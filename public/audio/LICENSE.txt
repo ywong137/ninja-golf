@@ -1,0 +1,15 @@
+Ishikari Lore
+Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
+
+Original track and attribution statement:
+https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100192
+Original file:
+https://incompetech.com/music/royalty-free/mp3-royaltyfree/Ishikari%20Lore.mp3
+
+The original recording is bundled unchanged. The game loops it and adjusts playback volume.
+The game displays attribution in its Music & credits panel.
+
+Sound effects and environmental noise use real-time Web Audio synthesis.
+The game does not generate or compose music.

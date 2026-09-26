@@ -1,0 +1,22 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
+const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.ninjaGolf);
+await page.screenshot({path:'/private/tmp/ninja-home-polish.png'});
+await page.click('#play');await page.click('[data-warrior="1"]');await page.click('#begin');
+await page.waitForFunction(()=>window.ninjaGolf.state().mode==='game');
+await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.ninjaGolf.state().club==='3W');assert.equal(await page.evaluate(()=>window.ninjaGolf.state().club),'3W');await page.keyboard.press('KeyQ');await page.waitForFunction(()=>window.ninjaGolf.state().club==='DR');
+await page.keyboard.press('Space');await page.waitForFunction(()=>window.ninjaGolf.state().charging);await page.waitForFunction(()=>window.ninjaGolf.state().power>.93);await page.keyboard.press('Space');
+await page.waitForFunction(()=>window.ninjaGolf.state().phase==='flight');await page.screenshot({path:'/private/tmp/ninja-flight.png'});await page.keyboard.press('Space');
+await page.waitForFunction(()=>window.ninjaGolf.state().phase==='combat',{},{timeout:20000});
+assert.equal(await page.evaluate(()=>window.ninjaGolf.state().strokes),1);
+await page.screenshot({path:'/private/tmp/ninja-combat.png'});
+await page.keyboard.press('KeyF');
+for(let i=0;i<65;i++){await page.keyboard.press('KeyJ');if(i%8===0)await page.keyboard.press('KeyK');await page.waitForTimeout(180);}
+console.log('After combat',await page.evaluate(()=>window.ninjaGolf.state()));
+await page.screenshot({path:'/private/tmp/ninja-battle.png'});
+await page.keyboard.press('Escape');await page.waitForFunction(()=>window.ninjaGolf.state().paused);assert.equal(await page.evaluate(()=>window.ninjaGolf.state().paused),true);await page.click('#resume');
+assert.equal(await page.evaluate(()=>window.ninjaGolf.state().paused),false);
+console.log('Browser errors',errors);assert.deepEqual(errors,[]);console.log('Browser smoke passed');await browser.close();
