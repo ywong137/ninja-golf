@@ -57,6 +57,9 @@ for name,clip in DATA.items():
   rotate('pelvis',(0,0,1),hip);rotate('pelvis',(1,0,0),pose.get('pelvisBend',bend*.5))
   for bn,f in [('spine_01',.35),('spine_02',.35),('spine_03',.30)]:
    rotate(bn,(0,0,1),(chest-hip)*f);rotate(bn,(1,0,0),(bend-pose.get('pelvisBend',bend*.5))*f)
+  if pose.get('torsoSideBend',0):
+   # Keep lateral torso flex above the native rig's thigh attachment.
+   for bn,f in [('spine_02',.60),('spine_03',.40)]:rotate(bn,(0,1,0),pose['torsoSideBend']*f)
   rotate('neck_01',(0,0,1),-chest*(.65 if t<.62 else .2) if golf else -(chest-hip)*.35);rotate('Head',(1,0,0),.18 if golf and t<.62 else -.04)
   if not golf:
    rotate('clavicle_r',(0,0,1),-.10);rotate('clavicle_l',(0,0,1),.10)

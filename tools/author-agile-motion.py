@@ -13,7 +13,7 @@ RING = [
  ([-.37,-.10,1.16],[-.14,-.42,1.32],[.09,-.16,1.44],[-.57,.19,-.05],[.40,-.43,.20],[.54,.20,.24]),
  ([-.32,-.12,.99],[-.23,-.40,1.25],[-.13,-.14,1.51],[-.40,.12,-.42],[-.20,-.38,.46],[.16,.18,.56]),
  ([.09,-.08,1.18],[-.25,-.42,1.15],[-.40,-.08,1.20],[.56,.24,0],[-.52,-.38,0],[-.53,.25,.10]),
- ([-.06,-.09,1.53],[-.22,-.42,1.09],[-.35,-.16,.99],[.39,.20,.47],[-.35,-.39,-.38],[-.50,.12,-.30]),
+ ([-.32,-.36,1.43],[-.22,-.42,1.09],[-.35,-.16,.99],[.39,.20,.47],[-.35,-.39,-.38],[-.50,.12,-.30]),
  ([-.36,-.07,.98],[-.22,-.41,1.22],[.02,-.16,1.48],[-.46,.18,-.32],[.12,-.42,.44],[.50,.11,.33]),
  ([-.41,-.06,1.20],[-.17,-.43,1.18],[.10,-.08,1.24],[-.55,.23,.10],[.47,-.41,.03],[.55,.25,.08]),
  ([.01,-.12,1.53],[-.23,-.41,1.00],[-.38,-.12,.95],[.41,.20,.42],[-.20,-.46,-.37],[-.52,.13,-.25]),
@@ -55,6 +55,16 @@ def recovery_clearance(name,pose,t):
   weight=math.sin(math.pi*(t-start)/(end-start))**2
   for target in ([key,'tip'] if key=='grip' else [key]):
    pose[target]=[pose[target][k]+offset[k]*weight for k in range(3)]
+ return pose
+
+def ring_cleave_windup(pose,t,hit):
+ # Move the elbow plane outward before the ring rises. The previous inward
+ # hand lift passed within 35 mm of the native shoulder and reversed its axis.
+ # Lead the hand by 55 ms, then retain the outside plane until the strike.
+ release=hit-.055
+ weight=u.smooth(t/.06) if t<release else 1-u.smooth((t-release)/.055)
+ if 0<t<hit:
+  pose['elbowR']=[pose['elbowR'][k]+[-.40,-.30,.30][k]*weight for k in range(3)]
  return pose
 
 def direction(keys,t,size):
@@ -110,7 +120,9 @@ def regular(prefix,index,old):
    shift[0]=shift[0]*(1-loading*.8)+support_center*loading*.8
   grip=u.track(hands,t)
   if prefix=='Ring_' and index==5:grip=ring_rising_return(grip,t)
-  poses.append(recovery_clearance(prefix+NAMES[index],build_pose(t,duration,u.track(hips,t),ch,u.track(bends,t),shift,grip,direction(axes,t,size),u.track(free,t),feet,roll+ch*(.55 if low else .95),low),t))
+  pose=recovery_clearance(prefix+NAMES[index],build_pose(t,duration,u.track(hips,t),ch,u.track(bends,t),shift,grip,direction(axes,t,size),u.track(free,t),feet,roll+ch*(.55 if low else .95),low),t)
+  if prefix=='Ring_' and index==4:pose=ring_cleave_windup(pose,t,hit)
+  poses.append(pose)
  return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in BASE},poses=poses)
 
 def musou(prefix,old):

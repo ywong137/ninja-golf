@@ -33,6 +33,51 @@ def heavy_return(grip,t,begin,end,lateral,forward):
   arc=math.sin(math.pi*(t-begin)/(end-begin))**2
   return [grip[0]-lateral*arc,grip[1]-forward*arc,grip[2]]
  return grip
+def cleave_core(pose,t,duration):
+ # Keep the existing pelvis pitch and all limb targets. The chest continues
+ # over the planted lead leg before the body unloads for its return step.
+ pose['pelvisBend']=pose['bend']*.5
+ pose['shift']=track([(0,[0,0,-.07]),(.115,[.070,.025,-.17]),(.305,[-.025,-.085,-.17]),(.36,[-.065,-.145,-.16]),(.425,[-.105,-.190,-.17]),(.58,[-.020,-.050,-.12]),(duration,[0,0,-.07])],t)
+ pose['bend']=track([(0,.17),(.115,.28),(.305,.43),(.36,.54),(.425,.62),(.58,.32),(duration,.17)],t)
+ # Positive source-Y bend leans away from the right-hand fan.
+ pose['torsoSideBend']=math.radians(track([(0,0),(.115,4),(.305,1),(.36,-6),(.425,-8),(.58,-2),(duration,0)],t))
+ return pose
+def regular_core(pose,t,duration,name,index,hits,prep,release,follow):
+ # Each fan stroke has its own load/release shape. Preserve the old pelvis
+ # pitch and limb choreography; add movement above the native thigh branch.
+ if name=='Heavy_Cleave':return cleave_core(pose,t,duration)
+ pose['pelvisBend']=pose['bend']*.5
+ if t<=0 or t>=duration:
+  pose['torsoSideBend']=0
+  return pose
+ # Prepare/release/contact/follow torso bend, then lateral contact/follow.
+ profiles={
+  'Cut_Diagonal':(.24,.29,.34,.38,-4,-5),
+  'Cut_Return':(.23,.26,.28,.31,4,5),
+  'Cut_Rising':(.32,.34,.25,.20,-3,-2),
+  'Cut_Sweep':(.25,.30,.34,.38,-5,-6),
+  'Heavy_Rising':(.40,.42,.32,.26,-5,-3),
+  'Heavy_Sweep':(.30,.38,.43,.48,7,8),
+  'Heavy_Slam':(.32,.40,.50,.58,-7,-8)}
+ load,ready,contact,finish,side_hit,side_follow=profiles[name]
+ heavy=index>=4;entry=STEPS[index][0];sign=-1 if entry=='r' else 1
+ amount=.045 if heavy else .028
+ bends=[(0,.17),(prep,load),(release,ready),(hits[0],contact),(follow,finish)]
+ sides=[(0,0),(prep,-side_hit*.55),(release,-side_hit*.2),(hits[0],side_hit),(follow,side_follow)]
+ # A small rear-side load precedes the lead-side transfer. Rising cuts extend
+ # through contact; downward cuts stay loaded through their follow-through.
+ rising=name.endswith('Rising')
+ dz=-.015 if rising else -.025 if heavy else -.006
+ transfers=[(0,[0,0,0]),(prep,[-sign*amount,.008,dz]),(release,[-sign*amount*.3,-.008,dz]),(hits[0],[sign*amount,-(.035 if heavy else .018),.005 if rising else dz]),(follow,[sign*amount*.8,-(.045 if heavy else .025),.015 if rising else dz*1.2])]
+ if len(hits)>1:
+  second=hits[1];last=second+.045
+  bends.extend([(second-.09,finish*.9),(second,contact),(last,finish*.94)])
+  sides.extend([(second-.09,side_follow*.7),(second,-side_hit),(last,-side_follow)])
+  transfers.extend([(second-.09,[sign*amount*.5,-.018,dz]),(second,[-sign*amount,-(.032 if heavy else .018),dz]),(last,[-sign*amount*.7,-.025,dz*.7])])
+ for keys,value in [(bends,.17),(sides,0),(transfers,[0,0,0])]:keys.append((duration,value))
+ pose['bend']=track(bends,t);pose['torsoSideBend']=math.radians(track(sides,t))
+ offset=track(transfers,t);pose['shift']=[pose['shift'][k]+offset[k] for k in range(3)]
+ return pose
 READY=[-.19,-.21,1.43];READY_SHAFT=[-.30,-.09,.50]
 # Prepared, contact and follow-through hand positions, followed by shaft directions.
 GESTURES={
@@ -94,8 +139,21 @@ def regular(name,duration,index):
    # This pole offset is a direction guide, not a requested elbow position.
    arc=math.sin(math.pi*(t-follow)/(duration-follow))**2
    p['elbowR'][0]-=.24*arc;p['elbowR'][2]+=.30*arc
+  regular_core(p,t,duration,name,index,hits,prep,release,follow)
   poses.append(p)
- return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
+ return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,nativeSampleRate=120,rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
+def musou_free_guard(pose,t,duration):
+ # The empty hand follows the lowered body and stays outside the shoulder.
+ # Guide its elbow behind the hand: a guide along the wrist line flips during
+ # the full-body turn. Fade to the original Ready planes at both endpoints.
+ weight=smooth(t/.12)*smooth((duration-t)/.15)
+ offset=turn([.16,-.055,pose['shift'][2]+.07],pose['chest'])
+ for key in ['offGrip','offTip']:
+  pose[key]=[pose[key][k]+offset[k]*weight for k in range(3)]
+ guide=turn([.8,.9,1.1+pose['shift'][2]*.4],pose['chest'])
+ for k in range(2):guide[k]+=pose['shift'][k]
+ pose['elbowL']=mix(pose['elbowL'],guide,weight)
+ return pose
 def musou():
  duration=3.3;hits=[.42,.86,1.30,1.78,2.25,2.82];headings=[0,.95,2.10,3.5,4.82,math.tau];base={'r':[-.22,0,0],'l':[.22,.07,0]};events={'r':[], 'l':[]};heading_keys=[(0,0)]
  for i in range(1,6):
@@ -134,7 +192,7 @@ def musou():
   off=track([(hit-.23,[.30,-.23,1.28]),(prep,[.22,-.11,1.08]),(release,[.24,-.04,1.02]),(hit,[.31,.035,1.03]),(follow,[.34,.10,1.09]),(hit+.15,[.30,-.23,1.28])],max(hit-.23,t))
   shift=[center[0],center[1],-load];grip=turn(grip,heading);direction=turn(direction,heading);off=turn(off,heading)
   for p in [grip,off]:p[0]+=center[0];p[1]+=center[1]
-  p=assemble(t,duration,heading+h,track(heading_keys,max(0,t-.035))+ch,bend,shift,grip,direction,off,feet,.45+ch*.8);p['pelvisBend']=pelvis_bend;poses.append(p)
+  p=assemble(t,duration,heading+h,track(heading_keys,max(0,t-.035))+ch,bend,shift,grip,direction,off,feet,.45+ch*.8);p['pelvisBend']=pelvis_bend;poses.append(musou_free_guard(p,t,duration))
  return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,rootAdvance=0,impacts=hits,headings=headings,nativeSampleRate=120,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
 def author(data):
  for index,name in enumerate(GESTURES):data['Fan_'+name]=regular(name,data['Fan_'+name]['duration'],index)
