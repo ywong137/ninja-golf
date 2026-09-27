@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCharacterOutfit,awaitCharacterOutfits} from './character-outfits.js';
 
 const nativeMaps=new Map();
 function nativeRoughness(name){
@@ -7,10 +8,10 @@ function nativeRoughness(name){
  entry.promise=new Promise((resolve,reject)=>{entry.texture=new THREE.TextureLoader().load(url,resolve,undefined,()=>reject(new Error(`Missing character surface map: ${url}`)));});
  entry.texture.colorSpace=THREE.NoColorSpace;entry.texture.flipY=false;entry.texture.anisotropy=4;nativeMaps.set(name,entry);return entry.texture;
 }
-export async function awaitCharacterMaterials(){await Promise.all([...nativeMaps.values()].map(entry=>entry.promise));}
+export async function awaitCharacterMaterials(){await Promise.all([...nativeMaps.values()].map(entry=>entry.promise));await awaitCharacterOutfits();}
 function finishNativeMaterial(mat){
  const match=/^[fm]\d{3}_(head|body|opacity)$/.exec(mat.name);if(!match)return false;
- mat.metalness=0;
+ mat.metalness=0;applyCharacterOutfit(mat);
  if(match[1]==='opacity'){
   // Preserve source strand blending; its layered cards depend on the exported depth settings.
   mat.roughness=.72;

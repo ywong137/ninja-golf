@@ -24,7 +24,7 @@ const STYLE_ATTACKS={
       {name:'Petal circle',reach:5.4,arc:Math.PI,damage:27,lunge:.8},
     ],
     heavy:[
-      {name:'Gale palm',reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
+      {name:'Gale cut',reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
       {name:'Updraft',reach:5.6,arc:2.4,damage:91,lunge:1.7,launch:7},
       {name:'Silk whirlwind',reach:6.5,arc:Math.PI,damage:60,lunge:.5},
       {name:'Falling blossoms',reach:7.5,arc:Math.PI,damage:140,lunge:1,launch:5},
@@ -48,15 +48,15 @@ const STYLE_ATTACKS={
   },
   sickle:{
     light:[
-      {name:'Low hook',reach:4.8,arc:1.3,damage:38,lunge:4.2},
-      {name:'Reaping return',reach:5,arc:1.7,damage:41,lunge:1.2,pull:true},
+      {name:'Low draw cut',reach:4.8,arc:1.3,damage:38,lunge:4.2},
+      {name:'Reaping return',reach:5,arc:1.7,damage:41,lunge:1.2},
       {name:'Rising talon',reach:5.3,arc:1.5,damage:48,lunge:3.4,launch:4},
       {name:'Harvest circle',reach:6,arc:Math.PI,damage:33,lunge:1.5},
     ],
     heavy:[
-      {name:'Anchor hook',reach:6.4,arc:1.6,damage:100,lunge:3.8,pull:true},
-      {name:'Sky snare',reach:6,arc:1.5,damage:110,lunge:2,launch:8},
-      {name:'Reaping spiral',reach:7,arc:Math.PI,damage:69,lunge:.6,pull:true},
+      {name:'Driving cut',reach:6.4,arc:1.6,damage:100,lunge:3.8},
+      {name:'Skyward cut',reach:6,arc:1.5,damage:110,lunge:2,launch:8},
+      {name:'Reaping spiral',reach:7,arc:Math.PI,damage:69,lunge:.6},
       {name:'Harvest fall',reach:8,arc:2.7,damage:160,lunge:3,launch:9},
     ],
     musou:{name:'Jade harvest',reach:18,launch:12,lunge:1.2},

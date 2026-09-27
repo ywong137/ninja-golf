@@ -1,0 +1,127 @@
+{
+  "license": "MIT",
+  "sourceRepository": "https://github.com/microsoft/Microsoft-Rocketbox",
+  "description": "Garment-only color and textile variations; original source folds, seams, skin and shoes remain.",
+  "files": [
+    {
+      "hero": "ronin",
+      "material": "m024_body",
+      "title": "Club burgundy",
+      "identity": "Male_Adult_10",
+      "source": "assets/source/rocketbox/Male_Adult_10/Textures/m024_body_color.tga",
+      "file": "m024_body-outfit.webp",
+      "sourceSha256": "5424cf19d81306897f005a94e104cfff08dd0d75cba57734cc056baab85e12cb",
+      "sha256": "bd69f221f8f337f4c00c77bba922ce71d2a49f9697cfdd16d0660a50f7ffdf16",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.45605897903442383,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    },
+    {
+      "hero": "shinobi",
+      "material": "m017_body",
+      "title": "Teal woven shirt",
+      "identity": "Male_Adult_09",
+      "source": "assets/source/rocketbox/Male_Adult_09/Textures/m017_body_color.tga",
+      "file": "m017_body-outfit.webp",
+      "sourceSha256": "6959a7dca441963ac10b0f86df4b3191ad5da839c16a1fc972da8464b6807b65",
+      "sha256": "dc6294038fb3c5b388e1f2f72bd4891c3923389ac12d8ba9a901d7d050a66014",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.3349480628967285,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    },
+    {
+      "hero": "monk",
+      "material": "m009_body",
+      "title": "Ochre clubhouse",
+      "identity": "Male_Adult_05",
+      "source": "assets/source/rocketbox/Male_Adult_05/Textures/m009_body_color.tga",
+      "file": "m009_body-outfit.webp",
+      "sourceSha256": "cf5704a0c083d57dab9b7cfdb797d8440fffd0128c7b560b8daad15c5dbcaad7",
+      "sha256": "e7eaae6ca29b2e66ddf47f1685425291db9595f1577f59ba4111ffad0fa85581",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.275285005569458,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    },
+    {
+      "hero": "kaede",
+      "material": "f003_body",
+      "title": "Indigo wave",
+      "identity": "Female_Adult_03",
+      "source": "assets/source/rocketbox/Female_Adult_03/Textures/f003_body_color.tga",
+      "file": "f003_body-outfit.webp",
+      "sourceSha256": "fc22fd6bd6686d5638bab7d24cdb435d180e6065325796b41b1966f047843e2c",
+      "sha256": "ab563e5e4cc45d4601934625ed7c66c8c25420404c826a0169f672a19bfc7b19",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.25850415229797363,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    },
+    {
+      "hero": "ayame",
+      "material": "f008_body",
+      "title": "Lavender argyle club",
+      "identity": "Female_Adult_08",
+      "source": "assets/source/rocketbox/Female_Adult_08/Textures/f008_body_color.tga",
+      "file": "f008_body-outfit.webp",
+      "sourceSha256": "13fad57cdcfaee92264172ef076539d928bbc1ba86309f493cd7dae06137d4fa",
+      "sha256": "17482bdc5811a213583cc97b97ec9f87f4a54fae8eb207e90a747ae5bf9da6eb",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.24269509315490723,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    },
+    {
+      "hero": "sora",
+      "material": "f012_body",
+      "title": "Jade wave",
+      "identity": "Female_Adult_12",
+      "source": "assets/source/rocketbox/Female_Adult_12/Textures/f012_body_color.tga",
+      "file": "f012_body-outfit.webp",
+      "sourceSha256": "7f517e4c12738bda2638786f8d6557920e3481a80a9b34d7af4f1c2f30e20dca",
+      "sha256": "b8bf022a62e55a7c9adcd1462de7e3c3fd6a80b7a3f6a56ef11132c1945752e5",
+      "size": [
+        2048,
+        2048
+      ],
+      "coverage": 0.2733018398284912,
+      "unchangedOutsideMaskBeforeCompression": true,
+      "encoding": {
+        "format": "WebP",
+        "quality": 93
+      }
+    }
+  ]
+}

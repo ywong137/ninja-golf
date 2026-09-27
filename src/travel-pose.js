@@ -23,6 +23,12 @@ function gripRotation(axis,palm,shaft,forearm){
  const worldY=shaft.clone().normalize(),worldZ=forearm.clone().addScaledVector(worldY,-forearm.dot(worldY)).normalize(),worldX=worldY.clone().cross(worldZ).normalize();
  return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(worldX,worldY,worldZ)).multiply(new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x,y,z)).invert());
 }
+function endpointTwist(fromRotation,fromAxis,toRotation,toAxis,localAxis,prior=0){
+ const from=fromRotation.clone().premultiply(new THREE.Quaternion().setFromUnitVectors(fromAxis,toAxis));
+ const relative=from.invert().multiply(toRotation).normalize();
+ const angle=2*Math.atan2(relative.x*localAxis.x+relative.y*localAxis.y+relative.z*localAxis.z,relative.w);
+ return prior+Math.atan2(Math.sin(angle-prior),Math.cos(angle-prior));
+}
 export class TravelPose {
  constructor(actor,kind){this.actor=actor;this.profile=TRAVEL_POSES[kind];this.weight=0;this.saved=[];this.carry={};this.shaftDirections={};}
  reset(){this.weight=0;this.shaftDirections={};}
@@ -44,11 +50,10 @@ export class TravelPose {
     // Blend swing and palm twist separately. A shortest-path quaternion blend
     // can reverse its chosen half-turn as the destination attack wrist moves.
     rotation.premultiply(new THREE.Quaternion().setFromUnitVectors(shaftAxes[side].clone().applyQuaternion(rotation),shaft));
-    nativeRotation.premultiply(new THREE.Quaternion().setFromUnitVectors(nativeAxis,shaft));
-    const relative=rotation.clone().invert().multiply(nativeRotation).normalize(),localAxis=shaftAxes[side];
-    let twist=2*Math.atan2(relative.x*localAxis.x+relative.y*localAxis.y+relative.z*localAxis.z,relative.w);
-    const prior=carry.exitTwist??0;
-    twist=prior+Math.atan2(Math.sin(twist-prior),Math.cos(twist-prior));carry.exitTwist=twist;
+    nativeRotation.premultiply(new THREE.Quaternion().setFromUnitVectors(nativeAxis,targetAxis));
+    // Measure at the full destination, independently of the fade weight.
+    const localAxis=shaftAxes[side],twist=endpointTwist(carry.rotation.clone().premultiply(rootQ),carryAxis,nativeRotation,targetAxis,localAxis,carry.exitTwist??0);
+    carry.exitTwist=twist;
     rotation.multiply(new THREE.Quaternion().setFromAxisAngle(localAxis,twist*(1-this.weight)));
     const pole=lower.getWorldPosition(new THREE.Vector3()).lerp(root.localToWorld(carry.elbow.clone()),this.weight).sub(upper.getWorldPosition(new THREE.Vector3())),wrist=palm.sub(palmGrips[side].clone().multiplyScalar(scale).applyQuaternion(rotation));
     solveArm(upper,lower,hand,wrist,pole);setWorld(hand,rotation);

@@ -30,7 +30,7 @@ SICKLE = [
 ]
 STEPS = {
  'Ring_': [('l',[.15,-.065,0],-.18),('r',[-.16,-.06,0],.18),('l',[.11,-.12,0],-.12),('r',[-.20,-.035,0],.24),('l',[.18,-.11,0],-.22),('r',[-.13,-.17,0],.18),('l',[.22,-.045,0],-.26),('r',[-.17,-.14,0],.20)],
- 'Sickle_': [('r',[-.025,-.17,0],.08),('l',[.025,-.16,0],-.08),('r',[-.035,-.18,0],.10),('l',[.065,-.12,0],-.16),('r',[-.035,-.24,0],.09),('l',[.04,-.22,0],-.08),('r',[-.075,-.18,0],.17),('l',[.035,-.25,0],-.10)]}
+ 'Sickle_': [('r',[-.025,-.24,0],.08),('l',[.025,-.23,0],-.08),('r',[-.035,-.27,0],.10),('l',[.08,-.18,0],-.16),('r',[-.04,-.34,0],.12),('l',[.04,-.32,0],-.12),('r',[-.10,-.26,0],.20),('l',[.045,-.36,0],-.14)]}
 def length(v): return math.sqrt(sum(x*x for x in v))
 def ring_rising_return(grip,t):
  # The original downward return crosses the shoulder. Carry the ring forward
@@ -68,8 +68,10 @@ def ring_cleave_windup(pose,t,hit):
  return pose
 
 def direction(keys,t,size):
- # The common interpolator performs spherical direction interpolation at length .62.
- return [x*size/.62 for x in u.shaft(keys,t)]
+ # The helper returns its final landmark unchanged after the last key.
+ # Normalize that branch too, so a Ready landmark cannot change shaft length.
+ axis=u.shaft(keys,t);scale=size/length(axis)
+ return [x*scale for x in axis]
 def build_pose(t,duration,hip,chest,bend,shift,grip,axis,off,feet,roll,low):
  p=u.assemble(t,duration,hip,chest,bend,shift,grip,axis,off,feet,roll)
  p['pelvisBend']=bend*.48
@@ -77,14 +79,96 @@ def build_pose(t,duration,hip,chest,bend,shift,grip,axis,off,feet,roll,low):
  p['offRoll']=.10 if low else -.45
  return p
 
-def regular(prefix,index,old):
+def sickle_core(pose,t,duration,index,hits,prep,release,follow,delta):
+ # Sora pulls with her body under the hook. Descending cuts retain a low
+ # receiving stance; rising cuts extend the knees after the low preparation.
+ # Keep the pelvis pitch independent from the added upper-torso flexion.
+ name=NAMES[index];heavy=index>=4;rising=name.endswith('Rising')
+ profiles={
+  'Cut_Diagonal':(.34,.43,.49,.18,.17,.17,-4),
+  'Cut_Return':(.32,.37,.40,.17,.16,.15,4),
+  'Cut_Rising':(.48,.34,.28,.22,.13,.095,-3),
+  'Cut_Sweep':(.38,.45,.48,.20,.19,.18,5),
+  'Heavy_Cleave':(.40,.63,.71,.24,.25,.26,-7),
+  'Heavy_Rising':(.55,.38,.29,.27,.14,.095,-5),
+  'Heavy_Sweep':(.42,.51,.56,.25,.24,.23,-7),
+  'Heavy_Slam':(.42,.68,.76,.25,.27,.29,8)}
+ load_bend,contact_bend,follow_bend,load,contact_load,follow_load,side=profiles[name]
+ lead=-1 if STEPS['Sickle_'][index][0]=='r' else 1
+ lateral=delta[0]*.5+lead*(.035 if heavy else .025)
+ forward=delta[1]*(.72 if heavy else .64)
+ bends=[(0,.25),(prep,load_bend),(release,load_bend+.04),(hits[0],contact_bend),(follow,follow_bend)]
+ shifts=[(0,[0,0,-.12]),(prep,[-lead*.035,.018,-load]),(release,[lateral*.5,forward*.58,-load]),(hits[0],[lateral,forward,-contact_load]),(follow,[lateral*1.05,forward*1.04,-follow_load])]
+ sides=[(0,0),(prep,-side*.5),(release,-side*.15),(hits[0],side),(follow,side*.9)]
+ if len(hits)>1:
+  second=hits[1];last=second+.04
+  bends.extend([(second-.09,follow_bend*.92),(second,contact_bend),(last,follow_bend)])
+  shifts.extend([(second,[-lateral*.65,forward,-contact_load]),(last,[-lateral*.75,forward*.9,-follow_load])])
+  sides.extend([(second-.09,side*.65),(second,-side),(last,-side*.9)])
+ # Hold the heavy finish long enough to read before the returning step.
+ if heavy and not rising:
+  settle=min(duration-.15,hits[-1]+.16)
+  if settle>shifts[-1][0]:
+   shifts.append((settle,shifts[-1][1][:]));bends.append((settle,bends[-1][1]));sides.append((settle,sides[-1][1]))
+ for keys,value in [(bends,.25),(shifts,[0,0,-.12]),(sides,0)]:keys.append((duration,value))
+ pose['bend']=u.track(bends,t);pose['shift']=u.track(shifts,t)
+ pose['torsoSideBend']=math.radians(u.track(sides,t))
+ return pose
+
+def sickle_free_guard(pose,t,duration):
+ # The empty hand follows the loaded chest instead of folding toward the
+ # shoulder as the knees lower. The blade hand keeps its separate hook path.
+ weight=u.smooth(t/.045)*u.smooth((duration-t)/.12)
+ anchor=u.turn([.50,-.32,1.24+pose['shift'][2]],pose['chest'])
+ for k in range(2):anchor[k]+=pose['shift'][k]
+ offset=[(anchor[k]-pose['offGrip'][k])*.85*weight for k in range(3)]
+ for key in ['offGrip','offTip']:pose[key]=[pose[key][k]+offset[k] for k in range(3)]
+ guide=u.turn([.65,.25,.65+pose['shift'][2]*.4],pose['chest'])
+ for k in range(2):guide[k]+=pose['shift'][k]
+ pose['elbowL']=u.mix(pose['elbowL'],guide,u.smooth(t/.10)*u.smooth((duration-t)/.12))
+ return pose
+
+def sickle_ready(old):
+ # A forward guard leaves room to raise and lower the hook without taking
+ # the wrist through the shoulder. Use this same pose at every attack boundary.
+ result=json.loads(json.dumps(old))
+ for p in result['poses']:
+  delta=[-.35-p['grip'][0],-.36-p['grip'][1],1.22-p['grip'][2]]
+  for key in ['grip','tip']:p[key]=[p[key][k]+delta[k] for k in range(3)]
+  p['elbowR']=[-.8+p['shift'][0],-.4+p['shift'][1],1.05+p['shift'][2]*.4]
+  p['pelvisBend']=p['bend']*.5
+  p['torsoSideBend']=0
+ result['nativeReachLimit']=.94
+ result['nativeSampleRate']=120
+ result['nativeAttackReady']=True
+ return result
+
+def sickle_boundaries(pose,t,duration,ready):
+ weight=1-u.smooth(t/.08)*u.smooth((duration-t)/.12)
+ axis=[pose['tip'][k]-pose['grip'][k] for k in range(3)]
+ ready_axis=[ready['tip'][k]-ready['grip'][k] for k in range(3)]
+ for key in ['grip','offGrip','offTip','shift','bend','pelvisBend','offRoll','freeHand','elbowL']:
+  value=ready[key]
+  pose[key]=u.mix(pose[key],value,weight) if isinstance(value,list) else pose[key]+(value-pose[key])*weight
+ shaft=direction([(0,axis),(1,ready_axis)],weight,length(axis))
+ pose['tip']=[pose['grip'][k]+shaft[k] for k in range(3)]
+ # Keep one continuous elbow guide through the guard, cut, and recovery.
+ # Fading through the former inside guide produced a new late elbow flip.
+ guide=u.turn([-.8,-.4,1.05+pose['shift'][2]*.4],pose['chest'])
+ for k in range(2):guide[k]+=pose['shift'][k]
+ pose['elbowR']=guide
+ return pose
+
+def regular(prefix,index,old,ready_pose=None):
  low=prefix=='Sickle_';duration=old['duration'];hits=old.get('impacts',HITS[index]);hit=hits[0];heavy=index>=4
- initial=old['poses'][0];ready=initial['grip'];ready_axis=[b-a for a,b in zip(ready,initial['tip'])];size=length(ready_axis)
+ initial=old['poses'][0];size=length([b-a for a,b in zip(initial['grip'],initial['tip'])])
+ if ready_pose:initial=ready_pose
+ ready=initial['grip'];ready_axis=[b-a for a,b in zip(ready,initial['tip'])]
  roll=initial.get('roll',.2 if low else -.7);a,b,c,sa,sb,sc=(SICKLE if low else RING)[index]
  side,delta,yaw=STEPS[prefix][index];sign=-1 if index in [1,6] else 1
  prep=hit*.32;release=hit-.055;follow=hit+.055;recovery=max(hits[-1]+.07,duration-.15)
  events={'r':[],'l':[]};target=[BASE[side][k]+delta[k] for k in range(3)]
- events[side]=[(.012,hit-.035,target,yaw,.065 if low else .075),(recovery,duration-.012,BASE[side],0,.065 if low else .07)]
+ events[side]=[(.012,hit-.035,target,yaw,(.095 if heavy else .08) if low else .075),(recovery,duration-.012,BASE[side],0,.075 if low else .07)]
  load=(.19 if heavy else .15) if low else (.12 if heavy else .08)
  settle=.12 if low else .07
  transfer=[delta[0]*.50,delta[1]*.53,-load*.74]
@@ -122,10 +206,17 @@ def regular(prefix,index,old):
   if prefix=='Ring_' and index==5:grip=ring_rising_return(grip,t)
   pose=recovery_clearance(prefix+NAMES[index],build_pose(t,duration,u.track(hips,t),ch,u.track(bends,t),shift,grip,direction(axes,t,size),u.track(free,t),feet,roll+ch*(.55 if low else .95),low),t)
   if prefix=='Ring_' and index==4:pose=ring_cleave_windup(pose,t,hit)
+  if low:
+   pose=sickle_core(pose,t,duration,index,hits,prep,release,follow,delta)
+   if ready_pose:pose=sickle_boundaries(pose,t,duration,ready_pose)
+   pose=sickle_free_guard(pose,t,duration)
   poses.append(pose)
- return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in BASE},poses=poses)
+ result=dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in BASE},poses=poses)
+ if low:result['nativeArmClearance']=dict(forward=.26,outward=.04,guide=[-.8,-.4,1.05],referenceDrop=.12)
+ if prefix=='Ring_' and index in [0,4]:result['carryExitDuration']=.116 if index==0 else .26
+ return result
 
-def musou(prefix,old):
+def musou(prefix,old,ready_pose=None):
  low=prefix=='Sickle_';duration=old['duration'];hits=old['impacts'];headings=[0,-.60,.45,-.85,.35,0] if low else [0,.85,1.85,3.05,4.55,math.tau]
  base=BASE;events={'r':[],'l':[]};heading_keys=[(0,0)]
  for i in range(1,6):
@@ -134,7 +225,9 @@ def musou(prefix,old):
    target=u.turn(base[side],headings[i]);target[1]-=.045*(i%2) if low and i<5 else 0
    events[side].append((a,b,target,headings[i],.065 if low else .10))
   heading_keys.extend([(start,headings[i-1]),(end,headings[i])])
- heading_keys.append((duration,headings[-1]));initial=old['poses'][0];ready=initial['grip'];ready_axis=[b-a for a,b in zip(ready,initial['tip'])];size=length(ready_axis);roll=initial.get('roll',.2 if low else -.7)
+ heading_keys.append((duration,headings[-1]));initial=old['poses'][0];size=length([b-a for a,b in zip(initial['grip'],initial['tip'])])
+ if ready_pose:initial=ready_pose
+ ready=initial['grip'];ready_axis=[b-a for a,b in zip(ready,initial['tip'])];roll=initial.get('roll',.2 if low else -.7)
  poses=[];order=[0,1,2,3,6,7] if low else [3,1,2,6,0,7]
  for i in range(793):
   t=i*duration/792;j=min(range(6),key=lambda j:abs(t-hits[j]));hit=hits[j];start=hit-.22;prep=hit-.16;release=hit-.065;follow=hit+.065;end=hit+.16;q=max(start,t);sign=-1 if j%2 else 1
@@ -158,12 +251,17 @@ def musou(prefix,old):
   for p in [grip,off]:
    for k in range(2):p[k]+=center[k]
   bend=u.track([(start,.25 if low else .18),(prep,.34 if low else .24),(hit,.43 if low else .30),(follow,.39 if low else .27),(end,.25 if low else .18)],q)
-  poses.append(recovery_clearance(prefix+'Musou_Flow',build_pose(t,duration,heading+hip,u.track(heading_keys,max(0,t-.035))+chest,bend,[*center,-load],grip,axis,off,feet,roll+chest*(.55 if low else .95),low),t))
- return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,headings=headings,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in base},poses=poses)
+  pose=recovery_clearance(prefix+'Musou_Flow',build_pose(t,duration,heading+hip,u.track(heading_keys,max(0,t-.035))+chest,bend,[*center,-load],grip,axis,off,feet,roll+chest*(.55 if low else .95),low),t)
+  if low and ready_pose:pose=sickle_boundaries(pose,t,duration,ready_pose)
+  poses.append(sickle_free_guard(pose,t,duration) if low else pose)
+ result=dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,headings=headings,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in base},poses=poses)
+ if low:result['nativeArmClearance']=dict(forward=.26,outward=.04,guide=[-.8,-.4,1.05],referenceDrop=.12)
+ return result
 
 def audit(records,original):
  report=[]
  for name,r in records.items():
+  if name.endswith('Ready'):continue
   assert r['duration']==original[name]['duration'];assert r['impacts']==original[name].get('impacts',HITS[NAMES.index(name.split('_',1)[1])] if 'Musou' not in name else [])
   size=length([b-a for a,b in zip(original[name]['poses'][0]['grip'],original[name]['poses'][0]['tip'])]);max_error=max(abs(length([b-a for a,b in zip(p['grip'],p['tip'])])-size) for p in r['poses']);assert max_error<1e-6,(name,max_error)
   for hit in r['impacts']:
@@ -212,9 +310,12 @@ def audit(records,original):
  return report
 def generate(original):
  records={}
+ ready=sickle_ready(original['Sickle_Ready'])
+ records['Sickle_Ready']=ready
  for prefix in ['Ring_','Sickle_']:
-  for i,name in enumerate(NAMES):records[prefix+name]=regular(prefix,i,original[prefix+name])
-  records[prefix+'Musou_Flow']=musou(prefix,original[prefix+'Musou_Flow'])
+  pose=ready['poses'][0] if prefix=='Sickle_' else None
+  for i,name in enumerate(NAMES):records[prefix+name]=regular(prefix,i,original[prefix+name],pose)
+  records[prefix+'Musou_Flow']=musou(prefix,original[prefix+'Musou_Flow'],pose)
  return records
 
 def repeat_error(a,b):

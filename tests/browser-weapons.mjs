@@ -9,7 +9,7 @@ try{
   const T=await import('/node_modules/three/build/three.module.js'),{createWeapon}=await import('/src/weapons.js');
   const scene=new T.Scene();scene.background=new T.Color('#687078');scene.add(new T.HemisphereLight(0xffffff,0x41405c,2));const key=new T.DirectionalLight(0xffe4c6,3);key.position.set(2,5,5);scene.add(key);
   const camera=new T.PerspectiveCamera(35,1500/900,.01,100),renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(1500,900);document.body.append(renderer.domElement);
-  const weapons=['odachi','twin','naginata','fan','ring','sickle'].map((kind,i)=>{const weapon=createWeapon(kind);weapon.position.set((i-2.5)*1.3,0,0);weapon.rotation.y=.22;scene.add(weapon);return weapon;});
+  const weapons=['odachi','twin','naginata','jian','dao','wakizashi'].map((kind,i)=>{const weapon=createWeapon(kind);weapon.position.set((i-2.5)*1.3,0,0);weapon.rotation.y=.22;scene.add(weapon);return weapon;});
   camera.position.set(0,1.1,10);camera.lookAt(0,.35,0);renderer.render(scene,camera);window.__weapons={scene,camera,renderer,weapons};
  });
  await page.screenshot({path:'/tmp/ninja-weapon-craft-lineup.png'});

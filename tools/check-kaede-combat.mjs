@@ -6,7 +6,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {WARRIORS} from '../src/warriors.js';
 const args=process.argv.slice(2),option=(key,fallback)=>{const index=args.indexOf(key);return index<0?fallback:args[index+1];};
-if(args.includes('--help')){console.log('node tools/check-kaede-combat.mjs --before DIRECTORY [--heroes ronin,kaede]');process.exit(0);}
+if(args.includes('--help')){console.log('node tools/check-kaede-combat.mjs --before DIRECTORY [--heroes ronin,kaede] [--include-ready]\n--include-ready permits a deliberately revised Ready clip; verify its attack boundaries separately.');process.exit(0);}
 const before=option('--before',null);if(!before)throw new Error('Pass --before DIRECTORY containing baseline hero GLBs and motion-data.json');
 const data=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url))),heroes=option('--heroes','kaede').split(',');
 const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(data)+';');
@@ -26,7 +26,7 @@ for(const hero of heroes){
  for(const image of old.doc.images){const v=old.doc.bufferViews[image.bufferView];assert.ok(old.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength).equals(current.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength)),`${hero}: texture bytes changed`);}
  for(const a of old.doc.animations){
   if(hero==='monk'&&/^(Cut_|Heavy_|Musou_)/.test(a.name)){assert.ok(!current.doc.animations.some(c=>c.name===a.name),'Retire the old shared Monk attack');continue;}
-  if(selected(a.name))continue;const b=current.doc.animations.find(c=>c.name===a.name);assert.deepEqual(a,b,`${hero}: protected ${a.name} descriptor`);for(const sampler of a.samplers)for(const key of ['input','output'])assert.ok(bytes(old,sampler[key]).equals(bytes(current,sampler[key])),`${hero}: protected ${a.name} bytes`);protectedClips++;
+  if(selected(a.name)||args.includes('--include-ready')&&a.name===warrior?.readyClip)continue;const b=current.doc.animations.find(c=>c.name===a.name);assert.deepEqual(a,b,`${hero}: protected ${a.name} descriptor`);for(const sampler of a.samplers)for(const key of ['input','output'])assert.ok(bytes(old,sampler[key]).equals(bytes(current,sampler[key])),`${hero}: protected ${a.name} bytes`);protectedClips++;
  }
  const {gltf,mixer}=await rig(current),point=name=>gltf.scene.getObjectByName(name).getWorldPosition(new T.Vector3()),hand=gltf.scene.getObjectByName('hand_r');gltf.scene.updateMatrixWorld(true);
  const axis=hand.worldToLocal(point('PalmShaft_r')).sub(hand.worldToLocal(point('PalmGrip_r'))).normalize();

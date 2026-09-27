@@ -60,6 +60,68 @@ def metadata(profile,duration,hits,events,poses,headings=None):
  result=dict(duration=duration,twoHanded=True,gripSpacing=profile['spacing'],nativeReachLimit=.96,nativeSampleRate=120,athleticAttack=True,rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in BASE},poses=poses)
  if headings is not None:result.update(headings=headings,nativeSampleRate=120)
  return result
+def cleave_arm_clearance(clip):
+ # Keep the two-handed handle ahead of the shoulders during the overhead cut.
+ # Moving both palms together preserves their spacing and the blade direction.
+ for p in clip['poses']:
+  seconds=p['t']*clip['duration']
+  weight=support.smooth(seconds/.10)*support.smooth((clip['duration']-seconds)/.15)
+  delta=turn([0,-.32*weight,0],p['chest'])
+  # A short extra clearance arc avoids the native forearm fold while loading.
+  # It ends before the .36 s contact and does not change the strike itself.
+  load=.04*support.smooth((seconds-.15)/.08)*(1-support.smooth((seconds-.31)/.03))
+  offset=turn([0,-load,0],p['chest']);delta=[delta[k]+offset[k] for k in range(3)]
+  for key in ['grip','tip','offGrip','offTip']:p[key]=[p[key][k]+delta[k] for k in range(3)]
+  for side,sign in [('R',-1),('L',1)]:
+   guide=turn([sign*.8,-.55,1.02+p['shift'][2]*.4],p['chest'])
+   for k in range(2):guide[k]+=p['shift'][k]
+   p['elbow'+side]=support.mix(p['elbow'+side],guide,weight)
+ return clip
+def odachi_foot_at(base,events,t):
+    position=base[:];yaw=0
+    for start,end,target,target_yaw,lift in events:
+        if t<=start:break
+        u=min(1,(t-start)/(end-start));blend=support.smooth((u-.13)/.74)
+        position=support.mix(position,target,blend);position[2]=lift*math.sin(math.pi*u)
+        yaw+=(target_yaw-yaw)*blend
+        if t<end:break
+    return position,yaw
+
+def wide_odachi_footwork(record,name):
+    result=record;index=NAMES.index(name);heavy=index>=4
+    duration=record['duration'];hit=record['impacts'][0];last=record['impacts'][-1]
+    lead=PROFILES['odachi']['steps'][index][0];rear='l' if lead=='r' else 'r';sign=-1 if lead=='r' else 1
+    width=([.64,.66,.68,.70,.88,.84,.88,.90])[index]
+    span=.50 if heavy else .24
+    targets={lead:[sign*width/2,-span*.70,0],rear:[-sign*width/2,span*.30,0]}
+    opening=(.008,hit*.38);entry=(opening[1]+.006,hit-.025)
+    recovery=last+.055;finish=duration-.012
+    distances={side:math.dist(targets[side],BASE[side]) for side in ['r','l']}
+    mid=recovery+(finish-recovery-.004)*distances[lead]/sum(distances.values())
+    events={rear:[(*opening,targets[rear],-.16 if rear=='l' else .16,.10 if heavy else .08),(mid+.004,duration-.012,BASE[rear],0,.09 if heavy else .075)],lead:[(*entry,targets[lead],-.10 if lead=='l' else .10,.12 if heavy else .09),(recovery,mid,BASE[lead],0,.10 if heavy else .08)]}
+    drop=(.275 if name=='Heavy_Sweep' else .25) if heavy else (.185 if name=='Cut_Sweep' else .145)
+    start=record['poses'][0]['shift'];end=record['poses'][-1]['shift']
+    # Load the current support before each lifted step. Both feet stay fixed for cuts.
+    shifts=[(0,start),(opening[1],[-sign*.065,.035,-drop]),(hit,[sign*.08,-.10 if heavy else -.05,-drop]),(min(last+.045,recovery-.005),[sign*.065,-.11 if heavy else -.06,-drop-.015]),(recovery,[sign*.065,-.11 if heavy else -.06,-drop-.015]),(mid,[sign*.025,.015,-drop*.75]),(duration-.012,[0,0,-.085]),(duration,end)]
+    # Each row gets the same rigid body-follow translation for both palms/poles.
+    # Approximate extra thoracic pitch by rotating a .42m shoulder-height offset.
+    for p in result['poses']:
+        t=p['t']*duration;old_shift=p['shift'][:];old_bend=p['bend']
+        if t<=0 or t>=duration:continue
+        p['shift']=support.track(shifts,t)
+        follow=min(last+.045,recovery-.005)
+        amount=support.track([(0,0),(hit*.32,.025 if heavy else .01),(hit,.07 if heavy else .025),(follow,.13 if heavy else .05),(recovery,.035 if heavy else .015),(duration,0)],t)
+        if name.endswith('Rising'):amount*=.55
+        p['bend']+=amount
+        body_delta=[p['shift'][k]-old_shift[k] for k in range(3)]
+        shoulder_delta=support.turn([0,-.42*(math.sin(p['bend'])-math.sin(old_bend)),.42*(math.cos(p['bend'])-math.cos(old_bend))],p['chest'])
+        for key in ['grip','tip','offGrip','offTip','elbowR','elbowL']:
+            p[key]=[p[key][k]+body_delta[k]+shoulder_delta[k] for k in range(3)]
+        for side in ['r','l']:
+            p['foot'+side.upper()],p['yaw'+side.upper()]=odachi_foot_at(BASE[side],events[side],t)
+    result['footPlants']={side:support.plants(events[side],duration) for side in ['r','l']}
+    return result
+
 def regular(profile,name,index,duration):
  heavy=index>=4;pole=profile['prefix']!='';hits=HITS[index];hit=hits[0];side,delta,yaw=profile['steps'][index];sign=-1 if side=='l' else 1
  prep=hit*.32;release=hit-(.075 if index==7 else .055);follow=hit+.055
@@ -111,7 +173,9 @@ def regular(profile,name,index,duration):
    weight=support.smooth((seconds-.345)/.08)*(1-support.smooth((seconds-.53)/.19))
    guide=[-.8,-.2,1.0]
    p['elbowR']=[p['elbowR'][k]*(1-weight)+guide[k]*weight for k in range(3)]
- if not pole and name=='Cut_Diagonal':result['carryExitDuration']=.11
+ if name=='Cut_Diagonal':result['carryExitDuration']=.135 if pole else .115
+ if not pole and name=='Heavy_Cleave':cleave_arm_clearance(result)
+ if not pole:wide_odachi_footwork(result,name)
  return result
 def musou(profile):
  duration=3.3;hits=[.42,.86,1.30,1.78,2.25,2.82];angles=profile['headings'];pole=bool(profile['prefix']);events={'r':[],'l':[]};heading_keys=[(0,0)]

@@ -8,7 +8,7 @@ test('Fan, ring, and sickle reward different positioning and finishers',()=>{
   const fan=attackDefinition('light',0,'fan'),ring=attackDefinition('light',0,'ring'),sickle=attackDefinition('light',0,'sickle');
   assert.ok(strikeContains(0,6,0,ring.reach,ring.arc));assert.ok(!strikeContains(0,6,0,fan.reach,fan.arc));
   assert.ok(strikeContains(3.8,-.8,0,fan.reach,fan.arc));assert.ok(!strikeContains(3.8,-.8,0,sickle.reach,sickle.arc));
-  assert.equal(attackDefinition('heavy',0,'sickle').pull,true);assert.ok(attackDefinition('heavy',0,'fan').knockback>14);
+  assert.ok(!attackDefinition('heavy',0,'sickle').pull,'Short-sword cuts do not hook enemies backward');assert.ok(attackDefinition('heavy',0,'fan').knockback>14);
   const names=new Set();for(const style of ['fan','ring','sickle'])for(const kind of ['light','heavy','musou'])for(let i=0;i<(kind==='musou'?1:4);i++){
     const a=attackDefinition(kind,i,style);assert.ok(a.hits.every(t=>t>0&&t<a.duration));names.add(a.name);
   }assert.equal(names.size,27);

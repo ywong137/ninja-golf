@@ -16,7 +16,7 @@ test('Exported motion retains every required gameplay clip',()=>{
 test('Six unique warrior models use explicit weapon metadata',async()=>{
   const {WARRIORS}=await import('../src/warriors.js');
   assert.equal(WARRIORS.length,6);assert.equal(new Set(WARRIORS.map(w=>w.model)).size,6);
-  for(const w of WARRIORS){assert.ok(['odachi','twin','naginata','fan','ring','sickle'].includes(w.weaponKind));assert.equal(w.dualWield,w.weaponKind==='twin');}
+  for(const w of WARRIORS){assert.ok(['odachi','twin','naginata','jian','dao','wakizashi'].includes(w.weaponKind));assert.equal(w.dualWield,w.weaponKind==='twin');}
   const {BLADE_PROFILES}=await import('../src/weapons.js');
   for(const kind of ['scout','guard','lancer','skirmisher'])assert.ok(BLADE_PROFILES[kind].width<BLADE_PROFILES.twin.width*.4);
 });
@@ -24,6 +24,7 @@ test('Six unique warrior models use explicit weapon metadata',async()=>{
 test('The three women have separate weapon silhouettes and motion families',async()=>{
   const {WARRIORS}=await import('../src/warriors.js'),{createWeapon}=await import('../src/weapons.js');
   assert.deepEqual(WARRIORS.slice(3).map(w=>w.combatStyle),['fan','ring','sickle']);
+  assert.deepEqual(WARRIORS.slice(3).map(w=>w.weaponKind),['jian','dao','wakizashi']);
   for(const w of WARRIORS.slice(3)){const held=createWeapon(w.weaponKind);assert.equal(held.userData.kind,w.weaponKind);assert.ok(held.getObjectByName('Wrapped hand grip'));assert.equal(w.dualWield,false);assert.ok(w.readyClip.startsWith(w.motionPrefix));}
 });
 

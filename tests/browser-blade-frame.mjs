@@ -3,8 +3,9 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 
-// Captured from fbea207 before the palm-frame change. Keep Ready art planes and
-// the full golf transform exact, including the club head's lateral offset.
+// Captured from fbea207 before the palm-frame change. Sora's Ready position
+// now uses her reviewed forward guard; its blade plane and scale remain exact.
+// Preserve every full golf transform, including the club head's lateral offset.
 const baseline=JSON.parse(readFileSync(new URL('./fixtures/weapon-ready-golf.json',import.meta.url),'utf8'));
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{

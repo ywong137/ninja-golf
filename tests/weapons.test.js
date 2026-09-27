@@ -5,7 +5,7 @@ import {createWeapon,bladeGeometry,BLADE_PROFILES} from '../src/weapons.js';
 
 test('Weapon refinements preserve reach and bounded rendering cost',()=>{
  const tips={fan:[0,.86,0],ring:[.03,.81,0],sickle:[.45,.17,0]};
- for(const kind of ['odachi','twin','naginata','fan','ring','sickle','scout','guard','lancer','skirmisher']){
+ for(const kind of ['odachi','twin','naginata','jian','dao','wakizashi','fan','ring','sickle','scout','guard','lancer','skirmisher']){
   const weapon=createWeapon(kind),profile=BLADE_PROFILES[kind];
   assert.deepEqual(weapon.position.toArray(),[0,0,0]);assert.deepEqual(weapon.userData.tip,tips[kind]||[profile.curve,.17+profile.length,0]);
   let draws=0,triangles=0;weapon.traverse(mesh=>{if(!mesh.isMesh)return;draws+=Array.isArray(mesh.material)?mesh.geometry.groups.length:1;triangles+=(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3;for(const attribute of ['position','normal'])assert.ok([...mesh.geometry.attributes[attribute].array].every(Number.isFinite),`${kind}: finite ${attribute}`);});

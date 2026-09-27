@@ -4,6 +4,35 @@ import argparse,copy,json,pathlib,struct
 def read_glb(path):
  raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0]
  return json.loads(raw[20:20+length]),raw[28+length:]
+
+def align_authored_end_times(doc,binary,motions):
+ """Place the baked endpoint at its authored time after whole-frame NLA export."""
+ binary=bytearray(binary);aligned={}
+ for clip in doc.get('animations',[]):
+  spec=motions.get(clip['name'],{})
+  if not(spec.get('athleticAttack') or spec.get('nativeAttackReady')):continue
+  duration=spec['duration'];rate=spec.get('nativeSampleRate',60)
+  for index in {sampler['input'] for sampler in clip['samplers']}:
+   if index in aligned:
+    if aligned[index]!=duration:raise ValueError('Shared animation times have different authored durations')
+    continue
+   accessor=doc['accessors'][index];view=doc['bufferViews'][accessor['bufferView']]
+   if accessor['componentType']!=5126 or accessor['type']!='SCALAR' or accessor['count']<2:
+    raise ValueError(f"{clip['name']}: expected at least two float timestamp keys")
+   stride=view.get('byteStride',4);offset=view.get('byteOffset',0)+accessor.get('byteOffset',0)+(accessor['count']-1)*stride
+   end=struct.unpack_from('<f',binary,offset)[0];previous=struct.unpack_from('<f',binary,offset-stride)[0]
+   if previous>=duration or end<duration-1e-6 or end-duration>1/rate+1e-6:
+    raise ValueError(f"{clip['name']}: missing baked endpoint at {duration}s; last keys are {previous}, {end}")
+   struct.pack_into('<f',binary,offset,duration);accessor['max']=[duration];aligned[index]=duration
+ return binary
+
+def normalize_authored_end_times(path):
+ doc,binary=read_glb(path)
+ motions=json.loads((pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json').read_text())
+ binary=align_authored_end_times(doc,binary,motions)
+ header=json.dumps(doc,separators=(',',':')).encode();header+=b' '*(-len(header)%4)
+ result=struct.pack('<III',0x46546c67,2,28+len(header)+len(binary))+struct.pack('<II',len(header),0x4e4f534a)+header+struct.pack('<II',len(binary),0x004e4942)+binary
+ path.write_bytes(result)
 def trim_replaced_tail(doc,binary):
  """Remove only unreferenced trailing animation storage from earlier append runs."""
  used=set()
@@ -29,7 +58,9 @@ def trim_replaced_tail(doc,binary):
 def append_guards(target,source,clip_prefixes=None,allowed_clips=(),removed_clips=()):
  old,binary=read_glb(target);new,incoming=read_glb(source)
  motion_path=pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json'
- attack_source_names={name for name,clip in json.loads(motion_path.read_text()).items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
+ motions=json.loads(motion_path.read_text())
+ attack_source_names={name for name,clip in motions.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
+ incoming=align_authored_end_times(new,incoming,motions)
  if clip_prefixes:new['animations']=[a for a in new['animations'] if a['name'].startswith(clip_prefixes)]
  nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}
  incoming_names={a['name'] for a in new.get('animations',[])};replaced=incoming_names|set(removed_clips);preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in replaced]);old['animations']=preserved.copy();binary=trim_replaced_tail(old,binary);out=bytearray(binary);views={};accessors={}

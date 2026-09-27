@@ -174,7 +174,7 @@ def apply_native_arm_clearance(rig,ik,grips,pose,clip,seconds):
  shoulder=rig.pose.bones['upperarm_r'].head.copy();elbow=rig.pose.bones['lowerarm_r'].head.copy()
  bone=rig.pose.bones['hand_r'];wrist=bone.head.copy();palm=bone.matrix@grips['r']['center']
  turn=Quaternion((0,0,1),pose['chest']);forward=turn@Vector((0,-1,0));lateral=turn@Vector((1,0,0))
- target=wrist+Vector((0,0,(pose['shift'][2]+.07)*weight))-lateral*config['outward']*weight
+ target=wrist+Vector((0,0,(pose['shift'][2]+config.get('referenceDrop',.07))*weight))-lateral*config['outward']*weight
  deficit=config['forward']-(target-shoulder).dot(forward)
  target+=forward*(.5*(deficit+math.sqrt(deficit*deficit+.0004))*weight)
  reach=((elbow-shoulder).length+(wrist-elbow).length)*clip['nativeReachLimit']
@@ -316,7 +316,11 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
    if gait:duration=gait['duration']
    if clip:duration=clip['duration']
    original.name='source_'+name;action=bpy.data.actions.new(name);rig.animation_data.action=action
-   source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in attack_source_names else 30) if clip else 60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
+   source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in attack_source_names else 30) if clip else 60 if gait else 30
+   # Include the exact end of authored clips, even when duration is not an
+   # integer number of samples. Rounding down left the .72 s cut in mid-return.
+   authored_attack=name in attack_source_names
+   count=max(1,math.ceil(duration*sample_rate-1e-9) if authored_attack else round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2
@@ -342,6 +346,8 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
      previous=previous_rotations.get(bone.name)
      if previous is not None and bone.rotation_quaternion.dot(previous)<0:bone.rotation_quaternion.negate()
      previous_rotations[bone.name]=bone.rotation_quaternion.copy()
+     # NLA export truncates fractional end frames. Put the exact endpoint pose
+     # on the next whole sample, then restore its time during GLB append.
      for path in ['location','rotation_quaternion','scale']:bone.keyframe_insert(data_path=path,frame=frame*scene.render.fps/sample_rate,group=bone.name)
    # These keys already sample the solved motion. Automatic Bezier handles add
    # unrequested overshoot between solved support and wrist positions.

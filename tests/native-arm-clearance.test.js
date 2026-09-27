@@ -4,6 +4,33 @@ import path from 'node:path';
 import * as THREE from 'three';
 import {loadNativeSkin,skinGroups,measureArmSkin} from './native-skin-helper.mjs';
 
+test('Ronin overhead cleave keeps both forearms clear through preparation and contact',async t=>{
+ const file=process.env.NINJA_NATIVE_ARM_DIR?path.join(process.env.NINJA_NATIVE_ARM_DIR,'ronin.glb'):new URL('../public/models/ronin.glb',import.meta.url);
+ const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name==='Heavy_Cleave');
+ const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
+ const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
+ const previous={},worst={inset:0,torsoPairs:0,elbowSpeed:0};
+ for(let frame=0;frame<=Math.ceil(clip.duration*240);frame++){
+  const seconds=Math.min(frame/240,clip.duration);action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+  for(const side of ['r','l']){
+   const elbow=point('lowerarm_'+side).sub(point('upperarm_'+side)),old=previous[side],dt=old?seconds-old.seconds:0;
+   if(dt>1e-7)worst.elbowSpeed=Math.max(worst.elbowSpeed,elbow.distanceTo(old.elbow)/dt);
+   // The unchanged Ready pose still needs a separate repair. This interval
+   // covers the loaded windup, .36 s cut, and follow-through before its return.
+   if(seconds>=.10&&seconds<=.60){
+    const skin=measureArmSkin(g,metadata,side);
+    worst.inset=Math.max(worst.inset,skin['fold_'+side].maxRadialPenetration);
+    worst.torsoPairs=Math.max(worst.torsoPairs,skin['forearmTorso_'+side].pairs);
+   }
+   previous[side]={seconds,elbow};
+  }
+ }
+ t.diagnostic(JSON.stringify(worst));
+ assert.ok(worst.inset<=.003,'Cleave preparation folds a forearm into its upper arm');
+ assert.equal(worst.torsoPairs,0,'Cleave passes a forearm through the torso');
+ assert.ok(worst.elbowSpeed<12,'Cleave has an abrupt elbow-plane reversal');
+});
+
 // The same actual-skin check must reject the independent pre-fix model.
 const asset=process.env.NINJA_NATIVE_ARM_DIR
  ?path.join(process.env.NINJA_NATIVE_ARM_DIR,'ayame.glb')

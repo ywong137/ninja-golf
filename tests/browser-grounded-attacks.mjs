@@ -10,7 +10,7 @@ try{
  const reports=await page.evaluate(async()=>{
   const g=window.__golfTest,T=await import('/node_modules/three/build/three.module.js'),{heightAt}=await import('/src/course.js'),{combatMotionName,motions}=await import('/src/motion.js');
   g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();const reports=[];
-  for(const hero of [0,2,3])for(const [kind,step]of [['light',0],['heavy',0],['heavy',2]]){
+  for(const hero of [0,1,2,3,4,5])for(const [kind,step]of [['light',0],['heavy',0],['heavy',2]]){
    g.clearEnemies();g.selectWarrior(hero);g.phase='combat';g.spawnTime=999;g.input.clear();g.cameraYaw=0;g.player.root.rotation.y=0;
    g.player.root.position.set(0,heightAt(g.course,0,45),45);g.ball.position.set(0,heightAt(g.course,0,190),190);g.updateCamera(10);
    for(let i=0;i<30;i++)g.player.update(g.time,1/60,{groundHeight:g.groundHeight});

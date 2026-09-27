@@ -80,6 +80,9 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # The Monk now owns a polearm family. Retire the former shared odachi clips.
   retired=[name.removeprefix('Naginata_') for name in clip_names if name.startswith('Naginata_') and any(part in name for part in ['Cut_','Heavy_','Musou_'])] if hero=='monk' and args.attacks_only else []
   subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in args.attack_name for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
+ # Full exports need the same exact attack endpoints as animation-only updates.
+ time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')
+ time_tools=importlib.util.module_from_spec(time_spec);time_spec.loader.exec_module(time_tools);time_tools.normalize_authored_end_times(temporary)
  subprocess.run(['python3',str(ROOT/'tools/compress-glb-textures.py'),'--max-size','1024' if args.enemies else '2048','--alpha-size','512' if args.enemies else '1024',str(temporary)],check=True)
  temporary.replace(output)
  print('EXPORTED',hero,flush=True)

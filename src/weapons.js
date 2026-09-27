@@ -3,16 +3,17 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {weaponSteel as steel,weaponEdge as edge,weaponBrass,weaponCord,weaponGrip,enamelMaterial} from './weapon-materials.js';
 const cache=new Map();
 const fittings=new THREE.MeshStandardMaterial({vertexColors:true,map:weaponBrass.map,roughnessMap:weaponBrass.roughnessMap,metalness:.55,roughness:.48});
-export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.94,width:.13,curve:.12,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
+export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.94,width:.13,curve:.12,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},jian:{length:.78,width:.046,curve:0,grip:.32,doubleEdge:true},dao:{length:.80,width:.066,curve:.12,grip:.32},wakizashi:{length:.57,width:.045,curve:.045,grip:.32},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
 export function bladeGeometry(profile){
   const positions=[],uvs=[],groups=[];const segments=48;
-  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.0045,profile.width*.045)*(.9-t*.35)*tip;const cross=[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]][side];return [profile.curve*t*t+cross[0],.17+t*profile.length,cross[1]];};
+  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.0045,profile.width*.045)*(.9-t*.35)*tip;const cross=(profile.doubleEdge?[[-w,0],[-w*.58,z],[w*.58,z],[w,0],[w*.58,-z],[-w*.58,-z]]:[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]])[side];return [profile.curve*t*t+cross[0],.17+t*profile.length,cross[1]];};
   const triangle=(a,b,c,ta,tb,tc)=>{positions.push(...a,...b,...c);uvs.push(...ta,...tb,...tc);};
   // Separate strip vertices keep flat faces and sharpened bevels physically distinct.
-  for(const sides of [[0,1,4],[2,3]]){const start=positions.length/3;for(const side of sides)for(let i=0;i<segments;i++){
-    const next=(side+1)%5,a=section(i,side),b=section(i,next),c=section(i+1,side),d=section(i+1,next),v=i/segments,w=(i+1)/segments;
+  const sectionSize=profile.doubleEdge?6:5;
+  for(const sides of profile.doubleEdge?[[1,4],[0,2,3,5]]:[[0,1,4],[2,3]]){const start=positions.length/3;for(const side of sides)for(let i=0;i<segments;i++){
+    const next=(side+1)%sectionSize,a=section(i,side),b=section(i,next),c=section(i+1,side),d=section(i+1,next),v=i/segments,w=(i+1)/segments;
     triangle(a,b,c,[0,v],[1,v],[0,w]);triangle(b,d,c,[1,v],[1,w],[0,w]);
-  }if(groups.length===0)for(const i of [0,segments])for(let side=1;side<4;side++){const order=i===0?[0,side+1,side]:[0,side,side+1];triangle(...order.map(s=>section(i,s)),[0,0],[1,0],[1,1]);}groups.push([start,positions.length/3-start,groups.length]);}
+  }if(groups.length===0)for(const i of [0,segments])for(let side=1;side<sectionSize-1;side++){const order=i===0?[0,side+1,side]:[0,side,side+1];triangle(...order.map(s=>section(i,s)),[0,0],[1,0],[1,1]);}groups.push([start,positions.length/3-start,groups.length]);}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));groups.forEach(v=>g.addGroup(...v));g.computeVertexNormals();g.computeBoundingBox();return g;
 }
 function cordGeometry(bottom,top,radius=.020){
@@ -89,14 +90,15 @@ export function createWeapon(kind='odachi'){
   if(cache.has(kind))return cache.get(kind).clone();if(SPECIAL_WEAPON_KINDS.includes(kind)){const weapon=specialWeapon(kind);cache.set(kind,weapon);return weapon.clone();}const p=BLADE_PROFILES[kind];if(!p)throw new Error(`Unknown weapon kind: ${kind}`);const group=new THREE.Group(),pieces=[];
   const add=(geo,color,x,y,z,sx=1,sy=1,sz=1)=>{const g=geo.index?geo.toNonIndexed():geo.clone();g.scale(sx,sy,sz);g.translate(x,y,z);const c=new THREE.Color(color),colors=[];for(let i=0;i<g.attributes.position.count;i++)colors.push(c.r,c.g,c.b);g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));pieces.push(g);geo.dispose();};
   const pole=kind==='naginata'||kind==='lancer';
-  const hero=['odachi','twin','naginata'].includes(kind);
+  const hero=['odachi','twin','naginata','jian','dao','wakizashi'].includes(kind);
   if(hero){const core=new THREE.Mesh(new THREE.CylinderGeometry(.017,.019,pole?1.05:p.grip,16),weaponGrip);core.name='Wrapped hand grip';core.position.y=pole?-.36:.17-p.grip/2;core.castShadow=true;group.add(core);}
   else add(new THREE.CylinderGeometry(.017,.019,pole?1.05:p.grip,12),'#252b30',0,pole?-.36:.17-p.grip/2,0);
-  add(new THREE.CylinderGeometry(.07,.07,.018,8),'#ae8240',0,.155,0,1.1,1,.7);
+  if(kind==='jian')add(new THREE.BoxGeometry(.15,.021,.043),'#ae8240',0,.155,0);
+  else add(new THREE.CylinderGeometry(.07,.07,.018,kind==='dao'?20:8),'#ae8240',0,.155,0,1.1,1,.7);
   add(new THREE.BoxGeometry(.065,.055,.025),'#b18b49',0,.192,0);
   for(let i=0;i<(hero?2:9);i++){const y=.13-i*(Math.min(p.grip,.40)-.06)/(hero?1:8);add(new THREE.TorusGeometry(.019,.0025,4,12).rotateX(Math.PI/2),'#b79a67',0,y,0,1,1,1);}
   const hardware=new THREE.Mesh(mergeGeometries(pieces),fittings);pieces.forEach(g=>g.dispose());hardware.castShadow=true;group.add(hardware);
-  if(['odachi','twin','naginata'].includes(kind)){const cord=new THREE.Mesh(cordGeometry(.17-Math.min(p.grip,.40),.12),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
+  if(hero){const cord=new THREE.Mesh(cordGeometry(.17-Math.min(p.grip,.40),.12),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
   const blade=new THREE.Mesh(bladeGeometry(p),[steel,edge]);blade.name='Flat steel blade';blade.castShadow=true;group.add(blade);
   group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;cache.set(kind,group);return group.clone();
 }
