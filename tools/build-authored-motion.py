@@ -4,6 +4,9 @@ from mathutils import Vector,Quaternion,Matrix
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=json.loads((ROOT/'src/motion-data.json').read_text())
 GUARDS_ONLY='--guards-only' in sys.argv
+ATTACKS_ONLY='--attacks-only' in sys.argv
+if ATTACKS_ONLY and GUARDS_ONLY:raise ValueError('Choose --attacks-only or --guards-only, not both')
+if ATTACKS_ONLY:DATA={name:clip for name,clip in DATA.items() if clip.get('athleticAttack')}
 if GUARDS_ONLY:DATA={name:clip for name,clip in DATA.items() if '_Guard_' in name}
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(ROOT/'assets/source/UAL1_Standard.glb'))
@@ -123,4 +126,4 @@ for track in rig.animation_data.nla_tracks:track.mute=False
 for o in list(scene.objects):
  if o!=rig:bpy.data.objects.remove(o,do_unlink=True)
 mesh=bpy.data.meshes.new('RigCarrier');mesh.from_pydata([(0,0,0),(.001,0,0),(0,.001,0)],[],[(0,1,2)]);obj=bpy.data.objects.new('RigCarrier',mesh);scene.collection.objects.link(obj);obj.vertex_groups.new(name='pelvis').add([0,1,2],1,'REPLACE');mod=obj.modifiers.new('Rig','ARMATURE');mod.object=rig;obj.parent=rig
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models'/('guard-motion.glb' if GUARDS_ONLY else 'golf-motion.glb')),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models'/('attack-motion.glb' if ATTACKS_ONLY else 'guard-motion.glb' if GUARDS_ONLY else 'golf-motion.glb')),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)

@@ -10,9 +10,10 @@ ROSTER=[('ronin','Male_Adult_10'),('shinobi','Male_Adult_09'),('monk','Male_Adul
 ENEMIES=[('ninja','Male_Adult_18'),('enemy-guard','Male_Adult_04'),('enemy-lancer','Male_Adult_11'),('enemy-skirmisher','Female_Adult_13')]
 ENEMY_CLIPS={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address'}
 ENEMY_ATTACKS=['Twin_Cut_Diagonal','Heavy_Cleave','Enemy_Thrust','Enemy_Throw']
-parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--locomotion-only',action='store_true',help='Append native speed-matched locomotion only');parser.add_argument('--preview',action='store_true');parser.add_argument('--enemies',action='store_true');parser.add_argument('--guard-walk-only',action='store_true',help='Append only directional guard locomotion');parser.add_argument('--guards-only',action='store_true',help='Append only new native guard clips to existing hero models');parser.add_argument('--hero',choices=[r[0] for r in ROSTER+ENEMIES]);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--attacks-only',action='store_true',help='Append only authored athletic attack clips');parser.add_argument('--locomotion-only',action='store_true',help='Append native speed-matched locomotion only');parser.add_argument('--preview',action='store_true');parser.add_argument('--enemies',action='store_true');parser.add_argument('--guard-walk-only',action='store_true',help='Append only directional guard locomotion');parser.add_argument('--guards-only',action='store_true',help='Append only new native guard clips to existing hero models');parser.add_argument('--hero',choices=[r[0] for r in ROSTER+ENEMIES]);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 if args.guard_walk_only:args.guards_only=True
-append_only=args.guards_only or args.locomotion_only
+if args.attacks_only and (args.guards_only or args.locomotion_only):parser.error('--attacks-only cannot be combined with another motion-only mode')
+append_only=args.guards_only or args.locomotion_only or args.attacks_only
 spec=importlib.util.spec_from_file_location('rocketbox_rig',ROOT/'tools/rocketbox-rig.py');bridge=importlib.util.module_from_spec(spec);spec.loader.exec_module(bridge)
 clip_spec=importlib.util.spec_from_file_location('character_clips',ROOT/'tools/filter-character-clips.py');clip_filter=importlib.util.module_from_spec(clip_spec);clip_spec.loader.exec_module(clip_filter)
 def materials(folder):
@@ -50,6 +51,10 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   if args.enemies:raise ValueError('--guards-only is for the hero roster')
   clip_names={name for name in clip_names if ('_Guard_Walk_' if args.guard_walk_only else '_Guard_') in name}
  if args.locomotion_only:clip_names=set(json.loads((ROOT/'src/locomotion-data.json').read_text()))
+ if args.attacks_only:
+  attack_names={name for name,clip in json.loads((ROOT/'src/motion-data.json').read_text()).items() if clip.get('athleticAttack')}
+  clip_names&=attack_names
+  if not clip_names:raise ValueError(f'No athletic attack clips selected for {hero}')
  bridge.bake_rocketbox_actions(rig,clip_names=clip_names)
  for side in ['r','l']:
   bone=rig.pose.bones['hand_'+side];center=Vector(rig['palmGrip'+side.upper()]);axis=Vector(rig['shaftAxis'+side.upper()])

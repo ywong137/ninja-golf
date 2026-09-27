@@ -134,6 +134,16 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
   if forward.length<.1:forward=Vector((1,0,0))-direction*direction.x
   forward.normalize();across=forward.cross(direction).normalized()
   q=Quaternion(direction,pose.get('roll' if side=='r' else 'offRoll',0))@Matrix((across,forward,direction)).transposed().to_quaternion()@grips[side]['basis'].inverted()
+  if clip.get('athleticAttack'):
+   # Transport the palm frame across shaft/forward alignment instead of flipping its knuckles.
+   previous=ik.setdefault('palm_previous',{}).get(side);roll=pose.get('roll' if side=='r' else 'offRoll',0)
+   desired=q.copy()
+   if previous:
+    q=direction.rotation_difference(previous['direction']).inverted()@previous['rotation']
+    q=Quaternion(direction,roll-previous['roll'])@q
+    phase=pose.get('_phase',0)
+    if phase>.78:q=q.slerp(desired,min(1,(phase-.78)/.22)*.32 if phase<.999 else 1)
+   ik['palm_previous'][side]={'direction':direction.copy(),'rotation':q.copy(),'roll':roll}
   ik['hands'][side].rotation_quaternion=q;ik['hands'][side].location=center-q@grips[side]['center']
   ik['poles'][side].location=pose.get('elbow'+side.upper(),(sign*.6,-.22,1.05))
   foot=ik['feet'][side];foot.location=ik['footBase'][side].copy()
@@ -219,7 +229,14 @@ def bake_rocketbox_actions(rig,clip_names=None):
  filenames=['warrior-motion.glb','golf-motion.glb']
  if (ROOT/'public/models/guard-motion.glb').exists():filenames.append('guard-motion.glb')
  sources=[import_motion_source(filename) for filename in filenames]
- if clip_names and set(clip_names)<=set(locomotion):scene.render.fps=60
+ athletic={name for name,clip in data.items() if clip.get('athleticAttack')}
+ attack_source=import_motion_source('attack-motion.glb') if athletic and (clip_names is None or athletic&set(clip_names)) else None
+ if attack_source:
+  for _,actions,_ in sources:
+   for original in actions:
+    if original.name.split('.')[0] in athletic:original.name='superseded_'+original.name
+  sources.append(attack_source)
+ if clip_names and set(clip_names)<=set(locomotion)|athletic:scene.render.fps=60
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
  address=next(a for a in authored[1] if a.name.split('.')[0]=='Golf_Address')
  source.animation_data.action=address;scene.frame_set(round(address.frame_range[0]));retarget_frame(rig,source,*mapping);grips=measure_grips(rig)
@@ -230,23 +247,28 @@ def bake_rocketbox_actions(rig,clip_names=None):
   jobs=[(a,a.name.split('.')[0]) for a in sorted(actions,key=lambda a:a.name)]
   jobs.extend((a,name) for a in actions for name,spec in locomotion.items() if a.name.split('.')[0]==spec['source'])
   for original,name in jobs:
+   if name in athletic and attack_source and source!=attack_source[0]:continue
    if clip_names is not None and name not in clip_names:continue
    if name in {a.name for a in outputs}:continue
    start,end=original.frame_range;duration=(end-start)/30;clip=data.get(name);gait=locomotion.get(name)
    if gait:duration=gait['duration']
    if clip:duration=clip['duration']
    original.name='source_'+name;action=bpy.data.actions.new(name);rig.animation_data.action=action
-   source.animation_data.action=original;sample_rate=60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
+   source.animation_data.action=original;sample_rate=60 if gait or name in athletic else 30;count=max(1,round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2
+   ik['palm_previous']={}
    for frame in range(count+1):
-    source_phase=frame/count
+    source_phase=min(frame/sample_rate,duration)/duration if name in athletic else frame/count
     if gait:source_phase=(source_phase+(0 if name=='Run_Backward' else .5))%1
     source_frame=start+(end-start)*source_phase;scene.frame_set(int(source_frame),subframe=source_frame%1)
     retarget_frame(rig,source,*mapping)
     if gait:apply_native_locomotion(rig,ik,gait,frame/count)
-    if clip:apply_native_targets(rig,ik,grips,sample_authored(clip,frame/count),clip,name.startswith('Golf_'))
+    if clip:
+     pose=sample_authored(clip,source_phase)
+     if name in athletic:pose['_phase']=source_phase
+     apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'))
     if clip:max_error=max(max_error,*[(rig.pose.bones['hand_'+side].head-ik['hands'][side].location).length for side in ['r','l']])
     matrices={b.name:b.matrix.copy() for b in rig.pose.bones}
     for bone in rig.pose.bones:

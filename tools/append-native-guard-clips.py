@@ -1,4 +1,4 @@
-"""Append native guard animations while retaining every existing animation byte."""
+"""Append selected native clips while retaining every unrelated animation byte."""
 import argparse,copy,json,pathlib,struct
 
 def read_glb(path):
@@ -28,6 +28,8 @@ def trim_replaced_tail(doc,binary):
 
 def append_guards(target,source,clip_prefixes=None):
  old,binary=read_glb(target);new,incoming=read_glb(source)
+ motion_path=pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json'
+ athletic={name for name,clip in json.loads(motion_path.read_text()).items() if clip.get('athleticAttack')}
  if clip_prefixes:new['animations']=[a for a in new['animations'] if a['name'].startswith(clip_prefixes)]
  nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}
  incoming_names={a['name'] for a in new.get('animations',[])};preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in incoming_names]);old['animations']=preserved.copy();binary=trim_replaced_tail(old,binary);out=bytearray(binary);views={};accessors={}
@@ -41,7 +43,7 @@ def append_guards(target,source,clip_prefixes=None):
    views[source_view]=len(old['bufferViews']);old['bufferViews'].append(view)
   value['bufferView']=views[source_view];accessors[index]=len(old['accessors']);old['accessors'].append(value);return accessors[index]
  for original in new.get('animations',[]):
-  assert '_Guard_' in original['name'] or original['name'].startswith(('Run_','Sprint_Forward')),f"Unexpected appended clip: {original['name']}"
+  assert original['name'] in athletic or '_Guard_' in original['name'] or original['name'].startswith(('Run_','Sprint_Forward')),f"Unexpected appended clip: {original['name']}"
   clip=copy.deepcopy(original)
   for sampler in clip['samplers']:
    for key in ['input','output']:sampler[key]=accessor(sampler[key])

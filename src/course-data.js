@@ -35,8 +35,8 @@ const highlands=[
  hole('Last Light at the Keep','One final climb beneath the ruined tower.',4,407,-28,24,-11,209),
 ];
 const desert=[
- hole('Saguaro Sunrise','Wide turf between tall desert sentinels.',4,328,26,27,8,301),
- hole('The Copper Bowl','Aim into the sandstone amphitheatre.',3,159,-16,21,-12,302),
+ hole('Saguaro Sunrise','Choose a broad landing or a shorter approach across the diagonal shelf.',4,328,26,27,8,301),
+ hole('Copper Ridge','A broad apron leads onto a narrow diagonal ridge.',3,159,-16,21,-12,302),
  hole('Arroyo Bend','The wash rewards a patient second shot.',5,482,-47,25,-16,303),
  hole('Palm Mirage','The water here is quite real.',4,304,34,23,13,304,{pond:[-37,214,22,28]}),
  hole('Coyote Ridge','A narrow approach above the desert scrub.',4,391,-24,22,-8,305),

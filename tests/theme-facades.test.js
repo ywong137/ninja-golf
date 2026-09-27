@@ -33,9 +33,9 @@ test('Desert and city paired doors meet their agreed entry levels within existin
 
 test('Facade detail remains batched and within the agreed cyber geometry increase',()=>{
  for(const [index,set]of COURSE_SETS.slice(1).entries()){
-  const root=new THREE.Group();buildThemeScenery(root,set.holes[0],[]);assert.ok(root.children.every(o=>o.userData.architectureTheme===set.theme));assert.ok(root.children.length<=[3,7,8][index]);
-  const triangles=root.children.reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.attributes.position.count)/3*(m.isInstancedMesh?m.count:1),0);
-  if(set.theme==='cyberpunk')assert.ok(triangles<=30224+20000);dispose(root);
+  const root=new THREE.Group();buildThemeScenery(root,set.holes[0],[]);assert.ok(root.children.every(o=>o.userData.architectureTheme===set.theme));const facade=root.children.filter(o=>!o.userData.cyberFixtureBatch),fixtures=root.children.filter(o=>o.userData.cyberFixtureBatch);assert.ok(facade.length<=[3,7,8][index]);assert.ok(fixtures.length<=(set.theme==='cyberpunk'?3:0));
+  const triangles=facade.reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.attributes.position.count)/3*(m.isInstancedMesh?m.count:1),0);
+  if(set.theme==='cyberpunk'){assert.ok(triangles<=30224+20000);const fixtureTriangles=fixtures.reduce((n,m)=>n+(m.geometry.index?.count??m.geometry.attributes.position.count)/3,0);assert.ok(fixtureTriangles<=root.userData.cyberFixtures.length*600);}dispose(root);
  }
 });
 

@@ -12,7 +12,7 @@ import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='human-running-2';
+const MODEL_REVISION='athletic-combat-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -92,7 +92,18 @@ export class Warrior {
     if(this.nativeHuman){this.mixer.stopAllAction();this.current='';this.play('Idle_Loop',0);this.mixer.update(0);}
     if(!enemy&&WARRIORS[type].readyClip&&this.actions.has(WARRIORS[type].readyClip)){this.play(WARRIORS[type].readyClip,0);this.mixer.update(0);}this.syncHeldObjects();
   }
-  play(name,fade=.16,once=false,speed=1){if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
+  play(name,fade=.16,once=false,speed=1){
+    if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
+    if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
+    const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
+    const previous=this.actions.get(this.current);
+    // Blade directions must crossfade with the hands instead of jumping to the new clip.
+    this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
+      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone()}:null;
+    next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
+    if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}
+    this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
+  }
   stepGuard(prefix,angle,speed,dt){
     if(this.running){for(const action of this.runActions)action.fadeOut(.1);this.running=false;}
     const names=['Forward','Right','Backward','Left'].map(direction=>`${prefix}_Guard_Walk_${direction}`);
@@ -151,7 +162,7 @@ export class Warrior {
     this.mixer.update(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
-    if(!golf&&!dodge&&!emerging&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
+    if(!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
       const gait=moving?Math.sin(time*(sprinting?15:11)):Math.sin(time*2)*.12;
       for(const [i,name] of ['spine_01','spine_02','spine_03'].entries())overlay(name,(moving?.025:0)+gait*.018,gait*.035*(i===2?-1:1),gait*.022);
       if(focused&&moving){const twist=Math.sin(moveAngle)*.6;overlay('pelvis',0,twist,0);overlay('spine_01',0,-twist*.4,0);overlay('spine_02',0,-twist*.6,0);}
@@ -179,7 +190,7 @@ export class Warrior {
     }
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf)this.travelPose?.reset();
-    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?.12:action?.kind==='heavy'?.22:.16});
+    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.athleticAttack?.10:.12):action?.kind==='heavy'?.22:.16});
     if(this.facialPose){
       let gazeYaw=0,gazePitch=0;
       const eye=this.bones.Bip01_REye;
@@ -214,6 +225,8 @@ export class Warrior {
         shaftDirection.set(to[0]-from[0],to[2]-from[2],from[1]-to[1]);
         if(golf)held.scale.setScalar(shaftDirection.length()/1.12);
         held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());held.rotateY(roll);
+        const blend=this.heldBlend;
+        if(!golf&&blend?.[side])held.quaternion.slerp(blend[side],1-THREE.MathUtils.clamp((this.mixer.time-blend.start)/blend.duration,0,1));
       }else{
         // Across the palm, perpendicular to wrist-to-knuckle direction.
         if(golf&&from&&to)held.scale.setScalar(Math.hypot(...to.map((v,i)=>v-from[i]))/1.12);

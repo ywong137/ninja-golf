@@ -6,6 +6,7 @@ import {queueSceneryRock} from './scenery-rocks.js';
 import {findBuildingSite,buildingBox,buildingCylinder} from './building-placement.js';
 import {scaleBoxUV} from './architecture-uv.js';
 import {architecturalSurface} from './architecture-materials.js';
+import {CYBER_FIXTURES,queueCyberFixture,flushCyberFixtures} from './cyber-fixtures.js';
 
 export const THEME_LIGHTS={
  japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#ffedd0',ground:'#777a49',intensity:3,ambient:.8},
@@ -31,7 +32,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
  const wood=mat(theme==='desert'?'#584335':theme==='cyberpunk'?'#53606b':'#555e57');if(theme==='cyberpunk'){wood.name='Brushed facade metal';wood.metalness=.4;wood.roughness=.45;}
  const gold=mat(theme==='highlands'?'#a89949':theme==='cyberpunk'?'#dfbc85':'#ddc39a',theme==='cyberpunk');
  if(theme==='cyberpunk')gold.emissiveIntensity=.25;
- const box=new THREE.BoxGeometry(1,1,1),ball=new THREE.IcosahedronGeometry(1,1),cyl=new THREE.CylinderGeometry(1,1,1,7);
+ const box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,7);
  const emit=(geo,m,x,y,z,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0,instanced=false)=>{
   transform.position.set(x,y,z);transform.scale.set(sx,sy,sz);transform.rotation.set(rx,ry,rz);transform.updateMatrix();
   if(instanced){const key=`${geo.uuid}/${m.uuid}`;if(!instances.has(key))instances.set(key,{geo,m,matrices:[]});instances.get(key).matrices.push(transform.matrix.clone());}
@@ -43,8 +44,8 @@ export function buildThemeScenery(root,c,sites,textures={}){
   const p=routePoint(c,(k+.5)/12),x=p.x+p.tangentZ*side*(p.width+6),z=p.z-p.tangentX*side*(p.width+6),y=heightAt(c,x,z);if(['Water','Bunker','Green'].includes(lieAt(c,x,z)))continue;
   const rockHeight=1.6*(theme==='desert'?.54:.8)*(1+Math.sin(k*1.73+side)*.12);
   if(theme==='highlands'||theme==='desert')queueSceneryRock(root,{x,z,y,height:rockHeight,radius:1.6,source:theme==='desert'?'desert-rock':'coastal-rock',angle:r()*Math.PI*2,burial:.08+r()*.13});
-  if(theme==='cyberpunk'){emit(box,dark,x,y+1.25,z,1.3,2.5,1.3);emit(box,k%2?leaf:flower,x,y+2.55,z,1.65,.16,1.65);emit(ball,leaf,x,y+3.3,z,.55,.55,.55);}
-  register(theme==='cyberpunk'?'lantern':'rock',x,z,theme==='cyberpunk'?3.5:rockHeight,.7);
+  if(theme==='cyberpunk')queueCyberFixture(root,{x,y,z,yaw:Math.atan2(p.tangentX,p.tangentZ)});
+  register(theme==='cyberpunk'?'lantern':'rock',x,z,theme==='cyberpunk'?CYBER_FIXTURES.bollard.height:rockHeight,theme==='cyberpunk'?CYBER_FIXTURES.bollard.radius:.7);
  }
  const solid=(id,m,x,y,z,w,h,d)=>{emit(box,m,x,y,z,w,h,d);buildingBox(root,id,x,y,z,w,h,d);};
  const column=(id,m,x,y,z,r,h)=>{emit(cyl,m,x,y,z,r,h,r);buildingCylinder(root,id,x,y,z,r,h);};
@@ -198,7 +199,8 @@ export function buildThemeScenery(root,c,sites,textures={}){
  for(const {geo,m,matrices} of instances.values()){const mesh=new THREE.InstancedMesh(geo.clone(),m,matrices.length);matrices.forEach((v,i)=>mesh.setMatrixAt(i,v));mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
  for(const [m,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geo,m);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
  if(theme==='highlands')dark.dispose();
- for(const geo of [box,ball,cyl,shrub])geo.dispose();
+ for(const geo of [box,cyl,shrub])geo.dispose();
+ if(theme==='cyberpunk')flushCyberFixtures(root);
 
 }
 
@@ -214,17 +216,19 @@ export function buildFairwayCover(root,c,sites,textures={}){
   for(const side of [count%2?-1:1,count%2?1:-1]){
    const x=p.x+p.tangentZ*side*(p.width-3.2),z=p.z-p.tangentX*side*(p.width-3.2),y=heightAt(c,x,z);
    if(lieAt(c,x,z)!=='Fairway'||y<3.8||greenDistance(c,x,z)<28||Math.hypot(x,z)<22)continue;
-   const rockCover=c.theme==='highlands'||c.theme==='desert',coverHeight=rockCover?(c.theme==='desert'?.7:.9):1.95;
+   const rockCover=c.theme==='highlands'||c.theme==='desert',coverHeight=rockCover?(c.theme==='desert'?.7:.9):c.theme==='cyberpunk'?CYBER_FIXTURES.cover.height:1.95;
    if(rockCover){
     queueSceneryRock(root,{x,z,y,height:coverHeight,radius:1.15,source:c.theme==='desert'?'desert-rock':'coastal-rock',angle:c.seed*.37+count*2.39,burial:.10+count*.04});
+   }else if(c.theme==='cyberpunk'){
+    queueCyberFixture(root,{x,y,z,kind:'cover',yaw:Math.atan2(p.tangentX,p.tangentZ)});
    }else{
     add(box,0,x,y+.14,z,1.35,.28,1.25);add(box,0,x,y+.8,z,.55,1.15,.55);
     add(box,1,x,y+1.52,z,1.1,.45,.76);add(box,0,x,y+1.85,z,1.45,.2,1.1);
    }
-   sites.push({id:`fairway-cover-${count}`,kind:c.theme==='highlands'||c.theme==='desert'?'rock':'lantern',x,z,y,height:coverHeight,radius:rockCover?1.15:.7,fairway:true});count++;break;
+   sites.push({id:`fairway-cover-${count}`,kind:c.theme==='highlands'||c.theme==='desert'?'rock':'lantern',x,z,y,height:coverHeight,radius:rockCover?1.15:c.theme==='cyberpunk'?CYBER_FIXTURES.cover.radius:.7,fairway:true});count++;break;
   }
  }
  for(let i=0;i<2;i++)if(chunks[i].length){const mesh=new THREE.Mesh(mergeGeometries(chunks[i]),i?accent:stone);chunks[i].forEach(g=>g.dispose());mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
  for(let i=0;i<2;i++)if(!chunks[i].length)(i?accent:stone).dispose();
- box.dispose();return count;
+ box.dispose();if(c.theme==='cyberpunk')flushCyberFixtures(root);return count;
 }

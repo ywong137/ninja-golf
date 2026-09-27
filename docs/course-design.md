@@ -6,7 +6,7 @@ All layouts use metres. Each course contains nine holes, par 36, with distinct t
 | --- | --- | --- |
 | Crane Coast | Japanese coastal gardens | Harbour dogleg, temple fork, lotus islands, fox hairpin, shrine peninsula |
 | Heather & Crown | Scottish Highland links | Double fairway, crofter elbow, coastal crescent, burn crossing, ruined-keep horseshoe |
-| Copper Saguaro | Sonoran desert resort | Arroyo islands, oasis loop, ridge steps, double elbow, terrace fan |
+| Copper Saguaro | Sonoran desert resort | Oblique opening shelf, arroyo islands, oasis loop, ridge steps, terrace fan |
 | Neo-Tokyo After Dark | Fictional future city | Circuit board, quantum orbit, figure eight, pocket spiral, constellation, final trident |
 
 All 36 layouts now have authored route geometry. The first three Crane Coast holes retain their names, but their layouts changed.
@@ -67,3 +67,5 @@ Foreground rock cover uses the existing CC0 scans listed in `public/models/natur
 Call `queueSceneryRock(root, {x, z, y, height, radius, angle, source, burial})` before constructing `NaturalLandscape`. The `y` value is the ground height. The `height` value specifies exposed height, and `radius` bounds the horizontal footprint. Burial defaults to 12%. Fitting preserves the scan's horizontal proportions and centers its rotation using the bounds of both LODs. NaturalLandscape consumes the queue once and includes these rocks in its existing source batches. It clones course geometry and materials but retains shared source textures. Cover sites remain separate records, so decoration does not add unplanned collision or combat sites.
 
 `tests/scenery-rocks.test.js` checks both GLB source bounds, rotated footprints, exposed heights, burial, theme cover visibility, and queue limits.
+
+The desert opener now uses a detached diagonal landing shelf instead of a split fairway loop. Its wider short landing leaves a longer approach. The narrow advanced landing requires a carry over sand. See [the layout identity audit](layout-identity-audit.md) for all 36 strategies and the remaining repeated families.
