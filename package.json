@@ -8,12 +8,13 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser-audio.mjs && node tests/browser-navigation.mjs && node tests/browser-combat.mjs && node tests/browser-smoke.mjs && node tests/browser-scenarios.mjs && node tests/browser-characters.mjs"
+    "test:browser": "node tests/browser-audio.mjs && node tests/browser-navigation.mjs && node tests/browser-combat.mjs && node tests/browser-smoke.mjs && node tests/browser-scenarios.mjs && node tests/browser-characters.mjs && node tests/browser-production.mjs"
   },
   "dependencies": {
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@dgreenheck/ez-tree": "^1.1.0",
     "playwright": "^1.62.1",
     "vite": "8.3.1"
   }

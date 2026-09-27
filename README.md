@@ -28,6 +28,7 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Action | Keyboard / mouse | Standard gamepad |
 | --- | --- | --- |
 | Aim | A / D or left / right arrows | Left stick |
+| Survey shot | R or survey button | Y during golf |
 | Change club | Q / E or club buttons | LB / RB |
 | Start swing, then strike | Space or swing button | A |
 | Speed up ball tracking | Space | A |
@@ -44,9 +45,9 @@ The production build lives in `dist/`. All game assets and music ship with the b
 
 The power meter repeats. Press the swing button again at the desired power. Carry scales with the square of power.
 
-Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
+Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. The landing preview includes wind and terrain. Survey mode shows the planned shot from above. Putting grids show slope, with moving dots pointing downhill. Shot results report distance and the next lie. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
 
-After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. Four melee attackers and two ranged attackers can commit at once. Others take positions around the fight. Ground warnings show committed attacks. Heavy cuts break guards, and a well-timed dodge earns Resolve. Blade ribbons, sparks, and brief impact pauses reinforce contact. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 
@@ -68,11 +69,11 @@ The Ronin has more driving power. The Shinobi moves faster and has less shot dis
 
 This release uses skinned human characters with 65-bone skeletons, fitted samurai costumes, and blended walking, running, sword, roll, and death animations. Golf swings use a separate baked two-hand animation. The ball launches at the swing contact time.
 
-The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Trees and grass use instancing. Weapon fittings and blade faces use three draw calls per blade. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
+The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Nearby trees retain branches and leaf cards, with wind deformation. Distant trees use eight baked viewing angles and a dithered transition. Grass uses instancing and fades smoothly at distance. Ponds reflect the scene, with ripples and shoreline foam. The architecture uses curved tiled roofs, galleries, lattice panels, and stone foundations. Weapon fittings and blade faces use three draw calls per blade. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
 This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, a full 18-hole course, licensed course replicas, or motion-captured combat.
 
-Choose Performance, Balanced, or High quality from the pause menu. Balanced caps rendering at 1.5 device pixels. Performance disables shadows and ambient occlusion. Balanced and High add contact shading with GTAO. High quality caps rendering at 2 device pixels.
+Choose Performance, Balanced, or High quality from the pause menu. Balanced adjusts rendering resolution to maintain frame rate, up to 1.5 device pixels. Performance disables dynamic shadows and ambient occlusion. Balanced and High add contact shading with GTAO. High quality caps rendering at 2 device pixels.
 
 Gamepad bindings use the browser Gamepad API and standard button mapping. Physical-controller testing is still needed across controller models.
 
@@ -96,9 +97,11 @@ Combat switches to this guitar, bass, and drum recording at 145 BPM. It uses [Cr
 
 Both recordings ship unchanged and loop during play. The game crossfades between them over 1.15 seconds and controls their volume. See `public/audio/LICENSE.txt` and the in-game credits.
 
-Sound effects use Web Audio synthesis. The game does not generate music.
+CC0 recordings supply wind, surf, birds, footsteps, splashes, and weapon swishes. Web Audio synthesis adds impact accents. The game does not generate music. Pause suspends all audio. A second active tab silences the first tab within the same browser profile. See the [recording credits](public/audio/field/CREDITS.md).
 
 Three.js uses the MIT license. Vite uses the MIT license. Human base meshes and the Universal Animation Library come from [Quaternius](https://quaternius.com/), under CC0. Costumes, weapons, and golf animations are original adaptations. See [model credits](public/models/LICENSE.txt).
+
+Vegetation uses Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
 
 Scanned materials, pine textures, and the HDR sky come from [Poly Haven](https://polyhaven.com/), under CC0. See [texture credits](public/textures/SOURCES.json). No Samurai Warriors game assets are included. The official [Samurai Warriors 4 character artwork](https://www.koeitecmoamerica.com/sw4/chara05.html) informed costume proportions and silhouettes.
 
@@ -129,6 +132,7 @@ node tests/browser-combat.mjs
 node tests/browser-characters.mjs
 node tests/browser-smoke.mjs
 node tests/browser-scenarios.mjs
+node tests/browser-production.mjs
 ```
 
 Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All browser processes mute audio output. The dedicated audio test still verifies playback internally. Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.
@@ -136,3 +140,17 @@ Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All br
 ## Motion and character study
 
 See [the character study](docs/character-motion-study.md) for references, pose checkpoints, controls, and enemy counters. `tools/build-warriors.py` builds the costumes. `tools/build-motion.py` exports the source locomotion library. Run `tools/build-authored-motion.py` last to bake the shared golf and blade trajectories from `src/motion-data.json`. The runtime uses those same trajectories to position the weapons.
+
+## Production art and performance checks
+
+See [the production quality record](docs/production-quality.md) for the reference, visual gates, and measured results. Camera sensitivity, inverted vertical look, and reduced camera effects persist locally.
+
+Rebuild vegetation with the development server running:
+
+```sh
+PLAYWRIGHT_CHANNEL=chrome node tools/build-trees.mjs
+python3 tools/compress-glb-textures.py public/models/vegetation/*.glb
+PLAYWRIGHT_CHANNEL=chrome node tools/bake-tree-impostors.mjs
+```
+
+The texture tools require Pillow. Character tools require Blender. Shipping assets do not require either tool.

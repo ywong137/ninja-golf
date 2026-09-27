@@ -47,6 +47,8 @@ export function heightAt(c,x,z) {
   let y = base + hill*smooth(c.width-3, c.width+42,d);
   y = y*(smooth(16,26,g)) + green*(1-smooth(16,26,g));
   for (const b of c.bunkers) y -= (1-smooth(.6,1.2,ellipse(x,z,b)))*.8;
+  // Inland hollows stay above sea level. Only the designed coast descends into the ocean.
+  y=.8+Math.log1p(Math.exp(y-.8));
   const pond = 1-smooth(.86,1.16,ellipse(x,z,c.pond));
   y = y*(1-pond)+(1.8)*pond;
   const coast = smooth(112+Math.sin(z*.014)*28,163+Math.sin(z*.014)*28,x);

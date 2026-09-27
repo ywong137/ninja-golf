@@ -63,15 +63,15 @@ def torso(name,rings,material,fold=.004,bone=None,N=48):
 def sleeve(side,material):
     verts=[];N=32
     for j in range(22):
-        t=j/21;x=side*(.2+t*.52);rr=.084*(1-t)+.049*t
+        t=j/21;x=side*(.2+t*.52);fit=.88 if current_kind in ['shinobi','ninja','enemy-skirmisher'] else 1;rr=(.084*(1-t)+.049*t)*fit
         for i in range(N):
-            a=math.tau*i/N;fold=.009*math.sin(a*8+t*15)*(1-t);verts.append((x,.066+(rr+fold)*math.sin(a),1.455+(rr+fold)*math.cos(a)))
+            a=math.tau*i/N;fold=.0025*math.sin(a*5+t*4)+.006*math.sin(t*43+a*1.5)*math.exp(-((t-.61)/.15)**2);verts.append((x,.066+(rr+fold)*math.sin(a),1.455+(rr+fold)*math.cos(a)))
     return mesh('Woven sleeve',verts,[(j*N+i,j*N+(i+1)%N,(j+1)*N+(i+1)%N,(j+1)*N+i) for j in range(21) for i in range(N)],material)
 
 def trousers(side,material):
     verts=[];N=40
     for j in range(30):
-        t=j/29;z=1.03-t*.89;rx=.115 if t<.52 else .115-(t-.52)*.11;ry=rx*.87;cx=side*(.113+math.sin(t*math.pi)*.01)
+        t=j/29;z=1.03-t*.89;rx=.115 if t<.52 else .115-(t-.52)*.11;rx*=.88 if current_kind in ['shinobi','ninja','enemy-skirmisher'] else 1;ry=rx*.87;cx=side*(.113+math.sin(t*math.pi)*.01)
         for i in range(N):
             a=math.tau*i/N;fold=.012*math.sin(a*9+t*6)*(1-.45*t)+.005*math.sin(t*43+a*2);verts.append((cx+(rx+fold)*math.cos(a),.04+(ry+fold)*math.sin(a),z))
     o=mesh('Pleated hakama',verts,[(j*N+i,j*N+(i+1)%N,(j+1)*N+(i+1)%N,(j+1)*N+i) for j in range(29) for i in range(N)],material)
@@ -105,7 +105,8 @@ def crest(material):
         curve('Kabuto gilded crest',points,.018,material,'Head')
 
 def setup(kind):
-    global base,rig,tree,parts
+    global base,rig,tree,parts,current_kind
+    current_kind=kind
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False);parts=[]
     bpy.ops.import_scene.gltf(filepath=str(SOURCE/'Superhero_Male_FullBody.gltf'))
     rig=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE');base=bpy.data.objects['SuperHero_Male'];rig.name='WarriorRig'
@@ -177,13 +178,27 @@ def setup(kind):
             curve('Scarf tail',[(.09,.11,1.59),(.15,.21,1.43),(.18,.23,1.17),(.24,.25,.98)],.048,cloth,'core')
             for x in [-.14,.14]:plate('Throwing pouch',(x,-.18,1.03),(.10,.055,.16),leather,'pelvis',bevel=.014)
     elif kind=='shinobi':
-        curve('Headband',[(.111*math.cos(a),.024+.122*math.sin(a),1.784) for a in [i*math.tau/40 for i in range(41)]],.012,cloth,'Head')
-        uv_sphere('Tied hair',(0,.108,1.79),(.065,.060,.068),leather,'Head')
-        curve('Flowing headband tail',[(.055,.12,1.77),(.10,.20,1.64),(.13,.24,1.49)],.017,cloth,'Head')
+        # A fitted hair cap and rear knot keep the forehead and face readable.
+        verts=[];faces=[];N=40;R=12
+        for j in range(R):
+            a=j/(R-1)*math.pi*.46
+            for i in range(N):
+                t=i*math.tau/N;verts.append((.111*math.sin(a)*math.cos(t),.024+.119*math.sin(a)*math.sin(t),1.729+.151*math.cos(a)))
+        for j in range(R-1):
+            for i in range(N):faces.append((j*N+i,j*N+(i+1)%N,(j+1)*N+(i+1)%N,(j+1)*N+i))
+        mesh('Swept black hair',verts,faces,leather,'Head')
+        curve('Headband',[(.113*math.cos(a),.024+.124*math.sin(a),1.754) for a in [i*math.tau/40 for i in range(41)]],.010,cloth,'Head')
+        uv_sphere('Tied hair',(0,.135,1.755),(.045,.053,.043),leather,'Head')
+        curve('Flowing headband tail',[(.055,.14,1.755),(.10,.20,1.64),(.13,.24,1.49)],.012,cloth,'Head')
     else:
         # Woven kasa hat and a string of prayer beads.
         verts=[(0,.02,1.967)]+[(.27*math.cos(i*math.tau/64),.02+.27*math.sin(i*math.tau/64),1.803+.012*math.sin(i*math.tau/64)) for i in range(64)]
         mesh('Woven kasa',verts,[(0,i+1,(i+1)%64+1) for i in range(64)],cord,'Head')
+        # Bound straw rings and a chin cord make the hat sit as a worn object.
+        for ring in range(1,8):
+            r=ring*.032;z=1.967-(r/.27)*.164
+            curve('Kasa woven binding',[(r*math.cos(i*math.tau/48),.02+r*math.sin(i*math.tau/48),z+.002) for i in range(49)],.0018,leather,'Head')
+        curve('Kasa chin cord',[(-.09,-.035,1.805),(-.093,-.075,1.65),(0,-.105,1.594),(.093,-.075,1.65),(.09,-.035,1.805)],.0035,leather,'Head')
         for i in range(22 if kind=='monk' else 0):
             a=i/21*math.pi;uv_sphere('Prayer bead',(.145*math.cos(a),-.14-.024*math.sin(a),1.43-.16*math.sin(a)),(.015,.015,.015),leather,'spine_03',10,6)
     if kind=='enemy-lancer':
@@ -198,6 +213,9 @@ def setup(kind):
     # Keep the source mesh only where skin is visible. Cloth supplies the covered silhouette.
     bm=bmesh.new();bm.from_mesh(base.data)
     bmesh.ops.delete(bm,geom=[v for v in bm.verts if (v.co.z<1.49 or (v.co.z<1.57 and abs(v.co.x)>.085)) and abs(v.co.x)<.713],context='VERTS');bm.to_mesh(base.data);bm.free()
+    if kind in ['ronin','shinobi','monk']:
+        bpy.ops.object.select_all(action='DESELECT');base.select_set(True);bpy.context.view_layer.objects.active=base
+        sub=base.modifiers.new('Hero facial curvature','SUBSURF');sub.levels=1;sub.render_levels=1;bpy.ops.object.modifier_apply(modifier=sub.name);base.select_set(False)
     brows=bpy.data.objects.get('Eyebrows')
     if brows:
         brows.shape_key_add(name='Basis');key=brows.shape_key_add(name='Resolve')

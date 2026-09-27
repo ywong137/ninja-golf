@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {finishCharacterMaterial} from './character-materials.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, ATTACK_CLIPS } from './motion.js';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='motion-study-3';
+const MODEL_REVISION='production-art-4';
 const templates=[];
 const retargeted=new Map();
 const motionSources=[];
@@ -14,12 +15,6 @@ const materials=new Map();
 const geometries=new Map();
 const q=new THREE.Quaternion();
 const shaftDirection=new THREE.Vector3(),axisY=new THREE.Vector3(0,1,0);
-let clothNormal;
-function wovenNormal(){
-  if(clothNormal)return clothNormal;const size=128,data=new Uint8Array(size*size*4);
-  for(let y=0;y<size;y++)for(let x=0;x<size;x++){const i=(y*size+x)*4,over=(Math.floor(x/8)+Math.floor(y/8))%2;data[i]=128+Math.sin(x*Math.PI/4)*(over?12:34);data[i+1]=128+Math.sin(y*Math.PI/4)*(over?34:12);data[i+2]=249;data[i+3]=255;}
-  clothNormal=new THREE.DataTexture(data,size,size);clothNormal.wrapS=clothNormal.wrapT=THREE.RepeatWrapping;clothNormal.generateMipmaps=true;clothNormal.minFilter=THREE.LinearMipmapLinearFilter;clothNormal.magFilter=THREE.LinearFilter;clothNormal.anisotropy=8;clothNormal.needsUpdate=true;return clothNormal;
-}
 export async function loadWarriorAssets(progress=()=>{}) {
   const loader=new GLTFLoader();let done=0;
   const urls=['ronin','shinobi','monk',...ENEMY_TYPES.map(e=>e.model),'warrior-motion','golf-motion'];
@@ -27,7 +22,7 @@ export async function loadWarriorAssets(progress=()=>{}) {
   const clipNames=new Set(results.slice(7).flatMap(model=>model.animations.map(clip=>clip.name)));
   for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
   templates.push(...results.slice(0,7));motionSources.push(...results.slice(7));
-  for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}if(/Woven|Silk|Indigo/.test(mat.name)){mat.normalMap=wovenNormal();mat.normalScale=new THREE.Vector2(.3,.3);}if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
+  for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}finishCharacterMaterial(mat);if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
 }
 function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.28:.78,metalness:metal}));return materials.get(key);}
 function part(parent,kind,color,x,y,z,sx,sy,sz,metal=0){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):new THREE.CylinderGeometry(1,1,1,10));const mesh=new THREE.Mesh(geometries.get(kind),mat(color,metal));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;}
@@ -56,7 +51,7 @@ export class Warrior {
   constructor(type=0,enemy=false){
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?3+type:type;
     this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
-    this.bones={};this.ownedMaterials=[];this.model.traverse(o=>{if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
+    this.bones={};this.ownedMaterials=[];this.model.traverse(o=>{if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:['odachi','twin','naginata'][type]);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);

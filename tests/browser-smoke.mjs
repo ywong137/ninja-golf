@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.ninjaGolf);
+await page.goto(process.env.GAME_URL||'http://localhost:5173');await page.waitForFunction(()=>!!window.ninjaGolf);
 await page.screenshot({path:'/private/tmp/ninja-home-polish.png'});
 await page.click('#audio-toggle');await page.click('#play');await page.click('[data-warrior="1"]');await page.click('#begin');
 await page.waitForFunction(()=>window.ninjaGolf.state().mode==='game');
