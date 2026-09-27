@@ -125,25 +125,46 @@ def sample_authored(clip,t):
   return (2*u**3-3*u*u+1)*get(a)+(u**3-2*u*u+u)*span*m0+(-2*u**3+3*u*u)*get(b)+(u**3-u*u)*span*m1
  return {k:([val(k,j) for j in range(len(a[k]))] if isinstance(a[k],list) else val(k)) for k in a if k!='t'}
 
-def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
+def palm_target(pose,clip,grips,side):
  primary=Vector(pose['grip']);shaft=(Vector(pose['tip'])-primary).normalized()
+ center=primary if side=='r' else primary-shaft*clip.get('gripSpacing',.09) if clip['twoHanded'] else Vector(pose['offGrip'])
+ direction=shaft if side=='r' or clip['twoHanded'] else (Vector(pose['offTip'])-center).normalized()
+ forward=Quaternion((0,0,1),pose['chest'])@Vector((0,-1,0));forward-=direction*forward.dot(direction)
+ if forward.length<.1:forward=Vector((1,0,0))-direction*direction.x
+ forward.normalize();across=forward.cross(direction).normalized();roll=pose.get('roll' if side=='r' else 'offRoll',0)
+ rotation=Quaternion(direction,roll)@Matrix((across,forward,direction)).transposed().to_quaternion()@grips[side]['basis'].inverted()
+ return center,direction,rotation,roll
+
+def plan_palm_recovery(clip,grips,count,sample_rate):
+ """Transport the grip, then return its twist over a fixed time interval.
+
+ The uncorrected transported frame remains separate from the recovery output.
+ This avoids recursive frame-count-dependent easing and a forced endpoint turn.
+ """
+ tracks={side:[] for side in ['r','l']};previous={}
+ for frame in range(count+1):
+  pose=sample_authored(clip,min(frame/sample_rate,clip['duration'])/clip['duration'])
+  for side in tracks:
+   _,direction,desired,roll=palm_target(pose,clip,grips,side);old=previous.get(side)
+   rotation=desired.copy() if old is None else Quaternion(direction,roll-old[2])@old[0].rotation_difference(direction)@old[1]
+   rotation.normalize();tracks[side].append((direction,rotation,desired));previous[side]=(direction,rotation,roll)
+ duration=clip['duration'];last_contact=max(clip.get('impacts') or [0])
+ # Begin after the final cut follows through, while the body also returns.
+ start=min(duration-.025,last_contact+.075)
+ result=[];twists={}
+ for side,track in tracks.items():
+  axis,rotation,desired=track[-1];delta=desired@rotation.inverted()
+  angle=2*math.atan2(Vector((delta.x,delta.y,delta.z)).dot(axis),delta.w)
+  twists[side]=math.atan2(math.sin(angle),math.cos(angle))
+ for frame in range(count+1):
+  u=max(0,min(1,(frame/sample_rate-start)/(duration-start)));weight=u*u*(3-2*u)
+  result.append({side:Quaternion(track[frame][0],twists[side]*weight)@track[frame][1] for side,track in tracks.items()})
+ return result
+
+def apply_native_targets(rig,ik,grips,pose,clip,golf=False,palm_rotations=None):
  for side in ['r','l']:
-  sign=-1 if side=='r' else 1;center=primary if side=='r' else primary-shaft*clip.get('gripSpacing',.09) if clip['twoHanded'] else Vector(pose['offGrip'])
-  direction=shaft if side=='r' or clip['twoHanded'] else (Vector(pose['offTip'])-center).normalized()
-  forward=Quaternion((0,0,1),pose['chest'])@Vector((0,-1,0));forward-=direction*forward.dot(direction)
-  if forward.length<.1:forward=Vector((1,0,0))-direction*direction.x
-  forward.normalize();across=forward.cross(direction).normalized()
-  q=Quaternion(direction,pose.get('roll' if side=='r' else 'offRoll',0))@Matrix((across,forward,direction)).transposed().to_quaternion()@grips[side]['basis'].inverted()
-  if clip.get('athleticAttack'):
-   # Transport the palm frame across shaft/forward alignment instead of flipping its knuckles.
-   previous=ik.setdefault('palm_previous',{}).get(side);roll=pose.get('roll' if side=='r' else 'offRoll',0)
-   desired=q.copy()
-   if previous:
-    q=direction.rotation_difference(previous['direction']).inverted()@previous['rotation']
-    q=Quaternion(direction,roll-previous['roll'])@q
-    phase=pose.get('_phase',0)
-    if phase>.78:q=q.slerp(desired,min(1,(phase-.78)/.22)*.32 if phase<.999 else 1)
-   ik['palm_previous'][side]={'direction':direction.copy(),'rotation':q.copy(),'roll':roll}
+  sign=-1 if side=='r' else 1;center,_,q,_=palm_target(pose,clip,grips,side)
+  if palm_rotations:q=palm_rotations[side]
   ik['hands'][side].rotation_quaternion=q;ik['hands'][side].location=center-q@grips[side]['center']
   ik['poles'][side].location=pose.get('elbow'+side.upper(),(sign*.6,-.22,1.05))
   foot=ik['feet'][side];foot.location=ik['footBase'][side].copy()
@@ -271,7 +292,8 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2
-   ik['palm_previous']={};previous_rotations={}
+   palm_frames=plan_palm_recovery(clip,grips,count,sample_rate) if clip and clip.get('athleticAttack') else None
+   previous_rotations={}
    for frame in range(count+1):
     source_phase=min(frame/sample_rate,duration)/duration if name in attack_source_names else frame/count
     if gait:source_phase=(source_phase+(0 if name=='Run_Backward' else .5))%1
@@ -280,8 +302,7 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
     if gait:apply_native_locomotion(rig,ik,gait,frame/count)
     if clip:
      pose=sample_authored(clip,source_phase)
-     if name in attack_source_names:pose['_phase']=source_phase
-     apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'))
+     apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'),palm_frames[frame] if palm_frames else None)
     if clip:max_error=max(max_error,*[(rig.pose.bones['hand_'+side].head-ik['hands'][side].location).length for side in ['r','l']])
     matrices={b.name:b.matrix.copy() for b in rig.pose.bones}
     for bone in rig.pose.bones:

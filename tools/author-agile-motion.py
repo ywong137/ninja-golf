@@ -32,6 +32,31 @@ STEPS = {
  'Ring_': [('l',[.15,-.065,0],-.18),('r',[-.16,-.06,0],.18),('l',[.11,-.12,0],-.12),('r',[-.20,-.035,0],.24),('l',[.18,-.11,0],-.22),('r',[-.13,-.17,0],.18),('l',[.22,-.045,0],-.26),('r',[-.17,-.14,0],.20)],
  'Sickle_': [('r',[-.025,-.17,0],.08),('l',[.025,-.16,0],-.08),('r',[-.035,-.18,0],.10),('l',[.065,-.12,0],-.16),('r',[-.035,-.24,0],.09),('l',[.04,-.22,0],-.08),('r',[-.075,-.18,0],.17),('l',[.035,-.25,0],-.10)]}
 def length(v): return math.sqrt(sum(x*x for x in v))
+def ring_rising_return(grip,t):
+ # The original downward return crosses the shoulder. Carry the ring forward
+ # and outside it, retaining the original endpoints and endpoint velocities.
+ if .36<t<.72:
+  arc=math.sin(math.pi*(t-.36)/.36)**2
+  return [grip[0]-.18*arc,grip[1]-.26*arc,grip[2]]
+ return grip
+def recovery_clearance(name,pose,t):
+ # These local recovery arcs avoid two different IK singularities. Return's
+ # wrist passed within 84 mm of its shoulder. Rising and the final sickle
+ # recovery passed across their elbow pole, reversing the bend plane.
+ # Offsets use source coordinates (X, forward-negative Y, Z-up).
+ config={
+  'Ring_Cut_Return':(.215,.43,'grip',[.10,-.10,0]),
+  'Ring_Heavy_Rising':(.37,.72,'elbowR',[.30,-.30,.10]),
+  'Sickle_Musou_Flow':(2.885,3.3,'elbowR',[-.10,.10,.20]),
+ }
+ if name not in config:return pose
+ start,end,key,offset=config[name]
+ if start<t<end:
+  weight=math.sin(math.pi*(t-start)/(end-start))**2
+  for target in ([key,'tip'] if key=='grip' else [key]):
+   pose[target]=[pose[target][k]+offset[k]*weight for k in range(3)]
+ return pose
+
 def direction(keys,t,size):
  # The common interpolator performs spherical direction interpolation at length .62.
  return [x*size/.62 for x in u.shaft(keys,t)]
@@ -83,7 +108,9 @@ def regular(prefix,index,old):
    shift[2]-=.065*loading
    support_center=(feet['r'][0][0]+feet['l'][0][0])*.5
    shift[0]=shift[0]*(1-loading*.8)+support_center*loading*.8
-  poses.append(build_pose(t,duration,u.track(hips,t),ch,u.track(bends,t),shift,u.track(hands,t),direction(axes,t,size),u.track(free,t),feet,roll+ch*(.55 if low else .95),low))
+  grip=u.track(hands,t)
+  if prefix=='Ring_' and index==5:grip=ring_rising_return(grip,t)
+  poses.append(recovery_clearance(prefix+NAMES[index],build_pose(t,duration,u.track(hips,t),ch,u.track(bends,t),shift,grip,direction(axes,t,size),u.track(free,t),feet,roll+ch*(.55 if low else .95),low),t))
  return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in BASE},poses=poses)
 
 def musou(prefix,old):
@@ -119,7 +146,7 @@ def musou(prefix,old):
   for p in [grip,off]:
    for k in range(2):p[k]+=center[k]
   bend=u.track([(start,.25 if low else .18),(prep,.34 if low else .24),(hit,.43 if low else .30),(follow,.39 if low else .27),(end,.25 if low else .18)],q)
-  poses.append(build_pose(t,duration,heading+hip,u.track(heading_keys,max(0,t-.035))+chest,bend,[*center,-load],grip,axis,off,feet,roll+chest*(.55 if low else .95),low))
+  poses.append(recovery_clearance(prefix+'Musou_Flow',build_pose(t,duration,heading+hip,u.track(heading_keys,max(0,t-.035))+chest,bend,[*center,-load],grip,axis,off,feet,roll+chest*(.55 if low else .95),low),t))
  return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94 if low else .95,rootAdvance=0,impacts=hits,headings=headings,nativeSampleRate=120,footPlants={s:u.plants(events[s],duration) for s in base},poses=poses)
 
 def audit(records,original):

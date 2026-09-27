@@ -20,6 +20,19 @@ def shaft(keys,t):
    if angle<.00001:return [v*.62 for v in va]
    return [.62*(math.sin((1-u)*angle)*x+math.sin(u*angle)*y)/math.sin(angle) for x,y in zip(va,vb)]
  return keys[-1][1]
+def final_return(start,finish,t,begin=2.895,end=3.15):
+ # Keep the recovery outside the shoulder instead of lifting through its center.
+ # Smooth time gives zero endpoint velocity without a stopped intermediate pose.
+ u=smooth((t-begin)/(end-begin));v=1-u
+ controls=[start,[-.36,-.30,1.00],[-.34,-.29,1.37],finish]
+ return [v**3*controls[0][k]+3*v*v*u*controls[1][k]+3*v*u*u*controls[2][k]+u**3*controls[3][k] for k in range(3)]
+def heavy_return(grip,t,begin,end,lateral,forward):
+ # Preserve the low strike and Ready pose, but keep the rising recovery wrist
+ # outside the shoulder as the native palm turns back toward its guard.
+ if begin<t<end:
+  arc=math.sin(math.pi*(t-begin)/(end-begin))**2
+  return [grip[0]-lateral*arc,grip[1]-forward*arc,grip[2]]
+ return grip
 READY=[-.19,-.21,1.43];READY_SHAFT=[-.30,-.09,.50]
 # Prepared, contact and follow-through hand positions, followed by shaft directions.
 GESTURES={
@@ -72,7 +85,16 @@ def regular(name,duration,index):
  times=sorted({round(t,9) for t in [i*duration/300 for i in range(301)]+hits+[e for ev in events.values() for row in ev for e in row[:2]]})
  poses=[]
  for t in times:
-  h=track(hips,t);ch=track(chest,t);feet={s:foot_at(base[s],events[s],t) for s in base};poses.append(assemble(t,duration,h,ch,track(bends,t),track(shifts,t),track(hands,t),shaft(directions,t),track(free,t),feet,.45+ch*.8))
+  h=track(hips,t);ch=track(chest,t);feet={s:foot_at(base[s],events[s],t) for s in base};grip=track(hands,t)
+  if name=='Heavy_Cleave':grip=heavy_return(grip,t,follow,duration,.18,.25)
+  elif name=='Heavy_Slam':grip=heavy_return(grip,t,follow,duration,.17,.24)
+  p=assemble(t,duration,h,ch,track(bends,t),track(shifts,t),grip,shaft(directions,t),track(free,t),feet,.45+ch*.8)
+  if name in ['Heavy_Cleave','Heavy_Slam'] and follow<t<duration:
+   # Keep the elbow plane outside the returning shoulder-to-wrist line.
+   # This pole offset is a direction guide, not a requested elbow position.
+   arc=math.sin(math.pi*(t-follow)/(duration-follow))**2
+   p['elbowR'][0]-=.24*arc;p['elbowR'][2]+=.30*arc
+  poses.append(p)
  return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
 def musou():
  duration=3.3;hits=[.42,.86,1.30,1.78,2.25,2.82];headings=[0,.95,2.10,3.5,4.82,math.tau];base={'r':[-.22,0,0],'l':[.22,.07,0]};events={'r':[], 'l':[]};heading_keys=[(0,0)]
@@ -87,6 +109,13 @@ def musou():
   ch=track([(hit-.23,0),(prep,-.30*sign),(release,-.25*sign),(hit,.13*sign),(follow,.42*sign),(hit+.15,0)],t) if t>=hit-.23 else 0
   a,b,c,sa,sb,sc=GESTURES[order[j]];handkeys=[(hit-.23,READY),(prep,a),(release,a),(hit,b),(follow,c),(hit+.15,READY)];shaftkeys=[(hit-.23,READY_SHAFT),(prep,sa),(release,sa),(hit,sb),(follow,sc),(hit+.15,READY_SHAFT)]
   grip=track(handkeys,max(hit-.23,t));direction=shaft(shaftkeys,max(hit-.23,t));load=track([(hit-.23,.08),(prep,.15),(release,.16),(hit,.105),(follow,.08),(hit+.15,.08)],max(hit-.23,t))
+  if j==5 and follow<t<3.15:
+   grip=final_return(c,READY,t,follow)
+   # Preserve the existing shaft length; only its recovery direction changes.
+   length=math.sqrt(sum(v*v for v in direction))
+   recovery=shaft([(follow,sc),(3.15,READY_SHAFT)],t)
+   scale=length/math.sqrt(sum(v*v for v in recovery))
+   direction=[v*scale for v in recovery]
   support='l' if feet['r'][0][2]>.005 else 'r' if feet['l'][0][2]>.005 else None
   center=[(feet['r'][0][k]+feet['l'][0][k])*.5 for k in range(2)]
   if support:

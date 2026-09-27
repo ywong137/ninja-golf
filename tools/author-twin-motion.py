@@ -156,6 +156,24 @@ def musou(old):
         choreography='Alternating paired-blade cuts with sequential turning steps and a low final receiving stance')
     return result
 
+def repair_light_recovery(record):
+    """Remove the late cross-body return while keeping the strike and lower body."""
+    if record.get('lightRecoveryVersion')==1:return record
+    start=record['impacts'][-1]+.065;duration=record['duration']
+    anchor=sample(record,start);end=record['poses'][-1]
+    for p in record['poses']:
+        seconds=p['t']*duration
+        if seconds<=start or seconds>=duration:continue
+        u=(seconds-start)/(duration-start);blend=u*u*u*(10+u*(-15+6*u))
+        for grip,tip in [('grip','tip'),('offGrip','offTip')]:
+            direction=[p[tip][k]-p[grip][k] for k in range(3)]
+            p[grip]=[anchor[grip][k]+(end[grip][k]-anchor[grip][k])*blend for k in range(3)]
+            p[tip]=[p[grip][k]+direction[k] for k in range(3)]
+        for key in ['elbowR','elbowL']:
+            p[key]=[anchor[key][k]+(end[key][k]-anchor[key][k])*blend for k in range(3)]
+    record['lightRecoveryVersion']=1
+    return record
+
 def generate(data):
     records={}
     for index,name in enumerate(NAMES+['Musou_Flow']):
@@ -166,6 +184,7 @@ def generate(data):
         else:record=musou(old) if name=='Musou_Flow' else regular(name,old,index)
         for pose in record['poses']:
             pose.setdefault('roll',0);pose.setdefault('offRoll',0);pose.setdefault('freeHand',0)
+        if index<4:record=repair_light_recovery(record)
         record['nativeSampleRate']=120
         record['twinAuthorVersion']=VERSION;records[key]=record
     ready=copy.deepcopy(records['Twin_Cut_Diagonal']['poses'][0])

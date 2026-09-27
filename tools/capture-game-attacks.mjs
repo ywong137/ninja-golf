@@ -4,10 +4,11 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
 const args=process.argv.slice(2);
-if(args.includes('--help')){console.log('node tools/capture-game-attacks.mjs before|after [--baseline DIRECTORY] [--hero 0..5]\nRuns standing and moving attacks through the game controller on flat ground. Saves contact sheets and joint samples in /tmp. Audio stays muted.');process.exit(0);}
+if(args.includes('--help')){console.log('node tools/capture-game-attacks.mjs before|after [--baseline DIRECTORY] [--hero 0..5] [--clip CLIP_NAME] [--times T0,T1,T2,T3,T4,T5,T6,T7] [--motion standing|moving|both]\nSample times are eight increasing values in seconds and require --clip.\nRuns attacks through the game controller on flat ground. Saves contact sheets and joint samples in /tmp. Audio stays muted.');process.exit(0);}
 const label=args.shift();if(!['before','after'].includes(label))throw Error('Use before or after. See --help.');
-let baseline=null,hero=3;
-while(args.length){const key=args.shift(),value=args.shift();if(key==='--baseline'&&value)baseline=value;else if(key==='--hero'&&/^[0-5]$/.test(value))hero=Number(value);else throw Error('Invalid option. See --help.');}
+let baseline=null,hero=3,clipName=null,sampleTimes=null,movement='both';
+while(args.length){const key=args.shift(),value=args.shift();if(key==='--baseline'&&value)baseline=value;else if(key==='--hero'&&/^[0-5]$/.test(value))hero=Number(value);else if(key==='--clip'&&value)clipName=value;else if(key==='--times'&&value)sampleTimes=value.split(',').map(Number);else if(key==='--motion'&&['standing','moving','both'].includes(value))movement=value;else throw Error('Invalid option. See --help.');}
+if(sampleTimes&&(!clipName||sampleTimes.length!==8||sampleTimes.some((t,i)=>!Number.isFinite(t)||t<0||i>0&&t<=sampleTimes[i-1])))throw Error('--times requires --clip and eight increasing, nonnegative seconds.');
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:2400,height:1000}}),errors=[];await disableHmr(page);page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
@@ -38,14 +39,16 @@ try{
   window.study={g,T,clone,scene,camera,renderer,captions,poses:[]};
  },hero);
  const reports=[];
- for(const moving of [false,true])for(const [kind,step]of [['light',0],['light',1],['light',2],['light',3],['heavy',0],['heavy',1],['heavy',2],['heavy',3],['musou',0]]){
-  const report=await page.evaluate(async({moving,kind,step,label,hero})=>{
+ for(const moving of movement==='both'?[false,true]:[movement==='moving'])for(const [kind,step]of [['light',0],['light',1],['light',2],['light',3],['heavy',0],['heavy',1],['heavy',2],['heavy',3],['musou',0]]){
+  const report=await page.evaluate(async({moving,kind,step,label,hero,clipName,sampleTimes})=>{
    const {g,T,clone,scene,camera,renderer,captions,poses}=window.study,{combatMotionName,motions}=await import('/src/motion.js');
+   const requested=combatMotionName(g.warrior,kind,step);if(clipName&&requested!==clipName)return null;
+   if(sampleTimes?.at(-1)>=motions[requested].duration)throw Error('Sample times must precede the attack duration.');
    for(const pose of poses)scene.remove(pose);poses.length=0;captions.replaceChildren();g.action=null;g.player.oneShot=0;g.player.actionToken=-1;g.player.mixer.stopAllAction();g.player.current='';g.player.play(g.warrior.readyClip||'Idle_Loop',0);g.player.root.position.set(0,0,45);g.player.root.rotation.set(0,0,0);g.phase='combat';g.spawnTime=999;g.dodgeTimer=0;g.cinematic=0;g.input.clear();g.ball.position.set(0,0,190);g.camera.position.set(0,4,36);g.camera.lookAt(0,0,45);
    for(let i=0;i<24;i++)g.player.update(g.time,1/60,{groundHeight:g.groundHeight});
    if(moving){g.input.keys.add('KeyW');for(let i=0;i<30;i++){g.time+=1/60;g.updateCombat(1/60);}}
    g.lightChain=kind==='heavy'?step+1:step;g.chainExpires=g.time+10;g.startAttack(kind);
-   const a=g.action,name=combatMotionName(g.warrior,kind,step),duration=a.duration,times=[0,a.hits[0]*.5,a.hits[0]-.03,a.hits[0],kind==='musou'?a.hits[2]:a.hits.at(-1)+.04,duration*.72,duration*.87,duration-.002],samples=[];let t=0;
+   const a=g.action,name=combatMotionName(g.warrior,kind,step),duration=a.duration,times=sampleTimes||[0,a.hits[0]*.5,a.hits[0]-.03,a.hits[0],kind==='musou'?a.hits[2]:a.hits.at(-1)+.04,duration*.72,duration*.87,duration-.002],samples=[];let t=0;
    for(let col=0;col<times.length;col++){
     while(t<times[col]-1e-7){const dt=Math.min(1/120,times[col]-t);g.time+=dt;g.updateCombat(dt);t+=dt;}
     if(col===0)g.player.update(g.time,0,{groundHeight:g.groundHeight,action:g.action,moving});g.player.root.updateMatrixWorld(true);
@@ -56,8 +59,9 @@ try{
     }
    }
    const title=document.createElement('div');title.style.cssText='position:absolute;bottom:5px;left:12px';title.textContent=`${label.toUpperCase()} · hero ${hero} · ${name} · ${moving?'MOVING':'STANDING'} · real combat controller`;captions.append(title);renderer.render(scene,camera);g.input.clear();return{name,moving,samples};
-  },{moving,kind,step,label,hero});reports.push(report);
+  },{moving,kind,step,label,hero,clipName,sampleTimes});if(!report)continue;reports.push(report);
   await page.screenshot({path:`/tmp/ninja-game-attacks-${label}-${hero}-${moving?'moving':'standing'}-${report.name}.png`});
  }
+ if(!reports.length)throw Error(`No attack matches ${clipName} for hero ${hero}.`);
  fs.writeFileSync(`/tmp/ninja-game-attacks-${label}-${hero}.json`,JSON.stringify(reports,null,2));if(errors.length)throw Error(errors.join('\n'));console.log(`Captured ${reports.length} gameplay attack sequences for hero ${hero}.`);
 }finally{await browser.close();}

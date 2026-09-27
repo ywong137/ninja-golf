@@ -96,6 +96,21 @@ def regular(profile,name,index,duration):
  times=sorted({round(t,9) for t in [i*duration/360 for i in range(361)]+hits+[v for ev in events.values() for e in ev for v in e[:2]]})
  poses=[pose(t,duration,profile,track(hands,t),spherical(shafts,t),track(hips,t),track(chest,t),track(bends,t),track(shifts,t),{s:foot_at(BASE[s],events[s],t) for s in BASE},track(pelvis_keys,t)) for t in times]
  result=metadata(profile,duration,hits,events,poses)
+ if pole and name=='Heavy_Rising':
+  # Keep the handle in front of the right shoulder while lowering the blade.
+  # Folding the wrist back beside the shoulder reverses the elbow's IK plane.
+  for p in poses:
+   seconds=p['t']*duration
+   weight=support.smooth((seconds-follow)/.105)*(1-support.smooth((seconds-.50)/.17))
+   for key in ['grip','tip','offGrip','offTip']:
+    p[key][0]-=.055*weight;p[key][1]-=.12*weight
+  # Steer the elbow outward before the lowering shaft approaches the old pole.
+  # The wide guide keeps a nonzero projection onto the shoulder/wrist plane.
+  for p in poses:
+   seconds=p['t']*duration
+   weight=support.smooth((seconds-.345)/.08)*(1-support.smooth((seconds-.53)/.19))
+   guide=[-.8,-.2,1.0]
+   p['elbowR']=[p['elbowR'][k]*(1-weight)+guide[k]*weight for k in range(3)]
  if not pole and name=='Cut_Diagonal':result['carryExitDuration']=.11
  return result
 def musou(profile):
