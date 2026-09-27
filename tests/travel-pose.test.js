@@ -14,6 +14,23 @@ test('Carry solver preserves native arm lengths and restores mixer input exactly
  }
 });
 
+test('Carry release keeps its chosen wrist turn when the target passes a half-turn',()=>{
+ const root=new THREE.Group(),upper=new THREE.Bone(),lower=new THREE.Bone(),hand=new THREE.Bone();
+ root.add(upper);upper.add(lower);lower.add(hand);upper.position.set(-.2,1.45,0);lower.position.set(0,-.27,0);hand.position.set(0,-.25,0);root.updateMatrixWorld(true);
+ const axis=new THREE.Vector3(0,0,1),palm=new THREE.Vector3(0,-.08,0);
+ const actor={root,bones:{upperarm_r:upper,lowerarm_r:lower,hand_r:hand},palmGrips:{r:palm},shaftAxes:{r:axis},runPhase:0,offhand:null};
+ const pose=new TravelPose(actor,'sickle');pose.weight=1;
+ pose.carry.r={palm:hand.localToWorld(palm.clone()),elbow:lower.getWorldPosition(new THREE.Vector3()),axis:axis.clone(),rotation:new THREE.Quaternion()};
+ let previous=new THREE.Quaternion(),largestTurn=0;
+ for(let frame=0;frame<48;frame++){
+  pose.restore();hand.quaternion.setFromAxisAngle(axis,(160+40*frame/47)*Math.PI/180);
+  pose.apply(1/240,false,{exitDuration:.2});root.updateMatrixWorld(true);
+  const actual=hand.getWorldQuaternion(new THREE.Quaternion());largestTurn=Math.max(largestTurn,actual.angleTo(previous));previous=actual;
+ }
+ assert.ok(largestTurn<.1,`The wrist reversed its turn during release: ${largestTurn} radians`);
+ assert.ok(previous.angleTo(new THREE.Quaternion().setFromAxisAngle(axis,200*Math.PI/180))<1e-6);
+});
+
 test('Thinner steel retains original reach and hero-to-enemy size contrast',()=>{
  for(const [kind,length]of [['odachi',1.4],['twin',.94],['naginata',1.1]]){const profile=BLADE_PROFILES[kind],g=bladeGeometry(profile);assert.equal(profile.length,length);assert.ok(g.boundingBox.max.z-g.boundingBox.min.z<=.00811);assert.ok(profile.width>BLADE_PROFILES.lancer.width*1.6);}
 });

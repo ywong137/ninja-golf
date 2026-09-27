@@ -40,8 +40,16 @@ export class TravelPose {
     const carry=this.carry[side],nativePalm=hand.localToWorld(palmGrips[side].clone()),nativeRotation=hand.getWorldQuaternion(new THREE.Quaternion()),nativeAxis=shaftAxes[side].clone().applyQuaternion(nativeRotation),from=side==='r'?motion?.grip:motion?.offGrip,to=side==='r'?motion?.tip:motion?.offTip;
     const targetAxis=from&&to?vector([to[0]-from[0],to[2]-from[2],from[1]-to[1]]).normalize().applyQuaternion(rootQ):nativeAxis;
     const carryAxis=carry.axis.clone().applyQuaternion(rootQ),turn=new THREE.Quaternion().setFromUnitVectors(carryAxis,targetAxis),shaft=carryAxis.clone().applyQuaternion(new THREE.Quaternion().slerp(turn,1-this.weight));
-    const palm=nativePalm.lerp(root.localToWorld(carry.palm.clone()),this.weight),rotation=carry.rotation.clone().premultiply(rootQ).slerp(nativeRotation,1-this.weight);
+    const palm=nativePalm.lerp(root.localToWorld(carry.palm.clone()),this.weight),rotation=carry.rotation.clone().premultiply(rootQ);
+    // Blend swing and palm twist separately. A shortest-path quaternion blend
+    // can reverse its chosen half-turn as the destination attack wrist moves.
     rotation.premultiply(new THREE.Quaternion().setFromUnitVectors(shaftAxes[side].clone().applyQuaternion(rotation),shaft));
+    nativeRotation.premultiply(new THREE.Quaternion().setFromUnitVectors(nativeAxis,shaft));
+    const relative=rotation.clone().invert().multiply(nativeRotation).normalize(),localAxis=shaftAxes[side];
+    let twist=2*Math.atan2(relative.x*localAxis.x+relative.y*localAxis.y+relative.z*localAxis.z,relative.w);
+    const prior=carry.exitTwist??0;
+    twist=prior+Math.atan2(Math.sin(twist-prior),Math.cos(twist-prior));carry.exitTwist=twist;
+    rotation.multiply(new THREE.Quaternion().setFromAxisAngle(localAxis,twist*(1-this.weight)));
     const pole=lower.getWorldPosition(new THREE.Vector3()).lerp(root.localToWorld(carry.elbow.clone()),this.weight).sub(upper.getWorldPosition(new THREE.Vector3())),wrist=palm.sub(palmGrips[side].clone().multiplyScalar(scale).applyQuaternion(rotation));
     solveArm(upper,lower,hand,wrist,pole);setWorld(hand,rotation);
     this.shaftDirections[side]=shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(rootQ.clone().invert()).normalize();

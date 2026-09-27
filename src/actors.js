@@ -8,6 +8,7 @@ import {FootPlacement,attackFootContacts} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
+import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
@@ -91,8 +92,27 @@ export class Warrior {
     this.travelPose=!enemy&&this.nativeHuman?new TravelPose(this,WARRIORS[type].weaponKind):null;this.overlays=[];this.coreScales=[];this.restModelRotation=this.model.quaternion.clone();this.tip=new THREE.Vector3();this.hilt=new THREE.Vector3();
     this.play(this.nativeHuman?'Golf_Address':'Idle_Loop',0);this.mixer.update(this.nativeHuman?0:Math.random()*.7);
     this.closedFingerGroups={r:[],l:[]};for(const bone of Object.values(this.bones))if(/^(index|middle|ring|pinky|thumb)_/.test(bone.name)){const side=bone.name.endsWith('_r')?'r':'l';this.closedFingerGroups[side].push([bone,bone.quaternion.clone()]);}
+    const palmFrames={};
+    if(this.nativeHuman){
+      this.root.updateMatrixWorld(true);
+      for(const side of this.offhand?['r','l']:['r']){
+        const hand=this.bones['hand_'+side],knuckle=this.bones['middle_01_'+side];
+        if(knuckle)palmFrames[side]=palmWeaponBasis(this.shaftAxes[side],hand.worldToLocal(knuckle.getWorldPosition(new THREE.Vector3())));
+      }
+    }
     if(this.nativeHuman){this.mixer.stopAllAction();this.current='';this.play('Idle_Loop',0);this.mixer.update(0);}
     if(!enemy&&WARRIORS[type].readyClip&&this.actions.has(WARRIORS[type].readyClip)){this.play(WARRIORS[type].readyClip,0);this.mixer.update(0);}this.syncHeldObjects();
+    // Preserve the selected weapon's Ready presentation with one fixed grip
+    // offset. During animation its face then follows the complete palm frame.
+    for(const [side,basis]of Object.entries(palmFrames)){
+      const held=side==='r'?this.weapon:this.offhand;
+      const handFrame=this.bones['hand_'+side].getWorldQuaternion(new THREE.Quaternion()).premultiply(this.root.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(basis).normalize();
+      const shaft=axisY.clone().applyQuaternion(held.quaternion);
+      alignWeaponShaft(handFrame,shaft);
+      const relative=handFrame.invert().multiply(held.quaternion);
+      basis.multiply(new THREE.Quaternion().setFromAxisAngle(axisY,2*Math.atan2(relative.y,relative.w)));
+    }
+    this.palmWeaponFrames=palmFrames;
   }
   play(name,fade=.16,once=false,speed=1){
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
@@ -218,7 +238,7 @@ export class Warrior {
   }
   syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
     // Anchor the handle to the evaluated palm after every mixer and torso update.
-    // Authored directions control the blade, while live bones control its position.
+    // Authored directions control the shaft; the live palm also controls blade roll.
     // Keep the measured closed grip when a source idle clip opens its free hand.
     for(const [bone,rotation]of this.closedFingerGroups.r)bone.quaternion.copy(rotation);
     if(this.offhand||golf||motions[this.current]?.twoHanded)for(const [bone,rotation]of this.closedFingerGroups.l)bone.quaternion.copy(rotation);
@@ -231,6 +251,20 @@ export class Warrior {
       const hand=this.bones['hand_'+side];
       if(held.parent!==this.root)this.root.add(held);
       held.position.copy(gripPosition.copy(this.palmGrips[side]).applyMatrix4(hand.matrixWorld).applyMatrix4(rootInverse));
+      if(!golf&&this.palmWeaponFrames?.[side]){
+        hand.matrixWorld.decompose(decomposedPosition,handRotation,decomposedScale);
+        held.quaternion.copy(handRotation).premultiply(rootRotation).multiply(this.palmWeaponFrames[side]).normalize();
+        const travelShaft=this.travelPose?.shaftDirections[side];
+        if(travelShaft)alignWeaponShaft(held.quaternion,travelShaft);
+        else if(from&&to&&!(this.travelPose?.weight>0)){
+          shaftDirection.set(to[0]-from[0],to[2]-from[2],from[1]-to[1]).normalize();
+          alignWeaponShaft(held.quaternion,shaftDirection);
+          const blend=this.heldBlend;
+          if(blend?.[side])held.quaternion.slerp(blend[side],1-THREE.MathUtils.clamp((this.mixer.time-blend.start)/blend.duration,0,1));
+        }
+        // Native hand animation already contains the authored roll.
+        return;
+      }
       if(this.travelPose?.shaftDirections[side]){
         held.quaternion.setFromUnitVectors(axisY,this.travelPose.shaftDirections[side]);held.rotateY(roll*(1-this.travelPose.weight));
       }else if(from&&to&&!(this.travelPose?.weight>0)){
