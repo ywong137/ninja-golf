@@ -158,13 +158,46 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
   ik['hands']['l'].rotation_quaternion=rig.pose.bones['lowerarm_l'].matrix.to_quaternion()@relative
   bpy.context.view_layer.update()
 
+def apply_native_locomotion(rig,ik,spec,phase):
+ """Keep licensed upper-body motion and solve native stance contacts explicitly."""
+ angle=spec['angle'];support=spec['support'];amplitude=spec['amplitude']
+ # The low pelvis leaves room for knee flexion at both ends of the support stride.
+ pelvis=rig.pose.bones['pelvis'];rest=pelvis.bone.matrix_local
+ bounce=.022*math.cos(phase*math.tau*2)
+ displacement=Vector((.025*math.sin(phase*math.tau),0,(-.24 if spec['source']=='Sprint_Loop' else -.21)+bounce))
+ pelvis.location=rest.to_quaternion().inverted()@displacement
+ lean=Quaternion(Vector((math.cos(angle),math.sin(angle),0)),.10 if spec['source']=='Sprint_Loop' else .055)
+ world=pelvis.matrix.copy();world.translation=rest.translation+displacement
+ world=Matrix.Translation(world.translation)@lean.to_matrix().to_4x4()@Matrix.Translation(-world.translation)@world
+ pelvis.matrix=world;bpy.context.view_layer.update()
+ for side,offset in [('r',0),('l',.5)]:
+  p=(phase+offset)%1
+  if p<support:travel=amplitude*(1-2*p/support);lift=0
+  else:
+   u=(p-support)/(1-support);slope=-2*amplitude*(1-support)/support
+   travel=(2*u**3-3*u*u+1)*(-amplitude)+(u**3-2*u*u+u)*slope+(-2*u**3+3*u*u)*amplitude+(u**3-u*u)*slope
+   # A running foot folds upward during recovery, then returns before loading.
+   lift=spec['lift']*math.sin(math.pi*u)**1.2
+  target=ik['feet'][side];base=ik['footBase'][side]
+  target.location=Vector(((-1 if side=='r' else 1)*spec['width']+math.sin(angle)*travel,-math.cos(angle)*travel,base.z+lift))
+  # Roll from heel contact to toe-off; the middle support interval stays flat.
+  if p<.04:pitch=-.15*(1-p/.04)
+  elif p>support-.04 and p<support:pitch=.25*(p-support+.04)/.04
+  elif p>=support:pitch=.25-.40*(p-support)/(1-support)
+  else:pitch=0
+  target.rotation_quaternion=Quaternion(Vector((1,0,0)),pitch)@ik['footRot'][side]
+  if p<support:target.location.z+=max(0,math.sin(pitch))*.12
+  ik['knees'][side].location=Vector(((-1 if side=='r' else 1)*spec['width'], -.9, .45))
+ bpy.context.view_layer.update()
+
 def bake_rocketbox_actions(rig,clip_names=None):
  """Bake native anatomical poses into named NLA clips for per-avatar export."""
  import json
- data=json.loads((ROOT/'src/motion-data.json').read_text());scene=bpy.context.scene;scene.render.fps=30;scene.frame_start=0
+ data=json.loads((ROOT/'src/motion-data.json').read_text());locomotion=json.loads((ROOT/'src/locomotion-data.json').read_text());scene=bpy.context.scene;scene.render.fps=30;scene.frame_start=0
  filenames=['warrior-motion.glb','golf-motion.glb']
  if (ROOT/'public/models/guard-motion.glb').exists():filenames.append('guard-motion.glb')
  sources=[import_motion_source(filename) for filename in filenames]
+ if clip_names and set(clip_names)<=set(locomotion):scene.render.fps=60
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
  address=next(a for a in authored[1] if a.name.split('.')[0]=='Golf_Address')
  source.animation_data.action=address;scene.frame_set(round(address.frame_range[0]));retarget_frame(rig,source,*mapping);grips=measure_grips(rig)
@@ -172,20 +205,25 @@ def bake_rocketbox_actions(rig,clip_names=None):
  bpy.context.view_layer.update();ik=create_native_ik(rig);rig.animation_data_create();outputs=[]
  for source,actions,objects in sources:
   mapping=retarget_setup(rig,source)
-  for original in sorted(actions,key=lambda a:a.name):
-   name=original.name.split('.')[0]
+  jobs=[(a,a.name.split('.')[0]) for a in sorted(actions,key=lambda a:a.name)]
+  jobs.extend((a,name) for a in actions for name,spec in locomotion.items() if a.name.split('.')[0]==spec['source'])
+  for original,name in jobs:
    if clip_names is not None and name not in clip_names:continue
    if name in {a.name for a in outputs}:continue
-   start,end=original.frame_range;duration=(end-start)/30;clip=data.get(name)
+   start,end=original.frame_range;duration=(end-start)/30;clip=data.get(name);gait=locomotion.get(name)
+   if gait:duration=gait['duration']
    if clip:duration=clip['duration']
    original.name='source_'+name;action=bpy.data.actions.new(name);rig.animation_data.action=action
-   source.animation_data.action=original;count=max(1,round(duration*30));max_error=0
+   source.animation_data.action=original;sample_rate=60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
-    constraint.influence=1 if clip else 0
+    constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2
    for frame in range(count+1):
-    source_frame=start+(end-start)*frame/count;scene.frame_set(int(source_frame),subframe=source_frame%1)
+    source_phase=frame/count
+    if gait:source_phase=(source_phase+(0 if name=='Run_Backward' else .5))%1
+    source_frame=start+(end-start)*source_phase;scene.frame_set(int(source_frame),subframe=source_frame%1)
     retarget_frame(rig,source,*mapping)
+    if gait:apply_native_locomotion(rig,ik,gait,frame/count)
     if clip:apply_native_targets(rig,ik,grips,sample_authored(clip,frame/count),clip,name.startswith('Golf_'))
     if clip:max_error=max(max_error,*[(rig.pose.bones['hand_'+side].head-ik['hands'][side].location).length for side in ['r','l']])
     matrices={b.name:b.matrix.copy() for b in rig.pose.bones}
@@ -193,7 +231,7 @@ def bake_rocketbox_actions(rig,clip_names=None):
      kwargs={'parent_matrix':matrices[bone.parent.name],'parent_matrix_local':bone.parent.bone.matrix_local} if bone.parent else {}
      local=bone.bone.convert_local_to_pose(matrices[bone.name],bone.bone.matrix_local,invert=True,**kwargs)
      bone.location,bone.rotation_quaternion,bone.scale=local.decompose()
-     for path in ['location','rotation_quaternion','scale']:bone.keyframe_insert(data_path=path,frame=frame,group=bone.name)
+     for path in ['location','rotation_quaternion','scale']:bone.keyframe_insert(data_path=path,frame=frame*scene.render.fps/sample_rate,group=bone.name)
    rig.animation_data.action=None;track=rig.animation_data.nla_tracks.new();track.name=name;track.strips.new(name,0,action);track.mute=True;outputs.append(action)
    print('NATIVE_CLIP',name,count+1,'max_wrist_error',round(max_error,4),flush=True)
  if clip_names is not None:

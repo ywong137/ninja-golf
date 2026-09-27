@@ -1,0 +1,59 @@
+[
+  {
+    "theme": "japanese",
+    "name": "Sanuki Hills, Shikoku, Japan",
+    "file": "japanese.i16",
+    "size": 513,
+    "encoding": "int16 little-endian, row-major north to south",
+    "bounds": [
+      134.02944806794076,
+      34.23220265900108,
+      134.29055193205923,
+      34.447797340998925
+    ],
+    "spanMetres": 24000,
+    "minMetres": -53,
+    "maxMetres": 367,
+    "source": "https://s3.amazonaws.com/elevation-tiles-prod/skadi/N34/N34E134.hgt.gz",
+    "sourceSHA256": "020104e58ce7c09b8d6f9d602ce71bed5c9cbeeadd9556b73afd08e6787c0f84",
+    "sha256": "ff52ad87f7366b27a5cb1d43dfe098f7e152d16d56f727641bc2e5d631e860cc"
+  },
+  {
+    "theme": "highlands",
+    "name": "Cuillin Hills, Isle of Skye, Scotland",
+    "file": "highlands.i16",
+    "size": 513,
+    "encoding": "int16 little-endian, row-major north to south",
+    "bounds": [
+      -6.4817845753648005,
+      57.01423643550126,
+      -6.0182154246351995,
+      57.26576356449874
+    ],
+    "spanMetres": 28000,
+    "minMetres": -150,
+    "maxMetres": 951,
+    "source": "https://s3.amazonaws.com/elevation-tiles-prod/skadi/N57/N57W007.hgt.gz",
+    "sourceSHA256": "7e62af200b094c5974aa0d6d7cc661dda734a73e344b3dedc8dbfcb285b7e801",
+    "sha256": "117221459975a8f05b300cdf5fe94b6d3eba7c1ef334a68115ee18a5891362cb"
+  },
+  {
+    "theme": "desert",
+    "name": "Sedona, Arizona, United States",
+    "file": "desert.i16",
+    "size": 513,
+    "encoding": "int16 little-endian, row-major north to south",
+    "bounds": [
+      -111.89137187896922,
+      34.75220265900108,
+      -111.62862812103079,
+      34.96779734099892
+    ],
+    "spanMetres": 24000,
+    "minMetres": 1043,
+    "maxMetres": 2168,
+    "source": "https://s3.amazonaws.com/elevation-tiles-prod/skadi/N34/N34W112.hgt.gz",
+    "sourceSHA256": "ed15b717a7e056724f025f8a3a632bd467ddf9287d433d6b8d2a1aa42c417464",
+    "sha256": "4cab7ce378e0d481cc5e4fac1853f292d5b1bb01d9eeffe57c3a0d8742ef2889"
+  }
+]

@@ -164,3 +164,5 @@ The expansion checks exercise six selections, four previews, mouse survey contro
 Grip checks compare handles with the actual curled finger joints. Motion checks include forward knee flexion and supporting feet.
 Run `node tools/benchmark.mjs --course=0` through `--course=3` to measure each environment. Add `--retina` for the adaptive-resolution check.
 All automated browser tests mute audio.
+
+Distant Japanese, Scottish, and Arizona landforms use adapted [Mapzen Terrain Tiles](https://registry.opendata.aws/terrain-tiles/). See [source credits](public/terrain/LICENSE.txt) and [crop metadata](public/terrain/SOURCES.json). These are fictional course settings, not recreations of real courses.

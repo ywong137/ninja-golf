@@ -93,3 +93,5 @@ export class NaturalLandscape{
   }
  }
 }
+
+export function forestAtlasSource(){return assets.get('forest-canopy');}

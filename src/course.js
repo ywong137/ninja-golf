@@ -1,3 +1,4 @@
+import {bunkerDistance,bunkerHeightOffset} from './bunkers.js';
 import {fairwayDistance,dryLandDistance,waterAt,waterBasins} from './course-layout.js';
 export {fairwayDistance,dryLandDistance,waterAt,waterBasins,routeNearest,routePoint,fairwayPrimitives,mapOutlines} from './course-layout.js';
 export { COURSE_SETS, COURSES } from './course-data.js';
@@ -22,7 +23,7 @@ export const COURSE_BOUNDS={minX:-240,maxX:240,minZ:-90,endMargin:120};
 export function lieAt(c, x, z) {
   if (x < COURSE_BOUNDS.minX || x > COURSE_BOUNDS.maxX || z < COURSE_BOUNDS.minZ || z > c.length + COURSE_BOUNDS.endMargin) return 'Out of bounds';
   if (waterAt(c,x,z) || c.coastal !== false && x > 138 + Math.sin(z*.014)*28) return 'Water';
-  if (c.bunkers.some(b => ellipse(x,z,b) < 1)) return 'Bunker';
+  if (c.bunkers.some(b => bunkerDistance(x,z,b) < 0)) return 'Bunker';
   if (greenDistance(c,x,z) < 17) return 'Green';
   if (Math.abs(x) < 5 && Math.abs(z) < 7) return 'Tee';
   if (fairwayDistance(c,x,z)<0) return 'Fairway';
@@ -38,7 +39,7 @@ export function heightAt(c,x,z) {
   const green = greenBase + (x-c.greenX)*.011 + (z-c.length)*.008;
   let y = base + hill*smooth(-3,42,d);
   y = y*(smooth(16,26,g)) + green*(1-smooth(16,26,g));
-  for (const b of c.bunkers) y -= (1-smooth(.6,1.2,ellipse(x,z,b)))*.8;
+  for (const b of c.bunkers) y += bunkerHeightOffset(x,z,b);
   // Inland hollows stay above sea level. Only the designed coast descends into the ocean.
   y=.8+Math.log1p(Math.exp(y-.8));
   const dry=dryLandDistance(c,x,z),landBlend=dry<=0?1:0;

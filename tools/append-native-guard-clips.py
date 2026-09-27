@@ -4,9 +4,33 @@ import argparse,copy,json,pathlib,struct
 def read_glb(path):
  raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0]
  return json.loads(raw[20:20+length]),raw[28+length:]
-def append_guards(target,source):
- old,binary=read_glb(target);new,incoming=read_glb(source);out=bytearray(binary);nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}
- incoming_names={a['name'] for a in new.get('animations',[])};preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in incoming_names]);old['animations']=preserved.copy();views={};accessors={}
+def trim_replaced_tail(doc,binary):
+ """Remove only unreferenced trailing animation storage from earlier append runs."""
+ used=set()
+ for mesh in doc.get('meshes',[]):
+  for primitive in mesh['primitives']:
+   used.update(primitive['attributes'].values())
+   if 'indices' in primitive:used.add(primitive['indices'])
+   for target in primitive.get('targets',[]):used.update(target.values())
+ for skin in doc.get('skins',[]):
+  if 'inverseBindMatrices' in skin:used.add(skin['inverseBindMatrices'])
+ for clip in doc.get('animations',[]):
+  for sampler in clip['samplers']:used.update([sampler['input'],sampler['output']])
+ doc['accessors']=doc['accessors'][:max(used)+1]
+ views={image['bufferView'] for image in doc.get('images',[]) if 'bufferView' in image}
+ for accessor in doc['accessors']:
+  if 'bufferView' in accessor:views.add(accessor['bufferView'])
+  if 'sparse' in accessor:
+   views.update(accessor['sparse'][key]['bufferView'] for key in ['indices','values'])
+ doc['bufferViews']=doc['bufferViews'][:max(views)+1]
+ end=max(view.get('byteOffset',0)+view['byteLength'] for view in doc['bufferViews']);end=(end+3)//4*4
+ return binary[:end]
+
+def append_guards(target,source,clip_prefixes=None):
+ old,binary=read_glb(target);new,incoming=read_glb(source)
+ if clip_prefixes:new['animations']=[a for a in new['animations'] if a['name'].startswith(clip_prefixes)]
+ nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}
+ incoming_names={a['name'] for a in new.get('animations',[])};preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in incoming_names]);old['animations']=preserved.copy();binary=trim_replaced_tail(old,binary);out=bytearray(binary);views={};accessors={}
  def accessor(index):
   if index in accessors:return accessors[index]
   value=copy.deepcopy(new['accessors'][index]);assert 'sparse' not in value,'Guard animation must use dense accessors'
@@ -17,7 +41,7 @@ def append_guards(target,source):
    views[source_view]=len(old['bufferViews']);old['bufferViews'].append(view)
   value['bufferView']=views[source_view];accessors[index]=len(old['accessors']);old['accessors'].append(value);return accessors[index]
  for original in new.get('animations',[]):
-  assert '_Guard_' in original['name'],f"Unexpected appended clip: {original['name']}"
+  assert '_Guard_' in original['name'] or original['name'].startswith(('Run_','Sprint_Forward')),f"Unexpected appended clip: {original['name']}"
   clip=copy.deepcopy(original)
   for sampler in clip['samplers']:
    for key in ['input','output']:sampler[key]=accessor(sampler[key])

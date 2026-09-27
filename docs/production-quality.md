@@ -209,3 +209,49 @@ Each measurement holds 64 enemies alive and repeats attacks for ten seconds afte
 Retina rendering adapts independently of the HUD, which retains full display resolution.
 These local measurements do not establish performance on every device or at every camera position.
 The environment still needs further art work to meet the full photorealism target.
+
+## Regional terrain and native running pass
+
+The source skin and clothing specular maps now control character roughness.
+All ten humans retain their original geometry, skin weights, color maps, normal maps, and hair coverage.
+The material capture covers all six heroes under four course lighting themes.
+
+Ordinary movement now uses five native clips with separate support and foot recovery.
+Forward, backward, and side movement blend by actual displacement after collision.
+Sprint uses its own stride and cadence. Licensed arm and torso motion remains intact.
+The 60-case movement check measures up to 5.3 mm cardinal drift and 27.3 mm diagonal drift.
+A repeated export keeps existing animation bytes and produces identical gait bytes.
+
+Distant Japanese, Scottish, and Arizona landforms now use adapted public elevation data.
+Course edges preserve the playable height field. Each region has its own terrain shape and surface colors.
+Forest belts use a single atlas draw and stay outside playable boundaries.
+The final forest placement samples rendered triangles to prevent floating trunks.
+Bunker floors, lips, sand masks, minimaps, and lies share the same curved outline.
+
+The terrain still needs further art work to reach the full photorealism target.
+
+### Regional pass verification
+
+- All 79 unit and asset checks pass.
+- All 18 browser scripts pass with audio muted.
+- All 36 cups complete with course-specific scorecards.
+- All six heroes pass the 60-case movement check and the existing golf, grip, attack, and guard checks.
+- Character material comparisons cover all six faces under four lighting themes.
+- Regional grid checks cover checksums, partial download failure, playable-edge continuity, and triangle orientation.
+- Forest height sampling agrees with ray intersections on the rendered mesh.
+- Each course has inspected aerial, tee, and bunker views without browser or shader errors.
+
+### Regional pass performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440×900 viewport.
+Each run holds 64 enemies alive and repeats attacks after warmup.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 51.3 | 33.4 ms |
+| Heather & Crown | 1.00 | 59.8 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 52.0 | 33.4 ms |
+
+These local measurements do not establish performance on every device or camera position.

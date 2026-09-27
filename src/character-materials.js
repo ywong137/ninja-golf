@@ -1,4 +1,26 @@
 import * as THREE from 'three';
+
+const nativeMaps=new Map();
+function nativeRoughness(name){
+ if(nativeMaps.has(name))return nativeMaps.get(name).texture;
+ const entry={texture:null,promise:null},url=`${import.meta.env?.BASE_URL||'/'}textures/characters/${name}-roughness.png`;
+ entry.promise=new Promise((resolve,reject)=>{entry.texture=new THREE.TextureLoader().load(url,resolve,undefined,()=>reject(new Error(`Missing character surface map: ${url}`)));});
+ entry.texture.colorSpace=THREE.NoColorSpace;entry.texture.flipY=false;entry.texture.anisotropy=4;nativeMaps.set(name,entry);return entry.texture;
+}
+export async function awaitCharacterMaterials(){await Promise.all([...nativeMaps.values()].map(entry=>entry.promise));}
+function finishNativeMaterial(mat){
+ const match=/^[fm]\d{3}_(head|body|opacity)$/.exec(mat.name);if(!match)return false;
+ mat.metalness=0;
+ if(match[1]==='opacity'){
+  // Preserve source strand blending; its layered cards depend on the exported depth settings.
+  mat.roughness=.72;
+ }else{
+  // Derived only from the source artist's specular intensity atlas.
+  mat.roughness=1;mat.roughnessMap=nativeRoughness(mat.name);
+ }
+ mat.userData.nativeSurfaceFinish=true;mat.needsUpdate=true;return true;
+}
+
 let weave;
 function fabricNormal(){
  if(weave)return weave;const n=128,data=new Uint8Array(n*n*4);
@@ -6,6 +28,7 @@ function fabricNormal(){
  weave=new THREE.DataTexture(data,n,n);weave.wrapS=weave.wrapT=THREE.RepeatWrapping;weave.generateMipmaps=true;weave.minFilter=THREE.LinearMipmapLinearFilter;weave.anisotropy=8;weave.needsUpdate=true;return weave;
 }
 export function finishCharacterMaterial(mat){
+ if(finishNativeMaterial(mat))return;
  const cloth=/Woven|Silk|Indigo/.test(mat.name),metal=/Lacquered|brass/i.test(mat.name),leather=/Leather/.test(mat.name);
  if(cloth){mat.normalMap=fabricNormal();mat.normalScale=new THREE.Vector2(.22,.22);mat.roughness=.9;}
  if(metal){mat.roughness=/brass/i.test(mat.name)?.38:.37;mat.envMapIntensity=.92;}

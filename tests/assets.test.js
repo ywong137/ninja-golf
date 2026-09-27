@@ -33,7 +33,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     assert.ok(rig,`${name}: native anatomical rig`);assert.equal(rig.extras.sourceAvatar,identities[index]);assert.equal(rig.extras.license,'MIT');
     for(const side of ['R','L']){assert.equal(rig.extras['palmGrip'+side].length,3);assert.equal(rig.extras['shaftAxis'+side].length,3);assert.ok(Object.keys(rig.extras['closedFingers'+side]).length>=15);}
     const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',['','Twin_','','Fan_','Ring_','Sickle_'][index]+'Musou_Flow'])assert.ok(clips.has(clip),`${name}: ${clip}`);
-    assert.ok(clips.size<=31,`${name}: own weapon family plus native guard and step clips only`);
+    assert.ok(clips.size<=36,`${name}: own weapon family, guard steps, and native directional locomotion only`);
     assert.ok(g.materials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
     assert.ok(g.materials.some(m=>m.normalTexture),`${name}: source surface normals`);
     assert.ok(!g.nodes.some(n=>n.name==='SamuraiCostume'),`${name}: preserve original clothing anatomy`);

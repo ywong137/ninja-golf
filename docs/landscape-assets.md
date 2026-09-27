@@ -44,3 +44,32 @@ The image bake requires the local development server. It runs with audio muted.
 
 The bake writes color, normal, and shadow WebP atlases, plus view bounds in `src/nature-views.json`.
 Run `node tests/browser-nature.mjs` to inspect day, night, aerial, and detail-transition views.
+
+## Regional landforms
+
+The distant landscape uses public Mapzen Terrain Tiles instead of the previous sinusoidal ridge.
+Three source regions give the courses different valleys and silhouettes:
+
+- Sanuki Hills, Shikoku, Japan.
+- Cuillin Hills, Isle of Skye, Scotland.
+- Sedona, Arizona, United States.
+
+The shipped grids contain 513 × 513 signed 16-bit heights each.
+Source URLs, crop bounds, hashes, and attribution ship in `public/terrain/`.
+`tools/build-regional-terrain.py` reproduces the grids from the original Skadi files.
+The game changes horizontal scale, elevation, and placement around its fictional courses.
+It does not reproduce actual golf courses from these surveys.
+
+A graded mesh joins the original detailed course edge exactly.
+Every playable position still uses the existing golf height field.
+The current horizon uses about 135,000 triangles, compared with 258,000 in the first regional implementation.
+Each failed region falls back separately, preserving other downloaded regions.
+
+Japanese and Highland forest belts use one additional atlas draw each.
+The trees sit outside the playable course limits and follow clustered groves.
+A triangle sampler grounds their trunks on the rendered horizon surface.
+This prevents floating trees where reduced geometry differs from the source height field.
+
+Bunker masks, maps, lie detection, and terrain height share one deterministic scalloped contour.
+Their depressed floors rise into rounded turf lips.
+The bunker mesh uses approximately 0.5 m spacing around each hazard.

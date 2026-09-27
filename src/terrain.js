@@ -1,20 +1,29 @@
 import * as THREE from 'three';
+import {BUNKER_GLSL,bunkerProfile} from './bunkers.js';
 import {fairwayPrimitives,FAIRWAY_GLSL,MAX_FAIRWAY_SEGMENTS,waterBasins} from './course-layout.js';
 // Course boundaries use the same analytic shapes as lieAt. They stay crisp at any mesh resolution.
-export function courseMaterial(c, textures) {
+export function courseMaterial(c, textures, distant=false) {
   const mat=new THREE.MeshStandardMaterial({map:textures.grassColor,normalMap:textures.grassNormal,normalScale:new THREE.Vector2(.36,.36),roughness:.96});
   mat.onBeforeCompile=shader=>{
     const routes=fairwayPrimitives(c);
-    Object.assign(shader.uniforms,{routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
-    shader.vertexShader='varying vec3 terrainPosition;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;');
-    shader.fragmentShader=FAIRWAY_GLSL+`varying vec3 terrainPosition;uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
+    Object.assign(shader.uniforms,{routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
+    shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
+    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+`varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
       float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}
+      vec3 groundSample(sampler2D source,vec2 uv){
+       vec2 cell=floor(uv),f=fract(uv),dx=dFdx(uv),dy=dFdy(uv);f=f*f*(3.-2.*f);
+       vec2 a=vec2(groundHash(cell),groundHash(cell+19.1))*7.;
+       vec2 b=vec2(groundHash(cell+vec2(1,0)),groundHash(cell+vec2(1,0)+19.1))*7.;
+       vec2 c=vec2(groundHash(cell+vec2(0,1)),groundHash(cell+vec2(0,1)+19.1))*7.;
+       vec2 d=vec2(groundHash(cell+vec2(1,1)),groundHash(cell+vec2(1,1)+19.1))*7.;
+       return mix(mix(textureGrad(source,uv+a,dx,dy).rgb,textureGrad(source,uv+b,dx,dy).rgb,f.x),mix(textureGrad(source,uv+c,dx,dy).rgb,textureGrad(source,uv+d,dx,dy).rgb,f.x),f.y);
+      }
       `+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
-      float sandMask=0.;for(int i=0;i<4;i++){vec4 b=bunkers[i];sandMask=max(sandMask,1.-smoothstep(.985,1.015,length((p-b.xy)/b.zw)));}
+      float sandMask=0.,turfLip=0.;for(int i=0;i<4;i++){float bd=bunkerDistance(p,bunkers[i],bunkerProfiles[i]);sandMask=max(sandMask,1.-smoothstep(-.10,.10,bd));turfLip=max(turfLip,smoothstep(-.10,.10,bd)*(1.-smoothstep(.4,1.4,bd)));}
       float edge=routeDistance(p);
       float fairway=1.-smoothstep(-.2,.2,edge);
       float firstCut=1.-smoothstep(1.8,2.4,edge);
@@ -22,7 +31,7 @@ export function courseMaterial(c, textures) {
       float green=1.-smoothstep(16.85,17.15,greenDistance);float collar=1.-smoothstep(18.3,18.8,greenDistance);
       float tee=(1.-smoothstep(4.9,5.1,abs(p.x)))*(1.-smoothstep(6.9,7.1,abs(p.y)));
       fairway=max(fairway,tee);float shortGrass=max(fairway,collar);
-      float stripe=smoothstep(-.1,.1,sin((p.y+p.x*.3)*3.14159265/11.));
+      float mowingAngle=atan(courseShape.z,courseShape.x)+.42;float stripe=smoothstep(-.15,.15,sin(dot(p,vec2(sin(mowingAngle),cos(mowingAngle)))*3.14159265/11.));
       vec3 rough=mix(vec3(.080,.135,.038),vec3(.115,.172,.060),groundNoise(p*.06));
       vec3 cut=mix(vec3(.095,.185,.045),vec3(.108,.205,.052),stripe);
       vec3 putting=mix(vec3(.18,.28,.090),vec3(.20,.30,.100),stripe);
@@ -30,20 +39,33 @@ export function courseMaterial(c, textures) {
       if(courseTheme>1.5&&courseTheme<2.5){rough=mix(texture2D(sandColor,p/7.).rgb,texture2D(sandColor,mat2(.8,-.6,.6,.8)*p/13.).rgb,.45)*vec3(.72,.53,.37);cut*=vec3(1.15,1.2,.85);}
       if(courseTheme>2.5){rough=mix(vec3(.04,.060,.032),vec3(.068,.085,.045),groundNoise(p*.04));cut=vec3(.055,.15,.07)*mix(.90,1.08,stripe);putting=vec3(.13,.25,.095);}
       vec3 grass=mix(rough,vec3(.090,.175,.046),firstCut);grass=mix(grass,cut,shortGrass);grass=mix(grass,putting,green);
-      vec3 closeSample=mix(texture2D(map,p/2.7).rgb,texture2D(map,p/.85).rgb,shortGrass*.72);
+      vec2 grassUV=p/2.7;float tileMix=smoothstep(.2,.8,groundNoise(p*.021));vec3 turfSample=mix(texture2D(map,grassUV).rgb,texture2D(map,grassUV+vec2(.37,.61)).rgb,tileMix);vec3 closeSample=mix(turfSample,texture2D(map,p/.85).rgb,shortGrass*.72);
       float detail=clamp(dot(closeSample,vec3(.299,.587,.114))*6.3,.50,1.4);
       float macro=.84+.17*groundNoise(p*.045)+.09*groundNoise(p*.22);
       if(courseTheme<1.5)grass=mix(grass,texture2D(map,p/6.).rgb*vec3(.8,1.1,.64),.27*(1.-shortGrass));
       vec3 sand=texture2D(sandColor,p/4.).rgb*.81;
       float rake=.96+.04*sin(p.x*21.+sin(p.y*.3)*3.);sand*=rake;
       float coast=138.+sin(p.y*.014)*28.;float beach=courseCoastal*smoothstep(coast-12.,coast-2.,p.x);
-      diffuseColor.rgb=mix(grass*detail*macro,sand,max(sandMask,beach));`);
+      diffuseColor.rgb=mix(grass*detail*macro*(1.-turfLip*.10),sand,max(sandMask,beach));
+      ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));
+      float landBlend=smoothstep(50.,850.,outerDistance);
+      vec3 slopeWeights=pow(abs(normalize(terrainSlope)),vec3(4.));slopeWeights/=dot(slopeWeights,vec3(1.));
+      vec3 rock=groundSample(landRock,terrainPosition.yz/18.)*slopeWeights.x+groundSample(landRock,p/18.)*slopeWeights.y+groundSample(landRock,terrainPosition.xy/18.)*slopeWeights.z;
+      float steep=1.-clamp(terrainSlope.y,0.,1.);float weathering=.72+.32*groundNoise(p*.004)+.10*groundNoise(p*.028);
+      float turfGrain=clamp(dot(groundSample(landCliff,p/12.),vec3(.299,.587,.114))*5.,.5,1.5);
+      float stoneGrain=clamp(dot(rock,vec3(.299,.587,.114))*3.2,.5,1.5);
+      vec3 farGrass=vec3(.070,.115,.041)*weathering*(.88+.12*turfGrain);
+      vec3 land=mix(farGrass,vec3(.15,.17,.14)*(.85+.15*stoneGrain),smoothstep(.18,.57,steep));
+      if(courseTheme>.5&&courseTheme<1.5){farGrass=vec3(.13,.115,.060)*weathering*(.88+.12*turfGrain);land=mix(farGrass,vec3(.16,.18,.18)*(.85+.15*stoneGrain),smoothstep(.09,.43,steep+terrainPosition.y*.0002));}
+      if(courseTheme>1.5&&courseTheme<2.5){float strata=.93+.07*smoothstep(-.3,.3,sin(terrainPosition.y*.16+groundNoise(p*.003)*2.));land=vec3(.36,.17,.082)*(.80+.20*stoneGrain)*strata*weathering;}
+      if(courseTheme>2.5)land=diffuseColor.rgb;
+      diffuseColor.rgb=mix(diffuseColor.rgb,land,landBlend);`:''}`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       vec3 gn=mix(texture2D(normalMap,p/2.7).xyz,texture2D(normalMap,p/.85).xyz,shortGrass*.72)*2.-1.;
       vec3 sn=texture2D(sandNormal,p/4.).xyz*2.-1.;vec3 terrainNormal=mix(gn,sn,max(sandMask,beach));
-      terrainNormal.xy*=normalScale*mix(1.,.35,green);normal=normalize(tbn*terrainNormal);`);
+      terrainNormal.xy*=normalScale*mix(1.,.35,green);normal=normalize(mix(normal,normalize(tbn*terrainNormal),${distant?'1.-landBlend':'1.'}));`);
   };
-  mat.customProgramCacheKey=()=>`course-ground-authored-v3`;
+  mat.customProgramCacheKey=()=>`course-ground-authored-v4-${distant}`;
   return mat;
 }
 
@@ -51,8 +73,8 @@ export function courseGeometry(c,heightAt,ellipse){
  const vertices=[],normals=[],uv=[],indices=[],extent=c.length+330,nz=Math.round(extent/3),dz=extent/nz;
  for(let iz=0;iz<nz;iz++)for(let ix=0;ix<250;ix++){
   const x0=-375+ix*3,z0=c.length/2-extent/2+iz*dz,cx=x0+1.5,cz=z0+dz*.5;
-  const detailed=waterBasins(c).some(e=>ellipse(cx,cz,e)<1.35)||c.bunkers.some(b=>ellipse(cx,cz,b)<1.3)||Math.hypot(cx-c.greenX,cz-c.length)<26;
-  const n=detailed?3:1,base=vertices.length/3;
+  const bunkerDetail=c.bunkers.some(b=>ellipse(cx,cz,b)<1.3),detailed=waterBasins(c).some(e=>ellipse(cx,cz,e)<1.35)||Math.hypot(cx-c.greenX,cz-c.length)<26;
+  const n=bunkerDetail?6:detailed?3:1,base=vertices.length/3;
   for(let z=0;z<=n;z++)for(let x=0;x<=n;x++){const px=x0+x/n*3,pz=z0+z/n*dz;vertices.push(px,heightAt(c,px,pz),pz);const nx=heightAt(c,px-.15,pz)-heightAt(c,px+.15,pz),ny=.3,nzz=heightAt(c,px,pz-.15)-heightAt(c,px,pz+.15),len=Math.hypot(nx,ny,nzz);normals.push(nx/len,ny/len,nzz/len);uv.push((px+375)/750,(pz+extent/2-c.length/2)/extent);}
   for(let z=0;z<n;z++)for(let x=0;x<n;x++){const a=base+z*(n+1)+x;indices.push(a,a+n+1,a+1,a+1,a+n+1,a+n+2);}
  }

@@ -34,3 +34,21 @@ Native animation clips preserve each model's original limb proportions.
 
 Use `-- --enemies` to export the four enemy bodies with 1K textures and only their required clips.
 The build requires a system Python with Pillow for embedded texture compression.
+
+## Surface materials
+
+The original Rocketbox head and body specular maps now control local roughness.
+The conversion preserves the author’s surface masks for skin, eyes, cloth, and hair.
+It approximates modern roughness from legacy specular intensity; it is not measured physical data.
+The original color maps, normal maps, UVs, anatomy, and material assignments remain intact.
+
+Run `python3 tools/build-character-material-maps.py` to rebuild the maps from the licensed source files.
+Hero maps use 1024 pixels per side. Enemy maps use 512 pixels per side.
+`public/textures/characters/SOURCES.json` records source URLs, source blob IDs, conversion parameters, and output hashes.
+The adjacent license file contains the original MIT terms.
+
+Hair cards keep the original blended strand coverage and depth settings.
+Opaque cutoffs and changes to depth writes produced visible seams in these layered source cards.
+The loader awaits all surface textures before the character selection screen becomes ready.
+
+`tests/browser-character-materials.mjs` captures each hero before and after the material pass under all four course lighting themes.

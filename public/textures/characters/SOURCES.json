@@ -1,0 +1,308 @@
+{
+  "license": "MIT",
+  "repository": "https://github.com/microsoft/Microsoft-Rocketbox",
+  "commit": "0943055db6ec570bcef9f2c8b41c9e5467c808f9",
+  "description": "Roughness derived from original authored specular intensity; not a measured roughness map.",
+  "files": [
+    {
+      "file": "m024_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_10/Textures/m024_body_specular.tga",
+      "sourceBlob": "dbcc2c5fdfdca558e8c8615c7c7a112eb9e06808",
+      "sha256": "80ceeba8d2b48e50d3590981f184877b66cbb9242625f4b8fdd949a1991f5823",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m024_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_10/Textures/m024_head_specular.tga",
+      "sourceBlob": "bf4316afb77e8cf8f790414a06d47155fa6b82e8",
+      "sha256": "e0a4bd00fd1d90dcd3020688a42655038f5ab2686b617b0f01aeb8c71ba7635f",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m017_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_09/Textures/m017_body_specular.tga",
+      "sourceBlob": "a48d68ea47c5ac78c91bc0ebcf108116bbb4cde4",
+      "sha256": "182c2d75b5e1b9e0880752866cafe94a3b66a9de0b83a293882cdaa094c29907",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m017_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_09/Textures/m017_head_specular.tga",
+      "sourceBlob": "1adf14fd961f609dd16376bb6b067ebb69061751",
+      "sha256": "421bbecc8cbd0b5f25446ae59a11e6d6195c39f4a38a8d84a47c3b83b7e6af46",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m009_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_05/Textures/m009_body_specular.tga",
+      "sourceBlob": "061e2e14f69c032bfec3df38121c648115c83394",
+      "sha256": "373624652b105f9ba931bd34e4c3df7cb422269c0247496a3c954d9c283530d5",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m009_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_05/Textures/m009_head_specular.tga",
+      "sourceBlob": "5a242341c002010323214d2764f866b13503bcbc",
+      "sha256": "f4f78eabf1b5d1ca6e582d48b68ae70b2a7b03f90e85dd55873566261bc385f7",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f003_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_03/Textures/f003_body_specular.tga",
+      "sourceBlob": "b8380ac1d5129b580b4beb3f30773a41cbe3c116",
+      "sha256": "ad2fc29dc38a5c60c5f21e38dbfd77ca8822da874a644603d5c9f5b0e8acb76f",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f003_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_03/Textures/f003_head_specular.tga",
+      "sourceBlob": "e5074769477d1c60287e92e8e2ab1439e9152e6e",
+      "sha256": "010f7ea0dd87a67bfcdb4bbe5124beb26a1e7d2609f5e87b2d3deed9905953f5",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f008_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_08/Textures/f008_body_specular.tga",
+      "sourceBlob": "9bb15b59d36a3e3cb932f9aa9785a401e9c06bbe",
+      "sha256": "9c3770a48b82498c1521b8d8d4cb6d85332e17d19320b3b651b620b3329c38c0",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f008_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_08/Textures/f008_head_specular.tga",
+      "sourceBlob": "96abf7c510c6625d2bc9d6335cf1794cc85ffcdb",
+      "sha256": "7f23836d0e07e03419816060c50a99e6a0a68e9cf691f35c3f6e53e120d73bdf",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f012_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_12/Textures/f012_body_specular.tga",
+      "sourceBlob": "31a935a7fce636507d8b84850dc2625ec2efe56c",
+      "sha256": "486b9af4d56185a63dd20b62c239d8c525a055a65fe826abbe774fb49b9ed719",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f012_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_12/Textures/f012_head_specular.tga",
+      "sourceBlob": "58eb7467c65015402d7d47deffe7ad0ffe4f36b3",
+      "sha256": "735805cc85b0dc8ccf5730191c91e97c2d0007568d0985d193130b15ebe22166",
+      "size": [
+        1024,
+        1024
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m023_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_18/Textures/m023_body_specular.tga",
+      "sourceBlob": "94da41adefb49b19aaf76888eb3c00b83fb82c0b",
+      "sha256": "fb1bfcd103401c690ff59caf0dcec468eb6010889f307505a81818d95a2b9db7",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m023_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_18/Textures/m023_head_specular.tga",
+      "sourceBlob": "93f673b75891dfe66d1ca87fac8d483e3c79c522",
+      "sha256": "12d3c1ca34a9b8e50c590d6c9edd259a8268712711e12278cdcfa97327d82847",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m006_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_04/Textures/m006_body_specular.tga",
+      "sourceBlob": "172d970935d72dabce9071961f7890b37f50a044",
+      "sha256": "0a5fbe1e2cd760101067b82f392e55b6006fc0473a8e876fe78ad32f20f75670",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m006_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_04/Textures/m006_head_specular.tga",
+      "sourceBlob": "2e08c0dcc2f80cc0ad0f6684f846b0e68eb7059c",
+      "sha256": "dc44dbdb93169bed2ff1c84401190acdfbee8977b548143b22a9ea48e6304da2",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m001_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_11/Textures/m001_body_specular.tga",
+      "sourceBlob": "e8d7f9064ef389c1e5b3dfa276d8368ce5997d81",
+      "sha256": "cb129a9aaa55380fb4cdcafd62356c29c43f47137e371d150e41c26c693b9b21",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "m001_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Male_Adult_11/Textures/m001_head_specular.tga",
+      "sourceBlob": "c11cd2aa9a67e185b7e8b33653d896532faba35c",
+      "sha256": "7fbf68e3bbec6fbd9912f3ecce360f706e4a447132fccfde55d7511aac650efa",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f019_body-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_13/Textures/f019_body_specular.tga",
+      "sourceBlob": "64be89c6c04effebb915b886f3e3a64d503b3563",
+      "sha256": "10f8b85d598de3d9803cfa1d13aa4dc18da7d6268ddf255c5486961a5d678653",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.92,
+        "sqrtSpecularGain": 0.75,
+        "minimum": 0.22
+      }
+    },
+    {
+      "file": "f019_head-roughness.png",
+      "source": "https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/0943055db6ec570bcef9f2c8b41c9e5467c808f9/Assets/Avatars/Adults/Female_Adult_13/Textures/f019_head_specular.tga",
+      "sourceBlob": "255729399f85cb64ca0ec72f421dd5dd7a45fbc5",
+      "sha256": "a7f157b0ae74d15108d002db8724c658259a00c55013dd5e378fb6eafbb30f07",
+      "size": [
+        512,
+        512
+      ],
+      "conversion": {
+        "base": 0.72,
+        "sqrtSpecularGain": 0.42,
+        "minimum": 0.22
+      }
+    }
+  ]
+}

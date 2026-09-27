@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
-import { SimplexNoise } from 'three/addons/math/SimplexNoise.js';
+import {loadRegionalTerrain} from './regional-terrain.js';
 import {createPond,createOceanMaterial} from './water.js';
-import { NaturalLandscape } from './nature.js';
+import { NaturalLandscape,forestAtlasSource } from './nature.js';
+import {buildDistantForest} from './distant-forest.js';
 import {SceneryCollision} from './scenery-collision.js';
 import {buildBridges} from './bridges.js';
 import {landscapeHorizon} from './landscape-horizon.js';
+import {createTerrainSurfaceSampler} from './terrain-surface.js';
 import {buildArchitecture} from './architecture.js';
 import {courseMaterial,courseGeometry} from './terrain.js';
 import {buildThemeScenery,buildFairwayCover,THEME_LIGHTS} from './course-themes.js';
@@ -42,7 +44,8 @@ export class World {
     this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');
     this.waterMaterial=createOceanMaterial({time:{value:0},skyMap:{value:null},hasSky:{value:0}});
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
-    this.makeMountains();
+    this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);
+    this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
     this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=.8;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentIntensity=.52;scene.environmentRotation.y=.8;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
     this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
   }
@@ -50,12 +53,10 @@ export class World {
     if(this.textureCache.has(file))return this.textureCache.get(file);
     let loaded;const ready=new Promise(resolve=>loaded=resolve);this.texturePromises.push(ready);const t=new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/${file}`,loaded,undefined,error=>{console.warn(`Surface texture unavailable: ${file}`,error);loaded();});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());if(srgb)t.colorSpace=THREE.SRGBColorSpace;this.textureCache.set(file,t);return t;
   }
-  waitForAssets(){return Promise.all([this.ready,this.nightReady,...this.texturePromises]);}
-  makeMountains(){
-    const noise=new SimplexNoise({random:random(84)});const geo=new THREE.PlaneGeometry(5400,2400,360,160);geo.rotateX(-Math.PI/2);const p=geo.attributes.position,colors=[];
-    for(let i=0;i<p.count;i++) {const x=p.getX(i),z=p.getZ(i);const ridge=Math.pow(Math.max(0,1-Math.abs(z)/1250),1.7);const detail=noise.noise(x*.004,z*.004)*45+noise.noise(x*.012,z*.012)*12+noise.noise(x*.036,z*.036)*3;const h=Math.max(0,(190+170*Math.sin(x*.002+1)+100*Math.sin(x*.0056)+detail)*ridge);p.setY(i,h);color.set('#344f40').lerp(new THREE.Color('#617463'),smooth(100,350,h)).lerp(new THREE.Color('#869282'),smooth(355,450,h+noise.noise(x*.02,z*.02)*22));colors.push(color.r,color.g,color.b);}
-    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();const rock=this.texture('cliff-color.jpg',true);rock.repeat.set(100,40);const normal=this.texture('cliff-normal.jpg');normal.repeat.copy(rock.repeat);
-    const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,map:rock,normalMap:normal,normalScale:new THREE.Vector2(.7,.7),roughness:1}));m.position.set(-400,-48,2600);this.mountains=m;this.scene.add(m);
+  waitForAssets(){return Promise.all([this.ready,this.nightReady,this.terrainReady,...this.texturePromises]);}
+  buildHorizon(c){
+    if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
+    this.horizon=new THREE.Mesh(landscapeHorizon(c,this.regions?.[c.theme]),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=(c.theme==='japanese'||c.theme==='highlands')?createTerrainSurfaceSampler(this.horizon.geometry):null;
   }
   applyTheme(c){
     const theme=c?.theme||'japanese',t=THEME_LIGHTS[theme];
@@ -63,26 +64,25 @@ export class World {
     this.scene.environment=theme==='cyberpunk'&&this.nightEnvironment?this.nightEnvironment.texture:this.environment.texture;
     this.sky.visible=theme!=='cyberpunk'&&!this.coastalSky;this.nightSky.visible=theme==='cyberpunk'&&!this.citySky;
     this.scene.backgroundIntensity=theme==='cyberpunk'?.02:theme==='highlands'?.63:theme==='desert'?.94:.78;this.scene.backgroundRotation.y=theme==='cyberpunk'?4.5:theme==='desert'?2.4:theme==='highlands'?1.6:.8;
-    this.scene.fog.color.set(t.fog);this.scene.fog.density=theme==='cyberpunk'?.0006:.00030;
+    this.scene.fog.color.set(t.fog);this.scene.fog.density=theme==='cyberpunk'?.0006:theme==='highlands'?.00014:theme==='desert'?.00013:.00022;
     this.sun.color.set(t.sun);this.sun.intensity=t.intensity;
     this.hemisphere.color.set(t.sun);this.hemisphere.groundColor.set(t.ground);this.hemisphere.intensity=t.ambient;
     this.scene.environmentIntensity=theme==='cyberpunk'?.4:theme==='highlands'?.32:.52;
-    this.ocean.visible=c?.coastal!==false;this.mountains.visible=theme!=='cyberpunk'&&theme!=='desert';
-    this.mountains.material.color.set(theme==='highlands'?'#9a9d89':'#ffffff');
+    this.ocean.visible=c?.coastal!==false;
     this.scene.environmentRotation.y=this.scene.backgroundRotation.y;this.waterMaterial.uniforms.skyRotation.value=this.scene.backgroundRotation.y;this.waterMaterial.uniforms.skyIntensity.value=this.scene.backgroundIntensity;this.waterMaterial.uniforms.waterFog.value.copy(this.scene.fog.color);this.waterMaterial.uniforms.skyMap.value=theme==='cyberpunk'?this.citySky:this.coastalSky;this.waterMaterial.uniforms.hasSky.value=this.waterMaterial.uniforms.skyMap.value?1:0;
   }
   terrainMaterial(c){return courseMaterial(c,this);}
   clear(){
     this.pond?.dispose();
     const materials=new Set(),geos=new Set();this.root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry)geos.add(o.geometry);if(o.customDepthMaterial)materials.add(o.customDepthMaterial);if(o.material&&o.material!==this.waterMaterial)materials.add(o.material);});
-    this.root.clear();this.root.userData.landmarks=[];geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+    this.root.clear();this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
     const geo=courseGeometry(c,heightAt,ellipse);
-    const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);const horizon=new THREE.Mesh(landscapeHorizon(c),this.terrainMaterial(c));horizon.receiveShadow=true;this.root.add(horizon);
+    const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);this.buildHorizon(c);
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);
-    if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.texture('rock-color-2k.jpg',true),normal:this.texture('rock-normal-2k.jpg')});this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.makeGrass(r);buildFairwayCover(this.root,c,this.ambushSites,{color:this.texture('rock-color-2k.jpg',true),normal:this.texture('rock-normal-2k.jpg')});buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites);this.makeFlag();this.makePath();this.makePetals(r);this.makeBirds();
+    if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.texture('rock-color-2k.jpg',true),normal:this.texture('rock-normal-2k.jpg')});this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(),this.horizonHeight);this.makeGrass(r);buildFairwayCover(this.root,c,this.ambushSites,{color:this.texture('rock-color-2k.jpg',true),normal:this.texture('rock-normal-2k.jpg')});buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites);this.makeFlag();this.makePath();this.makePetals(r);this.makeBirds();
     const teeMat=material('#ece0c4');for(const x of [-3.4,3.4]){const m=addMesh(this.root,new THREE.BoxGeometry(.45,.35,.45),teeMat,x,heightAt(c,x,0)+.17,0);m.rotation.y=.25;}
   }
   makeGrass(r){

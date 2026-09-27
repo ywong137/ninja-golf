@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import {finishCharacterMaterial} from './character-materials.js';
+import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, combatMotionName } from './motion.js';
+import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='human-guards-2';
+const MODEL_REVISION='human-running-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -29,8 +30,10 @@ export async function loadWarriorAssets(progress=()=>{}) {
   const clipNames=new Set(results.slice(characterCount).flatMap(model=>model.animations.map(clip=>clip.name)));
   for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
   for(const [i,warrior]of WARRIORS.entries())for(const phase of ['Loop','Impact','Break','Walk_Forward','Walk_Right','Walk_Backward','Walk_Left']){const name=`${GUARD_PREFIX[warrior.weaponKind]}_Guard_${phase}`;if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native guard animation ${name} in ${warrior.model}.glb`);}
+  for(const [i,warrior]of WARRIORS.entries())for(const name of Object.keys(locomotion))if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native locomotion ${name} in ${warrior.model}.glb`);
   templates.push(...results.slice(0,characterCount));motionSources.push(...results.slice(characterCount));
   for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}finishCharacterMaterial(mat);if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
+  await awaitCharacterMaterials();
 }
 function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.28:.78,metalness:metal}));return materials.get(key);}
 function part(parent,kind,color,x,y,z,sx,sy,sz,metal=0){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):new THREE.CylinderGeometry(1,1,1,10));const mesh=new THREE.Mesh(geometries.get(kind),mat(color,metal));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;}
@@ -83,8 +86,9 @@ export class Warrior {
     if(this.nativeHuman){this.mixer.stopAllAction();this.current='';this.play('Idle_Loop',0);this.mixer.update(0);}
     if(!enemy&&WARRIORS[type].readyClip&&this.actions.has(WARRIORS[type].readyClip)){this.play(WARRIORS[type].readyClip,0);this.mixer.update(0);}this.syncHeldObjects();
   }
-  play(name,fade=.16,once=false,speed=1){if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
+  play(name,fade=.16,once=false,speed=1){if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
   stepGuard(prefix,angle,speed,dt){
+    if(this.running){for(const action of this.runActions)action.fadeOut(.1);this.running=false;}
     const names=['Forward','Right','Backward','Left'].map(direction=>`${prefix}_Guard_Walk_${direction}`);
     const direction=[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
     // Shorter side steps need proportionally more weight and a faster cadence.
@@ -95,6 +99,23 @@ export class Warrior {
     if(!this.guardWalking){this.actions.get(this.current)?.fadeOut(.1);this.guardWalkActions=names.map(name=>this.actions.get(name));for(const action of this.guardWalkActions){action.reset().setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}this.guardWalking=true;this.guardWalkBlend=0;}
     this.guardWalkBlend=Math.min(1,this.guardWalkBlend+dt/.1);
     this.guardWalkActions.forEach((action,i)=>{action.time=this.guardWalkPhase*clip.duration;action.setEffectiveWeight(weights[i]*this.guardWalkBlend);});
+    this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
+  }
+  stepRun(angle,speed,dt,sprint=false){
+    const names=sprint?['Sprint_Forward']:['Run_Forward','Run_Right','Run_Backward','Run_Left'];
+    const direction=sprint?[1]:[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
+    const raw=direction.map((amount,i)=>{const spec=locomotion[names[i]];return amount/(2*spec.amplitude/(spec.support*spec.duration));});
+    const sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum),duration=locomotion[names[0]].duration;
+    this.runPhase=((this.runPhase||0)+dt*speed*sum/(this.root.scale.x*duration))%1;
+    if(!this.running||this.runSprint!==sprint){
+      if(this.guardWalking){for(const action of this.guardWalkActions)action.fadeOut(.12);this.guardWalking=false;}
+      if(this.running)for(const action of this.runActions)action.fadeOut(.12);else this.actions.get(this.current)?.fadeOut(.12);
+      this.runActions=names.map(name=>this.actions.get(name));
+      for(const action of this.runActions)action.reset().setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();
+      this.running=true;this.runSprint=sprint;this.runBlend=0;
+    }
+    this.runBlend=Math.min(1,this.runBlend+dt/.12);
+    this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0}={}){
@@ -116,13 +137,14 @@ export class Warrior {
       const speed=moveSpeed??(moving?2.3*WARRIORS[this.type].speed:0);
       if(moving&&speed>.05)this.stepGuard(guardPrefix,moveAngle,speed,dt);else this.play(`${guardPrefix}_Guard_Loop`,.12);
     }
-    else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
+    else if(!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85);
+    else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving&&(moveSpeed??1)>.05?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.wasParry=parry>0;this.wasGuardBreak=guardBreak>0;this.lastGuardHitToken=guardHitToken;
     if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current))this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1));
     this.mixer.update(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
-    if(!golf&&!dodge&&!emerging&&!/_Guard_/.test(this.current)){
+    if(!golf&&!dodge&&!emerging&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
       const gait=moving?Math.sin(time*(sprinting?15:11)):Math.sin(time*2)*.12;
       for(const [i,name] of ['spine_01','spine_02','spine_03'].entries())overlay(name,(moving?.025:0)+gait*.018,gait*.035*(i===2?-1:1),gait*.022);
       if(focused&&moving){const twist=Math.sin(moveAngle)*.6;overlay('pelvis',0,twist,0);overlay('spine_01',0,-twist*.4,0);overlay('spine_02',0,-twist*.6,0);}

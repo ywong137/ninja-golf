@@ -1,0 +1,28 @@
+REGIONAL ELEVATION DATA
+
+The Japanese, Scottish and Arizona distant landscapes use adapted Mapzen Terrain
+Tiles. The game changes placement, horizontal scale, elevation and the course
+surroundings. The fictional golf courses are not surveys of real golf courses.
+
+Source collection: https://registry.opendata.aws/terrain-tiles/
+Format and attribution: https://github.com/tilezen/joerd/tree/master/docs
+Tile URLs, crop bounds, source hashes and derived hashes: SOURCES.json
+
+Mapzen
+United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data
+courtesy of the U.S. Geological Survey.
+Europe terrain data produced using Copernicus data and information funded by
+the European Union - EU-DEM layers.
+United Kingdom terrain data © Environment Agency copyright and/or database
+right 2015. All rights reserved. Contains public sector information licensed
+under the Open Government Licence v3.0.
+Global ETOPO1 terrain data: U.S. National Oceanic and Atmospheric Administration.
+DOC/NOAA/NESDIS/NCEI > National Centers for Environmental Information, NESDIS,
+NOAA, U.S. Department of Commerce.
+
+USGS and NOAA United States Government source materials are not subject to
+copyright protection within the United States.
+
+Licenses and source terms:
+https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+https://github.com/tilezen/joerd/blob/master/docs/attribution.md
