@@ -11,7 +11,7 @@ Universal Animation Library (Standard, free edition)
 https://quaternius.com/packs/universalanimationlibrary.html
 https://quaternius.itch.io/universal-animation-library
 Source clips: Idle_Loop, Sword_Idle, Walk_Loop, Jog_Fwd_Loop,
-Sprint_Loop, Sword_Attack, Roll, Death01, and Hit_Chest.
+Sprint_Loop, Sword_Attack, Roll, Death01, Hit_Chest, Jump_Start, Jump_Loop, and Jump_Land.
 
 Modifications for Ninja Golf:
 - Original fitted clothing, armor, helmets, footwear, and skin weights.

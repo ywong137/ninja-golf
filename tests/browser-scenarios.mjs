@@ -11,8 +11,8 @@ for(const kind of ['water','bounds']){
 }
 console.log('Water and out-of-bounds penalties passed');
 // Exercise crowd damage, multi-target hits, Resolve, and revival.
-await page.evaluate(()=>{const g=window.__golfTest;g.phase='combat';g.enemyBudget=80;g.enemiesSpawned=0;g.spawnWave(24);g.combatTime=0;g.spawnTime=100;g.health=g.warrior.health;g.attackTimer=0;g.resolve=100;g.enemies.forEach((e,i)=>{e.root.position.copy(g.player.root.position);e.root.position.x+=Math.sin(i)*3;e.root.position.z+=Math.cos(i)*3;});});
-await page.keyboard.press('KeyK');await page.waitForFunction(()=>window.ninjaGolf.state().kills>=24);
+await page.evaluate(()=>{const g=window.__golfTest;g.phase='combat';g.enemyBudget=80;g.enemiesSpawned=0;g.spawnWave(24);g.combatTime=0;g.spawnTime=100;g.health=g.warrior.health;g.attackTimer=0;g.resolve=100;g.enemies.forEach((e,i)=>{e.emerging=null;e.root.visible=true;e.root.position.copy(g.player.root.position);e.root.position.x+=Math.sin(i)*3;e.root.position.z+=Math.cos(i)*3;});});
+await page.keyboard.press('KeyL');await page.waitForFunction(()=>window.ninjaGolf.state().kills>=24);
 assert.ok(await page.evaluate(()=>window.ninjaGolf.state().resolve>=0));console.log('24-enemy special attack passed');
 await page.evaluate(()=>{window.__golfTest.health=0;});await page.waitForFunction(()=>window.ninjaGolf.state().health===110);console.log('Revival passed');
 // A virtual standard gamepad checks shared actions without relying on a physical controller.

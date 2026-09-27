@@ -4,7 +4,7 @@ from mathutils import Vector, Quaternion
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
 bpy.ops.import_scene.gltf(filepath=str(ROOT/'assets/source/UAL1_Standard.glb'))
-keep={'Idle_Loop','Sword_Idle','Walk_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Hit_Chest'}
+keep={'Idle_Loop','Sword_Idle','Walk_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Hit_Chest','Jump_Start','Jump_Loop','Jump_Land'}
 for o in bpy.context.scene.objects:
  if o.animation_data:
   for t in list(o.animation_data.nla_tracks):
@@ -29,25 +29,47 @@ for side in ['l','r']:
   ob=bpy.data.objects.new('golf_'+kind+'_'+side,None);scene.collection.objects.link(ob)
   (targets if kind=='target' else poles)[side]=ob
  poles[side].location=(.44 if side=='l' else -.44,-.5,1.2)
- c=rig.pose.bones['lowerarm_'+side].constraints.new('IK');c.target=targets[side];c.pole_target=poles[side];c.chain_count=2;c.pole_angle=-math.pi/2 if side=='l' else math.pi/2;c.use_tail=True
+ c=rig.pose.bones['lowerarm_'+side].constraints.new('IK');c.target=targets[side];c.pole_target=poles[side];c.chain_count=2;c.pole_angle=-math.pi/2 if side=='l' else math.pi/2;c.use_tail=True;c.use_stretch=False
+feet={}
 # Keep both feet planted at shoulder width while the upper body turns.
 for side in ['l','r']:
  ob=bpy.data.objects.new('golf_foot_'+side,None);scene.collection.objects.link(ob)
  ob.location=rig.pose.bones['foot_'+side].head+Vector((.075 if side=='l' else -.075,-.015,0))
- c=rig.pose.bones['calf_'+side].constraints.new('IK');c.target=ob;c.chain_count=2;c.use_tail=True
+ feet[side]=ob
+ c=rig.pose.bones['calf_'+side].constraints.new('IK');c.target=ob;c.chain_count=2;c.use_tail=True;c.use_stretch=False
 for b in rig.pose.bones:b.rotation_mode='QUATERNION'
 base_pos={b.name:b.location.copy() for b in rig.pose.bones}
+foot_pos={side:ob.location.copy() for side,ob in feet.items()}
+def rotate_world(name,axis,angle):
+ b=rig.pose.bones[name];local=b.bone.matrix_local.to_quaternion().inverted()@Vector(axis)
+ b.rotation_quaternion=b.rotation_quaternion@Quaternion(local,angle)
+
 
 def authored(name,poses,end):
  rig.animation_data.action=bpy.data.actions.new(name)
  for frame,grip,turn,bend,shaft in poses:
   scene.frame_set(frame)
   for b in rig.pose.bones:b.rotation_quaternion=Quaternion();b.location=base_pos[b.name]
-  # Weight shift, hip rotation, and shoulder rotation precede the arms.
-  rig.pose.bones['pelvis'].rotation_quaternion=Quaternion((0,1,0),turn*.35)
-  rig.pose.bones['spine_01'].rotation_quaternion=Quaternion((1,0,0),bend*.55)
-  rig.pose.bones['spine_02'].rotation_quaternion=Quaternion((0,1,0),turn*.4)
-  rig.pose.bones['spine_03'].rotation_quaternion=Quaternion((0,1,0),turn*.6)@Quaternion((1,0,0),bend*.45)
+  # Anatomical axes are converted from armature space into each bone's rest frame.
+  # The hips lead the downswing, while the head stays over the ball through impact.
+  rotate_world('pelvis',(0,0,1),turn*.38)
+  rotate_world('pelvis',(1,0,0),bend*.6)
+  rotate_world('spine_01',(1,0,0),bend*.5)
+  rotate_world('spine_01',(0,0,1),turn*.18)
+  rotate_world('spine_02',(0,0,1),turn*.27)
+  rotate_world('spine_03',(0,0,1),turn*.32)
+  rotate_world('spine_03',(1,0,0),bend*.5)
+  rotate_world('neck_01',(0,0,1),-turn*.5 if frame<36 else -turn*.15)
+  rotate_world('Head',(1,0,0),.22 if frame<36 else .08)
+  pelvis=rig.pose.bones['pelvis']
+  shift=Vector((-turn*.075,.025,-.05-.017*math.sin(min(math.pi,abs(turn)*2))))
+  pelvis.location=pelvis.bone.matrix_local.to_quaternion().inverted()@shift
+  for side,ob in feet.items():
+   ob.location=foot_pos[side].copy()
+   if name=='Golf_Swing' and side=='r' and frame>35:
+    heel=min(1,(frame-35)/15);ob.location.z+=heel*.065
+    rotate_world('foot_r',(1,0,0),heel*.36)
+   ob.keyframe_insert(data_path='location',frame=frame)
   for side in ['l','r']:
    targets[side].location=Vector(grip)+Vector((.02 if side=='r' else -.02,0,-.025 if side=='r' else .045))
    targets[side].keyframe_insert(data_path='location',frame=frame)

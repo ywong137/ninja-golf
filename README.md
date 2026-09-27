@@ -33,8 +33,10 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Speed up ball tracking | Space | A |
 | Move | W A S D or arrows | Left stick |
 | Look during combat | Hold right mouse button and drag | Right stick |
-| Slash | J or left mouse button | X or RT |
-| Special attack | K, with full Resolve | Y |
+| Fast attack | J or left mouse button | X or RT |
+| Heavy attack / combo finisher | K or middle mouse button | Y |
+| Musou | L, with full Resolve | RB during combat |
+| Focused strafe / backpedal | Hold C or right mouse button | Hold LT |
 | Sprint / dodge | Hold / tap Shift | Hold / tap B |
 | Face the ball waypoint | F | — |
 | Address the ball | Space, near the ball with no nearby enemies | A |
@@ -44,7 +46,7 @@ The power meter repeats. Press the swing button again at the desired power. Carr
 
 Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
 
-After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. F turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Use the special attack to clear a large area.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. F turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 

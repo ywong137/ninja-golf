@@ -16,3 +16,5 @@ export function radarPoint(dx, dz, yaw, radius, range) {
   const scale = radius / Math.max(range, distance);
   return { x: right * scale, y: -forward * scale, outside: distance > range };
 }
+
+export function courseMapPoint(x,z,length){const scale=222/(length+60);return{x:110-x*scale,y:248-z*scale};}

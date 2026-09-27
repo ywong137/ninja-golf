@@ -24,7 +24,7 @@ assert.equal(await page.locator('#map-title').textContent(),'COMBAT RADAR');
 await page.keyboard.press('KeyF');const stopped=await page.evaluate(()=>window.ninjaGolf.state().player);await page.waitForTimeout(400);
 assert.deepEqual(await page.evaluate(()=>window.ninjaGolf.state().player),stopped,'F faces the waypoint without autorunning');
 // Enemies behind the warrior do not turn the warrior or receive a forward slash.
-await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.enemyBudget=2;g.enemiesSpawned=0;g.spawnWave(2);g.spawnTime=100;g.player.root.rotation.y=0;for(const [i,e]of g.enemies.entries()){e.root.position.copy(g.player.root.position);e.root.position.z+=i? -2.5:2.5;e.hp=30;e.speed=0;e.cooldown=100;}g.kills=0;g.attackTimer=0;});
+await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.enemyBudget=2;g.enemiesSpawned=0;g.spawnWave(2);g.spawnTime=100;g.player.root.rotation.y=0;for(const [i,e]of g.enemies.entries()){e.emerging=null;e.root.visible=true;e.root.position.copy(g.player.root.position);e.root.position.z+=i? -2.5:2.5;e.hp=30;e.speed=0;e.cooldown=100;}g.kills=0;g.attackTimer=0;});
 await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.ninjaGolf.state().facing),0,'No implicit enemy facing');
 await page.keyboard.press('KeyJ');await page.waitForFunction(()=>window.ninjaGolf.state().kills===1);
 assert.equal(await page.evaluate(()=>window.ninjaGolf.state().enemies),1,'Forward slash leaves the enemy behind alive');

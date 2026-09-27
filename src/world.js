@@ -64,7 +64,7 @@ export class World {
     this.root.clear();geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
-    this.clear();this.course=course;const c=course,r=random(c.seed);const extent=c.length+330;
+    this.clear();this.ambushSites=[];this.course=course;const c=course,r=random(c.seed);const extent=c.length+330;
     const geo=new THREE.PlaneGeometry(750,extent,250,Math.round(extent/3));geo.rotateX(-Math.PI/2);geo.translate(0,0,c.length/2);
     const p=geo.attributes.position,colors=[];
     for(let i=0;i<p.count;i++){
@@ -79,8 +79,9 @@ export class World {
     }
     geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
     const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);
-    const pond=new THREE.Mesh(new THREE.CircleGeometry(1,80),this.waterMaterial);pond.rotation.x=-Math.PI/2;pond.scale.set(c.pond[2]*1.035,c.pond[3]*1.035,1);pond.position.set(c.pond[0],3.1,c.pond[1]);this.root.add(pond);
-    this.makeTrees(r);this.makeRocks(r);this.makeGrass(r);this.makeBuildings();this.makeFlag();this.makePath();this.makePetals(r);
+    const pondMaterial=this.waterMaterial.clone();pondMaterial.uniforms=this.waterMaterial.uniforms;pondMaterial.side=THREE.DoubleSide;pondMaterial.polygonOffset=true;pondMaterial.polygonOffsetFactor=-1;pondMaterial.polygonOffsetUnits=-4;
+    const pond=new THREE.Mesh(new THREE.CircleGeometry(1,128),pondMaterial);pond.frustumCulled=false;pond.renderOrder=1;this.pond=pond;pond.rotation.x=-Math.PI/2;pond.scale.set(c.pond[2]*1.035,c.pond[3]*1.035,1);pond.position.set(c.pond[0],3.1,c.pond[1]);this.root.add(pond);
+    this.makeTrees(r);this.makeRocks(r);this.makeGrass(r);this.makeBuildings();this.makeAmbushGardens();this.makeFlag();this.makePath();this.makePetals(r);
     const teeMat=material('#ece0c4');for(const x of [-3.4,3.4]){const m=addMesh(this.root,new THREE.BoxGeometry(.45,.35,.45),teeMat,x,heightAt(c,x,0)+.17,0);m.rotation.y=.25;}
   }
   makeTrees(r){
@@ -99,6 +100,7 @@ export class World {
     const foliage=new THREE.InstancedMesh(leafGeo,leafMat,trees.length*38);
     let ti=0,li=0;
     for(const t of trees){
+      this.ambushSites.push({id:`tree-${this.ambushSites.length}`,kind:'tree',x:t.x,z:t.z,y:t.y,height:t.size*.55});
       obj.position.set(t.x,t.y+t.size*.34,t.z);obj.rotation.set(0,t.angle,.045);obj.scale.set(t.size*.10,t.size*.68,t.size*.10);obj.updateMatrix();trunks.setMatrixAt(ti++,obj.matrix);
       for(let j=0;j<4;j++) {const a=t.angle+j*1.8;obj.position.set(t.x+Math.cos(a)*t.size*.11,t.y+t.size*(.46+j*.05),t.z+Math.sin(a)*t.size*.11);obj.rotation.set(Math.cos(a)*.6,a,Math.sin(a)*.6);obj.scale.set(t.size*.048,t.size*.39,t.size*.048);obj.updateMatrix();trunks.setMatrixAt(ti++,obj.matrix);}
       for(let j=0;j<38;j++) {const a=t.angle+j*2.4,rr=j===37?0:t.size*(.05+r()*.29);obj.position.set(t.x+Math.cos(a)*rr,t.y+t.size*(.48+(j%7)*.067),t.z+Math.sin(a)*rr);obj.rotation.set((r()-.5)*.6,r()*6.28,(r()-.5)*.3);const sz=t.size*(.20+r()*.06);obj.scale.set(sz,sz*(.55+r()*.20),sz);obj.updateMatrix();foliage.setMatrixAt(li,obj.matrix);color.set(j%3===0?'#dee1bf':j%3===1?'#ffffff':'#e5eddb');foliage.setColorAt(li++,color);}
@@ -152,6 +154,32 @@ export class World {
     addMesh(temple,new THREE.ConeGeometry(.55,4.5,8),gold,0,20.2,0);this.root.add(temple);
     // Stone lanterns beside the tee and the green.
     for(const [x,z] of [[-8,8],[8,8],[c.greenX-24,c.length-10]]){const y=heightAt(c,x,z),stone=material('#999787');addMesh(this.root,cyl,stone,x,y+1,z,.35,2,.35);addMesh(this.root,box,stone,x,y+2,z,1,.8,1);addMesh(this.root,new THREE.ConeGeometry(1, .65,4),dark,x,y+2.65,z);}
+  }
+  makeAmbushGardens(){
+    const firstChild=this.root.children.length;
+    const c=this.course,stone=new THREE.MeshStandardMaterial({color:'#a5a59a',map:this.texture('rock-color.jpg',true),normalMap:this.texture('rock-normal.jpg'),roughness:.9});
+    const dark=material('#35443c'),bronze=material('#7c765b',.4,.6),box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,12);
+    const rockGeo=new THREE.IcosahedronGeometry(1,2);
+    const register=(kind,x,z,height=0)=>this.ambushSites.push({id:`${kind}-${this.ambushSites.length}`,kind,x,z,y:kind==='water'?3.1:heightAt(c,x,z),height});
+    // Paired lanterns mark each section of the walking route; stone groups frame each shrine.
+    for(let station=0,z=24;z<c.length+10;z+=38,station++)for(const side of [-1,1]){
+      const x=center(c,z)+side*(c.width+6+(station%3)*2);if(lieAt(c,x,z)==='Water')continue;
+      const y=heightAt(c,x,z),g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(center(c,z+8)-center(c,z-8),16);this.root.add(g);
+      addMesh(g,box,stone,0,.14,0,1.6,.28,1.6);addMesh(g,cyl,stone,0,.75,0,.26,1.1,.26);addMesh(g,box,stone,0,1.43,0,.93,.23,.93);
+      for(const xx of [-.32,.32])for(const zz of [-.32,.32])addMesh(g,box,stone,xx,1.78,zz,.15,.6,.15);
+      addMesh(g,cyl,bronze,0,1.65,0,.15,.15,.15);
+      const levels=station%3===1?3:1;
+      for(let l=0;l<levels;l++){const roof=new THREE.ConeGeometry(1-l*.15,.45,4);roof.rotateY(Math.PI/4);addMesh(g,roof,dark,0,2.17+l*.54,0);if(l<levels-1)addMesh(g,box,stone,0,2.4+l*.54,0,.55,.45,.55);}
+      addMesh(g,new THREE.SphereGeometry(.13,12,8),stone,0,2.48+(levels-1)*.54,0);
+      register(levels>1?'pagoda':'lantern',x,z,2.5);
+      if(station%2===0)for(let j=0;j<3;j++){const rx=x+side*(2.1+j*.9),rz=z+1.1-j*1.3,ry=heightAt(c,rx,rz),size=j===0?1.2:.6+j*.14;const rock=addMesh(this.root,rockGeo,stone,rx,ry+size*.45,rz,size,size*.82,size*.7);rock.rotation.set(.2*j,.7*j,.2);register('rock',rx,rz,size);}
+    }
+    // Merge static garden props by material so each course adds three draw calls.
+    const props=this.root.children.slice(firstChild),batches=new Map(),originals=new Set();
+    for(const prop of props){prop.updateMatrixWorld(true);prop.traverse(o=>{if(!o.isMesh)return;const geometry=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrixWorld);if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(geometry);originals.add(o.geometry);});this.root.remove(prop);}
+    for(const [mat,geometries]of batches){const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;this.root.add(mesh);}originals.forEach(g=>g.dispose());
+    for(const b of c.bunkers)for(const side of [-1,1])register('sand',b[0]+side*b[2]*.45,b[1]);
+    for(let i=0;i<10;i++){const a=i*Math.PI*2/10;register('water',c.pond[0]+Math.cos(a)*c.pond[2]*.87,c.pond[1]+Math.sin(a)*c.pond[3]*.87);}
   }
   makeFlag(){
     const c=this.course,x=c.greenX,z=c.length,y=heightAt(c,x,z);this.cup=new THREE.Vector3(x,y,z);
