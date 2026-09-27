@@ -1,7 +1,9 @@
 """Map licensed Rocketbox Biped rigs to the game's anatomical bone vocabulary."""
-import bpy,math,pathlib
+import bpy,math,pathlib,importlib.util
 from mathutils import Vector,Quaternion,Matrix
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+_profile_spec=importlib.util.spec_from_file_location('native_locomotion_profile',ROOT/'tools/native-locomotion-profile.py')
+locomotion_profile=importlib.util.module_from_spec(_profile_spec);_profile_spec.loader.exec_module(locomotion_profile)
 MAP={'Bip01 Pelvis':'pelvis','Bip01 Spine':'spine_01','Bip01 Spine1':'spine_02','Bip01 Spine2':'spine_03','Bip01 Neck':'neck_01','Bip01 Head':'Head'}
 for side,short in [('L','l'),('R','r')]:
  for original,name in [('Clavicle','clavicle'),('UpperArm','upperarm'),('Forearm','lowerarm'),('Hand','hand'),('Thigh','thigh'),('Calf','calf'),('Foot','foot'),('Toe0','ball')]:MAP[f'Bip01 {side} {original}']=f'{name}_{short}'
@@ -177,7 +179,7 @@ def apply_native_locomotion(rig,ik,spec,phase):
    u=(p-support)/(1-support);slope=-2*amplitude*(1-support)/support
    travel=(2*u**3-3*u*u+1)*(-amplitude)+(u**3-2*u*u+u)*slope+(-2*u**3+3*u*u)*amplitude+(u**3-u*u)*slope
    # A running foot folds upward during recovery, then returns before loading.
-   lift=spec['lift']*math.sin(math.pi*u)**1.2
+   lift=locomotion_profile.recovery_lift(u,spec['lift'])
   target=ik['feet'][side];base=ik['footBase'][side]
   target.location=Vector(((-1 if side=='r' else 1)*spec['width']+math.sin(angle)*travel,-math.cos(angle)*travel,base.z+lift))
   # Roll from heel contact to toe-off; the middle support interval stays flat.
@@ -188,6 +190,26 @@ def apply_native_locomotion(rig,ik,spec,phase):
   target.rotation_quaternion=Quaternion(Vector((1,0,0)),pitch)@ik['footRot'][side]
   if p<support:target.location.z+=max(0,math.sin(pitch))*.12
   ik['knees'][side].location=Vector(((-1 if side=='r' else 1)*spec['width'], -.9, .45))
+ bpy.context.view_layer.update()
+ # Move part of the turn into the hips while retaining the source chest/arm rotations.
+ # Native thighs attach to spine_01; compensate above that branch.
+ spine=rig.pose.bones['spine_02'];source_chest_rotation=spine.matrix.to_quaternion()
+ yaw=Quaternion(Vector((0,0,1)),locomotion_profile.pelvis_yaw(phase,angle))
+ position=pelvis.matrix.translation.copy();rotation=yaw@pelvis.matrix.to_quaternion()
+ pelvis.matrix=Matrix.Translation(position)@rotation.to_matrix().to_4x4()
+ bpy.context.view_layer.update()
+ chest=spine.matrix.copy();spine.matrix=Matrix.Translation(chest.translation)@source_chest_rotation.to_matrix().to_4x4()
+ bpy.context.view_layer.update()
+ # Preserve support targets; both leg reaches limit the pelvis lift.
+ budgets=[]
+ for side in ['r','l']:
+  hip=rig.pose.bones['thigh_'+side].head;ankle=ik['feet'][side].location
+  upper=rig.data.bones['calf_'+side].head_local-rig.data.bones['thigh_'+side].head_local
+  lower=rig.data.bones['foot_'+side].head_local-rig.data.bones['calf_'+side].head_local
+  reach=(upper.length+lower.length)*.985;horizontal=(ankle.xy-hip.xy).length
+  budgets.append(ankle.z+math.sqrt(max(0.,reach*reach-horizontal*horizontal))-hip.z)
+ lift=locomotion_profile.posture_lift(phase,budgets)
+ world=pelvis.matrix.copy();world.translation.z+=lift;pelvis.matrix=world
  bpy.context.view_layer.update()
 
 def bake_rocketbox_actions(rig,clip_names=None):

@@ -415,3 +415,61 @@ Athletic body motion remains the first character priority. Facial bone animation
 
 The game still falls short of full AAA presentation and photorealism.
 The buildings, city integration, character movement, and close-up detail require further work.
+
+
+## Running posture and putting consistency
+
+The running revision raises the pelvis within each native leg's reach.
+The planted foot targets remain fixed. The free foot folds higher during recovery.
+Hip rotation now reaches the thigh joints because the upper-body correction starts above their parent bone.
+The original chest and arm rotations remain intact.
+Terrain adaptation now prepares for downhill support and respects each foot's actual target.
+This removes a slope-related ankle jump exposed by the higher posture.
+The change is modest in screenshots, with clearer knee recovery and less crouch during support.
+It does not establish final AAA character motion.
+
+The game now uses native eye, jaw, and brow bones for small facial changes.
+Eyes follow the camera during selection and the Musou close-up.
+Running and attacks add a small jaw movement. Musou adds a small brow movement.
+Golf, dodge, emergence, and death preserve their original facial transforms.
+Only heroes use this layer; crowds have no additional facial update.
+The previous inactive expression morph layer was removed.
+
+There is no blink. The current eyelid translation closes the eyes only with invalid skin folds.
+`docs/facial-pose.md` records the rejected deformation and the accepted limits.
+
+Putting guides now share live rolling resistance, slope response, hazards, and cup capture.
+The previous guide treated every surface like a green and could continue through water.
+One Lotus Crossing putt predicted 85.07 metres but stopped after 10.70 metres in rough.
+The corrected guide predicts 10.696 metres. Live rolling constants and operation order remain unchanged.
+
+### Remaining work after this pass
+
+Building collision, city architecture, shot-shaping controls, and clearer dispersion feedback remain incomplete.
+Close-up character detail and athletic combat motion still need further artistic review.
+The game remains below the requested AAA and photorealistic standard.
+
+
+### Verification for the running and putting revision
+
+All 111 unit tests pass. All 29 browser scripts pass across the full run and focused reruns.
+The first terrain-contact run exposed a 43.4 mm planted-ankle step on a downhill cyber-course stance.
+The corrected solver passes all 24 hero-and-theme cases without changing the original thresholds.
+Maximum support-step movement is 1.1 mm; maximum pelvis correction change is 16.2 mm at 60 Hz.
+Golf hand paths remain unchanged. Actual putts and previews have zero endpoint difference in nine browser cases.
+The production build succeeds. All development browser sessions remain muted.
+
+Final dense-combat measurements use Chrome, Metal, Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run keeps 64 enemies alive and repeats attacks for ten seconds after warmup.
+No Blender or capture jobs ran during these measurements.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.5 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.6 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.7 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 53.2 | 33.3 ms |
+
+Dynamic shadows remain active. Balanced mode disables contact shading at this crowd size.
+These local measurements do not establish performance on every device or camera position.

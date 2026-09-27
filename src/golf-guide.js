@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {heightAt,greenDistance,launchShot,lieAt} from './course.js';
-// Predict only the first landing. Bounce, roll, and random dispersion still belong to the shot.
+import {BALL_STEP,stepRollingBall} from './golf-roll.js';
+// Airborne guides end at first landing. Putts share the live rolling rules.
 export function previewShot(course,club,warrior,lie,power,aim,origin){
  const v=launchShot(club,warrior,lie,power,aim),p={...origin},points=[{...p}],h=1/30;
  if(club.short==='PT'){
-  for(let i=0;i<360;i++){p.x+=v.x*h;p.z+=v.z*h;p.y=heightAt(course,p.x,p.z)+.15;const speed=Math.hypot(v.x,v.z),next=Math.max(0,speed-.95*h);if(next<.1){points.push({...p});break;}v.x*=next/speed;v.z*=next/speed;v.x-=(heightAt(course,p.x+.3,p.z)-heightAt(course,p.x-.3,p.z))/.6*5*h;v.z-=(heightAt(course,p.x,p.z+.3)-heightAt(course,p.x,p.z-.3))/.6*5*h;if(i%4===0)points.push({...p});}
+  const state={position:p,velocity:v,time:0,stillTime:0},cup={x:course.greenX,y:heightAt(course,course.greenX,course.length),z:course.length};
+  for(let i=0;i<=3600;i++){const outcome=stepRollingBall(course,state,BALL_STEP,cup);if(outcome){points.push({...p});return{points,landing:p,lie:state.lie,distance:Math.hypot(p.x-origin.x,p.z-origin.z),outcome};}if(i%16===0)points.push({...p});}
  }else for(let i=0;i<600;i++){v.y-=9.81*h;v.x+=course.wind[0]*.22*h;v.z+=course.wind[1]*.22*h;p.x+=v.x*h;p.y+=v.y*h;p.z+=v.z*h;const ground=Math.max(heightAt(course,p.x,p.z)+.15,lieAt(course,p.x,p.z)==='Water'?3.15:-99);if(p.y<ground){p.y=ground;points.push({...p});break;}if(i%3===0)points.push({...p});}
  return{points,landing:p,lie:lieAt(course,p.x,p.z),distance:Math.hypot(p.x-origin.x,p.z-origin.z)};
 }

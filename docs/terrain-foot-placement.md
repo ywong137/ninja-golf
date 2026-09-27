@@ -18,8 +18,20 @@ Corrections have fixed bounds:
 
 The course audit uses real bunker lips in all four themes. Their sampled elevation changes reach 27–39 cm across 60 cm. The CPU tests cover all six native humans, preserve segment lengths within 10 micrometres, and verify unchanged golf hand positions. The browser test also checks motion transitions, recovery, grounded attacks, and golf follow-through.
 
-Final browser limits are 12 mm support error, 5 mm penetration, and 20 mm golf sole gap. The measured maxima were 10.0 mm, 2.5 mm, and 15.6 mm. Recovery-foot correction stayed zero when those feet cleared the terrain. Golf club-position error stayed zero.
+Final browser limits are 12 mm support error, 5 mm penetration, and 20 mm golf sole gap. After the running revision, measured maxima were 5.5 mm, 2.4 mm, and 16.2 mm. Recovery-foot correction stayed zero when those feet cleared the terrain. Golf club-position error stayed zero.
 
-The test measures world-space support continuity separately from the vertical correction. A large correction change can be necessary when the root climbs a steep lip. Maximum world-space ankle movement during consecutive support frames was 16.4 mm. Pelvis correction changes stay within 35 mm per frame at 60 Hz.
+The test measures world-space support continuity separately from the vertical correction. A large correction change can be necessary when the root climbs a steep lip. Maximum world-space ankle movement during consecutive support frames was 1.1 mm. The maximum pelvis correction change was 16.2 mm at 60 Hz.
 
 `tests/browser-foot-main.mjs` exercises the real combat, address, swing, and flight update paths. It verifies the callback against the rendered triangle sampler and captures a running sequence across a bunker lip.
+
+
+The running revision exposed a reach delay on a downhill stance. It produced a 43.4 mm ankle step in the Shinobi cyber-course test.
+The earlier solver also constrained airborne feet against ground height, then stopped that constraint above 25 cm.
+The solver now uses each foot's actual target. Four nearby terrain samples prepare the body before a downhill foot loads.
+These samples stay independent of the running phase. They add no new rendering work.
+The preferred pelvis movement remains smooth, but the current reach ceiling takes precedence over that smoothing.
+The 20 cm pelvis bound remains. Golf still changes only the legs.
+All 24 hero-and-theme combinations pass the original contact and continuity thresholds after this correction.
+
+Set `FOOT_HERO=1 FOOT_THEME=3 SKIP_FOOT_CAPTURES=1` to isolate the original failure.
+The report includes the worst support step and pelvis step, with their frame numbers.

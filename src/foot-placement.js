@@ -45,15 +45,20 @@ export class FootPlacement {
    const gap=soleHeight-ankle.y,wanted=clamp(Math.max(gap*weight,gap),-.32,.32);
    state.offset=(stance?.[side]||(contactWeights?.[side]??0)>.9)?wanted:THREE.MathUtils.lerp(state.offset,wanted,1-Math.exp(-90*Math.min(dt,.05)));
    const appliedOffset=state.offset*weight;
-   samples.push({side,state,ankle,target:ankle.clone().add(new THREE.Vector3(0,Math.max(appliedOffset,gap>0?Math.min(.32,gap):-Infinity),0)),rotation,weight,lift,terrainDelta,groundTargetY:ankle.y+clamp(gap,-.32,.32)});
+   samples.push({side,state,ankle,target:ankle.clone().add(new THREE.Vector3(0,Math.max(appliedOffset,gap>0?Math.min(.32,gap):-Infinity),0)),rotation,weight,lift,terrainDelta});
   }
-  // Lower the pelvis only when needed to keep a supporting leg within its native reach.
-  let pelvisWanted=0;
-  if(!golf)for(const s of samples){if(s.lift>.25)continue;const hip=bones['thigh_'+s.side].getWorldPosition(new THREE.Vector3()),knee=bones['calf_'+s.side].getWorldPosition(new THREE.Vector3()),length=(hip.distanceTo(knee)+knee.distanceTo(s.ankle))*.985,horizontal=Math.hypot(s.target.x-hip.x,s.target.z-hip.z),available=Math.sqrt(Math.max(.01,length*length-horizontal*horizontal));pelvisWanted=Math.min(pelvisWanted,s.groundTargetY+available-hip.y);}
-  pelvisWanted=clamp(pelvisWanted,-.20,0);this.pelvisOffset+=clamp((pelvisWanted-this.pelvisOffset)*response,-2.1*Math.min(dt,.05),1.5*Math.min(dt,.05));
+  // Keep current targets reachable and prepare the pelvis for downhill support.
+  let pelvisWanted=0,pelvisLimit=0;
+  if(!golf&&stance){
+   // Lower before the downhill foot loads; fixed probes do not depend on gait phase.
+   const reach=.7*root.scale.x,x=root.position.x,z=root.position.z;
+   for(const [dx,dz]of [[reach,0],[-reach,0],[0,reach],[0,-reach]])pelvisWanted=Math.min(pelvisWanted,groundHeight(x+dx,z+dz)-root.position.y);
+  }
+  if(!golf)for(const s of samples){const hip=bones['thigh_'+s.side].getWorldPosition(new THREE.Vector3()),knee=bones['calf_'+s.side].getWorldPosition(new THREE.Vector3()),length=(hip.distanceTo(knee)+knee.distanceTo(s.ankle))*.985,horizontal=Math.hypot(s.target.x-hip.x,s.target.z-hip.z),available=Math.sqrt(Math.max(.01,length*length-horizontal*horizontal));pelvisLimit=Math.min(pelvisLimit,s.target.y+available-hip.y);}
+  pelvisLimit=clamp(pelvisLimit,-.20,0);pelvisWanted=clamp(Math.min(pelvisWanted,pelvisLimit),-.20,0);this.pelvisOffset=Math.min(pelvisLimit,this.pelvisOffset+clamp((pelvisWanted-this.pelvisOffset)*response,-2.1*Math.min(dt,.05),1.5*Math.min(dt,.05)));
   for(const name of ['pelvis','thigh_r','calf_r','foot_r','thigh_l','calf_l','foot_l']){const bone=bones[name];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
   if(!golf){const pelvis=bones.pelvis,point=pelvis.getWorldPosition(new THREE.Vector3());point.y+=this.pelvisOffset;pelvis.position.copy(pelvis.parent.worldToLocal(point));root.updateMatrixWorld(true);}
-  this.report={pelvisOffset:golf?0:this.pelvisOffset,feet:[]};
+  this.report={pelvisOffset:golf?0:this.pelvisOffset,pelvisWanted,pelvisLimit,feet:[]};
   for(const s of samples){
    const foot=bones['foot_'+s.side],error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],foot,s.target,s.rotation);let toeRoll=0;
    // On a steep downhill stance, use the toe before asking the native leg to stretch.
