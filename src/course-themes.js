@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {shrubGeometry} from './theme-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {heightAt,lieAt,routePoint,waterBasins,random,greenDistance} from './course.js';
+import {heightAt,lieAt,routePoint,waterBasins,waterSurfaceAt,random,greenDistance} from './course.js';
 import {queueSceneryRock} from './scenery-rocks.js';
 import {findBuildingSite,buildingBox,buildingCylinder} from './building-placement.js';
 import {scaleBoxUV} from './architecture-uv.js';
@@ -38,7 +38,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
   if(instanced){const key=`${geo.uuid}/${m.uuid}`;if(!instances.has(key))instances.set(key,{geo,m,matrices:[]});instances.get(key).matrices.push(transform.matrix.clone());}
   else {if(!batches.has(m))batches.set(m,[]);const part=geo.index?geo.toNonIndexed():geo.clone();if(geo===box)scaleBoxUV(part,sx,sy,sz);batches.get(m).push(part.applyMatrix4(transform.matrix));}
  };
- const register=(kind,x,z,height,radius)=>sites.push({id:`${theme}-${sites.length}`,kind,x,z,y:heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
+ const register=(kind,x,z,height,radius)=>sites.push({id:`${theme}-${sites.length}`,kind,x,z,y:kind==='water'?waterSurfaceAt(c,x,z):heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
  // Tall monuments remain outside the playable corridor. Small cover follows the fairway edges.
  for(let k=0;k<12;k++)for(const side of [-1,1]){
   const p=routePoint(c,(k+.5)/12),x=p.x+p.tangentZ*side*(p.width+6),z=p.z-p.tangentX*side*(p.width+6),y=heightAt(c,x,z);if(['Water','Bunker','Green'].includes(lieAt(c,x,z)))continue;

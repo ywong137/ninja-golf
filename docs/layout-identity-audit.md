@@ -2,7 +2,7 @@
 
 Reviewed all 36 authored plans and their shared curved coverage after deployment `0060b61`. Distinct names and different seeds do not establish distinct layouts.
 
-The collection has useful variety, but several holes repeat the same topology and shot decision. The desert opener previously repeated the Highland opener's divided fairway loop. The first change replaced that desert opener. The next change replaces Desert 2 and Desert 6.
+The collection has useful variety, but several holes repeat the same topology and shot decision. The desert opener previously repeated the Highland opener's divided fairway loop. The first change replaced that desert opener. Later changes replaced Desert 2, 4, 6, and 9.
 
 ## Desert opener correction
 
@@ -41,12 +41,12 @@ The table describes actual routing decisions. Shared families do not automatical
 | Desert 1 | Detached diagonal shelf; wider short carry versus narrow advanced landing | New opener identity; no loop |
 | Desert 2 | Broad foreground apron feeds a narrow diagonal ridge; central bunker challenges the direct line | Connected short-hole layup choice, distinct from Japan 8 |
 | Desert 3 | Alternating turf islands across a dry arroyo | Repeats the detached-terrace family |
-| Desert 4 | Two continuous routes around an oasis | Repeats Japan 3's water-fork decision |
+| Desert 4 | Transverse layup bar before a lake, then separate far green | Controlled tee distance and mandatory second carry |
 | Desert 5 | Three rising steps with one lateral traverse | Some identity from elevation and controlled layups; shares the terrace family |
 | Desert 6 | Lateral shoreline target joins the broad eastern bank; direct water carry or dry approach | Open bank, with no island or bridge |
 | Desert 7 | Two elbows joined by a horizontal mesa | Repeats the rough-corner shortcut family |
 | Desert 8 | Two broad lobes separated by a narrow bunker saddle | Similar to Highlands 8 despite the diagonal orientation |
-| Desert 9 | Two terrace branches around water; joined uphill finish | Repeats the water-fork family |
+| Desert 9 | Continuous western runway reaches a rear apron beyond the cup | Risky second over front water or safer reverse approach |
 | Cyber 1 | Rectangular circuit with four turns; skip a whole section | Strong graphic identity, but a familiar rough-shortcut decision |
 | Cyber 2 | Three water islands with a direct final carry | Related to Japan 5; more landing choices do not fully change the decision |
 | Cyber 3 | Long horizontal ladder with several cross-course shortcuts | Visually distinct from diagonal zigzags; gameplay still rewards skipped bends |
@@ -59,16 +59,16 @@ The table describes actual routing decisions. Shared families do not automatical
 
 ## Redesign priorities after this pass
 
-1. Completed: Desert 6 now uses a shoreline target and continuous bank. Rendered acceptance remains pending.
-2. Completed: Desert 2 now uses a connected diagonal ridge and safe foreground apron. Rendered acceptance remains pending.
-3. Separate the water-fork roles of Japan 3, Desert 4, and Desert 9. All reward choosing a broad route over a narrower shortcut around central water.
+1. Completed and visually reviewed: Desert 6 uses a shoreline target and continuous bank.
+2. Completed and visually reviewed: Desert 2 uses a connected diagonal ridge and safe foreground apron.
+3. Completed and visually reviewed: Desert 4 uses a lake layup; Desert 9 uses a reverse approach.
 4. Separate Japan 9, Desert 3, and Cyber 4. Their alternating detached landings currently ask similar club-selection questions.
 5. Revisit Highlands 8 and Desert 8. Both use broad lobes around a narrow bunker-defended waist.
 6. Give the elbow and hairpin families different shot constraints. Additional turns alone do not make the golf strategy novel.
 
 Several displayed route lengths also describe walking detours rather than expected shot paths. Cyber 6 has a 508 m route but par 3; Cyber 7 has a 1,091 m route but par 5. These holes deliberately permit shortcuts. Future yardage work should distinguish the intended shot line from the walking route rather than imply that golfers must follow every turn.
 
-Only Desert 1, 2, and 6 change across these two layout passes. Shared smoothing and physics remain unchanged. Rendered review remains necessary before visual acceptance.
+These layout passes changed Desert 1, 2, 4, 6, and 9. Rendered reviews appear below. Shared curve smoothing remains unchanged. The latest release also grades pond terrain and aligns water contact with visible water levels.
 
 
 ## Desert short-hole correction
@@ -98,3 +98,15 @@ Aerial captures of Saguaro Sunrise, Copper Ridge, and Oasis Carry confirm their 
 Their route, grade, landing-area, and cup-clearance checks pass. The all-36 review still identifies repeated layout families elsewhere. These three redesigns do not establish 36 fundamentally novel holes.
 
 The captures also exposed steep pond banks. The separate `pond-bank-audit.md` records that issue and its shared rendering/physics scope.
+
+## Palm Mirage and Sunset Terrace correction
+
+Palm Mirage now uses a broad transverse landing bar before a lake. It retains par 4 and the cup at (13, 304). The intended first shot travels 140 m to (-30, 136.8), with a clear 17 m landing radius. The second shot carries approximately 173 m to the cup. A straight 220 m drive enters water. The green occupies separate turf beyond the lake. A dry eastern walking detour replaces the former two golf branches. This is a distance-control hole, not another choice between two routes around central water.
+
+Sunset Terrace retains par 4 and the cup at (9, 418). One continuous fairway passes west of the cup, reaches a rear apron, then returns towards the green. The intended drive travels 212 m to (-55, 204.82), with a clear 22 m landing radius. An aggressive second shot travels 223 m across the front water. The safer second shot travels 197 m to the western approach, followed by a pitch. The rear turf offers a dry final approach of approximately 59 m. This safer three-shot route deliberately trades a birdie chance for reduced water risk.
+
+Both holes retain a dry 6 m walking corridor and clear 10 m cup discs. Their walking distances remain 460 m and 594 m. These are not the intended two-shot distances. The separate yardage proposal remains deferred.
+
+The focused checks pass for actual desert buildings, all 36 building footprints, maps, paths, tee/green clearance, and route access. A hypothetical pagoda test exposed a stair-entry gap on Sunset Terrace. The placement function now enforces its existing 0.45 m entry limit. A denser fallback search finds safe sites within 150 m of the green. All placement tests pass.
+
+Aerial review confirms the transverse landing bar and the separate reverse approach. The two layouts no longer repeat Japan 3's fork around water. The same release also grades the pond banks; `shorelines.md` records that shared terrain work. The separate yardage proposal remains open.

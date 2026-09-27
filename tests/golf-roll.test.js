@@ -6,10 +6,11 @@ import {applyRollingResistance,capturesCup,ballHazard} from '../src/golf-roll.js
 const origin=(c,x,z)=>({x,z,y:heightAt(c,x,z)+.13});
 const putt=(c,p,aim,power=1)=>previewShot(c,CLUBS[7],WARRIORS[0],lieAt(c,p.x,p.z),power,aim,p);
 
-test('Lotus Crossing putt stops in fringe rough instead of predicting through the lake',()=>{
- const c=COURSE_SETS[0].holes[4],p=putt(c,origin(c,c.greenX,c.length-12),Math.PI);
+test('Lotus Crossing controlled putt stops in rough and an overhit ends at the graded waterline',()=>{
+ const c=COURSE_SETS[0].holes[4],start=origin(c,c.greenX,c.length-12),p=putt(c,start,Math.PI,.9);
  assert.equal(p.outcome,'Stopped');assert.equal(p.lie,'Rough');assert.ok(p.distance>10&&p.distance<12);
  assert.ok(p.points.every(v=>lieAt(c,v.x,v.z)!=='Water'));
+ const overhit=putt(c,start,Math.PI);assert.equal(overhit.outcome,'Water');assert.ok(overhit.distance>12&&overhit.distance<14);
 });
 test('Putt guides cross fairway into sand and stop at water across three themes',()=>{
  for(const [theme,hole]of [[0,0],[1,2],[2,6]]){
@@ -32,6 +33,6 @@ test('Swept cup checks preserve speed, height, and narrow miss rules',()=>{
  assert.equal(capturesCup(a,b,{x:6,y:0,z:0},cup),false);
  assert.equal(capturesCup({...a,z:.33},{...b,z:.33},{x:5,y:0,z:0},cup),false);
  assert.equal(capturesCup(a,{...b,y:3},{x:5,y:0,z:0},cup),false);
- assert.equal(ballHazard({y:8},{ground:2,lie:'Water'},1),null);assert.equal(ballHazard({y:3.2},{ground:2,lie:'Water'},1),'Water');
+ assert.equal(ballHazard({y:18},{ground:12,lie:'Water',water:14},1),null);assert.equal(ballHazard({y:14.1},{ground:12,lie:'Water',water:14},1),'Water');
  assert.equal(ballHazard({y:5},{ground:5,lie:'Out of bounds'},1),'Out of bounds');
 });

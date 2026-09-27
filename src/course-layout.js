@@ -6,7 +6,8 @@ export function segments(paths=[]){const out=[];for(const path of paths){if(path
 export function segmentDistance(x,z,s){const dx=s[2]-s[0],dz=s[3]-s[1],t=clamp(((x-s[0])*dx+(z-s[1])*dz)/(dx*dx+dz*dz||1),0,1);return Math.hypot(x-s[0]-dx*t,z-s[1]-dz*t)-(s[4]+(s[5]-s[4])*t);}
 export function fairwayPrimitives(c){return c.layout?.segments||[];}
 export function fairwayDistance(c,x,z){let d=1e6;for(const s of fairwayPrimitives(c))d=Math.min(d,segmentDistance(x,z,s));return d;}
-export function dryLandDistance(c,x,z){let d=1e6;for(const s of c.layout?.bridgeSegments||[])d=Math.min(d,segmentDistance(x,z,s));for(const e of c.layout?.islands||[])d=Math.min(d,(Math.hypot((x-e[0])/e[2],(z-e[1])/e[3])-1)*Math.min(e[2],e[3]));return d;}
+export function bridgeDistance(c,x,z){let d=1e6;for(const s of c.layout?.bridgeSegments||[])d=Math.min(d,segmentDistance(x,z,s));return d;}
+export function dryLandDistance(c,x,z){let d=bridgeDistance(c,x,z);for(const e of c.layout?.islands||[])d=Math.min(d,(Math.hypot((x-e[0])/e[2],(z-e[1])/e[3])-1)*Math.min(e[2],e[3]));return d;}
 export function waterBasins(c){return c.waters||[c.pond];}
 export function waterAt(c,x,z){return dryLandDistance(c,x,z)>0&&waterBasins(c).some(e=>Math.hypot((x-e[0])/e[2],(z-e[1])/e[3])<1);}
 export function routeNearest(c,x,z){const route=c.layout?.route||[[0,0,c.width],[c.greenX,c.length,c.width]];let best={distance:Infinity,x:0,z:0,width:c.width,tangentX:0,tangentZ:1,progress:0};let run=0,total=0;for(let i=1;i<route.length;i++)total+=Math.hypot(route[i][0]-route[i-1][0],route[i][1]-route[i-1][1]);for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz),t=clamp(((x-a[0])*dx+(z-a[1])*dz)/(len*len||1),0,1),xx=a[0]+dx*t,zz=a[1]+dz*t,d=Math.hypot(x-xx,z-zz);if(d<best.distance)best={distance:d,x:xx,z:zz,width:a[2]+(b[2]-a[2])*t,tangentX:dx/(len||1),tangentZ:dz/(len||1),progress:(run+t*len)/(total||1)};run+=len;}return best;}

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {COURSE_SETS,COURSES,lieAt,heightAt,fairwayDistance,routePoint,waterAt,waterBasins,mapOutlines} from '../src/course.js';
+import {COURSE_SETS,COURSES,lieAt,heightAt,fairwayDistance,routePoint,waterAt,waterBasins,waterSurfaceAt,mapOutlines} from '../src/course.js';
 import {MAX_FAIRWAY_SEGMENTS,MAX_BRIDGES,MAX_ISLANDS,MAX_WATERS} from '../src/course-layout.js';
 import {courseMaterial} from '../src/terrain.js';
 import {createPond} from '../src/water.js';
@@ -32,7 +32,7 @@ test('Walking bridges cross real water without creating broad fairways',()=>{
  const c=COURSE_SETS[3].holes[7],s=c.layout.bridgeSegments[2],x=(s[0]+s[2])*.5,z=(s[1]+s[3])*.5;
  assert.equal(waterAt(c,x,z),false);assert.ok(heightAt(c,x,z)>3.1);assert.ok(fairwayDistance(c,x,z)>0);
  const dx=s[2]-s[0],dz=s[3]-s[1],len=Math.hypot(dx,dz),xx=x-dz/len*7,zz=z+dx/len*7;
- assert.equal(waterAt(c,xx,zz),true);assert.ok(heightAt(c,xx,zz)<3.1);
+ assert.equal(waterAt(c,xx,zz),true);assert.ok(heightAt(c,xx,zz)<waterSurfaceAt(c,xx,zz));
 });
 test('CPU coverage supplies shader primitives and map boundaries for every hole',()=>{
  for(const set of COURSE_SETS)for(const c of set.holes){const m=courseMaterial(c,{grassColor:null,grassNormal:null}),shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};m.onBeforeCompile(shader);assert.equal(shader.uniforms.routeCount.value,c.layout.segments.length);assert.ok(shader.fragmentShader.includes('float edge=routeDistance(p)'));assert.ok(!shader.fragmentShader.includes('cx=sin('));

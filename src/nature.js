@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
+import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
 import {TREE_DETAIL,foliageEye,shadowFocus,treeTransition,treeImpostor,canopyShadowMaterial} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
@@ -35,7 +36,7 @@ export class NaturalLandscape{
    placements.get(rock.source).push(fitSceneryRock(rock,source.bounds));
   }
   delete root.userData.sceneryRocks;
-  const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
+  const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&bridgeDistance(c,x,z)>3&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
   const spacing=desert?15:highland?15:10,occupied=[];
   for(let i=0;i<900;i++){
    const x=-240+r()*365,z=-65+r()*(c.length+180);if(!safe(x,z,15)||occupied.some(t=>Math.hypot(t.x-x,t.z-z)<spacing))continue;

@@ -1,16 +1,19 @@
+import {pondUniforms} from './water-uniforms.js';
+import {pondProfiles,basinDistance} from './ponds.js';
 import * as THREE from 'three';
 import {LANDSCAPE_GLSL} from './landscape-material.js';
 import {BUNKER_GLSL,bunkerProfile} from './bunkers.js';
-import {fairwayPrimitives,FAIRWAY_GLSL,MAX_FAIRWAY_SEGMENTS,waterBasins} from './course-layout.js';
+import {fairwayPrimitives,dryLandDistance,FAIRWAY_GLSL,MAX_FAIRWAY_SEGMENTS,MAX_WATERS,DRY_LAND_GLSL} from './course-layout.js';
 // Course boundaries use the same analytic shapes as lieAt. They stay crisp at any mesh resolution.
 export function courseMaterial(c, textures, distant=false) {
   const mat=new THREE.MeshStandardMaterial({map:textures.grassColor,normalMap:textures.grassNormal,normalScale:new THREE.Vector2(.36,.36),roughness:.96});
   mat.onBeforeCompile=shader=>{
     const routes=fairwayPrimitives(c);
-    Object.assign(shader.uniforms,{routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
+    Object.assign(shader.uniforms,{...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
     shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
-    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+`varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform sampler2D turfColor;uniform sampler2D turfNormal;uniform sampler2D turfRoughness;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
+    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];
+varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform sampler2D turfColor;uniform sampler2D turfNormal;uniform sampler2D turfRoughness;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
       float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}
       vec3 groundSample(sampler2D source,vec2 uv,vec2 dx,vec2 dy){
@@ -120,6 +123,15 @@ export function courseMaterial(c, textures, distant=false) {
       float rake=.96+.04*sin(p.x*21.+sin(p.y*.3)*3.);sand*=rake;
       float coast=138.+sin(p.y*.014)*28.;beach=courseCoastal*smoothstep(coast-12.,coast-2.,p.x);
       diffuseColor.rgb=mix(grass*macro*(1.-turfLip*.10),sand,max(sandMask,beach));
+      // Exposed mineral soil and a damp margin make the waterline readable at eye level.
+      float bankDistance=1000000.,bankLevel=0.;
+      for(int i=0;i<${MAX_WATERS};i++){if(i>=pondCount)break;vec4 b=shoreBasins[i];vec2 q=p-b.xy;float e=length(q/b.zw);float metric=(e-1.)/max(.0001,length(q/(b.zw*b.zw))/max(.0001,e));float d=max(metric,-dryDistance(p));if(d<bankDistance){bankDistance=d;bankLevel=shoreLevels[i];}}
+      float waterlineNoise=groundNoise(p*1.7)*.28+groundNoise(p*.35)*.45;
+      float shoreSoil=(1.-smoothstep(.7,2.1,bankDistance+waterlineNoise))*(1.-smoothstep(.55,1.25,abs(terrainPosition.y-bankLevel)));
+      if(shoreSoil>.001){vec3 shoreColor=texture2D(sandColor,p/2.3).rgb*mix(vec3(.33,.32,.27),vec3(.57,.47,.34),step(1.5,courseTheme)*(1.-step(2.5,courseTheme)));
+      float damp=(1.-smoothstep(-.15,.9,bankDistance+waterlineNoise))*.4;
+      diffuseColor.rgb=mix(diffuseColor.rgb,shoreColor*(1.-damp),shoreSoil);}
+
       ${distant?`}if(landBlend>0.&&courseTheme<2.5){vec3 land=landscapeAlbedo(terrainPosition,normalize(terrainSlope),courseTheme,rockMask);diffuseColor.rgb=mix(diffuseColor.rgb,land,landBlend);}`:''}`);
 
     shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`
@@ -141,14 +153,20 @@ export function courseMaterial(c, textures, distant=false) {
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-authored-v12-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-shorelines-v13-${distant}`;
   return mat;
 }
 
 function courseGrid(c){const extent=c.length+330,nz=Math.round(extent/3);return{extent,nz,dz:extent/nz};}
 function courseCellDetail(c,cx,cz,ellipse){
  if(c.bunkers.some(b=>ellipse(cx,cz,b)<1.3))return 6;
- return waterBasins(c).some(e=>ellipse(cx,cz,e)<1.35)||Math.hypot(cx-c.greenX,cz-c.length)<26?3:1;
+ let detail=Math.hypot(cx-c.greenX,cz-c.length)<26?3:1;
+ for(const p of pondProfiles(c)){
+  const distance=basinDistance(cx,cz,p.basin);if(distance>=p.bankWidth+2)continue;
+  if(Math.abs(Math.max(distance,-dryLandDistance(c,cx,cz)))<3)return 6;
+  detail=3;
+ }
+ return detail;
 }
 // Samples the triangles actually drawn, including the hazard subdivisions. This
 // avoids a mesh-wide raycast for a foot, path vertex, or other ground attachment.

@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import {heightAt,greenDistance,launchShot,lieAt} from './course.js';
-import {BALL_STEP,stepRollingBall} from './golf-roll.js';
+import {BALL_STEP,BALL_RADIUS,ballSurface,stepRollingBall} from './golf-roll.js';
 // Airborne guides end at first landing. Putts share the live rolling rules.
 export function previewShot(course,club,warrior,lie,power,aim,origin,collision=null){
- const v=launchShot(club,warrior,lie,power,aim),p={...origin},points=[{...p}],h=1/30;
+ const v=launchShot(club,warrior,lie,power,aim),p={...origin},points=[{...p}],h=BALL_STEP;
  if(club.short==='PT'){
   const state={position:p,velocity:v,time:0,stillTime:0},cup={x:course.greenX,y:heightAt(course,course.greenX,course.length),z:course.length};
   for(let i=0;i<=3600;i++){const outcome=stepRollingBall(course,state,BALL_STEP,cup,collision);if(outcome){points.push({...p});return{points,landing:p,lie:state.lie,distance:Math.hypot(p.x-origin.x,p.z-origin.z),outcome};}if(i%16===0)points.push({...p});}
- }else for(let i=0;i<600;i++){const before={...p};v.y-=9.81*h;v.x+=course.wind[0]*.22*h;v.z+=course.wind[1]*.22*h;p.x+=v.x*h;p.y+=v.y*h;p.z+=v.z*h;const building=collision?.sweepSphere(before,p,.13,true);if(building){p.x=before.x+(p.x-before.x)*building.t;p.y=before.y+(p.y-before.y)*building.t;p.z=before.z+(p.z-before.z)*building.t;points.push({...p});return{points,landing:p,lie:'Building',distance:Math.hypot(p.x-origin.x,p.z-origin.z),outcome:'Obstruction'};}const ground=Math.max(heightAt(course,p.x,p.z)+.15,lieAt(course,p.x,p.z)==='Water'?3.15:-99);if(p.y<ground){p.y=ground;points.push({...p});break;}if(i%3===0)points.push({...p});}
+ }else for(let i=0;i<2400;i++){const before={...p};v.y-=9.81*h;v.x+=course.wind[0]*.22*h;v.z+=course.wind[1]*.22*h;p.x+=v.x*h;p.y+=v.y*h;p.z+=v.z*h;const building=collision?.sweepSphere(before,p,.13,true);if(building){p.x=before.x+(p.x-before.x)*building.t;p.y=before.y+(p.y-before.y)*building.t;p.z=before.z+(p.z-before.z)*building.t;points.push({...p});return{points,landing:p,lie:'Building',distance:Math.hypot(p.x-origin.x,p.z-origin.z),outcome:'Obstruction'};}const surface=ballSurface(course,p),ground=surface.water==null?surface.ground:surface.water+BALL_RADIUS;if(p.y<=ground){p.y=ground;points.push({...p});break;}if(i%12===0)points.push({...p});}
  return{points,landing:p,lie:lieAt(course,p.x,p.z),distance:Math.hypot(p.x-origin.x,p.z-origin.z)};
 }
 export class PuttingGuide {

@@ -18,7 +18,7 @@ import {createCoursePath} from './course-path.js';
 import {buildTeeMarkers} from './tee-markers.js';
 import {buildThemeScenery,buildFairwayCover,THEME_LIGHTS} from './course-themes.js';
 import { Sky } from 'three/addons/objects/Sky.js';
-import { heightAt, lieAt, routePoint, waterBasins, ellipse, smooth, random } from './course.js';
+import { heightAt, lieAt, routePoint, waterBasins, waterSurfaceAt, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
 const SUN_OFFSET=new THREE.Vector3(-100,95,-100);
@@ -134,7 +134,7 @@ export class World {
     const c=this.course,stone=new THREE.MeshStandardMaterial({color:'#a5a59a',map:this.texture('rock-color-2k.jpg',true),normalMap:this.texture('rock-normal-2k.jpg'),roughness:.9});
     const dark=material('#35443c'),bronze=material('#7c765b',.4,.6),box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,12);
     const rockGeo=new THREE.IcosahedronGeometry(1,2);
-    const register=(kind,x,z,height=0,radius)=>this.ambushSites.push({id:`${kind}-${this.ambushSites.length}`,kind,x,z,y:kind==='water'?3.1:heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
+    const register=(kind,x,z,height=0,radius)=>this.ambushSites.push({id:`${kind}-${this.ambushSites.length}`,kind,x,z,y:kind==='water'?waterSurfaceAt(c,x,z):heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
     // Boundary pairs frame the walk. Alternating fairway islands create interior ambush locations.
     const locations=[];
     for(let station=0;station<12;station++)for(const side of [-1,1]){const p=routePoint(c,(station+.5)/12);locations.push({station,side,z:p.z-p.tangentX*side*(p.width+7),x:p.x+p.tangentZ*side*(p.width+7),interior:false,angle:Math.atan2(p.tangentX,p.tangentZ)});}

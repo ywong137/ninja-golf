@@ -38,12 +38,12 @@ const desert=[
  hole('Saguaro Sunrise','Choose a broad landing or a shorter approach across the diagonal shelf.',4,328,26,27,8,301),
  hole('Copper Ridge','A broad apron leads onto a narrow diagonal ridge.',3,159,-16,21,-12,302),
  hole('Arroyo Bend','The wash rewards a patient second shot.',5,482,-47,25,-16,303),
- hole('Palm Mirage','The water here is quite real.',4,304,34,23,13,304,{pond:[-37,214,22,28]}),
+ hole('Palm Mirage','Stop before the lake, then carry to the far green.',4,304,34,23,13,304,{pond:[-37,214,22,28]}),
  hole('Coyote Ridge','A narrow approach above the desert scrub.',4,391,-24,22,-8,305),
  hole('Oasis Carry','One clean shot over the water.',3,138,10,21,4,306,{pond:[0,72,37,22],bunkers:[[-24,131,7,10],[29,149,7,11]]}),
  hole('Red Mesa Run','Long shadows cross a generous landing ground.',5,524,42,28,18,307),
  hole('Agave Alley','The safe side changes with the wind.',4,363,-35,23,-16,308),
- hole('The Sunset Terrace','The last green rests beside the resort.',4,418,23,25,9,309),
+ hole('The Sunset Terrace','The safer finish approaches the cup from behind.',4,418,23,25,9,309),
 ];
 const cyberpunk=[
  hole('Loading Screen','Your opening drive has entered the network.',4,321,10,23,4,401,{weave:35}),

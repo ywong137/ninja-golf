@@ -16,17 +16,23 @@ export function pagodaStairs(c,site){
  });
 }
 export function pagodaLocation(c,root=null){
- let best=null,bestScore=Infinity;
- for(const radius of [65,85,105,125])for(const dz of [8,-24,28,-48])for(const side of [-1,1]){
-  const site=buildingFootprint(c,{x:c.greenX+side*radius,z:c.length+dz,halfWidth:13,halfDepth:12},root,12);if(!site)continue;
-  const steps=pagodaStairs(c,site);if(steps.length>22)continue;
-  const front=steps[0],ground=[];for(let dx=-4;dx<=4;dx++)ground.push(heightAt(c,site.x+dx,front.z-front.depth/2));
-  const score=site.y-site.foundationBottom+10*(Math.max(...ground)-Math.min(...ground))+.004*radius;
-  if(score<bestScore){best=site;bestScore=score;}
+ const searches=[{radii:[65,85,105,125],offsets:[8,-24,28,-48]},{radii:[65,75,85,95,105,115,125,135,145],offsets:[-8,-40,40,52,-64]}];
+ for(const search of searches){
+  let best=null,bestScore=Infinity;
+  for(const radius of search.radii)for(const dz of search.offsets)for(const side of [-1,1]){
+   if(Math.hypot(radius,dz)>=150)continue;
+   const site=buildingFootprint(c,{x:c.greenX+side*radius,z:c.length+dz,halfWidth:13,halfDepth:12},root,12);if(!site)continue;
+   const steps=pagodaStairs(c,site);if(steps.length>22)continue;
+   const front=steps[0],ground=[];for(let dx=-4;dx<=4;dx+=.5)ground.push(heightAt(c,site.x+dx,front.z-front.depth/2));
+   if(front.top-Math.min(...ground)>=.45)continue;
+   const score=site.y-site.foundationBottom+10*(Math.max(...ground)-Math.min(...ground))+.004*radius;
+   if(score<bestScore){best=site;bestScore=score;}
+  }
+  if(best)return best;
  }
- if(best)return best;
  throw new Error(`No safe pagoda site for ${c.name}`);
 }
+
 function roof(width,depth,rise){
  const v=[],uv=[],ids=[],N=28;
  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const a=x/N*2-1,b=z/N*2-1,q=Math.max(Math.abs(a),Math.abs(b));const h=rise*Math.pow(1-q,.86)+.32*Math.pow(q,9)+.18*Math.pow(Math.abs(a*b),3);v.push(a*width/2,h,b*depth/2);uv.push(x/N*width,z/N*depth);}

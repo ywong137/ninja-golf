@@ -1,6 +1,6 @@
 # Pond bank audit
 
-CPU review of the current environment. This audit does not change pond geometry or water behavior.
+Historical CPU review before the shoreline correction. This audit did not change pond geometry or water behavior. See `shorelines.md` for the implemented correction and its verification.
 
 ## Measurement
 

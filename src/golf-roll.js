@@ -1,10 +1,10 @@
-import {heightAt,lieAt} from './course.js';
+import {heightAt,lieAt,waterSurfaceAt} from './course.js';
 import {resolveBuildingBall,buildingRelief} from './building-ball.js';
 
 export const BALL_STEP=1/120,BALL_RADIUS=.13;
-export function ballSurface(course,p){return{ground:heightAt(course,p.x,p.z)+BALL_RADIUS,lie:lieAt(course,p.x,p.z)};}
+export function ballSurface(course,p){return{ground:heightAt(course,p.x,p.z)+BALL_RADIUS,lie:lieAt(course,p.x,p.z),water:waterSurfaceAt(course,p.x,p.z)};}
 export function ballHazard(p,surface,time){
- if(surface.lie==='Water'&&p.y<3.3)return'Water';
+ if(surface.lie==='Water'&&surface.water!=null&&p.y<=surface.water+BALL_RADIUS)return'Water';
  if(surface.lie==='Out of bounds'&&(p.y<surface.ground+2||time>12))return'Out of bounds';
  return null;
 }

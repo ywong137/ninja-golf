@@ -1,5 +1,9 @@
-import {bunkerDistance,bunkerHeightOffset} from './bunkers.js';
-import {fairwayDistance,dryLandDistance,waterAt,waterBasins} from './course-layout.js';
+import {naturalHeightAt} from './terrain-height.js';
+import {gradePonds} from './ponds.js';
+export {pondProfiles,waterSurfaceAt} from './ponds.js';
+export {naturalHeightAt} from './terrain-height.js';
+import {bunkerDistance} from './bunkers.js';
+import {fairwayDistance,waterAt} from './course-layout.js';
 export {fairwayDistance,dryLandDistance,waterAt,waterBasins,routeNearest,routePoint,fairwayPrimitives,mapOutlines} from './course-layout.js';
 export { COURSE_SETS, COURSES } from './course-data.js';
 export { WARRIORS } from './warriors.js';
@@ -30,25 +34,7 @@ export function lieAt(c, x, z) {
   return 'Rough';
 }
 export function heightAt(c,x,z) {
-  const d = fairwayDistance(c,x,z);
-  const g = greenDistance(c,x,z);
-  const t=clamp(z/c.length,0,1),elevation=(c.rise||0)*t+(c.swell||0)*Math.sin(t*Math.PI);
-  const base = 7.5 + Math.sin(z*.012)*2.2 + z*.003 + elevation;
-  const hill = (c.relief || 1) * (Math.sin(x*.031+z*.008)*5 + Math.cos(z*.023-x*.009)*3 + Math.sin(x*.079+z*.05)*.6);
-  const greenBase = 7.5 + Math.sin(c.length*.012)*2.2 + c.length*.003 + (c.rise||0);
-  const green = greenBase + (x-c.greenX)*.011 + (z-c.length)*.008;
-  let y = base + hill*smooth(-3,42,d);
-  y = y*(smooth(16,26,g)) + green*(1-smooth(16,26,g));
-  for (const b of c.bunkers) y += bunkerHeightOffset(x,z,b);
-  // Inland hollows stay above sea level. Only the designed coast descends into the ocean.
-  y=.8+Math.log1p(Math.exp(y-.8));
-  const dry=dryLandDistance(c,x,z),landBlend=dry<=0?1:0;
-  let wetY=y;
-  for(const basin of waterBasins(c)){const e=ellipse(x,z,basin);if(e<1.16){const bed=e<1?1.8+1.3*smooth(.88,1,e):3.1+(y-3.1)*smooth(1,1.16,e);wetY=Math.min(wetY,bed);}}
-  y=wetY*(1-landBlend)+Math.max(4.3,y)*landBlend;
-  const coast = c.coastal === false ? 0 : smooth(112+Math.sin(z*.014)*28,163+Math.sin(z*.014)*28,x);
-  y = y*(1-coast)-12*coast;
-  return y;
+  return gradePonds(c,x,z,naturalHeightAt(c,x,z));
 }
 export function carryFor(club, warrior, lie, power = 1) {
   const penalty = lie==='Rough' ? .79 : lie==='Bunker' ? (club.short==='SW' ? .87 : .55) : 1;
