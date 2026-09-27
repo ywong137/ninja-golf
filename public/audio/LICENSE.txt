@@ -13,3 +13,15 @@ The game displays attribution in its Music & credits panel.
 
 Sound effects and environmental noise use real-time Web Audio synthesis.
 The game does not generate or compose music.
+
+Neolith
+Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
+
+Original track and attribution statement:
+https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100140
+ISRC: USUAN1100140
+
+The original recording is bundled unchanged. Combat playback loops it, adjusts
+volume, and crossfades to and from Ishikari Lore. The game displays both credits.

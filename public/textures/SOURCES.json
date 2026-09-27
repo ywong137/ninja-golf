@@ -1,0 +1,54 @@
+[
+  {
+    "asset": "grass_ground",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/grass_ground"
+  },
+  {
+    "asset": "aerial_grass_rock",
+    "author": {
+      "Rob Tuytel": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/aerial_grass_rock"
+  },
+  {
+    "asset": "sand_01",
+    "author": {
+      "Rob Tuytel": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/sand_01"
+  },
+  {
+    "asset": "japanese_cedar_bark",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/japanese_cedar_bark"
+  },
+  {
+    "asset": "rock_boulder_dry",
+    "author": {
+      "Dimitrios Savva": "Photography",
+      "Rico Cilliers": "Processing"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/rock_boulder_dry"
+  },
+  {
+    "asset": "kloofendal_48d_partly_cloudy_puresky",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky"
+  },
+  {
+    "asset": "pine_tree_01",
+    "parts": "twig color, normal and alpha textures",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/pine_tree_01"
+  }
+]

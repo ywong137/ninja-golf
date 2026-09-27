@@ -13,8 +13,9 @@ await page.waitForFunction(()=>window.ninjaGolf.state().phase==='flight');await 
 await page.waitForFunction(()=>window.ninjaGolf.state().phase==='combat',{},{timeout:20000});
 assert.equal(await page.evaluate(()=>window.ninjaGolf.state().strokes),1);
 await page.screenshot({path:'/private/tmp/ninja-combat.png'});
-await page.keyboard.press('KeyF');
+await page.keyboard.press('KeyF');await page.waitForTimeout(500);await page.keyboard.down('KeyW');await page.keyboard.down('ShiftLeft');
 for(let i=0;i<65;i++){await page.keyboard.press('KeyJ');if(i%8===0)await page.keyboard.press('KeyK');await page.waitForTimeout(180);}
+await page.keyboard.up('KeyW');await page.keyboard.up('ShiftLeft');
 console.log('After combat',await page.evaluate(()=>window.ninjaGolf.state()));
 await page.screenshot({path:'/private/tmp/ninja-battle.png'});
 await page.keyboard.press('Escape');await page.waitForFunction(()=>window.ninjaGolf.state().paused);assert.equal(await page.evaluate(()=>window.ninjaGolf.state().paused),true);await page.click('#resume');

@@ -1,83 +1,100 @@
 import * as THREE from 'three';
-const materials=new Map(),geometries=new Map();
-function mat(c,metal=0){const k=c+metal;if(!materials.has(k))materials.set(k,new THREE.MeshStandardMaterial({color:c,roughness:metal?.4:.83,metalness:metal}));return materials.get(k);}
-function geo(kind){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):kind==='sphere'?new THREE.SphereGeometry(1,10,8):kind==='cone'?new THREE.ConeGeometry(1,1,8):new THREE.CylinderGeometry(1,1,1,8));return geometries.get(kind);}
-function part(parent,kind,c,x,y,z,sx,sy,sz,metal=0){const m=new THREE.Mesh(geo(kind),mat(c,metal));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;parent.add(m);return m;}
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+export { Effects } from './effects.js';
+const templates=[];
+const retargeted=new Map();
+const motionSources=[];
+const materials=new Map();
+const geometries=new Map();
+const q=new THREE.Quaternion();
+const gripWorld=new THREE.Vector3(),shaftDirection=new THREE.Vector3(),axisY=new THREE.Vector3(0,1,0);
+const swingShaft=[[0,[0,-.90,.60]],[.3,[.8,-.25,.5]],[.63,[.35,.86,-.40]],[.83,[.75,.25,.55]],[1.03,[.6,-.7,.55]],[1.133,[0,-.90,.60]],[1.3,[-.8,-.15,.45]],[1.63,[-.1,.7,-.7]],[2.17,[.25,.45,-.86]]];
+export async function loadWarriorAssets(progress=()=>{}) {
+  const loader=new GLTFLoader();let done=0;
+  const urls=['ronin','shinobi','monk','warrior-motion','golf-motion'];
+  const results=await Promise.all(urls.map(async name=>{const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb`);progress(++done,urls.length);return model;}));
+  const clipNames=new Set(results.slice(3).flatMap(model=>model.animations.map(clip=>clip.name)));
+  for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
+  templates.push(...results.slice(0,3));motionSources.push(...results.slice(3));
+  for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(mat.map)mat.map.anisotropy=4;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
+}
+function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.28:.78,metalness:metal}));return materials.get(key);}
+function part(parent,kind,color,x,y,z,sx,sy,sz,metal=0){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):new THREE.CylinderGeometry(1,1,1,10));const mesh=new THREE.Mesh(geometries.get(kind),mat(color,metal));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;}
+function clipsFor(index){
+  if(retargeted.has(index))return retargeted.get(index);
+  const target=templates[index].scene,clips=[];target.updateMatrixWorld(true);
+  for(const source of motionSources){source.scene.updateMatrixWorld(true);
+    for(const original of source.animations){const clip=original.clone();const tracks=[];
+      for(const track of clip.tracks){const dot=track.name.lastIndexOf('.'),name=track.name.slice(0,dot),prop=track.name.slice(dot+1);const dst=target.getObjectByName(name),src=source.scene.getObjectByName(name);if(!dst||!src)continue;
+        if(prop==='quaternion'){
+          // Express source motion relative to its bind pose, then apply the target bind pose.
+          const correction=dst.quaternion.clone().multiply(src.quaternion.clone().invert());
+          for(let i=0;i<track.values.length;i+=4){q.fromArray(track.values,i).premultiply(correction).normalize().toArray(track.values,i);}tracks.push(track);
+        }else if(prop==='position'&&(name==='pelvis'||name==='root')){
+          const ratio=name==='pelvis'?dst.position.length()/Math.max(.001,src.position.length()):1;
+          for(let i=0;i<track.values.length;i+=3){track.values[i]=dst.position.x+(track.values[i]-src.position.x)*ratio;track.values[i+1]=dst.position.y+(track.values[i+1]-src.position.y)*ratio;track.values[i+2]=dst.position.z+(track.values[i+2]-src.position.z)*ratio;}tracks.push(track);
+        }
+      }
+      clip.tracks=tracks;clips.push(clip);
+    }
+  }
+  retargeted.set(index,clips);return clips;
+}
+let katanaTemplate;
+function katana(){
+  if(katanaTemplate)return katanaTemplate.clone();
+  const group=new THREE.Group();
+  part(group,'cyl','#302a24',0,.02,0,.022,.23,.022);part(group,'cyl','#b49b60',0,.145,0,.063,.013,.063,.8);
+  const path=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.16,0),new THREE.Vector3(0,.45,.009),new THREE.Vector3(0,.78,.037),new THREE.Vector3(0,1.03,.075)]);
+  const vertices=[],indices=[];for(let i=0;i<=32;i++){const p=path.getPoint(i/32),width=.024*(i>29?(33-i)/4:1);for(const [x,z] of [[-width,0],[0,.009],[width,0],[0,-.004]])vertices.push(p.x+x,p.y,p.z+z);if(i<32)for(let j=0;j<4;j++){const a=i*4+j,b=i*4+(j+1)%4;indices.push(a,b,a+4,b,b+4,a+4);}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();const blade=new THREE.Mesh(g,mat('#d3d9d4',.95));blade.castShadow=true;group.add(blade);
+  for(let i=0;i<7;i++){const band=part(group,'box','#9d8b63',0,-.065+i*.025,.022,.025,.012,.007);band.rotation.z=i%2?.5:-.5;}
+  group.updateMatrixWorld(true);const pieces=[];
+  for(const child of group.children){const geo=child.geometry.index?child.geometry.toNonIndexed():child.geometry.clone();geo.applyMatrix4(child.matrix);const values=[];const c=child.material.color;for(let i=0;i<geo.attributes.position.count;i++)values.push(c.r,c.g,c.b);geo.setAttribute('color',new THREE.Float32BufferAttribute(values,3));geo.deleteAttribute('uv');pieces.push(geo);}
+  const merged=mergeGeometries(pieces);pieces.forEach(g=>g.dispose());group.clear();const mesh=new THREE.Mesh(merged,new THREE.MeshStandardMaterial({vertexColors:true,metalness:.8,roughness:.32}));mesh.castShadow=true;group.add(mesh);katanaTemplate=group;return group.clone();
+}
 export class Warrior {
   constructor(type=0,enemy=false){
-    this.root=new THREE.Group();this.body=new THREE.Group();this.root.add(this.body);this.enemy=enemy;this.type=type;
-    const cloth=enemy?(type===2?'#574a55':'#293b40'):type===0?'#9e3a2d':type===1?'#344e57':'#c49b4b';
-    const armor=enemy?'#31373a':type===0?'#373b36':type===1?'#20363e':'#4c4430';
-    const gold=enemy?'#77766a':'#c4a66a',skin='#c5a180';
-    const torso=part(this.body,'box',cloth,0,1.32,0,.64,.74,.37);torso.rotation.z=.02;
-    part(this.body,'box',armor,0,1.4,.2,.58,.53,.08);
-    for(let i=0;i<4;i++)part(this.body,'box',gold,0,1.19+i*.11,.25,.48,.018,.026,.4);
-    part(this.body,'box','#292e29',0,.98,0,.73,.14,.43);part(this.body,'box',gold,0,.98,.245,.12,.12,.055,.4);
-    for(const side of [-1,1]){
-      const skirt=part(this.body,'box',armor,side*.25,.81,0,.28,.37,.47);skirt.rotation.z=side*.15;
-      for(let i=0;i<3;i++)part(skirt,'box',gold,0,-.33+i*.3,.52,.82,.05,.04);
-    }
-    part(this.body,'cyl',skin,0,1.81,0,.125,.17,.125);
-    part(this.body,'sphere',enemy?'#28353a':skin,0,2.01,0,.23,.28,.21);
-    part(this.body,'box',enemy?'#101d22':'#4a302b',0,2.04,.19,.31,.052,.036);
-    for(const s of [-1,1])part(this.body,'box',enemy?'#d8c9aa':'#e8decb',s*.078,2.05,.212,.06,.02,.017);
-    if(type===0&&!enemy){
-      part(this.body,'sphere',armor,0,2.19,-.016,.27,.2,.25);part(this.body,'box',armor,0,2.13,.16,.61,.08,.24);
-      for(const s of [-1,1]){const horn=part(this.body,'cone',gold,s*.19,2.37,.13,.075,.5,.07,.6);horn.rotation.z=-s*.45;}
-      part(this.body,'box',armor,0,1.94,-.2,.52,.34,.13);
-    } else if(type===2&&!enemy){part(this.body,'cone','#ab9462',0,2.26,0,.48,.25,.48);}
-    else {part(this.body,'box',cloth,0,2.14,0,.46,.09,.43);const tail=part(this.body,'box',cloth,.14,1.97,-.31,.14,.4,.035);tail.rotation.x=.4;}
-    this.arms=[];this.legs=[];
-    for(const s of [-1,1]){
-      const arm=new THREE.Group();arm.position.set(s*.4,1.59,0);this.body.add(arm);
-      part(arm,'box',cloth,0,-.23,0,.22,.5,.25);part(arm,'box',armor,0,-.025,0,.31,.22,.36);
-      part(arm,'box',armor,0,-.47,.04,.21,.27,.23);part(arm,'sphere',enemy?'#333a35':skin,0,-.65,.06,.1,.12,.11);this.arms.push(arm);
-      const leg=new THREE.Group();leg.position.set(s*.2,.85,0);this.root.add(leg);
-      part(leg,'box',cloth,0,-.21,0,.28,.46,.31);part(leg,'box',armor,0,-.55,0,.21,.34,.24);
-      part(leg,'box','#242927',0,-.76,.08,.23,.14,.39);this.legs.push(leg);
-    }
-    this.sword=new THREE.Group();this.arms[1].add(this.sword);this.sword.position.set(0,-.65,.1);this.sword.rotation.x=-Math.PI/2;
-    const length=type===2&&!enemy?1.9:1.25;
-    part(this.sword,'cyl','#322c29',0,.02,0,.045,.32,.045);part(this.sword,'box',gold,0,.21,0,.21,.048,.15,.6);
-    part(this.sword,'box','#dbe5dd',0,.22+length/2,0,.055,length,.085,.85);const tip=part(this.sword,'cone','#dbe5dd',0,.22+length+.09,0,.04,.18,.055,.85);
-    tip.rotation.z=-.14;
-    if(type===1&&!enemy){this.offhand=this.sword.clone(true);this.arms[0].add(this.offhand);this.offhand.scale.setScalar(.78);}
-    this.club=new THREE.Group();this.arms[1].add(this.club);this.club.position.set(0,-.62,.1);this.club.rotation.x=-Math.PI/2;
-    part(this.club,'cyl','#b9c6c3',0,.58,0,.018,1.4,.018,.7);part(this.club,'box','#313e3c',.11,1.3,0,.26,.14,.16,.7);
-    this.club.visible=false;
-    // A compact club bag makes the silhouette part golfer, part warrior.
-    const bag=part(this.body,'cyl','#4c5140',-.14,1.35,-.38,.18,.86,.18);bag.rotation.z=-.2;
-    for(let i=0;i<3;i++){part(this.body,'cyl','#aaa99a',-.29+i*.12,1.93,-.37,.014,.75,.014,.5);part(this.body,'box','#bcbeb1',-.25+i*.12,2.29,-.37,.11,.06,.07,.6);}
-    this.root.scale.setScalar(enemy?1.02:1.1);this.phase=Math.random()*6;this.dead=0;
+    this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?1:type;
+    this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
+    this.bones={};this.model.traverse(o=>{if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();if(/Woven|Silk/.test(o.material.name))o.material.color.set(type===2?'#342e40':'#23353a');if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
+    this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
+    const hand=this.bones.hand_r;
+    this.weapon=katana();this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
+    if(type===2&&!enemy){this.weapon.scale.y=1.45;part(this.weapon,'cyl','#51402b',0,-.30,0,.022,.68,.022);}
+    if(type===1&&!enemy){this.offhand=katana();this.offhand.scale.setScalar(.76);this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
+    this.club=new THREE.Group();this.club.position.set(0,.04,0);this.root.add(this.club);
+    part(this.club,'cyl','#252a27',0,.04,0,.018,.20,.018);part(this.club,'cyl','#b7c4c2',0,.60,0,.008,1.0,.008,.85);const head=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);head.rotation.z=-.15;this.club.visible=false;
+    // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
+    const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
+    if(enemy)bag.visible=false;
+    this.play('Idle_Loop',0);this.mixer.update(Math.random()*.7);
   }
-  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0}={}){
-    this.sword.visible=!golf;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf;
-    const cycle=time*(sprinting?14:10)+this.phase,amount=moving?.72:0;
-    this.legs[0].rotation.x=Math.sin(cycle)*amount;this.legs[1].rotation.x=-Math.sin(cycle)*amount;
-    this.body.position.y=moving?Math.abs(Math.sin(cycle))*.055:Math.sin(time*2+this.phase)*.012;
-    this.body.rotation.y=attack>0?Math.sin(attack*Math.PI*2)*1.1:0;
-    this.arms[0].rotation.set(moving?-Math.sin(cycle)*.45:0,0,.1);
-    this.arms[1].rotation.set(moving?Math.sin(cycle)*.45:0,0,-.14);
-    if(attack>0){this.arms[1].rotation.x=-1.2;this.arms[1].rotation.z=-.5-Math.sin(attack*Math.PI)*1.4;this.arms[0].rotation.x=-.65;}
-    if(golf){this.arms[1].rotation.x=-.4;this.arms[0].rotation.x=-.42;if(swing>0){this.arms[1].rotation.z=-Math.sin(swing*Math.PI)*2;this.body.rotation.y=Math.sin(swing*Math.PI)*.8;}}
-    if(this.dead>0){this.root.rotation.z=Math.min(Math.PI/2,this.dead*3);this.root.position.y-=dt*1.2;this.root.scale.multiplyScalar(Math.max(.1,1-dt*.9));}
+  play(name,fade=.16,once=false,speed=1){const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
+  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false}={}){
+    this.weapon.visible=!golf;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf;
+    if(this.dead>0){if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
+    this.oneShot=Math.max(0,this.oneShot-dt);
+    if(swing>0&&!this.wasSwing)this.play(putting?'Golf_Putt':'Golf_Swing',.10,true,1);
+    else if(attack>0&&!this.wasAttack)this.play('Sword_Attack',.07,true,2.2);
+    else if(dodge&&!this.wasDodge)this.play('Roll',.06,true,1.4);
+    else if(this.oneShot<=0)this.play(golf?'Golf_Address':moving?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
+    this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.mixer.update(dt);
+    if(golf){
+      this.root.updateMatrixWorld(true);this.bones.hand_r.getWorldPosition(gripWorld);this.root.worldToLocal(gripWorld);this.club.position.copy(gripWorld);
+      shaftDirection.set(0,-.90,.60);
+      if(this.current==='Golf_Swing'){
+        const t=this.actions.get(this.current).time;let i=1;while(i<swingShaft.length-1&&t>swingShaft[i][0])i++;
+        const a=swingShaft[i-1],b=swingShaft[i],f=THREE.MathUtils.clamp((t-a[0])/(b[0]-a[0]),0,1);shaftDirection.fromArray(a[1]).lerp(new THREE.Vector3(...b[1]),f);
+      }
+      this.club.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());
+    }
   }
+  dispose(){this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();if(this.enemy&&o.isMesh)o.material.dispose();});}
 }
-export class Effects {
-  constructor(scene){this.scene=scene;this.items=[];this.geo=new THREE.SphereGeometry(1,5,4);this.mats=[new THREE.MeshBasicMaterial({color:'#f7d59a'}),new THREE.MeshBasicMaterial({color:'#d5e1cb'}),new THREE.MeshBasicMaterial({color:'#bb5261'})];}
-  burst(position,count=12,power=4,kind=0){for(let i=0;i<count;i++){const m=new THREE.Mesh(this.geo,this.mats[kind]);m.position.copy(position);m.scale.setScalar(.035+Math.random()*.07);this.scene.add(m);this.items.push({m,v:new THREE.Vector3((Math.random()-.5)*power,Math.random()*power*.7,(Math.random()-.5)*power),life:.35+Math.random()*.45});}}
-  slash(position,yaw,special=false){const g=new THREE.RingGeometry(special?2:1.4,special?6:3.8,40,1,0,Math.PI*1.5);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:special?'#efc875':'#eff4da',transparent:true,opacity:.8,side:THREE.DoubleSide,depthWrite:false}));m.rotation.set(-Math.PI/2,.1,yaw);m.position.copy(position);m.position.y+=1;this.scene.add(m);this.items.push({m,life:.24,max:.24,ring:true});}
-  update(dt){for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt;if(p.life<=0){this.scene.remove(p.m);if(p.ring){p.m.geometry.dispose();p.m.material.dispose();}this.items.splice(i,1);continue;}if(p.ring){p.m.material.opacity=p.life/p.max*.8;p.m.scale.multiplyScalar(1+dt*2);}else{p.v.y-=9*dt;p.m.position.addScaledVector(p.v,dt);p.m.scale.multiplyScalar(1-dt*1.4);}}}
-  clear(){for(const p of this.items){this.scene.remove(p.m);if(p.ring){p.m.geometry.dispose();p.m.material.dispose();}}this.items=[];}
-}
-
-// Share one draw call per geometry/material across the entire enemy crowd.
-// Each warrior keeps its articulated transform hierarchy for animation and combat.
 export class CrowdRenderer {
-  constructor(scene){this.scene=scene;this.batches=new Map();}
-  update(enemies){
-    for(const batch of this.batches.values())batch.count=0;
-    for(const enemy of enemies){enemy.root.updateMatrixWorld(true);enemy.root.traverseVisible(part=>{if(!part.isMesh)return;const key=part.geometry.uuid+part.material.uuid;let batch=this.batches.get(key);if(!batch){const mesh=new THREE.InstancedMesh(part.geometry,part.material,2048);mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.castShadow=true;mesh.frustumCulled=false;this.scene.add(mesh);batch={mesh,count:0};this.batches.set(key,batch);}if(batch.count<2048)batch.mesh.setMatrixAt(batch.count++,part.matrixWorld);});}
-    for(const {mesh,count} of this.batches.values()){mesh.count=count;mesh.visible=count>0;if(count)mesh.instanceMatrix.needsUpdate=true;}
-  }
+  constructor(scene){this.scene=scene;this.active=new Set();}
+  update(enemies){const present=new Set(enemies);for(const e of this.active)if(!present.has(e)){this.scene.remove(e.root);e.dispose();this.active.delete(e);}for(const e of enemies)if(!this.active.has(e)){this.scene.add(e.root);this.active.add(e);}}
 }

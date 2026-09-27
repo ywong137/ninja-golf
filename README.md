@@ -36,7 +36,7 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Slash | J or left mouse button | X or RT |
 | Special attack | K, with full Resolve | Y |
 | Sprint / dodge | Hold / tap Shift | Hold / tap B |
-| Run toward the ball | F | — |
+| Face the ball waypoint | F | — |
 | Address the ball | Space, near the ball with no nearby enemies | A |
 | Pause | Escape | Start |
 
@@ -44,7 +44,7 @@ The power meter repeats. Press the swing button again at the desired power. Carr
 
 Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
 
-After a long shot, walk to the ball and fight the attackers. Attacks hit several enemies. Defeats build Resolve and restore a little health. Use the special attack to clear a large area.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. F turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Use the special attack to clear a large area.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 
@@ -64,11 +64,13 @@ The Ronin has more driving power. The Shinobi moves faster and has less shot dis
 
 ## Graphics and scope
 
-This release uses procedural terrain, original articulated characters, leaf cards, instanced trees, grass, rocks, and animated water. Enemy parts share instanced draw calls. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
+This release uses skinned human characters with 65-bone skeletons, fitted samurai costumes, and blended walking, running, sword, roll, and death animations. Golf swings use a separate baked two-hand animation. The ball launches at the swing contact time.
 
-The game targets a polished, compact birthday release. It does not contain AAA scanned assets or full golf-simulator physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, a full 18-hole course, licensed course replicas, or motion-captured combat.
+The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Trees and grass use instancing. Weapon parts share one mesh per sword. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
-Choose Performance, Balanced, or High quality from the pause menu. Balanced caps rendering at 1.5 device pixels. Performance disables shadows. High quality caps rendering at 2 device pixels.
+This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, a full 18-hole course, licensed course replicas, or motion-captured combat.
+
+Choose Performance, Balanced, or High quality from the pause menu. Balanced caps rendering at 1.5 device pixels. Performance disables shadows and ambient occlusion. Balanced and High add contact shading with GTAO. High quality caps rendering at 2 device pixels.
 
 Gamepad bindings use the browser Gamepad API and standard button mapping. Physical-controller testing is still needed across controller models.
 
@@ -86,20 +88,29 @@ Licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/li
 
 [Original track and license](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100192).
 
-The original recording ships unchanged and loops during play. The game adjusts playback volume. See `public/audio/LICENSE.txt` and the in-game credits.
+**“Neolith” — Kevin MacLeod (incompetech.com)**
+
+Combat switches to this guitar, bass, and drum recording at 145 BPM. It uses [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). [Original track and license](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100140).
+
+Both recordings ship unchanged and loop during play. The game crossfades between them over 1.15 seconds and controls their volume. See `public/audio/LICENSE.txt` and the in-game credits.
 
 Sound effects use Web Audio synthesis. The game does not generate music.
 
-Three.js uses the MIT license. Vite uses the MIT license. Terrain, characters, architecture, and vegetation are original procedural assets.
+Three.js uses the MIT license. Vite uses the MIT license. Human base meshes and the Universal Animation Library come from [Quaternius](https://quaternius.com/), under CC0. Costumes, weapons, and golf animations are original adaptations. See [model credits](public/models/LICENSE.txt).
+
+Scanned materials, pine textures, and the HDR sky come from [Poly Haven](https://polyhaven.com/), under CC0. See [texture credits](public/textures/SOURCES.json). No Samurai Warriors game assets are included. The official [Samurai Warriors 4 character artwork](https://www.koeitecmoamerica.com/sw4/chara05.html) informed costume proportions and silhouettes.
 
 ## Code layout
 
 - `src/main.js`: game states, camera, ball simulation, combat, and persistence.
 - `src/course.js`: course data, terrain queries, club data, and launch calculations.
 - `src/world.js`: terrain, water, vegetation, lighting, and architecture.
-- `src/actors.js`: articulated characters, crowd instancing, and effects.
+- `src/actors.js`: human rigs, motion retargeting, animation blending, and crowd lifecycle.
+- `src/effects.js`: slash trails and particles.
+- `src/navigation.js`: camera-relative movement, aiming, and radar projection.
 - `src/input.js`: shared keyboard, mouse, and gamepad actions.
-- `src/audio.js`: music playback and sound effects.
+- `src/audio.js`: two-track music crossfades, playback controls, and sound effects.
+- `src/rendering.js`: antialiasing, contact shading, and display output.
 - `src/ui.js` and `src/style.css`: menus, controls, HUD, and scorecard.
 
 The development server exposes scenario access for browser tests. Production builds remove that access. Production diagnostics only return current game state.
@@ -110,8 +121,10 @@ With the development server running, install the test browser and run:
 
 ```sh
 npx playwright install chromium
+node tests/browser-audio.mjs
+node tests/browser-navigation.mjs
 node tests/browser-smoke.mjs
 node tests/browser-scenarios.mjs
 ```
 
-The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.
+Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.

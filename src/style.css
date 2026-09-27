@@ -6,3 +6,14 @@
 body[data-screen=game] .masthead{background:linear-gradient(#102c2877,transparent);padding-bottom:32px}body[data-screen=game] .round-hud{background:#173328b8;border:1px solid #e1e6ca26;backdrop-filter:blur(12px);padding:13px 16px;border-radius:3px}.wind{text-shadow:0 1px 7px #13372a,0 1px 18px #13372a}.selection-intro{pointer-events:none}
 
 .vitality{top:230px}@media(max-height:760px){.vitality{top:215px}}
+body[data-phase=combat] .minimap-panel{border-color:#c6a87877;width:210px;background:#122923ef;box-shadow:0 0 30px #071d1777}body[data-phase=combat] .minimap-panel canvas{height:255px}body[data-phase=combat] .map-key span:last-child{color:#ee795e}body[data-phase=combat] .phase-banner>span{color:#efbc79}body[data-phase=combat] .ball-objective{background:#102e26d9;border:1px solid #cbb57766;border-radius:3px;padding:16px 24px;min-width:180px}body[data-phase=combat] .ball-objective>span{font-size:8px;letter-spacing:1.3px}body[data-phase=combat] .ball-objective p{margin-bottom:0}
+.loading-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse at 65% 40%,#345345,#132e27);color:#ece6ce}.loading-screen .brand-mark{width:60px;height:60px;font-size:32px}.loading-screen h2{font:42px Georgia,serif;font-weight:400;margin:28px 0 15px}.loading-screen p{font-size:11px;color:#bcbfa6;letter-spacing:1px}
+
+@media(min-width:1000px){
+body[data-screen=selection] #vignette{background:linear-gradient(90deg,#102921eb 0,#1029219a 39%,transparent 67%),linear-gradient(0deg,#10271fc0,transparent 20%)}
+.selection-intro{top:13%;left:7%}.selection-intro h2{font-size:38px;margin:11px 0}.selection-intro p{margin:8px 0}
+.warrior-cards{left:7%;right:auto;width:39%;top:34%;bottom:135px;grid-template-columns:1fr;gap:10px}
+.warrior-card{padding:14px 20px;display:grid;grid-template-columns:1fr 1fr;align-content:center;column-gap:20px}
+.warrior-top{grid-column:1 / -1;font-size:7px}.warrior-card h3{font-size:25px;margin:8px 0 4px}.warrior-title{grid-column:1;align-self:start}
+.warrior-card p{grid-column:2;grid-row:2 / 4;margin:7px 0 0;min-height:0;font-size:10px;line-height:1.6}.warrior-card .stats{grid-column:1 / -1;margin-top:8px}.stats i{margin-top:4px}
+}

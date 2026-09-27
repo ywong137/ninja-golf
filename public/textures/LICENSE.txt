@@ -1,0 +1,9 @@
+Scanned materials and HDR sky: Poly Haven
+CC0 1.0 Universal Public Domain Dedication
+https://polyhaven.com/license
+https://creativecommons.org/publicdomain/zero/1.0/
+
+SOURCES.json lists each asset, source page, and available author credits.
+Materials use 1K diffuse and OpenGL normal maps. The sky uses a 2K HDR.
+Pine foliage uses the twig atlas from pine_tree_01, with a shaped branch card.
+All files ship locally with the game; no runtime asset service is required.

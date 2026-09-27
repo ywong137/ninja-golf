@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser-smoke.mjs && node tests/browser-scenarios.mjs"
+    "test:browser": "node tests/browser-audio.mjs && node tests/browser-navigation.mjs && node tests/browser-smoke.mjs && node tests/browser-scenarios.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

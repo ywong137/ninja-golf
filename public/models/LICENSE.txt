@@ -1,0 +1,23 @@
+Human meshes and source motion clips: Quaternius
+CC0 1.0 Universal Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Universal Base Characters (Standard, free edition)
+https://quaternius.com/packs/universalbasecharacters.html
+https://quaternius.itch.io/universal-base-characters
+Source used: Superhero_Male_FullBody, with skeleton, skin, eyes, brows, and textures.
+
+Universal Animation Library (Standard, free edition)
+https://quaternius.com/packs/universalanimationlibrary.html
+https://quaternius.itch.io/universal-animation-library
+Source clips: Idle_Loop, Sword_Idle, Walk_Loop, Jog_Fwd_Loop,
+Sprint_Loop, Sword_Attack, Roll, Death01, and Hit_Chest.
+
+Modifications for Ninja Golf:
+- Original fitted clothing, armor, helmets, footwear, and skin weights.
+- Covered body surfaces removed; embedded textures resized and compressed.
+- Source motion retargeted to the human skeleton during loading.
+- Golf_Address, Golf_Swing, and Golf_Putt authored and baked with two-hand IK.
+
+The Quaternius source assets retain their CC0 dedication.
+No assets from Samurai Warriors or Dynasty Warriors are included.
