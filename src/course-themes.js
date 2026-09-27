@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {shrubGeometry} from './theme-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {heightAt,lieAt,routePoint,fairwayDistance,waterBasins,random,greenDistance} from './course.js';
+import {heightAt,lieAt,routePoint,waterBasins,random,greenDistance} from './course.js';
 import {queueSceneryRock} from './scenery-rocks.js';
+import {findBuildingSite,buildingBox,buildingCylinder} from './building-placement.js';
 
 export const THEME_LIGHTS={
  japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#ffedd0',ground:'#777a49',intensity:3,ambient:.8},
@@ -41,45 +42,94 @@ export function buildThemeScenery(root,c,sites,textures={}){
   if(theme==='cyberpunk'){emit(box,dark,x,y+1.25,z,1.3,2.5,1.3);emit(box,k%2?leaf:flower,x,y+2.55,z,1.65,.16,1.65);emit(ball,leaf,x,y+3.3,z,.55,.55,.55);}
   register(theme==='cyberpunk'?'lantern':'rock',x,z,theme==='cyberpunk'?3.5:rockHeight,.7);
  }
+ const solid=(id,m,x,y,z,w,h,d)=>{emit(box,m,x,y,z,w,h,d);buildingBox(root,id,x,y,z,w,h,d);};
+ const column=(id,m,x,y,z,r,h)=>{emit(cyl,m,x,y,z,r,h,r);buildingCylinder(root,id,x,y,z,r,h);};
  const landmarkCount=theme==='cyberpunk'?5:2;
  for(let k=0;k<landmarkCount;k++){
-  const p=routePoint(c,(k+.5)/landmarkCount),z=p.z;let x=p.x-75;while(fairwayDistance(c,x,z)<28)x-=12;const y=heightAt(c,x,z);
-  (root.userData.landmarks??=[]).push({x,z,halfWidth:theme==='desert'?13:theme==='highlands'?15:10,halfDepth:14});
+  const p=routePoint(c,(k+.38+(k%2)*.18)/landmarkCount),site=findBuildingSite(root,c,p,theme==='cyberpunk'?23:15,theme==='cyberpunk'?20:15,k%2?1:-1,sites),{x,z,y}=site,id=`${theme}-${k}`;
+  (root.userData.landmarks??=[]).push(site);
+  // Foundations meet the lowest terrain sample while floors stay above the highest.
+  const footing=(label,cx,cz,w,d)=>solid(`${id}-${label}`,stone,cx,(site.foundationBottom+y)/2,cz,w,y-site.foundationBottom,d);
   if(theme==='highlands'){
-   for(let side=-1;side<=1;side+=2){emit(box,stone,x+side*8,y+5,z,4,10,6);for(let i=0;i<3;i++)emit(box,stone,x+side*8+(i-1)*1.3,y+10.7,z,1,1.4,6);}
-   emit(box,stone,x,y+7.5,z,14,3,4);
+   for(let side=-1;side<=1;side+=2){footing(`tower-foot-${side}`,x+side*8,z,4,6);solid(`${id}-tower-${side<0?'left':'right'}`,stone,x+side*8,y+5,z,4,10,6);for(let i=0;i<3;i++)emit(box,stone,x+side*8+(i-1)*1.3,y+10.7,z,1,1.4,6);}
+   solid(`${id}-lintel`,stone,x,y+7.5,z,14,3,4);
    for(const side of [-1,1])for(let row=0;row<11;row++)for(let col=0;col<3;col++){
     if(row>8&&((col+k+row)%4===0))continue;
     const xx=x+side*8+(col-1)*1.25+(row%2)*.16,yy=y+.45+row*.88;
     emit(box,(row+col)%4===0?dark:stone,xx,yy,z-3.05,1.15,.77,.22,0,0,(r()-.5)*.035);
     emit(box,(row+col)%4===0?dark:stone,xx,yy,z+3.05,1.15,.77,.22);
    }
-   for(let i=0;i<7;i++)for(let row=0;row<3;row++)emit(box,(i+row)%3?stone:dark,x-12+i*3.7+(row%2)*.4,y+.25+row*.45,z+11,3.5,.4,1.1);
-   for(let i=0;i<11;i++){const a=i*Math.PI/10;emit(box,stone,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,1,.8,.7,0,0,a-Math.PI/2);}
+   footing('rear-foot',x-.7,z+11,26.5,1.1);
+   for(let i=0;i<7;i++)for(let row=0;row<3;row++)solid(`${id}-rear-wall-${i}-${row}`,(i+row)%3?stone:dark,x-12+i*3.7+(row%2)*.4,y+.25+row*.45,z+11,3.5,.4,1.1);
+   for(let i=0;i<11;i++){const a=i*Math.PI/10,theta=a-Math.PI/2;emit(box,stone,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,1,.8,.7,0,0,theta);buildingBox(root,`${id}-arch-${i}`,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,Math.abs(Math.cos(theta))+.8*Math.abs(Math.sin(theta)),Math.abs(Math.sin(theta))+.8*Math.abs(Math.cos(theta)),.7);}
    for(let j=0;j<12;j++){const rx=x-10+r()*20,rz=z-7+r()*4;queueSceneryRock(root,{x:rx,z:rz,y:heightAt(c,rx,rz),height:.24+r()*.2,radius:.35+r()*.3,angle:r()*Math.PI*2,burial:.12+r()*.15});}
   }else if(theme==='desert'){
-   emit(box,stone,x,y+3,z,24,6,14);emit(box,gold,x,y+6.1,z,26,.45,16);emit(box,dark,x,y+2.3,z-7.1,9,3.5,.1);
-   for(const side of [-1,1])emit(cyl,gold,x+side*10,y+2.5,z-10,.45,5,.45);
-   emit(box,stone,x,y+5.1,z-10,24,.4,6);
-   emit(box,stone,x+4,y+7.7,z+2,12,3,8);emit(box,gold,x+4,y+9.25,z+2,13,.25,9);
+   footing('foundation',x,z,24,14);solid(`${id}-body`,stone,x,y+3,z,24,6,14);solid(`${id}-roof`,gold,x,y+6.1,z,26,.45,16);emit(box,dark,x,y+2.3,z-7.1,9,3.5,.1);
+   for(const side of [-1,1])column(`${id}-porch-column-${side<0?'left':'right'}`,gold,x+side*10,(site.foundationBottom+y+5)/2,z-10,.45,y+5-site.foundationBottom);
+   solid(`${id}-porch-roof`,stone,x,y+5.1,z-10,24,.4,6);
+   solid(`${id}-upper-body`,stone,x+4,y+7.7,z+2,12,3,8);solid(`${id}-upper-roof`,gold,x+4,y+9.25,z+2,13,.25,9);
    for(const side of [-1,1])for(let w=0;w<6;w++){emit(box,dark,x-10+w*4,y+2.8,z+side*7.08,2.3,3.4,.18);emit(box,glass,x-10+w*4,y+2.9,z+side*7.19,1.8,2.7,.06);emit(box,gold,x-10+w*4,y+1.4,z+side*7.35,2.8,.22,.8);}
    for(let j=0;j<15;j++)emit(box,wood,x-11+j*1.6,y+5.4,z-9.6,.16,.25,7);
-   for(const side of [-1,1]){emit(box,stone,x+side*10,y+.45,z-13,3,.9,2);emit(shrub,shrubMat,x+side*10,y+.9,z-13,1.3,.75,.8,0,0,0,true);}
+   for(const side of [-1,1]){
+    const px=x+side*12,pz=z-12.5;let low=Infinity,high=-Infinity;
+    for(const dx of [-1.5,0,1.5])for(const dz of [-1,0,1]){const ground=heightAt(c,px+dx,pz+dz);low=Math.min(low,ground);high=Math.max(high,ground);}
+    const bottom=low-.15,top=high+.8;
+    solid(`${id}-planter-${side}`,stone,px,(bottom+top)/2,pz,3,top-bottom,2);
+    emit(shrub,shrubMat,px,top,pz,1.3,.75,.8,0,0,0,true);
+   }
 
 
   }else{
-   emit(box,dark,x,y+22+k*3,z,15,44+k*6,17);
-   for(let j=0;j<9;j++){
-    emit(box,j%2?flower:leaf,x,y+4+j*5,z-8.6,15,.10,.15);
-    for(let col=0;col<5;col++){const lit=(j*7+col*3+k)%5===0;emit(box,lit?gold:glass,x-5.8+col*2.8,y+6+j*4.7,z-8.58,1.6,2.5,.09);emit(box,lit?leaf:glass,x+7.58,y+6+j*4.7,z-6+col*2.8,.09,2.5,1.6);}
+   const variant=(k+c.seed)%5,total=[38,64,47,76,54][variant],width=[16,13,18,12,17][variant],depth=[15,17,13,15,16][variant];
+   footing('foundation',x,z,22,19);solid(`${id}-podium`,stone,x,y+2.4,z,22,4.8,19);
+   // Continuous four-sided facade grids follow each setback, including upper floors.
+   const facade=(cx,cz,base,w,d,h,index)=>{
+    solid(`${id}-tower-${index}`,dark,cx,base+h/2,cz,w,h,d);
+    const floors=Math.max(1,Math.floor(h/3.3)),colsX=Math.max(2,Math.floor(w/2.6)),colsZ=Math.max(2,Math.floor(d/2.6));
+    for(let floor=0;floor<floors;floor++){
+     const yy=base+(floor+.5)*h/floors;
+     for(const side of [-1,1]){
+      for(let col=0;col<colsX;col++)emit(box,((floor*7+col*3+k+index)%9===0)?gold:glass,cx-w/2+(col+.5)*w/colsX,yy,cz+side*(d/2+.025),w/colsX*.67,1.85,.07);
+      for(let col=0;col<colsZ;col++)emit(box,((floor*3+col*7+k+index)%11===0)?leaf:glass,cx+side*(w/2+.025),yy,cz-d/2+(col+.5)*d/colsZ,.07,1.85,d/colsZ*.67);
+     }
+     if(floor%3===0){emit(box,stone,cx,yy-1.3,cz,w+.15,.18,d+.15);}
+    }
+    for(const side of [-1,1]){emit(box,stone,cx+side*(w/2-.13),base+h/2,cz,.26,h,d+.12);emit(box,stone,cx,base+h/2,cz+side*(d/2-.13),w,.26+h,.26);}
+    const roofY=base+h,trim=k%2?leaf:flower;
+    // Dark roof membranes replace the former full-area emissive caps.
+    emit(box,stone,cx,roofY+.025,cz,w,.05,d);
+    for(const side of [-1,1]){
+     emit(box,trim,cx+side*(w/2-.10),roofY+.06,cz,.075,.08,d-.2);
+     emit(box,trim,cx,roofY+.06,cz+side*(d/2-.10),w-.2,.08,.075);
+    }
+    // Shallow service hatches stay within the previous roof-cap envelope.
+    if(index>=2){
+     const hx=cx-w*.20,hz=cz+d*.18,hw=Math.min(2.4,w*.28),hd=Math.min(3.2,d*.32);
+     emit(box,dark,hx,roofY+.085,hz,hw,.07,hd);
+     for(let fin=0;fin<7;fin++)emit(box,wood,hx,roofY+.125,hz-hd*.4+fin*hd*.8/6,hw*.85,.018,.035);
+     emit(box,dark,cx+w*.21,roofY+.075,cz-d*.23,1.1,.05,1.6);
+     emit(box,stone,cx+w*.21,roofY+.106,cz-d*.23,.92,.012,1.4);
+    }
+   };
+   const lower=total*.53,upper=total*.29,crown=total-lower-upper;
+   facade(x,z,y+4.8,width,depth,lower,0);
+   facade(x+(k%2?1.6:-1.6),z+1.2,y+4.8+lower,width*.79,depth*.81,upper,1);
+   facade(x+(k%2?2.3:-2.3),z+1.7,y+4.8+lower+upper,width*.54,depth*.6,crown,2);
+   const companionX=x+(k%2?-16:16),companionZ=z+5,companionH=9+(k%3)*4;
+   footing('companion-foot',companionX,companionZ,10,13);facade(companionX,companionZ,y,10,13,companionH,3);
+   // Ground-level shop glazing and slender canopies tie each cluster together.
+   for(const side of [-1,1])for(let col=0;col<7;col++)emit(box,col%4?glass:gold,x-9+col*3,y+2,z+side*9.54,2.3,3,.08);
+   solid(`${id}-canopy`,dark,x,y+4.2,z-11,22,.28,3);
+   emit(box,k%2?flower:leaf,x,y+4.4,z-12.5,22,.12,.1);
+   column(`${id}-antenna`,wood,x+(k%2?2.3:-2.3),y+total+8,z+1.7,.08,6.4);
+   for(let j=0;j<3;j++){
+    const px=x-3+j*2.5,py=y+total*.53+5.3;
+    solid(`${id}-roof-plant-${j}`,stone,px,py,z-4,1.6,1,2);
+    for(let vent=0;vent<6;vent++)emit(box,dark,px,py-.34+vent*.13,z-5.006,1.25,.045,.014);
+    emit(cyl,dark,px,py+.505,z-4,.53,.012,.53);
+    for(let fin=0;fin<5;fin++)emit(box,wood,px-.4+fin*.2,py+.516,z-4,.035,.012,.85);
    }
-   emit(box,stone,x+2,y+46+k*6,z+2,8,4,8);emit(cyl,leaf,x,y+52+k*6,z,.09,14,.09);
-   emit(box,dark,x,y+2,z-10,20,4,6);emit(box,flower,x,y+4.1,z-13,20,.15,.15);
-   // Vertical sign bars form a simple circuit mark on a projecting billboard.
-   emit(box,stone,x-8.2,y+23,z-5,.7,13,5);
-   for(let row=0;row<4;row++){emit(box,gold,x-8.62,y+19+row*2.4,z-5,.06,.16,3.2);emit(box,flower,x-8.65,y+19.8+row*2.4,z-4.2,.06,1.6,.16);}
 
-   const ring=new THREE.TorusGeometry(10,.3,5,32);emit(ring,k%2?flower:leaf,x,y+38,z,1,1,1,.3,k);ring.dispose();
   }
  }
  for(const b of c.bunkers)register('sand',b[0],b[1],0);

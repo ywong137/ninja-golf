@@ -5,6 +5,8 @@ import { loadNature } from './nature.js';
 import {PuttingGuide,previewShot} from './golf-guide.js';
 import {BALL_STEP,BALL_RADIUS,ballSurface,ballHazard,applyRollingResistance,capturesCup,rollingFinished} from './golf-roll.js';
 import { World } from './world.js';
+import {moveOnLand} from './land-movement.js';
+import {resolveBuildingBall,buildingRelief} from './building-ball.js';
 import {courseSurfaceHeight} from './terrain.js';
 import { Warrior, Effects, CrowdRenderer, loadWarriorAssets } from './actors.js';
 import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
@@ -66,7 +68,7 @@ class Game {
   changeClub(delta){if(this.phase!=='aim'||this.mode!=='game'||this.paused)return;this.selectClub((this.club+delta+CLUBS.length)%CLUBS.length);}
   selectClub(i){if(this.phase!=='aim'||this.mode!=='game'||this.paused)return;this.club=i;this.charging=false;this.power=1;this.refreshAim();this.audio.play('click');}
   refreshAim(){
-    const club=CLUBS[this.club],preview=previewShot(this.course,club,this.warrior,this.lie,this.charging?this.power:1,this.aim,this.ball.position);this.shotPreview=preview;
+    const club=CLUBS[this.club],preview=previewShot(this.course,club,this.warrior,this.lie,this.charging?this.power:1,this.aim,this.ball.position,this.world.collision);this.shotPreview=preview;
     this.aimMarker.position.set(preview.landing.x,preview.landing.y+.03,preview.landing.z);
     const points=preview.points.map(p=>new THREE.Vector3(p.x,p.y,p.z));
     this.aimLine.geometry.dispose();this.aimLine.geometry=new THREE.BufferGeometry().setFromPoints(points);this.aimLine.computeLineDistances();
@@ -87,7 +89,11 @@ class Game {
     while(remaining>0&&this.phase==='flight'){
       const h=Math.min(step,remaining);remaining-=h;this.flightTime+=h;const before=this.ball.position.clone();
       if(!this.rolling){this.velocity.y-=9.81*h;this.velocity.x+=this.course.wind[0]*.22*h;this.velocity.z+=this.course.wind[1]*.22*h;}
-      this.ball.position.addScaledVector(this.velocity,h);const p=this.ball.position,surface=ballSurface(this.course,p),{ground,lie}=surface;
+      this.ball.position.addScaledVector(this.velocity,h);
+      const buildingHit=resolveBuildingBall(this.world.collision,before,this.ball.position,this.velocity);
+      if(buildingHit?.unplayableRoof){this.penalty('Unplayable roof. One penalty stroke.');return;}
+      if(buildingHit){this.audio.play('land');this.effects.burst(this.ball.position,5,1.5,0);}
+      const p=this.ball.position,surface=ballSurface(this.course,p),{ground,lie}=surface;
       const hazard=ballHazard(p,surface,this.flightTime);
       if(hazard){this.penalty(hazard==='Water'?'Water hazard. One penalty stroke.':'Out of bounds. One penalty stroke.');return;}
       if(p.y<=ground){p.y=ground;
@@ -99,15 +105,20 @@ class Game {
     }
     this.trailPoints.push(this.ball.position.clone());if(this.trailPoints.length>100)this.trailPoints.shift();this.trail.geometry.dispose();this.trail.geometry=new THREE.BufferGeometry().setFromPoints(this.trailPoints);
   }
-  penalty(message){this.audio.play('water');this.strokes++;this.penalties++;this.ball.position.copy(this.shotOrigin);this.ui.toast(message);this.velocity.set(0,0,0);this.phase='aim';this.charging=false;this.power=1;this.lie=this.shotStartLie;this.trail.visible=false;this.aimAtPin();this.placePlayer();this.refreshAim();}
+  penalty(message){this.audio.play(message.startsWith('Water')?'water':'land');this.strokes++;this.penalties++;this.ball.position.copy(this.shotOrigin);this.ui.toast(message);this.velocity.set(0,0,0);this.phase='aim';this.charging=false;this.power=1;this.lie=this.shotStartLie;this.trail.visible=false;this.aimAtPin();this.placePlayer();this.refreshAim();}
   land(){
+    const shotDistance=Math.hypot(this.ball.position.x-this.shotOrigin.x,this.ball.position.z-this.shotOrigin.z)*YARD;
+    const relief=buildingRelief(this.course,this.world.collision,this.ball.position);
+    if(relief.status==='unplayable'){this.penalty('Unplayable building lie. One penalty stroke.');return;}
+    if(relief.status==='relief')this.ball.position.copy(relief.position);
+    const reliefNotice=relief.status==='relief'?'Free drop from the building. No penalty. ':'';
     this.velocity.set(0,0,0);this.lie=lieAt(this.course,this.ball.position.x,this.ball.position.z);this.phase='combat';this.enemiesSpawned=0;this.combatTime=0;this.spawnTime=2;this.combo=0;this.comboTime=0;this.cameraYaw=this.aim;this.trail.visible=false;this.fastFlight=false;
-    const distance=this.player.root.position.distanceTo(this.ball.position);this.lastShot={distance:Math.hypot(this.ball.position.x-this.shotOrigin.x,this.ball.position.z-this.shotOrigin.z)*YARD,lie:this.lie,pin:this.ball.position.distanceTo(this.world.cup)*YARD};this.ui.shotResult(this.lastShot);this.enemyBudget=Math.max(12,Math.min(200,Math.round(distance*.65)+this.hole*20));
-    if(distance<12||this.shotStartLie==='Green'){this.phase='aim';this.placePlayer();this.selectBestClub();this.aimAtPin();this.refreshAim();this.power=1;this.ui.toast(this.lie==='Green'?'On the green. Read the line and choose your pace.':'A short walk. Your next shot is ready.');return;}
-    this.spawnWave(14);this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast('Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
+    const distance=this.player.root.position.distanceTo(this.ball.position);this.lastShot={distance:shotDistance,lie:this.lie,pin:this.ball.position.distanceTo(this.world.cup)*YARD,relief:!!reliefNotice};this.ui.shotResult(this.lastShot);this.enemyBudget=Math.max(12,Math.min(200,Math.round(distance*.65)+this.hole*20));
+    if(distance<12||this.shotStartLie==='Green'){this.phase='aim';this.aimAtPin();this.placePlayer();this.selectBestClub();this.refreshAim();this.power=1;this.ui.toast(reliefNotice+(this.lie==='Green'?'On the green. Read the line and choose your pace.':'A short walk. Your next shot is ready.'));return;}
+    this.spawnWave(14);this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast(reliefNotice||'Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
   }
   selectBestClub(){const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;}
-  slideOnLand(position,radius=.38){const x=position.x,z=position.z;this.world.collision.slide(position,radius);if(['Water','Out of bounds'].includes(lieAt(this.course,position.x,position.z))){position.x=x;position.z=z;}}
+  slideOnLand(position,from,radius=.38,lift=0){moveOnLand(position,from,this.course,this.world.collision,radius,lift);}
   spawnWave(count){
     const p=this.player.root.position,yaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);
     const sites=chooseAmbushSites(this.world.ambushSites,p,yaw,this.time);if(!sites.length)return;
@@ -116,9 +127,14 @@ class Game {
       // Entrances always begin at visible scenery, then land on a verified dry point.
       const dx=p.x-site.x,dz=p.z-site.z,length=Math.hypot(dx,dz)||1;let x=site.x+dx/length*2.5,z=site.z+dz/length*2.5;
       if(site.kind==='water'){const [px,pz,rx,rz]=waterBasins(this.course).reduce((a,b)=>Math.hypot((site.x-a[0])/a[2],(site.z-a[1])/a[3])<Math.hypot((site.x-b[0])/b[2],(site.z-b[1])/b[3])?a:b);const angle=Math.atan2((site.z-pz)/rz,(site.x-px)/rx);x=px+Math.cos(angle)*rx*1.22;z=pz+Math.sin(angle)*rz*1.22;}
-      if(lieAt(this.course,x,z)==='Water'||lieAt(this.course,x,z)==='Out of bounds')continue;
+      let landing=null;
+      searchLanding:for(const radius of [0,1.2,2.4])for(let angle=0;angle<(radius?8:1);angle++){
+        const lx=x+Math.cos(angle*Math.PI/4)*radius,lz=z+Math.sin(angle*Math.PI/4)*radius,candidate=new THREE.Vector3(lx,heightAt(this.course,lx,lz),lz);
+        if(!['Water','Out of bounds'].includes(lieAt(this.course,lx,lz))&&!this.world.collision.blocked(candidate,.31,2)&&this.world.collision.segmentClear({x:site.x,y:site.y,z:site.z},candidate,.3,2,true)){landing=candidate;break searchLanding;}
+      }
+      if(!landing){enemy.dispose();continue;}
       enemy.root.position.set(site.x,site.y,site.z);enemy.root.visible=false;
-      enemy.emerging={site,delay:Math.floor(i/5)*.22+Math.random()*.18,time:0,duration:site.kind==='tree'?1.05:.85,landing:new THREE.Vector3(x,heightAt(this.course,x,z),z)};
+      enemy.emerging={site,delay:Math.floor(i/5)*.22+Math.random()*.18,time:0,duration:site.kind==='tree'?1.05:.85,landing};
       enemy.spawnSite=site.id;enemy.role=ENEMY_TYPES[enemy.type].role;enemy.slot=slot;enemy.hp=ENEMY_TYPES[enemy.type].hp;enemy.cooldown=1.4+Math.random()*1.8;enemy.readyAt=this.time+(Math.random()<.65?2+Math.random()*3:0);enemy.strike=0;enemy.speed=ENEMY_TYPES[enemy.type].speed;enemy.dead=0;enemy.knockback=new THREE.Vector3();enemy.lift=0;enemy.verticalSpeed=0;this.enemies.push(enemy);this.enemiesSpawned++;site.readyAt=this.time+8;
     }
   }
@@ -146,7 +162,7 @@ class Game {
     const strikeFacing=this.attackYaw+(action.headings?.[action.hitIndex]||0),strikeArc=action.kind==='musou'&&action.hitIndex<5?1.1:action.arc;
     this.effects.slash(this.player.root.position,strikeFacing,action.kind!=='light',{style:action.style,reach:action.reach,arc:strikeArc,color:this.warrior.color});if(action.kind==='musou')this.effects.flourish(this.player.root.position,action.hitIndex,this.warrior.color,action.style);let hit=false;
     for(const e of this.enemies){if(e.dead||e.emerging)continue;v1.copy(e.root.position).sub(this.player.root.position);
-      if(strikeContains(v1.x,v1.z,strikeFacing,action.reach,strikeArc)){const front=Math.cos(Math.atan2(-v1.x,-v1.z)-e.root.rotation.y)>.35,multiplier=guardDamageMultiplier(e.type,action.kind,front,e.stun>0);e.hp-=action.damage*this.warrior.damage*multiplier;hit=true;if(multiplier<1)this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.4,0)),15,4,0);if(multiplier===1){if(action.kind!=='light'){e.stun=ENEMY_TYPES[e.type].armor?1.3:.6;if(ENEMY_TYPES[e.type].armor)this.ui.combatCue('GUARD BROKEN');}e.enemyAction=null;e.oneShot=0;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(action.pull?-Math.min(10,Math.max(0,v1.length()-2)*4):action.knockback||(action.kind==='light'?7:14));e.verticalSpeed=action.launch||0;e.strike=0;e.cooldown=1.1;}this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.2,0)),action.kind==='light'?20:45,action.kind==='light'?6:11,action.kind==='musou'?2:0);
+      if(strikeContains(v1.x,v1.z,strikeFacing,action.reach,strikeArc)&&this.world.collision.segmentClear({x:this.player.root.position.x,y:this.player.root.position.y+1,z:this.player.root.position.z},{x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},0,0,true)){const front=Math.cos(Math.atan2(-v1.x,-v1.z)-e.root.rotation.y)>.35,multiplier=guardDamageMultiplier(e.type,action.kind,front,e.stun>0);e.hp-=action.damage*this.warrior.damage*multiplier;hit=true;if(multiplier<1)this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.4,0)),15,4,0);if(multiplier===1){if(action.kind!=='light'){e.stun=ENEMY_TYPES[e.type].armor?1.3:.6;if(ENEMY_TYPES[e.type].armor)this.ui.combatCue('GUARD BROKEN');}e.enemyAction=null;e.oneShot=0;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(action.pull?-Math.min(10,Math.max(0,v1.length()-2)*4):action.knockback||(action.kind==='light'?7:14));e.verticalSpeed=action.launch||0;e.strike=0;e.cooldown=1.1;}this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.2,0)),action.kind==='light'?20:45,action.kind==='light'?6:11,action.kind==='musou'?2:0);
         if(e.hp<=0){e.dead=.001;e.dramaticDeath=action.kind==='musou';e.deathYaw=e.root.rotation.y;e.tumble=(e.slot%2?1:-1)*(2.6+(e.slot%3)*.6);e.verticalSpeed=e.dramaticDeath?9+(e.slot%4)*1.3:action.kind==='heavy'?5:2;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(e.dramaticDeath?18+(e.slot%3)*3:9);if(e.dramaticDeath)this.effects.explosion(e.root.position,0.75);this.kills++;this.combo++;this.bestCombo=Math.max(this.bestCombo,this.combo);this.resolve=Math.min(100,this.resolve+7);this.health=Math.min(this.warrior.health,this.health+1.6);}}
     }
     if(hit){this.audio.play('hit');this.hitStop=action.kind==='light'?.045:action.kind==='musou'?.065:.085;this.shake=action.kind==='light'?.075:.16;}
@@ -167,14 +183,14 @@ class Game {
     if(this.action){this.action.time+=dt;this.attackTimer=Math.max(0,this.action.duration-this.action.time);const a=this.action;const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.lunge;mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;
       while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}
     }
-    const movementStartX=p.x,movementStartZ=p.z;
+    const movementStartX=p.x,movementStartZ=p.z,movementStart={x:p.x,y:p.y,z:p.z};
     const x=clamp(p.x+mx*dt,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+mz*dt,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
-    if(lieAt(this.course,x,z)!=='Water'){p.x=x;p.z=z;}else if(lieAt(this.course,x,p.z)!=='Water')p.x=x;else if(lieAt(this.course,p.x,z)!=='Water')p.z=z;
+    p.set(x,heightAt(this.course,x,z),z);
     if(this.action)this.player.root.rotation.y=this.attackYaw;
     else if(this.guard.active)this.player.root.rotation.y=this.cameraYaw;
     else if(this.focused)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,this.cameraYaw,dt*20);
     else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18);
-    this.slideOnLand(p);p.y=heightAt(this.course,p.x,p.z);
+    this.slideOnLand(p,movementStart);
     if(moving){this.stepTime=(this.stepTime||0)+dt;if(this.stepTime>(sprinting?.26:.37)){this.audio.play('step',lieAt(this.course,p.x,p.z));this.stepTime=0;}}
     if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
     if(this.guardBufferedAttack&&!guardAttackRecovering(this.guard,this.time)){const queued=this.guardBufferedAttack;this.guardBufferedAttack=null;if(queued.expires>=this.time)this.attack(queued.kind);}
@@ -192,35 +208,36 @@ class Game {
         e.root.position.set(THREE.MathUtils.lerp(a.site.x,a.landing.x,t),THREE.MathUtils.lerp(startY,a.landing.y,t)+Math.sin(t*Math.PI)*(a.site.kind==='tree'?.3:1.8),THREE.MathUtils.lerp(a.site.z,a.landing.z,t));e.root.rotation.y=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.update(this.time,dt,{emerging:{progress:t}});
         if(t>=1){e.emerging=null;e.oneShot=0;this.effects.burst(e.root.position,12,3,a.site.kind==='sand'?4:1);}continue;
       }
+      const enemyStart={x:e.root.position.x,y:e.root.position.y,z:e.root.position.z};
       e.lift=Math.max(0,(e.lift||0)+(e.verticalSpeed||0)*dt);e.verticalSpeed=(e.verticalSpeed||0)-15*dt;if(e.lift===0)e.verticalSpeed=0;
       if(e.knockback.lengthSq()>.1){const nx=e.root.position.x+e.knockback.x*dt,nz=e.root.position.z+e.knockback.z*dt;if(lieAt(this.course,nx,nz)!=='Water'){e.root.position.x=nx;e.root.position.z=nz;}e.knockback.multiplyScalar(Math.exp(-(e.dead&&e.dramaticDeath?1.3:7)*dt));}
-      if(e.dead){e.dead+=dt;e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z)+e.lift;e.update(this.time,dt,{});const lifetime=e.dramaticDeath?2.7:1.5;if(e.dramaticDeath){e.root.rotation.set(Math.sin(e.dead*2)*.8,e.deathYaw+e.dead*e.tumble,Math.sin(e.dead*3)*.6);if(e.lift===0&&!e.landedDead){e.landedDead=true;this.effects.explosion(e.root.position,.45);}}if(e.dead>lifetime-.35)e.root.scale.setScalar(1.1*Math.max(.01,(lifetime-e.dead)/.35));if(e.dead>lifetime){this.effects.burst(e.root.position,12,3,1);this.scene.remove(e.root);this.enemies.splice(i,1);}continue;}
+      if(e.dead){this.slideOnLand(e.root.position,enemyStart,.3,e.lift);e.dead+=dt;e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z)+e.lift;e.update(this.time,dt,{});const lifetime=e.dramaticDeath?2.7:1.5;if(e.dramaticDeath){e.root.rotation.set(Math.sin(e.dead*2)*.8,e.deathYaw+e.dead*e.tumble,Math.sin(e.dead*3)*.6);if(e.lift===0&&!e.landedDead){e.landedDead=true;this.effects.explosion(e.root.position,.45);}}if(e.dead>lifetime-.35)e.root.scale.setScalar(1.1*Math.max(.01,(lifetime-e.dead)/.35));if(e.dead>lifetime){this.effects.burst(e.root.position,12,3,1);this.scene.remove(e.root);this.enemies.splice(i,1);}continue;}
       const distance=Math.hypot(p.x-e.root.position.x,p.z-e.root.position.z),definition=ENEMY_TYPES[e.type];e.cooldown-=dt;e.stun=Math.max(0,(e.stun||0)-dt);
       if(distance>90){this.scene.remove(e.root);this.enemies.splice(i,1);continue;}
       let enemyMoving=false;
       if(e.stun<=0&&distance>1.8&&!e.enemyAction&&e.lift<.1&&(engaged.has(e)||distance>9||this.playerVelocity.x**2+this.playerVelocity.z**2>9)){
-        const target=engagementTarget({x:e.root.position.x,z:e.root.position.z,type:e.type,slot:e.slot},p,this.playerVelocity,engaged.has(e));v1.set(target.x-e.root.position.x,0,target.z-e.root.position.z).normalize();e.moveYaw=Math.atan2(v1.x,v1.z);
+        const engagement=engagementTarget({x:e.root.position.x,z:e.root.position.z,type:e.type,slot:e.slot},p,this.playerVelocity,engaged.has(e));engagement.y=heightAt(this.course,engagement.x,engagement.z);if(this.world.collision.blocked(engagement,.34,2,true)){engagement.x=p.x;engagement.y=p.y;engagement.z=p.z;}const target=this.world.buildingNavigation.waypoint(e.root.position,engagement,e,this.time);v1.set(target.x-e.root.position.x,0,target.z-e.root.position.z).normalize();e.moveYaw=Math.atan2(v1.x,v1.z);
         const remaining=Math.hypot(target.x-e.root.position.x,target.z-e.root.position.z);const speed=Math.min(remaining/dt,e.speed*(distance>10?1.4:definition.ranged&&distance<13?.7:1)),nx=e.root.position.x+v1.x*speed*dt,nz=e.root.position.z+v1.z*speed*dt;
         if(lieAt(this.course,nx,nz)!=='Water'){e.root.position.x=nx;e.root.position.z=nz;enemyMoving=speed>.4;}else{const tx=e.root.position.x+v1.z*speed*dt,tz=e.root.position.z-v1.x*speed*dt;if(lieAt(this.course,tx,tz)!=='Water'){e.root.position.x=tx;e.root.position.z=tz;enemyMoving=speed>.4;}}
       }
       for(let j=0;j<i;j++){const other=this.enemies[j];if(other.dead||other.emerging)continue;v2.copy(e.root.position).sub(other.root.position);v2.y=0;const d=v2.length();if(d<1.15&&d>.001){const sx=e.root.position.x+v2.x*(1.15-d)/d*dt*4,sz=e.root.position.z+v2.z*(1.15-d)/d*dt*4;if(lieAt(this.course,sx,sz)!=='Water'){e.root.position.x=sx;e.root.position.z=sz;}}}
-      this.slideOnLand(e.root.position,.3);e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z)+e.lift;
+      this.slideOnLand(e.root.position,enemyStart,.3,e.lift);enemyMoving=enemyMoving&&Math.hypot(e.root.position.x-enemyStart.x,e.root.position.z-enemyStart.z)>dt*.2;
       const toward=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.root.rotation.y=turnToward(e.root.rotation.y,e.enemyAction?e.enemyAction.yaw:enemyMoving&&!definition.ranged?(e.moveYaw??toward):toward,dt*12);
-      if(engaged.has(e)&&distance<definition.reach&&e.cooldown<=0&&e.lift<.1&&e.stun<=0&&!e.enemyAction){
+      if(engaged.has(e)&&distance<definition.reach&&this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&e.cooldown<=0&&e.lift<.1&&e.stun<=0&&!e.enemyAction){
         e.enemyAction={token:`enemy-${++this.enemyActionSerial}`,duration:definition.duration,time:0,hitIndex:0,yaw:toward,target:p.clone().add(new THREE.Vector3(this.playerVelocity.x*.22,1,this.playerVelocity.z*.22))};e.cooldown=definition.duration+definition.recovery+Math.random()*.6;e.readyAt=this.time+e.cooldown+(Math.random()<.65?1.6+Math.random()*2.6:0);
         this.effects.telegraph(e.root.position,toward,definition.reach,definition.hits[0],e.type===2?'thrust':definition.ranged?'ranged':'sweep');
       }
       if(e.enemyAction){const a=e.enemyAction;a.time+=dt;e.strike=Math.max(0,a.duration-a.time);
         while(a.hitIndex<definition.hits.length&&a.time>=definition.hits[a.hitIndex]){
           if(definition.ranged){this.projectiles.spawn(e.root.position.clone().add(new THREE.Vector3(0,1.35,0)),a.target,definition.damage,e);this.audio.play('sword');}
-          else if(strikeContains(p.x-e.root.position.x,p.z-e.root.position.z,a.yaw,definition.reach+.3,e.type===2?.48:1.15))this.hurt(definition.damage,e.root.position,e);
+          else if(this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&strikeContains(p.x-e.root.position.x,p.z-e.root.position.z,a.yaw,definition.reach+.3,e.type===2?.48:1.15))this.hurt(definition.damage,e.root.position,e);
           a.hitIndex++;if(!e.enemyAction)break;
         }
       }else e.strike=0;
       e.update(this.time,dt,{moving:enemyMoving,sprinting:distance>10,attack:e.strike,enemyAction:e.enemyAction,focused:definition.ranged,moveAngle:(e.moveYaw||0)-e.root.rotation.y});
       if(e.enemyAction?.time>=definition.duration)e.enemyAction=null;
     }
-    this.projectiles.update(dt,p,(damage,source,attacker)=>this.hurt(damage,source,attacker));
+    this.projectiles.update(dt,p,(damage,source,attacker)=>this.hurt(damage,source,attacker),this.world.collision);
     if(this.health<=0){this.health=this.warrior.health;this.strokes++;this.penalties++;this.clearEnemies();this.guard=createPlayerGuard();this.resolve=Math.max(50,this.resolve);this.invincible=3;this.spawnTime=6;this.ui.achievement('A MINOR SETBACK','Rise again.','One penalty stroke. Your honor is mostly intact.');}
     if(input.tap('Interact')&&!this.action)this.addressBall();
   }
@@ -261,6 +278,7 @@ class Game {
     else{const d=this.club===7?9.0:9.5;camTarget.set(b.x-Math.sin(this.aim)*d+Math.cos(this.aim)*3,b.y+4.2,b.z-Math.cos(this.aim)*d-Math.sin(this.aim)*3);camLook.set(b.x+Math.sin(this.aim)*16,b.y+.65,b.z+Math.cos(this.aim)*16);speed=4;}
     if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),camTarget);
     camTarget.y=Math.max(camTarget.y,heightAt(this.course,camTarget.x,camTarget.z)+(this.cinematic>0?1.1:1.8));this.camera.position.lerp(camTarget,1-Math.exp(-speed*dt));this.currentLook.lerp(camLook,1-Math.exp(-speed*dt));if(this.shake>0&&!this.input.reducedMotion){this.shake-=dt;this.camera.position.x+=(Math.random()-.5)*this.shake*2;this.camera.position.y+=(Math.random()-.5)*this.shake;}
+    if(this.mode==='game'&&this.phase==='combat')this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),this.camera.position);
     this.camera.lookAt(this.currentLook);
   }
   frame(){

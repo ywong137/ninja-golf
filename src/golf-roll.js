@@ -1,4 +1,5 @@
 import {heightAt,lieAt} from './course.js';
+import {resolveBuildingBall,buildingRelief} from './building-ball.js';
 
 export const BALL_STEP=1/120,BALL_RADIUS=.13;
 export function ballSurface(course,p){return{ground:heightAt(course,p.x,p.z)+BALL_RADIUS,lie:lieAt(course,p.x,p.z)};}
@@ -28,13 +29,19 @@ export function capturesCup(before,p,v,cup){
 export function rollingFinished(stillTime,time){return stillTime>.32||time>30;}
 
 // Preview adapter uses the same post-movement operations as Game.updateBall.
-export function stepRollingBall(course,state,dt,cup){
+export function stepRollingBall(course,state,dt,cup,collision=null){
  const p=state.position,v=state.velocity,before={...p};state.time+=dt;
  p.x+=v.x*dt;p.y+=v.y*dt;p.z+=v.z*dt;
+ const buildingHit=resolveBuildingBall(collision,before,p,v);if(buildingHit?.unplayableRoof){state.lie='Building';return state.outcome='Unplayable roof';}
  const surface=ballSurface(course,p),hazard=ballHazard(p,surface,state.time);state.lie=surface.lie;
  if(hazard)return state.outcome=hazard;
  state.stillTime=applyRollingResistance(course,p,v,surface,dt,state.stillTime);
  if(capturesCup(before,p,v,cup))return state.outcome='Holed';
- if(rollingFinished(state.stillTime,state.time))return state.outcome='Stopped';
+ if(rollingFinished(state.stillTime,state.time)){
+  const relief=buildingRelief(course,collision,p);
+  if(relief.status==='unplayable')return state.outcome='Unplayable building lie';
+  if(relief.status==='relief'){Object.assign(p,relief.position);state.lie=lieAt(course,p.x,p.z);}
+  return state.outcome='Stopped';
+ }
  return null;
 }

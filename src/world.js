@@ -6,6 +6,7 @@ import {createPond,createOceanMaterial} from './water.js';
 import { NaturalLandscape,forestAtlasSource,queueSceneryRock } from './nature.js';
 import {buildDistantForest} from './distant-forest.js';
 import {SceneryCollision} from './scenery-collision.js';
+import {BuildingNavigation} from './building-navigation.js';
 import {buildBridges} from './bridges.js';
 import {landscapeHorizon} from './landscape-horizon.js';
 import {createTerrainSurfaceSampler} from './terrain-surface.js';
@@ -79,7 +80,7 @@ export class World {
   clear(){
     this.pond?.dispose();
     const materials=new Set(),geos=new Set();this.root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry)geos.add(o.geometry);if(o.customDepthMaterial)materials.add(o.customDepthMaterial);if(o.material&&o.material!==this.waterMaterial)materials.add(o.material);});
-    this.root.clear();this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.pathContains=null;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
@@ -88,7 +89,7 @@ export class World {
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);this.makePath();
     if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.rockColor,normal:this.rockNormal});
     buildFairwayCover(this.root,c,this.ambushSites,{color:this.rockColor,normal:this.rockNormal});
-    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites);this.makeFlag();this.makePetals(r);this.makeBirds();
+    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
     buildTeeMarkers(this.root,c,{stoneColor:this.rockColor,stoneNormal:this.rockNormal});
   }
   makeGrass(r){

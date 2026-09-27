@@ -75,11 +75,13 @@ Each warrior has a distinct face, hair, costume, and body shape. Enemies use sma
 
 ## Graphics and scope
 
-This release uses skinned human characters with 65-bone skeletons, fitted samurai costumes, and blended walking, running, sword, roll, and death animations. Golf swings use a separate baked two-hand animation. The ball launches at the swing contact time.
+This release uses licensed Microsoft Rocketbox humans with their original anatomy, skinning, faces, hair, clothing, and textures. Each character has adapted golf, movement, combat, guard, and death animations. Golf swings use a baked two-hand animation. The ball launches at the swing contact time.
 
 The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Trees, shrubs, rocks, and cliffs use reduced photographic scans. Buildings and small props use generated geometry. Nearby trees retain branches and leaf cards, with wind deformation. Distant trees use 24 viewing angles, including elevated views. Their surface normals respond to scene lighting. Ground shadows follow their actual branches. Short dithered transitions connect the detail levels. Grass uses instancing and fades smoothly at distance. Ponds reflect the scene, with ripples and shoreline foam. The architecture uses curved tiled roofs, galleries, lattice panels, and stone foundations. Weapons use beveled steel, cloth grips, and brass fittings. Each hero weapon uses five to seven material draws. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
 This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, licensed course replicas, or motion-captured combat.
+
+Buildings block actors, combat cameras, blades, projectiles, and golf balls. Enemies take routes around their walls. Gates, arches, and porches remain open. Interiors and stairs remain inaccessible. Balls receive a free drop when a building blocks the golf stance. Inaccessible roofs add one penalty stroke. The [building review](docs/building-collision-review.md) records placement checks, collision behavior, and remaining limits.
 
 Choose Performance, Balanced, or High quality from the pause menu. Balanced adjusts rendering resolution to maintain frame rate, up to 1.5 device pixels. Performance disables dynamic shadows and ambient occlusion. Balanced and High add contact shading with GTAO. Balanced suspends this extra pass during dense combat, while keeping dynamic shadows. High quality caps rendering at 2 device pixels.
 

@@ -473,3 +473,67 @@ No Blender or capture jobs ran during these measurements.
 
 Dynamic shadows remain active. Balanced mode disables contact shading at this crowd size.
 These local measurements do not establish performance on every device or camera position.
+
+
+## Solid architecture and crowd routes
+
+Buildings now block actors, combat cameras, melee attacks, projectiles, and golf balls.
+Construction records preserve open gateways, arches, and porches.
+Enemies take validated routes around building corners. Nearby enemies reuse routes after checking their new endpoints.
+Movement retains its previous safe position when a collision correction reaches water.
+
+Placement checks cover whole building footprints across all 36 holes.
+They exclude water, fairways, greens, walking routes, rendered paths, cover objects, and neighboring structures.
+Pagoda stairs now meet local ground and the foundation deck.
+Desert planters have grounded bases and clearance from porch columns.
+City clusters use different tower heights, setbacks, smaller buildings, four-sided windows, dark roofs, and narrow light strips.
+
+Golf balls rebound from walls. Putting previews share the live response.
+Airborne guides show their first building obstruction.
+A ball beside a building receives a free drop when the golfer needs room for the address stance.
+The drop cannot move nearer the cup. Inaccessible roofs and unplayable building lies add one penalty stroke.
+
+### Building verification
+
+All 142 unit tests pass. The production build succeeds.
+Ten relevant browser scripts pass: buildings, navigation, combat, guard, putting, expansion, production views, foot placement, rocks, and smoke.
+The expansion check completes all 36 cups.
+The building check uses actual player input, attached enemies, live golf updates, and projectiles across all four themes.
+It verifies 64 golf stances after free drops, without adding strokes or penalties.
+It also checks one-stroke roof relief and the unplayable-lie fallback.
+
+Rendered inspections cover all four buildings at travel height and overhead, plus openings and the pagoda stairs.
+Those inspections exposed glowing rooftop slabs and floating planters. The final captures confirm both corrections.
+Development and verification browsers remain muted.
+
+### Limits after the building revision
+
+The stairs, galleries, and building interiors remain inaccessible.
+Curved roof collision uses conservative overhead cells.
+The building routes do not replace local forest or terrain steering.
+Close walls still have oversized texture patterns. City surroundings need more architectural detail and coherent ground surfaces.
+Character movement and close-up detail still need artistic refinement.
+The game remains below the requested AAA and photorealistic standard.
+
+
+### Building-pass performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run keeps 64 enemies alive and repeats attacks for ten seconds after warmup.
+No other rendering or capture jobs ran during the measurements.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.7 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.7 | 16.7 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.7 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.8 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 52.8 | 33.4 ms |
+| City building detours | 1.00 | 60.0 | 16.8 ms |
+
+The building scenario starts all 64 enemies across a solid city podium from the hero.
+Its largest measured combat update took 25.7 ms, including the first route searches.
+The measurement records 132 route requests across setup, warmup, and sampling.
+Steady average frame rate does not exclude that initial delay.
+Dynamic shadows remain active; Balanced mode suspends contact shading at this crowd size.
+These measurements describe this machine and these scenarios, not every device or camera position.
