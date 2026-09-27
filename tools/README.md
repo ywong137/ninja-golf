@@ -31,3 +31,10 @@ Source scans remain in `/private/tmp/ninja-nature-sources`. The game loads only 
 
 The playable heroes now use separate licensed Rocketbox identities. See `docs/rocketbox-roster.md`.
 All four enemy bodies use separate Rocketbox identities. Quaternius remains the original motion reference only.
+
+# Native guard motion
+
+`author-guard-motion.py` defines each weapon’s guard, impact, break, and four directional steps.
+`append-native-guard-clips.py` fits these poses to the six native hero rigs.
+It replaces only guard clips and preserves every existing mesh and other animation byte.
+The regular native-human build also includes the guard family.

@@ -47,3 +47,10 @@ body[data-screen=game] .swing-panel{left:50%;right:auto;transform:translateX(-50
 @keyframes cinema-lines{0%,22%{opacity:0}40%,90%{opacity:.6}100%{opacity:0}}
 
 #strategy-readout:empty{display:none}#strategy-readout{font-size:10px;line-height:1.6;color:#d5dcc8;margin:4px 0 12px}.survey-active #survey-button{color:#fff1b1}
+/* Keep combat resources legible against bright grass and foliage. */
+.vitality{width:292px;padding:14px 16px;background:#102921e0;border:1px solid #dfe5ce33;border-radius:3px}
+.vitality>div:first-child,.resolve-label{font-size:10px;letter-spacing:.6px}
+.resolve-label{margin:12px 0 6px}
+.combat-count{top:max(45%,398px)}
+@media(max-height:760px){.vitality{top:205px}.combat-count{top:370px}.combat-count strong{font-size:54px}.combat-count b{margin-top:10px}}
+@media(max-width:700px){.vitality{width:250px}.vitality>div:first-child,.resolve-label{font-size:9px;letter-spacing:.3px}}

@@ -1,5 +1,5 @@
 // Keyboard, mouse and gamepad produce the same semantic combat actions.
-const COMBAT_KEYS={KeyF:'Musou',KeyE:'Interact',KeyQ:'Waypoint',Space:'Dodge',ShiftLeft:'Dodge',ShiftRight:'Dodge'};
+const COMBAT_KEYS={KeyF:'Musou',KeyE:'Interact',KeyQ:'Waypoint',Space:'Dodge'};
 export class Input {
   constructor(canvas){
     this.canvas=canvas;this.keys=new Set();this.pressed=new Set();this.lookX=0;this.lookY=0;this.panX=0;this.panY=0;this.zoom=0;this.dragging=false;this.gamepad=false;this.previousButtons=[];this.context='menu';this.locked=false;this.sensitivity=1;this.invertY=false;this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;try{const options=JSON.parse(localStorage.getItem('ninja-golf-controls'));if(options){this.sensitivity=Math.max(.3,Math.min(2,options.sensitivity||1));this.invertY=!!options.invertY;this.reducedMotion=!!options.reducedMotion;}}catch{}
@@ -18,17 +18,18 @@ export class Input {
   }
   setContext(context){if(context===this.context)return;this.context=context;this.dragging=false;if(context!=='combat'&&document.pointerLockElement===this.canvas)document.exitPointerLock();}
   poll(dt,combat=false){
-    const pad=Array.from(navigator.getGamepads?.()||[]).find(Boolean);this.gamepad=!!pad;this.padX=0;this.padY=0;this.padFocus=false;this.padSprint=false;
+    const pad=Array.from(navigator.getGamepads?.()||[]).find(Boolean);this.gamepad=!!pad;this.padX=0;this.padY=0;this.padFocus=false;this.padSprint=false;this.padGuard=false;
     if(pad){const dead=x=>Math.abs(x)<.16?0:x;this.padX=dead(pad.axes[0]||0);this.padY=dead(pad.axes[1]||0);this.lookX+=dead(pad.axes[2]||0)*dt*620;this.lookY+=dead(pad.axes[3]||0)*dt*240;
       const map=combat?{0:'Interact',1:'Dodge',2:'LightAttack',3:'HeavyAttack',5:'Musou',7:'LightAttack',9:'Escape'}:{0:'Space',1:'ShiftLeft',3:'KeyR',4:'KeyQ',5:'KeyE',9:'Escape',14:'ArrowLeft',15:'ArrowRight'};
-      pad.buttons.forEach((b,i)=>{if(b.pressed&&!this.previousButtons[i]&&map[i])this.pressed.add(map[i]);this.previousButtons[i]=b.pressed;});this.padSprint=pad.buttons[1]?.pressed;this.padFocus=pad.buttons[6]?.pressed;if(this.context==='survey')this.zoom+=((pad.buttons[7]?.value||0)-(pad.buttons[6]?.value||0))*dt*650;
+      pad.buttons.forEach((b,i)=>{if(b.pressed&&!this.previousButtons[i]&&map[i])this.pressed.add(map[i]);this.previousButtons[i]=b.pressed;});this.padSprint=combat&&!!pad.buttons[10]?.pressed;this.padFocus=pad.buttons[6]?.pressed;this.padGuard=combat&&!!pad.buttons[4]?.pressed;if(this.context==='survey')this.zoom+=((pad.buttons[7]?.value||0)-(pad.buttons[6]?.value||0))*dt*650;
     }else this.previousButtons=[];
   }
   saveSettings(){try{localStorage.setItem('ninja-golf-controls',JSON.stringify({sensitivity:this.sensitivity,invertY:this.invertY,reducedMotion:this.reducedMotion}));}catch{}}
+  get guarding(){return this.padGuard||this.down('KeyV');}
   get focused(){return this.padFocus||this.down('KeyC');}
   down(...codes){return codes.some(c=>this.keys.has(c));}
   tap(...codes){return codes.some(c=>this.pressed.has(c));}
   get move(){return{x:(this.down('KeyD','ArrowRight')?1:0)-(this.down('KeyA','ArrowLeft')?1:0)+(this.padX||0),y:(this.down('KeyW','ArrowUp')?1:0)-(this.down('KeyS','ArrowDown')?1:0)-(this.padY||0)};}
   end(){this.pressed.clear();this.lookX=0;this.lookY=0;this.panX=0;this.panY=0;this.zoom=0;}
-  clear(){this.keys.clear();this.end();this.dragging=false;}
+  clear(){this.keys.clear();this.end();this.dragging=false;this.padGuard=false;this.padFocus=false;this.padSprint=false;}
 }

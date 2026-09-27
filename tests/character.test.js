@@ -7,7 +7,7 @@ import {ENEMY_TYPES,enemyTypeForSlot,enemyIntent,guardDamageMultiplier} from '..
 import {Projectiles} from '../src/projectiles.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 test('Blades have broad flat faces, distinct profiles, and bounded draw groups',()=>{
- for(const [name,p]of Object.entries(BLADE_PROFILES)){const g=bladeGeometry(p),size=g.boundingBox.getSize(new THREE.Vector3());assert.ok(size.x>size.z*7,`${name} must read as a flat blade`);assert.equal(g.groups.length,2);assert.equal(g.getAttribute('position').count,165);g.dispose();}
+ for(const [name,p]of Object.entries(BLADE_PROFILES)){const g=bladeGeometry(p),size=g.boundingBox.getSize(new THREE.Vector3());assert.ok(size.x>size.z*7,`${name} must read as a flat blade`);assert.equal(g.groups.length,2);assert.ok(g.getAttribute('position').count<1800,'Blade geometry stays bounded');assert.ok(g.getAttribute('uv'),'Steel finish follows the blade surface');const normals=g.getAttribute('normal');for(let i=0;i<normals.count;i++)assert.ok(Number.isFinite(normals.getX(i)+normals.getY(i)+normals.getZ(i)),`${name}: finite normals`);g.dispose();}
 });
 test('Authored motion has continuous phase landmarks and a stable lead foot contract',()=>{
  for(const [name,c]of Object.entries(motions)){assert.equal(c.poses[0].t,0,name);assert.equal(c.poses.at(-1).t,1,name);for(let i=1;i<c.poses.length;i++)assert.ok(c.poses[i].t>c.poses[i-1].t,name);for(const p of c.poses){assert.ok(Object.values(p).flat().every(Number.isFinite),name);assert.ok(Math.hypot(...p.tip.map((x,i)=>x-p.grip[i]))>.3,name);}}
@@ -72,4 +72,19 @@ test('Native human golf clips start at zero and preserve authored contact timing
    assert.ok(Math.abs(clipEnd-motions[name].duration)<1e-5,`${hero}/${name}: clip duration changed`);
   }
  }
+});
+
+test('Each native hero has a distinct braced guard and whole-body recoil clips',()=>{
+ const styles={ronin:'Odachi',shinobi:'Twin',monk:'Naginata',kaede:'Fan',ayame:'Ring',sora:'Sickle'};
+ for(const [hero,style]of Object.entries(styles)){
+  const bytes=readFileSync(new URL(`../public/models/${hero}.glb`,import.meta.url)),size=bytes.readUInt32LE(12),gltf=JSON.parse(bytes.subarray(20,20+size));
+  const guards=gltf.animations.filter(clip=>clip.name.includes('_Guard_'));
+  assert.deepEqual(guards.map(clip=>clip.name).sort(),['Break','Impact','Loop','Walk_Backward','Walk_Forward','Walk_Left','Walk_Right'].map(kind=>`${style}_Guard_${kind}`));
+  const loop=motions[`${style}_Guard_Loop`],impact=motions[`${style}_Guard_Impact`],broken=motions[`${style}_Guard_Break`];
+  assert.deepEqual(loop.poses[0].grip,loop.poses.at(-1).grip,'Held guard loops smoothly');
+  assert.ok(impact.poses[1].shift[2]<loop.poses[0].shift[2]-.03,'Impact absorbs force through bent legs');
+  assert.ok(broken.poses[1].chest>loop.poses[0].chest+.35,'Guard break moves the chest and pelvis');
+  for(const clip of guards)for(const bone of ['pelvis','spine_01','hand_r','foot_r'])assert.ok(clip.channels.some(channel=>gltf.nodes[channel.target.node].name===bone),`${hero}/${clip.name}: missing whole-body channel ${bone}`);
+ }
+ assert.equal(motions.Naginata_Guard_Loop.gripSpacing,.30,'Polearm guard uses a wider two-handed grip');
 });

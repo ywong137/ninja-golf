@@ -126,7 +126,7 @@ def sample_authored(clip,t):
 def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
  primary=Vector(pose['grip']);shaft=(Vector(pose['tip'])-primary).normalized()
  for side in ['r','l']:
-  sign=-1 if side=='r' else 1;center=primary if side=='r' else primary-shaft*.09 if clip['twoHanded'] else Vector(pose['offGrip'])
+  sign=-1 if side=='r' else 1;center=primary if side=='r' else primary-shaft*clip.get('gripSpacing',.09) if clip['twoHanded'] else Vector(pose['offGrip'])
   direction=shaft if side=='r' or clip['twoHanded'] else (Vector(pose['offTip'])-center).normalized()
   forward=Quaternion((0,0,1),pose['chest'])@Vector((0,-1,0));forward-=direction*forward.dot(direction)
   if forward.length<.1:forward=Vector((1,0,0))-direction*direction.x
@@ -162,7 +162,9 @@ def bake_rocketbox_actions(rig,clip_names=None):
  """Bake native anatomical poses into named NLA clips for per-avatar export."""
  import json
  data=json.loads((ROOT/'src/motion-data.json').read_text());scene=bpy.context.scene;scene.render.fps=30;scene.frame_start=0
- sources=[import_motion_source(filename) for filename in ['warrior-motion.glb','golf-motion.glb']]
+ filenames=['warrior-motion.glb','golf-motion.glb']
+ if (ROOT/'public/models/guard-motion.glb').exists():filenames.append('guard-motion.glb')
+ sources=[import_motion_source(filename) for filename in filenames]
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
  address=next(a for a in authored[1] if a.name.split('.')[0]=='Golf_Address')
  source.animation_data.action=address;scene.frame_set(round(address.frame_range[0]));retarget_frame(rig,source,*mapping);grips=measure_grips(rig)

@@ -16,7 +16,11 @@ The build preserves source texture maps and UV coordinates. It reduces geometry 
 The tree build thins whole leaf groups before reduction. This prevents the canopy from collapsing into disconnected triangles.
 The trunk has a separate geometry budget. The importer welds matching scan vertices before reduction.
 
-The runtime instances each material group. It selects geometry by distance and uses eight-view tree images beyond 90 metres.
+The runtime instances each material group. It selects geometry by distance and uses 24-view tree images beyond 112 metres.
+Each tree atlas contains eight horizontal directions at three elevations: 0°, 30°, and 60°.
+Albedo and normal atlases let distant trees use the same scene lighting as nearby geometry.
+Eight projected branch silhouettes supply ground shadows beyond the dynamic shadow range.
+Short dithered transitions connect the detail levels at 34–36 and 108–112 metres.
 Close trees retain full branch geometry. Ground shrubs disappear beyond their useful viewing distance.
 Tree groves leave open views across the course. Plants and rocks stay outside the authored fairways and greens.
 
@@ -37,3 +41,6 @@ PLAYWRIGHT_CHANNEL=chrome node tools/bake-nature-impostors.mjs
 ```
 
 The image bake requires the local development server. It runs with audio muted.
+
+The bake writes color, normal, and shadow WebP atlases, plus view bounds in `src/nature-views.json`.
+Run `node tests/browser-nature.mjs` to inspect day, night, aerial, and detail-transition views.

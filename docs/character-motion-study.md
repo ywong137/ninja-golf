@@ -116,3 +116,21 @@ Native clips start at frame zero. This keeps the authored 1.4-second golf contac
 For two-handed combat, the bridge moves the shared handle into both native arms' reach. Both wrist targets receive the same translation. This preserves their spacing along the shaft. The browser check measures the second palm against that shaft throughout Musou.
 
 Native free hands follow the solved forearm orientation. They keep the authored wrist position without copying an unused weapon direction. This prevents a sharply bent wrist in relaxed guards.
+
+## Native directional guards
+
+Each weapon has a braced guard loop, a short impact response, and a guard-break recoil. Odachi uses a diagonal blade cover. Twin blades cross in front of the body. Naginata uses a wider, 30 cm hand spacing. The fan covers the upper body. The ring stays near the centerline. The sickle uses a compact hook guard.
+
+Impact lowers the pelvis and lets the chest absorb force. Guard break opens the arms and turns the chest. The native bake keeps feet supported and maintains the measured grips. Runtime guard states suppress the ordinary idle overlays.
+
+`Warrior.update` accepts `blocking`, `parry`, `guardBreak`, and `guardHitToken`. `parry` and `guardBreak` use remaining seconds. Each new hit token starts impact recoil. A rising guard-break state starts the break clip. An attack exits the guard immediately.
+
+Run `python3 tools/author-guard-motion.py`, then Blender with `tools/build-authored-motion.py -- --guards-only`. Run Blender with `tools/build-rocketbox-warriors.py -- --guards-only` to append the native clips. The append tool preserves existing animation descriptors and binary bytes. It does not rebuild the bodies or replace earlier motion.
+
+Run `PLAYWRIGHT_CHANNEL=chrome node tests/browser-guards.mjs` to verify all six guards, state transitions, grip spacing, foot support, and joint posture. The check saves guard, impact, and break contact sheets under `/tmp/ninja-guard-*.png`.
+
+Guard locomotion uses four native cycles for forward, backward, and sideways travel. Each cycle has a planted support phase and a lifted recovery step. The shorter side steps retain bent knees. Runtime blends adjacent directions at the same gait phase. It scales each direction's contribution by that clip's travel speed, then sets cadence from actual movement and model scale. Zero actual speed returns to the planted guard.
+
+Use `moveSpeed` and `moveAngle` from actual displacement when guarding. Attacks and dodges take priority over a lingering guard-break response. Run `tests/browser-guard-walk.mjs` for all six heroes in eight directions. The test also checks blocked movement, grip contact, knee direction, foot lift, and break cancellation.
+
+Blender's `tools/build-rocketbox-warriors.py -- --guard-walk-only` appends only the four movement clips. Earlier guards, attacks, golf motion, and body data remain unchanged. Final validation measured less than 0.6 mm support drift in cardinal directions and 1.9 cm in diagonal blends. The largest two-handed grip gap was 0.018 mm.

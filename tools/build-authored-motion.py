@@ -1,8 +1,10 @@
 """Bake study-based whole-body golf and blade motions with shared grip trajectories."""
-import bpy,json,math,pathlib
+import bpy,json,math,pathlib,sys
 from mathutils import Vector,Quaternion,Matrix
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=json.loads((ROOT/'src/motion-data.json').read_text())
+GUARDS_ONLY='--guards-only' in sys.argv
+if GUARDS_ONLY:DATA={name:clip for name,clip in DATA.items() if '_Guard_' in name}
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(ROOT/'assets/source/UAL1_Standard.glb'))
 source=next(o for o in bpy.context.scene.objects if o.type=='ARMATURE')
@@ -57,7 +59,7 @@ for name,clip in DATA.items():
    rotate('clavicle_r',(0,0,1),-.10);rotate('clavicle_l',(0,0,1),.10)
   grip=Vector(pose['grip']);direction=(Vector(pose['tip'])-grip).normalized()
   for side in ['r','l']:
-   center=grip if side=='r' else (grip-direction*.09 if clip['twoHanded'] else Vector(pose['offGrip']))
+   center=grip if side=='r' else (grip-direction*clip.get('gripSpacing',.09) if clip['twoHanded'] else Vector(pose['offGrip']))
    shaft=direction if side=='r' or clip['twoHanded'] else (Vector(pose['offTip'])-center).normalized()
    # The closed palm runs across the handle; its local Z follows the shaft.
    forward=Quaternion((0,0,1),chest)@Vector((0,-1,0))
@@ -121,4 +123,4 @@ for track in rig.animation_data.nla_tracks:track.mute=False
 for o in list(scene.objects):
  if o!=rig:bpy.data.objects.remove(o,do_unlink=True)
 mesh=bpy.data.meshes.new('RigCarrier');mesh.from_pydata([(0,0,0),(.001,0,0),(0,.001,0)],[],[(0,1,2)]);obj=bpy.data.objects.new('RigCarrier',mesh);scene.collection.objects.link(obj);obj.vertex_groups.new(name='pelvis').add([0,1,2],1,'REPLACE');mod=obj.modifiers.new('Rig','ARMATURE');mod.object=rig;obj.parent=rig
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/golf-motion.glb'),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models'/('guard-motion.glb' if GUARDS_ONLY else 'golf-motion.glb')),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)

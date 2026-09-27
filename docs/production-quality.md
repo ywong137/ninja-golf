@@ -133,7 +133,7 @@ Every route passes 801 dry-ground samples from tee to green. Tee and green discs
 These assets improve human anatomy and natural surface detail. They do not establish parity with modern AAA games.
 Buildings and props still use generated geometry. Full facial performance and cloth simulation remain outside this implementation.
 
-### Current verification
+### Replacement-pass verification
 
 - All 49 unit and asset checks pass.
 - The browser suite passes audio, movement, combat, golf, penalties, revival, saved rounds, and all 36 cups.
@@ -146,7 +146,7 @@ Buildings and props still use generated geometry. Full facial performance and cl
 The geometric measurements validate attachment and contact constraints. They do not measure animation quality by themselves.
 Rendered pose checks accompany them.
 
-### Current performance
+### Replacement-pass performance
 
 Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440×900 viewport.
 Each run holds 64 enemies alive and repeats attacks for ten seconds after warmup.
@@ -161,3 +161,51 @@ Each run holds 64 enemies alive and repeats attacks for ten seconds after warmup
 
 The HUD retains full display resolution. These results describe these local scenarios, not every device or camera position.
 Both 1440×900 and 1280×720 visual layouts pass. Automated tests mute system audio.
+
+
+## Defensive combat and material refinement
+
+Each hero now has a weapon-specific guard, impact response, broken-guard recoil, and four directional guard steps.
+Guard faces the camera. It blocks a 130-degree frontal arc and leaves the rear exposed.
+A timed press parries one attack, staggers its attacker, and adds ten Resolve.
+Guard strength limits continuous blocking. A broken guard permits a dodge or buffers an attack through a short recovery.
+
+Weapons now have sharp bevel normals, mapped steel grain, cord wraps, and brass fittings.
+The sickle and ring use curved surfaces. The fan has pleated metal blades.
+Grip origins, combat reach, and the smaller enemy weapon sizes remain consistent.
+
+Distant tree images now contain 24 views, including three camera elevations.
+Separate surface-normal images let them respond to daylight and night lighting.
+Ground silhouettes follow the scanned branches and the same sun direction as nearby shadows.
+The renderer changes detail within short distance bands. This reduces visible dithering during movement.
+
+
+### Refinement verification
+
+- All 61 unit and asset checks pass.
+- The complete 15-script browser suite passes, including all 36 cups.
+- All six heroes pass guard movement checks in eight directions.
+- Support-foot drift stays below 0.6 mm in cardinal directions and 1.9 cm in diagonal blends.
+- Guard movement follows actual displacement after collision. A boundary regression verifies the change.
+- Keyboard guard uses V; gamepad guard uses LB. Ctrl remains available to the browser.
+- B only dodges. Held left-stick click sprints. Keyboard sprint remains Shift.
+- All four course previews use the revised lighting and foliage.
+- Day, night, aerial, and tree-detail views pass without shader errors.
+- The 1280×720 and 1440×900 presentation checks pass with audio muted.
+
+### Refinement performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440×900 viewport.
+Each measurement holds 64 enemies alive and repeats attacks for ten seconds after warmup.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 51.8 | 33.4 ms |
+| Heather & Crown | 1.00 | 60.1 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.20 | 50.7 | 33.4 ms |
+
+Retina rendering adapts independently of the HUD, which retains full display resolution.
+These local measurements do not establish performance on every device or at every camera position.
+The environment still needs further art work to meet the full photorealism target.

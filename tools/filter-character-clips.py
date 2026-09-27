@@ -1,10 +1,11 @@
 """Keep a hero's own clips and remove their unused GLB animation buffers."""
 import argparse,json,pathlib,struct
 PREFIX={'ronin':'','shinobi':'Twin_','monk':'','kaede':'Fan_','ayame':'Ring_','sora':'Sickle_'}
+GUARD_PREFIX={'ronin':'Odachi','shinobi':'Twin','monk':'Naginata','kaede':'Fan','ayame':'Ring','sora':'Sickle'}
 COMMON={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address','Golf_Swing','Golf_Putt'}
 def clip_names(hero,names):
  prefix=PREFIX[hero]
- return {n for n in names if n in COMMON or (n.startswith(prefix) and n[len(prefix):].startswith(('Cut_','Heavy_','Musou_','Ready')))}
+ return {n for n in names if n in COMMON or n.startswith(GUARD_PREFIX[hero]+'_Guard_') or (n.startswith(prefix) and n[len(prefix):].startswith(('Cut_','Heavy_','Musou_','Ready')))}
 def prune(path,hero):
  raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0];doc=json.loads(raw[20:20+length]);binary=raw[28+length:];assert len(doc['buffers'])==1,'Expected one embedded GLB buffer'
  keep=clip_names(hero,[a['name'] for a in doc['animations']]);doc['animations']=[a for a in doc['animations'] if a['name'] in keep]

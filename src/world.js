@@ -14,6 +14,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { heightAt, lieAt, routePoint, fairwayDistance, waterBasins, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
+const SUN_OFFSET=new THREE.Vector3(-100,95,-100);
 const color = new THREE.Color();
 function material(hex, roughness=.9, metalness=0) { return new THREE.MeshStandardMaterial({color:hex,roughness,metalness}); }
 function addMesh(g, geo, mat, x,y,z, sx=1,sy=1,sz=1) {
@@ -32,7 +33,7 @@ export class World {
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
       }`}));this.nightSky.visible=false;scene.add(this.nightSky);
-    const sun=new THREE.Vector3(-.65,.42,-.68).normalize();const u=sky.material.uniforms;
+    const sun=SUN_OFFSET.clone().normalize();const u=sky.material.uniforms;
     u.turbidity.value=3.5;u.rayleigh.value=1.7;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.83;u.sunPosition.value.copy(sun);
     this.sun=new THREE.DirectionalLight('#ffedd0',3.0);this.sun.position.copy(sun).multiplyScalar(150);this.sun.castShadow=true;
     this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:400});this.sun.shadow.bias=-.0004;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=3;
@@ -77,7 +78,7 @@ export class World {
     this.root.clear();this.root.userData.landmarks=[];geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
-    this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed);
+    this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
     const geo=courseGeometry(c,heightAt,ellipse);
     const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);const horizon=new THREE.Mesh(landscapeHorizon(c),this.terrainMaterial(c));horizon.receiveShadow=true;this.root.add(horizon);
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);
@@ -167,11 +168,11 @@ float phase=instanceMatrix[3].y;transformed.y+=abs(position.x)*sin(birdTime*4.+p
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));const m=new THREE.PointsMaterial({color:this.course.theme==='cyberpunk'?'#7bf5f5':this.course.theme==='desert'?'#e8c997':this.course.theme==='highlands'?'#c8cdda':'#f4d3c9',size:this.course.theme==='cyberpunk'?.28:.16,transparent:true,opacity:.8});this.petals=new THREE.Points(g,m);this.root.add(this.petals);
   }
   update(time,dt,focus,camera){
-    this.vegetation?.update(time,camera||focus||new THREE.Vector3(90,70,-80));
+    const lightingFocus=focus||this.previewShadowFocus;this.vegetation?.update(time,camera||lightingFocus,lightingFocus);
     this.waterMaterial.uniforms.time.value=time;if(this.grassTime)this.grassTime.value=time;if(focus)this.grassFocus?.value.copy(focus);
     if(this.birds){this.birdTime.value=time;for(let i=0;i<9;i++){const a=time*.035+i*.52;obj.position.set(110+Math.sin(a)*65,28+i%3*7+Math.sin(a*2)*3,this.course.length*.55+Math.cos(a)*120);obj.rotation.set(0,Math.atan2(Math.cos(a)*65,-Math.sin(a)*120),Math.sin(a)*.1);obj.scale.setScalar(.9+i%3*.15);obj.updateMatrix();this.birds.setMatrixAt(i,obj.matrix);}this.birds.instanceMatrix.needsUpdate=true;}
     if(this.flag){const p=this.flag.geometry.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*3-time*4)*x*.13);}p.needsUpdate=true;this.flag.geometry.computeVertexNormals();}
     if(this.petals){const p=this.petals.geometry.attributes.position;for(let i=0;i<p.count;i++){p.setX(i,p.getX(i)+dt*.6);p.setY(i,p.getY(i)-dt*.16);if(p.getY(i)<6)p.setY(i,38);if(p.getX(i)>95)p.setX(i,-75);}p.needsUpdate=true;}
-    if(focus){this.updateGrass(focus);this.sun.target.position.copy(focus);this.sun.position.copy(focus).add(new THREE.Vector3(-100,95,-100));this.sun.target.updateMatrixWorld();}
+    if(focus)this.updateGrass(focus);if(lightingFocus){this.sun.target.position.copy(lightingFocus);this.sun.position.copy(lightingFocus).add(SUN_OFFSET);this.sun.target.updateMatrixWorld();}
   }
 }

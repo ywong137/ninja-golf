@@ -112,3 +112,29 @@ export function engagementTarget(enemy,player,velocity,engaged){
 
 export const MUSOU_CINEMATIC_DURATION=2.85;
 export function enemyReadyToAttack(enemy,time){return !enemy.dead&&!enemy.emerging&&!(enemy.stun>0)&&enemy.cooldown<.4&&time>=(enemy.readyAt||0);}
+
+export const PLAYER_GUARD={maximum:100,halfArc:65*Math.PI/180,parryWindow:.18,parryCooldown:.65,resolve:10,stagger:1.2,breakDuration:1.1,attackRecovery:.22,recoveryDelay:.75,recoveryRate:28};
+export function createPlayerGuard(){return{strength:PLAYER_GUARD.maximum,active:false,held:false,parryUntil:-Infinity,nextParryAt:0,brokenUntil:0,recoverAt:0,parryPoseUntil:0,breakPoseUntil:0,attackReadyAt:0,hitToken:0};}
+export function updatePlayerGuard(guard,{time,dt,held,allowed}){
+ const pressed=held&&!guard.held;guard.held=held;
+ guard.active=held&&allowed&&time>=guard.brokenUntil&&guard.strength>0;
+ if(pressed&&guard.active&&time>=guard.nextParryAt){guard.parryUntil=time+PLAYER_GUARD.parryWindow;guard.nextParryAt=time+PLAYER_GUARD.parryCooldown;}
+ if(!guard.active)guard.parryUntil=-Infinity;
+ if(time>=guard.recoverAt&&time>=guard.brokenUntil)guard.strength=Math.min(PLAYER_GUARD.maximum,guard.strength+dt*PLAYER_GUARD.recoveryRate*(guard.active?.35:1));
+ return guard;
+}
+export function exitPlayerGuard(guard){guard.active=false;guard.parryUntil=-Infinity;}
+// Source is the attacker's direction from the defender, or the incoming projectile's previous position.
+export function resolvePlayerGuard(guard,{time,damage,dx,dz,facing}){
+ if(!guard.active||time<guard.brokenUntil||!Number.isFinite(dx)||!Number.isFinite(dz)||Math.hypot(dx,dz)<1e-5)return{kind:'hit',damage};
+ const angle=Math.atan2(dx,dz)-facing;
+ if(Math.cos(angle)<Math.cos(PLAYER_GUARD.halfArc))return{kind:'hit',damage};
+ guard.hitToken++;
+ if(time<guard.parryUntil){guard.parryUntil=-Infinity;guard.parryPoseUntil=time+.24;guard.strength=Math.min(PLAYER_GUARD.maximum,guard.strength+12);return{kind:'parry',damage:0,resolve:PLAYER_GUARD.resolve,stagger:PLAYER_GUARD.stagger};}
+ guard.strength=Math.max(0,guard.strength-Math.max(12,Math.min(34,damage*3)));guard.recoverAt=time+PLAYER_GUARD.recoveryDelay;
+ if(guard.strength===0){guard.active=false;guard.brokenUntil=time+PLAYER_GUARD.breakDuration;guard.breakPoseUntil=time+.4;guard.attackReadyAt=time+PLAYER_GUARD.attackRecovery;guard.recoverAt=guard.brokenUntil;return{kind:'break',damage:0};}
+ return{kind:'block',damage:0};
+}
+
+export function guardAttackRecovering(guard,time){return time<guard.attackReadyAt;}
+export function escapeGuardBreak(guard,time){guard.attackReadyAt=time;guard.breakPoseUntil=time;}
