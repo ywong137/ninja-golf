@@ -73,3 +73,25 @@ This prevents floating trees where reduced geometry differs from the source heig
 Bunker masks, maps, lie detection, and terrain height share one deterministic scalloped contour.
 Their depressed floors rise into rounded turf lips.
 The bunker mesh uses approximately 0.5 m spacing around each hazard.
+
+## Short turf and gravel paths
+
+Fairways and tees use [ambientCG Grass005](https://ambientcg.com/view?id=Grass005) under [CC0](https://docs.ambientcg.com/license/).
+This asset combines procedural and bitmap elements. It is not a scan of a putting green.
+The game preserves its RGB variation and uses finer detail with weaker normals on the greens.
+Fairway mowing changes brightness with viewing direction, following [USGA's explanation](https://www.usga.org/course-care/green-section-record/57/22/defining-definition.html).
+Highland fairways use a quieter half-and-half pattern. Rough stays unstriped.
+
+Paths use Charlotte Baglioni's [Gravel Floor 04](https://polyhaven.com/a/gravel_floor_04) under [CC0](https://polyhaven.com/license).
+The gravel repeats at its verified physical width of 2.5 metres.
+A curved strip follows the rendered terrain and fades into the rough at its edges.
+It excludes water, bunkers, tees, greens, and fairways. Tight route turns can end a path section.
+
+The source licenses, dimensions, and hashes ship in `public/textures/GOLF-SURFACES.json`.
+All six delivered maps remain 2048 × 2048 pixels.
+Color maps use sRGB. Normal and roughness maps use linear data.
+Grass005 has no published physical size; its 1.4 m fairway tile is an artistic choice.
+
+`tools/prepare-golf-surfaces.py` re-encodes the verified sources without resizing them.
+`courseSurfaceHeight` samples the same triangle subdivisions as the visible terrain.
+Paths and hero foot placement share this sampler.

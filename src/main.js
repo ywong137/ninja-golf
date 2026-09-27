@@ -4,6 +4,7 @@ import { Rendering } from './rendering.js';
 import { loadNature } from './nature.js';
 import {PuttingGuide,previewShot} from './golf-guide.js';
 import { World } from './world.js';
+import {courseSurfaceHeight} from './terrain.js';
 import { Warrior, Effects, CrowdRenderer, loadWarriorAssets } from './actors.js';
 import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
 import { attackDefinition, strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
@@ -14,13 +15,14 @@ import {musouHeadings} from './motion.js';
 import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { UI } from './ui.js';
-import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, lieAt, waterBasins, clamp, carryFor, launchShot, scoreName } from './course.js';
+import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, ellipse, lieAt, waterBasins, clamp, carryFor, launchShot, scoreName } from './course.js';
 
 const v1=new THREE.Vector3(),v2=new THREE.Vector3(),camTarget=new THREE.Vector3(),camLook=new THREE.Vector3();
 const YARD=1.09361, BALL_RADIUS=.13;
 class Game {
   constructor(){
     this.courseIndex=0;this.roundCourse=COURSE_SETS[0];this.holes=this.roundCourse.holes;this.penalties=0;this.scorePenalties=[];this.audio=new AudioEngine();this.mode='home';this.phase='aim';this.paused=false;this.hole=0;this.scores=[];this.kills=0;this.combo=0;this.bestCombo=0;this.comboTime=0;this.resolve=35;this.guard=createPlayerGuard();this.health=110;this.quality='balanced';this.time=0;this.playerIndex=0;this.enemies=[];this.power=1;this.charging=false;this.club=0;this.strokes=0;this.enemiesSpawned=0;this.attackTimer=0;this.dodgeTimer=0;this.invincible=0;this.shotOrigin=new THREE.Vector3();this.cameraYaw=0;this.cameraPitch=.35;this.swingTimer=0;this.uiTime=0;this.frameCount=0;this.fpsTime=0;
+    this.groundHeight=(x,z)=>courseSurfaceHeight(this.course,x,z,heightAt,ellipse);
     this.ui=new UI({selection:()=>this.selectScreen(),home:()=>this.home(),begin:(i,c)=>this.begin(i,c),courseSelection:()=>this.selectCourseScreen(),course:i=>this.previewCourse(i),warrior:i=>this.selectWarrior(i),audio:()=>this.ui.audio(this.audio.toggle()),pause:()=>this.togglePause(),help:()=>{this.ui.help();},resume:()=>this.resume(),swing:()=>{this.audio.start();this.swing();},club:d=>this.changeClub(d),selectClub:i=>this.selectClub(i),skip:()=>{this.fastFlight=true;},restart:()=>{this.paused=false;this.loadHole(this.hole);this.audio.resume();},next:()=>this.nextHole(),survey:()=>this.toggleSurvey()});
     try{this.renderer=new THREE.WebGLRenderer({canvas:this.ui.canvas,antialias:true,powerPreference:'high-performance'});}catch(e){this.ui.modal('<h2>A little more graphics power.</h2><p>This game needs WebGL 2. Enable hardware acceleration in your browser, then reload the page.</p>');return;}
     this.renderer.setSize(innerWidth,innerHeight);this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.92;this.renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -180,7 +182,7 @@ class Game {
     if(moving){this.stepTime=(this.stepTime||0)+dt;if(this.stepTime>(sprinting?.26:.37)){this.audio.play('step',lieAt(this.course,p.x,p.z));this.stepTime=0;}}
     if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
     if(this.guardBufferedAttack&&!guardAttackRecovering(this.guard,this.time)){const queued=this.guardBufferedAttack;this.guardBufferedAttack=null;if(queued.expires>=this.time)this.attack(queued.kind);}
-    this.player.update(this.time,dt,{moving,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveSpeed:Math.hypot(p.x-movementStartX,p.z-movementStartZ)/Math.max(dt,.0001),blocking:this.guard.active,parry:Math.max(0,this.guard.parryPoseUntil-this.time),guardBreak:Math.max(0,this.guard.breakPoseUntil-this.time),guardHitToken:this.guard.hitToken,moveAngle:Math.atan2(p.x-movementStartX,p.z-movementStartZ)-this.player.root.rotation.y});
+    this.player.update(this.time,dt,{groundHeight:this.groundHeight,moving,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveSpeed:Math.hypot(p.x-movementStartX,p.z-movementStartZ)/Math.max(dt,.0001),blocking:this.guard.active,parry:Math.max(0,this.guard.parryPoseUntil-this.time),guardBreak:Math.max(0,this.guard.breakPoseUntil-this.time),guardHitToken:this.guard.hitToken,moveAngle:Math.atan2(p.x-movementStartX,p.z-movementStartZ)-this.player.root.rotation.y});
     if(this.action){const [hilt,tip]=this.player.weaponPoints();if(this.action.hits.some(hit=>Math.abs(this.action.time-hit)<.105)){this.effects.trail(hilt,tip,this.action.kind==='musou'?2:0,this.action.token);if(this.player.offhand){const [a,b]=this.player.weaponPoints(true);this.effects.trail(a,b,this.action.kind==='musou'?2:0,this.action.token,1);}}if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}}
     if(this.spawnTime<=0&&pd>11){this.spawnWave(10+this.hole*2);this.spawnTime=3.5;}
     const ready=this.enemies.filter(e=>!e.dead&&!e.emerging&&!(e.stun>0)).sort((a,b)=>a.root.position.distanceToSquared(p)-b.root.position.distanceToSquared(p));
@@ -278,11 +280,11 @@ class Game {
           if(this.input.tap('KeyQ'))this.changeClub(-1);if(this.input.tap('KeyE'))this.changeClub(1);
           if(this.input.tap('Space'))this.swing();if(this.input.tap('KeyR'))this.toggleSurvey();
           if(this.charging){this.chargeTime+=dt;this.power=.08+.92*(.5-.5*Math.cos(this.chargeTime*2.5));this.refreshAim();}
-          this.player.update(this.time,dt,{golf:true});
+          this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true});
         }else if(this.phase==='swing'){
-          this.swingElapsed+=dt;this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{golf:true,swing:1,putting:this.club===7});if(this.swingElapsed>=this.contactTime)this.launchBall();
+          this.swingElapsed+=dt;this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:1,putting:this.club===7});if(this.swingElapsed>=this.contactTime)this.launchBall();
         }else if(this.phase==='flight'){
-          if(this.input.tap('Space'))this.fastFlight=true;this.updateBall(dt*(this.fastFlight?3:1));this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{golf:true,swing:this.swingTimer>0?1:0,putting:this.club===7});
+          if(this.input.tap('Space'))this.fastFlight=true;this.updateBall(dt*(this.fastFlight?3:1));this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:this.swingTimer>0?1:0,putting:this.club===7});
         }else if(this.phase==='combat')this.updateCombat(dt);
         this.uiTime+=dt;if(this.uiTime>.05){this.ui.update(this,this.uiTime);this.uiTime=0;}
       }else if(this.mode==='selection')this.player.update(this.time,dt,{selection:true});

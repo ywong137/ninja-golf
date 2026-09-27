@@ -1,0 +1,149 @@
+{
+  "sources": [
+    {
+      "asset": "Grass005",
+      "source": "https://ambientcg.com/view?id=Grass005",
+      "license": "CC0-1.0",
+      "licenseSource": "https://docs.ambientcg.com/license/",
+      "physicalDimensionsMetres": null,
+      "dimensionsNote": "Not stated on asset page",
+      "files": [
+        {
+          "file": "Grass005_2K-JPG_Color.jpg",
+          "size": 7710363,
+          "sha256": "2acdf15d09e790a114743f21bc0332a86e386cb77c54507323d626f67f0f2e10",
+          "pixels": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "file": "Grass005_2K-JPG_Roughness.jpg",
+          "size": 3473702,
+          "sha256": "20c302c4cf059d6676d83528ae7cbf62ca35944e691dc6377a164ce9c31c8e67",
+          "pixels": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "file": "Grass005_2K-JPG_NormalGL.jpg",
+          "size": 9634506,
+          "sha256": "c8406e8b784fbcd22d706fbe0c24175c327bca7e19ad8d09457fad8a05089548",
+          "pixels": [
+            2048,
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "gravel_floor_04",
+      "source": "https://polyhaven.com/a/gravel_floor_04",
+      "license": "CC0-1.0",
+      "licenseSource": "https://polyhaven.com/license",
+      "physicalDimensionsMetres": [
+        2.5,
+        2.5
+      ],
+      "dimensionsNote": "Asset page states 2.5m wide; square texture",
+      "files": [
+        {
+          "file": "gravel_floor_04_rough_2k.jpg",
+          "size": 1214552,
+          "sha256": "8d2451ebd7b2823f0aa171cb22450795f27f4419c4a3413f90cb8b850e2d55c3",
+          "pixels": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "file": "gravel_floor_04_diff_2k.jpg",
+          "size": 3971898,
+          "sha256": "f067bfbe24fd17cf29712c7a0ef579b1152eb404a37096d75872d2f1b278a7dd",
+          "pixels": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "file": "gravel_floor_04_nor_gl_2k.jpg",
+          "size": 5737956,
+          "sha256": "597c4805f743e2ebe8e75f394f30777017d5945c7c5d7716bc6ba4bddec6153e",
+          "pixels": [
+            2048,
+            2048
+          ]
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "file": "turf-color-2k.jpg",
+      "sourceFile": "Grass005_2K-JPG_Color.jpg",
+      "sourceSHA256": "2acdf15d09e790a114743f21bc0332a86e386cb77c54507323d626f67f0f2e10",
+      "sha256": "c90d63d14961e8cc3af2d89d62f937a64ce5c28baa15011f5b2b80a3912ba3cf",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG RGB Q93, no chroma subsampling"
+    },
+    {
+      "file": "turf-normal-2k.jpg",
+      "sourceFile": "Grass005_2K-JPG_NormalGL.jpg",
+      "sourceSHA256": "c8406e8b784fbcd22d706fbe0c24175c327bca7e19ad8d09457fad8a05089548",
+      "sha256": "f0ff3deb391f1fecf8f2f381129d4dc859b7b7b66381e60b0b0470d5873fc475",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG RGB Q93, no chroma subsampling"
+    },
+    {
+      "file": "turf-roughness-2k.jpg",
+      "sourceFile": "Grass005_2K-JPG_Roughness.jpg",
+      "sourceSHA256": "20c302c4cf059d6676d83528ae7cbf62ca35944e691dc6377a164ce9c31c8e67",
+      "sha256": "5788bb7a32b7743e0ef737468196f96db89c2e3bd06a62d03dbb27ea7326c6e6",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG grayscale Q90"
+    },
+    {
+      "file": "path-color-2k.jpg",
+      "sourceFile": "gravel_floor_04_diff_2k.jpg",
+      "sourceSHA256": "f067bfbe24fd17cf29712c7a0ef579b1152eb404a37096d75872d2f1b278a7dd",
+      "sha256": "dfe40bee4b00270da677e8f87c5349b4d18efcb4e48c16cc17f3bead0c7aeadc",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG RGB Q93, no chroma subsampling"
+    },
+    {
+      "file": "path-normal-2k.jpg",
+      "sourceFile": "gravel_floor_04_nor_gl_2k.jpg",
+      "sourceSHA256": "597c4805f743e2ebe8e75f394f30777017d5945c7c5d7716bc6ba4bddec6153e",
+      "sha256": "015afbce8f69a4558c7c6686d2eb8855d40ddff0201a71ffde135071bb2773f8",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG RGB Q93, no chroma subsampling"
+    },
+    {
+      "file": "path-roughness-2k.jpg",
+      "sourceFile": "gravel_floor_04_rough_2k.jpg",
+      "sourceSHA256": "8d2451ebd7b2823f0aa171cb22450795f27f4419c4a3413f90cb8b850e2d55c3",
+      "sha256": "d5f34926be8521803a88a869f36df7f2f28137d4e45779fd45823453143b5676",
+      "dimensions": [
+        2048,
+        2048
+      ],
+      "encoding": "JPEG grayscale Q90"
+    }
+  ]
+}

@@ -255,3 +255,49 @@ Each run holds 64 enemies alive and repeats attacks after warmup.
 | Crane Coast, Retina DPR 2 | 1.50 | 52.0 | 33.4 ms |
 
 These local measurements do not establish performance on every device or camera position.
+
+## Ground contact and course surface pass
+
+All six heroes now adapt their legs to the rendered course triangles.
+The solver preserves native limb lengths and the golf club path.
+Running and guard steps retain their recovery arcs. Rolls, jumps, and airborne attacks release ground correction.
+The four-theme slope audit measures up to 10 mm support error and 2.5 mm penetration.
+Golf support stays within 15.6 mm. Club-position error stays zero.
+The real-game test covers combat, address, swing, and flight updates.
+
+Short turf now retains the RGB detail from ambientCG Grass005.
+Fairways use subtle viewing-dependent mowing bands. Greens use finer detail and weaker normals.
+Curved gravel paths follow the terrain and exclude grass, shrubs, and the main playing surfaces.
+Nearby rough grass has narrower blades and lower height.
+Distant groves gain terrain-following shadows without another dynamic shadow pass.
+
+These changes improve grounding and surface detail. They do not establish full AAA quality or photorealism.
+
+### Remaining art priorities
+
+The latest visual review identifies three larger gaps:
+
+- Fairway boundaries still contain long straight edges and abrupt corners. Shared curved boundaries should preserve each hole's distinct routing.
+- Distant ridges show triangular seams and broad pale patches. Refine prominent ridges and use geological surface detail aligned with their slopes.
+- Large weapons obscure faces during travel. Author side-carry poses and refine blade proportions while preserving grips and combat reach.
+
+The current bodies read as people. Further body replacement is not the next priority.
+
+### Ground pass verification and performance
+
+All 85 unit checks and 21 browser scripts pass.
+The browser suite covers all 36 cups, all six heroes, grips, music transitions, controls, guard actions, and terrain views.
+All development browsers use muted audio.
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each measurement holds 64 enemies alive and repeats attacks after warmup.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 0.85 | 46.4 | 33.4 ms |
+| Heather & Crown | 1.00 | 59.7 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.7 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.8 ms |
+| Crane Coast, Retina DPR 2 | 1.20 | 51.8 | 33.4 ms |
+
+These local measurements include adaptive resolution. They do not establish performance on every device or camera position.

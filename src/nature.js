@@ -26,7 +26,7 @@ export class NaturalLandscape{
  constructor(root,c,sites){
   this.records=[];this.groups=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),desert=c.theme==='desert',highland=c.theme==='highlands';
   const add=(name,x,z,scale=1,angle=r()*Math.PI*2,depth=0)=>{if(!placements.has(name))placements.set(name,[]);const rec={x,z,y:heightAt(c,x,z)-depth,scale,angle};placements.get(name).push(rec);return rec;};
-  const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
+  const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
   const tree=desert?'dry-tree':'forest-canopy',spacing=desert?15:10,occupied=[];
   for(let i=0;i<900;i++){
    const x=-240+r()*365,z=-65+r()*(c.length+180);if(!safe(x,z,15)||occupied.some(t=>Math.hypot(t.x-x,t.z-z)<spacing))continue;

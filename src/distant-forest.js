@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {COURSE_BOUNDS,random} from './course.js';
 import {landscapeHeight} from './regional-terrain.js';
 import {treeImpostor} from './foliage-materials.js';
+import {buildForestShadows} from './forest-shadows.js';
 export const DISTANT_FOREST_LIMITS={japanese:2800,highlands:1200};
 
 export function distantForestPlacements(c,region,sampledHeight=null){
@@ -41,8 +42,10 @@ export function buildDistantForest(root,c,region,source,sampledHeight=null,mater
  if(!source?.map||!source?.normalMap||!Number.isFinite(source.span)||!Number.isFinite(source.center))throw new Error('Distant forest needs the loaded forest-canopy atlas and normal atlas.');
  const records=distantForestPlacements(c,region,sampledHeight);if(!records.length)return{mesh:null,records};
  const geometry=new THREE.PlaneGeometry(source.span,source.span);geometry.translate(0,source.center,0);
- const material=materialFactory(source),mesh=new THREE.InstancedMesh(geometry,material,records.length),transform=new THREE.Object3D();
+ const material=materialFactory(source,{nearFade:false}),mesh=new THREE.InstancedMesh(geometry,material,records.length),transform=new THREE.Object3D();
  mesh.name='Distant forest belt';mesh.castShadow=false;mesh.receiveShadow=false;
  for(const [i,p]of records.entries()){transform.position.set(p.x,p.y,p.z);transform.rotation.set(0,p.angle,0);transform.scale.setScalar(p.scale);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);}
- mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();root.add(mesh);return{mesh,records};
+ mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();
+ const shadow=buildForestShadows(records,source,(x,z)=>sampledHeight?.(x,z)??landscapeHeight(c,region,x,z));
+ root.add(shadow,mesh);return{mesh,shadow,records};
 }

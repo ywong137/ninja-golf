@@ -4,6 +4,7 @@ import {finishCharacterMaterial,awaitCharacterMaterials} from './character-mater
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, combatMotionName } from './motion.js';
+import {FootPlacement} from './foot-placement.js';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
@@ -71,6 +72,7 @@ export class Warrior {
     this.bones={};this.ownedMaterials=[];this.resolveTargets=[];this.model.traverse(o=>{if(o.morphTargetDictionary?.Resolve!==undefined)this.resolveTargets.push([o,o.morphTargetDictionary.Resolve]);if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
+    this.footPlacement=!enemy&&this.nativeHuman?new FootPlacement(this.root,this.bones):null;
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
@@ -118,7 +120,8 @@ export class Warrior {
     this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
   }
-  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0}={}){
+  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null}={}){
+    this.footPlacement?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
@@ -166,6 +169,12 @@ export class Warrior {
     }
     const resolve=cinematic?1:action?.kind==='musou'?.9:attack?.4:0;for(const [mesh,index]of this.resolveTargets)mesh.morphTargetInfluences[index]=resolve;
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
+    let contactWeights=null,stance=null;
+    if(this.running||this.guardWalking){
+      contactWeights={};stance={};const running=this.running,phase=running?this.runPhase:this.guardWalkPhase,support=running ? .28 : .5;
+      for(const [side,offset]of running?[['r',0],['l',.5]]:[['r',.25],['l',.75]]){const p=(phase+offset)%1;stance[side]=p<support;contactWeights[side]=p<support?1:p<support+.10?1-THREE.MathUtils.smoothstep(p,support,support+.10):THREE.MathUtils.smoothstep(p,.90,1);}
+    }
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     this.syncHeldObjects(motion,golf);
   }
   syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
