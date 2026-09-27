@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
 // The same screen-right input must turn a shot right and move a warrior right.
 const initialAim=await page.evaluate(()=>window.ninjaGolf.state().aim);
 await page.keyboard.down('KeyD');await page.waitForTimeout(250);await page.keyboard.up('KeyD');

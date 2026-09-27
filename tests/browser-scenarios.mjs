@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
 // Put each hazard into a controlled scenario, then let the actual frame loop resolve it.
 for(const kind of ['water','bounds']){
   await page.evaluate(kind=>{const g=window.__golfTest;g.shotOrigin.copy(g.ball.position);g.shotStartLie=g.lie;g.strokes=1;g.phase='flight';g.flightTime=0;g.stillTime=0;g.rolling=false;g.bounces=0;g.velocity=g.ball.position.clone().set(0,-3,0);g.ball.position.set(kind==='water'?g.course.pond[0]:300,kind==='water'?3.2:1,kind==='water'?g.course.pond[1]:0);},kind);
@@ -24,7 +24,7 @@ for(let hole=0;hole<3;hole++){
   await page.keyboard.press('Space');await page.waitForFunction(()=>window.ninjaGolf.state().charging);await page.waitForFunction(()=>{const p=window.ninjaGolf.state().power;return p>.32&&p<.37;});await page.keyboard.press('Space');
   await page.waitForFunction(()=>window.ninjaGolf.state().phase==='holed',{},{timeout:18000});assert.equal(await page.evaluate(()=>window.ninjaGolf.state().scores.length),hole+1);
   await page.waitForSelector('#next-hole');await page.screenshot({path:`/private/tmp/ninja-score-${hole+1}.png`});
-  if(hole===0){await page.reload();await page.waitForSelector('#continue-round');await page.click('#continue-round');assert.equal(await page.evaluate(()=>window.ninjaGolf.state().hole),1);console.log('Saved round resumes at hole 2');}
+  if(hole===0){await page.reload();await page.waitForSelector('#continue-round');await page.click('#audio-toggle');await page.click('#continue-round');assert.equal(await page.evaluate(()=>window.ninjaGolf.state().hole),1);console.log('Saved round resumes at hole 2');}
   else if(hole<2)await page.click('#next-hole');
 }
 console.log('All three cups and final scorecard passed',await page.evaluate(()=>window.ninjaGolf.state().scores));
