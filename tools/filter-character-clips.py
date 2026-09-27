@@ -1,6 +1,6 @@
 """Keep a hero's own clips and remove their unused GLB animation buffers."""
 import argparse,json,pathlib,struct
-PREFIX={'ronin':'','shinobi':'Twin_','monk':'','kaede':'Fan_','ayame':'Ring_','sora':'Sickle_'}
+PREFIX={'ronin':'','shinobi':'Twin_','monk':'Naginata_','kaede':'Fan_','ayame':'Ring_','sora':'Sickle_'}
 GUARD_PREFIX={'ronin':'Odachi','shinobi':'Twin','monk':'Naginata','kaede':'Fan','ayame':'Ring','sora':'Sickle'}
 COMMON={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address','Golf_Swing','Golf_Putt'}
 def clip_names(hero,names):

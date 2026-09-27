@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {WARRIORS} from '../src/warriors.js';
 function glb(name){const buffer=readFileSync(new URL(`../public/models/${name}.glb`,import.meta.url));assert.equal(buffer.readUInt32LE(0),0x46546c67);const bytes=buffer.readUInt32LE(12);return JSON.parse(buffer.subarray(20,20+bytes).toString());}
 test('Each warrior contains a complete human skeleton and weighted mesh',()=>{
   for(const name of ['ronin','shinobi','monk','kaede','ayame','sora','ninja','enemy-guard','enemy-lancer','enemy-skirmisher']){const g=glb(name);const bones=new Set(g.nodes.map(n=>n.name));for(const bone of ['pelvis','spine_03','Head','hand_l','hand_r','foot_l','foot_r'])assert.ok(bones.has(bone),`${name}: ${bone}`);assert.ok(g.skins.some(s=>s.joints.length>=60));assert.ok(g.meshes.some(m=>m.primitives.some(p=>p.attributes.JOINTS_0!==undefined&&p.attributes.WEIGHTS_0!==undefined)));for(const node of g.nodes.filter(n=>['SuperHero_Male','Eyes','Eyebrows','SamuraiCostume'].includes(n.name)))assert.notEqual(node.skin,undefined,`${name}: ${node.name} must remain skinned`);assert.ok(g.images.every(image=>image.bufferView!==undefined),'Textures must ship inside the model');}
@@ -32,7 +33,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     const g=glb(name),rig=g.nodes.find(n=>n.extras?.nativeMotion);
     assert.ok(rig,`${name}: native anatomical rig`);assert.equal(rig.extras.sourceAvatar,identities[index]);assert.equal(rig.extras.license,'MIT');
     for(const side of ['R','L']){assert.equal(rig.extras['palmGrip'+side].length,3);assert.equal(rig.extras['shaftAxis'+side].length,3);assert.ok(Object.keys(rig.extras['closedFingers'+side]).length>=15);}
-    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',['','Twin_','','Fan_','Ring_','Sickle_'][index]+'Musou_Flow'])assert.ok(clips.has(clip),`${name}: ${clip}`);
+    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',WARRIORS[index].motionPrefix+'Musou_Flow',WARRIORS[index].readyClip])assert.ok(clips.has(clip),`${name}: ${clip}`);
     assert.ok(clips.size<=36,`${name}: own weapon family, guard steps, and native directional locomotion only`);
     assert.ok(g.materials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
     assert.ok(g.materials.some(m=>m.normalTexture),`${name}: source surface normals`);

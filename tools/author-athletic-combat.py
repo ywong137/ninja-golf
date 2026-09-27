@@ -93,5 +93,7 @@ if __name__=='__main__':
  # Preserve the complete fan choreography when regenerating the generic pilot.
  import importlib.util
  spec=importlib.util.spec_from_file_location('kaede_motion',ROOT/'tools/author-kaede-motion.py');kaede=importlib.util.module_from_spec(spec);spec.loader.exec_module(kaede);kaede.author(data)
+ # Keep the complete roster after the legacy pilot and Kaede authoring steps.
+ spec=importlib.util.spec_from_file_location('roster_motion',ROOT/'tools/author-roster-motion.py');roster=importlib.util.module_from_spec(spec);spec.loader.exec_module(roster);roster.author(data)
  path.write_text(json.dumps(data,separators=(',',':'))+'\n')
- print('Authored',', '.join(PILOT))
+ print('Authored the complete combat roster and matching ready poses')

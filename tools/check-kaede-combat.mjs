@@ -4,6 +4,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {WARRIORS} from '../src/warriors.js';
 const args=process.argv.slice(2),option=(key,fallback)=>{const index=args.indexOf(key);return index<0?fallback:args[index+1];};
 if(args.includes('--help')){console.log('node tools/check-kaede-combat.mjs --before DIRECTORY [--heroes ronin,kaede]');process.exit(0);}
 const before=option('--before',null);if(!before)throw new Error('Pass --before DIRECTORY containing baseline hero GLBs and motion-data.json');
@@ -17,13 +18,20 @@ async function rig(asset){const j=structuredClone(asset.doc);j.buffers[0].uri='d
 const reports=[];
 for(const hero of heroes){
  const old=read(path.join(before,hero+'.glb')),current=read(new URL('../public/models/'+hero+'.glb',import.meta.url));let protectedClips=0;
+ const warrior=WARRIORS.find(w=>w.model===hero),prefix=warrior?.motionPrefix;
+ const selected=name=>warrior?name.startsWith(prefix)&&/^(Cut_|Heavy_|Musou_)/.test(name.slice(prefix.length)):name===({ninja:'Twin_Cut_Diagonal','enemy-guard':'Heavy_Cleave'})[hero];
+ if(!warrior&&!['ninja','enemy-guard'].includes(hero))throw Error(`Unsupported hero: ${hero}`);
  for(const key of ['meshes','nodes','skins','materials','textures','images'])assert.deepEqual(current.doc[key],old.doc[key],`${hero}: changed ${key}`);
  for(const mesh of old.doc.meshes)for(const primitive of mesh.primitives)for(const i of [...Object.values(primitive.attributes),primitive.indices].filter(v=>v!==undefined))assert.ok(bytes(old,i).equals(bytes(current,i)),`${hero}: body bytes changed`);
  for(const image of old.doc.images){const v=old.doc.bufferViews[image.bufferView];assert.ok(old.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength).equals(current.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength)),`${hero}: texture bytes changed`);}
- for(const a of old.doc.animations){if(data[a.name]?.athleticAttack)continue;const b=current.doc.animations.find(c=>c.name===a.name);assert.deepEqual(a,b,`${hero}: protected ${a.name} descriptor`);for(const sampler of a.samplers)for(const key of ['input','output'])assert.ok(bytes(old,sampler[key]).equals(bytes(current,sampler[key])),`${hero}: protected ${a.name} bytes`);protectedClips++;}
+ for(const a of old.doc.animations){
+  if(hero==='monk'&&/^(Cut_|Heavy_|Musou_)/.test(a.name)){assert.ok(!current.doc.animations.some(c=>c.name===a.name),'Retire the old shared Monk attack');continue;}
+  if(selected(a.name))continue;const b=current.doc.animations.find(c=>c.name===a.name);assert.deepEqual(a,b,`${hero}: protected ${a.name} descriptor`);for(const sampler of a.samplers)for(const key of ['input','output'])assert.ok(bytes(old,sampler[key]).equals(bytes(current,sampler[key])),`${hero}: protected ${a.name} bytes`);protectedClips++;
+ }
  const {gltf,mixer}=await rig(current),point=name=>gltf.scene.getObjectByName(name).getWorldPosition(new T.Vector3()),hand=gltf.scene.getObjectByName('hand_r');gltf.scene.updateMatrixWorld(true);
  const axis=hand.worldToLocal(point('PalmShaft_r')).sub(hand.worldToLocal(point('PalmGrip_r'))).normalize();
- for(const clip of gltf.animations.filter(c=>data[c.name]?.athleticAttack)){
+ const attacks=gltf.animations.filter(c=>selected(c.name));assert.equal(attacks.length,warrior?9:1,`${hero}: incomplete attack family`);
+ for(const clip of attacks){
   const spec=data[clip.name],samples=[],stanceRefs={},action=mixer.clipAction(clip);mixer.stopAllAction();action.play();let maxShaft=0,maxKeyShaft=0,maxSupportDrift=0,minimumKnee=1,maxArmReach=0,maxHandStep=0;const previousHands={};
   for(let i=0;i<=Math.ceil(spec.duration*240);i++){
    const t=Math.min(spec.duration,i/240);action.time=t;mixer.update(0);gltf.scene.updateMatrixWorld(true);const pose=sampleMotion(clip.name,t),authored=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize(),shaft=axis.clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()));

@@ -8,7 +8,7 @@ try{
  await page.goto('http://localhost:5173/tests/rig-stage.html');
  const report=await page.evaluate(async()=>{
   const THREE=await import('/node_modules/three/build/three.module.js');const g={scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera(35,1.6,.01,100),renderer:new THREE.WebGLRenderer({antialias:true})};window.__rigStage=g;g.renderer.setSize(1600,1000);document.body.append(g.renderer.domElement);g.scene.background=new THREE.Color('#59626c');g.scene.add(new THREE.HemisphereLight(0xffffff,0x41405c,2));const light=new THREE.DirectionalLight(0xffe4c6,3);light.position.set(2,5,5);g.scene.add(light);
-  const {Warrior,loadWarriorAssets}=await import('/src/actors.js');const {WARRIORS}=await import('/src/warriors.js');
+  const {Warrior,loadWarriorAssets}=await import('/src/actors.js');const {WARRIORS}=await import('/src/warriors.js');const {motions}=await import('/src/motion.js');
   await loadWarriorAssets();const results=[];window.__gripHeroes=[];
   for(let i=0;i<WARRIORS.length;i++){
    const p=new Warrior(i);window.__gripHeroes.push(p);const prefix=WARRIORS[i].motionPrefix||'';const names=[WARRIORS[i].readyClip||'Idle_Loop','Sword_Idle',...Array.from(p.actions.keys()).filter(n=>n.startsWith(prefix)&&/^(Cut_|Heavy_|Musou_)/.test(n.slice(prefix.length)))];
@@ -19,6 +19,11 @@ try{
      const shaft=held.localToWorld(new THREE.Vector3(0,1,0)).sub(held.getWorldPosition(new THREE.Vector3())).normalize();
      const offset=center.clone().sub(held.getWorldPosition(new THREE.Vector3()));const cavityDistance=offset.addScaledVector(shaft,-offset.dot(shaft)).length();
      results.push({hero:i,name,t,side,distance,cavityDistance});}
+    if(motions[name]?.twoHanded){
+     const palm=p.bones.hand_l.localToWorld(p.palmGrips.l.clone()),handle=p.weapon.localToWorld(new THREE.Vector3(0,-(motions[name].gripSpacing??.09),0));
+     const grip=p.weapon.getObjectByName('Wrapped hand grip'),radius=grip.geometry.parameters.radiusTop*grip.getWorldScale(new THREE.Vector3()).x;
+     const distance=palm.distanceTo(handle);if(distance>radius)throw Error(`Secondary palm leaves the wrapped handle ${i}/${name}/${t}: ${distance}m`);
+    }
    }
    p.mixer.stopAllAction();p.current='';p.play(WARRIORS[i].readyClip||'Idle_Loop',0);p.mixer.update(.2);p.update(.2,0,{selection:true});p.root.position.set((i-2.5)*1.65,0,0);g.scene.add(p.root);
   }

@@ -26,13 +26,13 @@ def trim_replaced_tail(doc,binary):
  end=max(view.get('byteOffset',0)+view['byteLength'] for view in doc['bufferViews']);end=(end+3)//4*4
  return binary[:end]
 
-def append_guards(target,source,clip_prefixes=None,allowed_clips=()):
+def append_guards(target,source,clip_prefixes=None,allowed_clips=(),removed_clips=()):
  old,binary=read_glb(target);new,incoming=read_glb(source)
  motion_path=pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json'
- athletic={name for name,clip in json.loads(motion_path.read_text()).items() if clip.get('athleticAttack')}
+ attack_source_names={name for name,clip in json.loads(motion_path.read_text()).items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
  if clip_prefixes:new['animations']=[a for a in new['animations'] if a['name'].startswith(clip_prefixes)]
  nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}
- incoming_names={a['name'] for a in new.get('animations',[])};preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in incoming_names]);old['animations']=preserved.copy();binary=trim_replaced_tail(old,binary);out=bytearray(binary);views={};accessors={}
+ incoming_names={a['name'] for a in new.get('animations',[])};replaced=incoming_names|set(removed_clips);preserved=copy.deepcopy([a for a in old.get('animations',[]) if a['name'] not in replaced]);old['animations']=preserved.copy();binary=trim_replaced_tail(old,binary);out=bytearray(binary);views={};accessors={}
  def accessor(index):
   if index in accessors:return accessors[index]
   value=copy.deepcopy(new['accessors'][index]);assert 'sparse' not in value,'Guard animation must use dense accessors'
@@ -43,7 +43,7 @@ def append_guards(target,source,clip_prefixes=None,allowed_clips=()):
    views[source_view]=len(old['bufferViews']);old['bufferViews'].append(view)
   value['bufferView']=views[source_view];accessors[index]=len(old['accessors']);old['accessors'].append(value);return accessors[index]
  for original in new.get('animations',[]):
-  assert original['name'] in allowed_clips or original['name'] in athletic or '_Guard_' in original['name'] or original['name'].startswith(('Run_','Sprint_Forward')),f"Unexpected appended clip: {original['name']}"
+  assert original['name'] in allowed_clips or original['name'] in attack_source_names or '_Guard_' in original['name'] or original['name'].startswith(('Run_','Sprint_Forward')),f"Unexpected appended clip: {original['name']}"
   clip=copy.deepcopy(original)
   for sampler in clip['samplers']:
    for key in ['input','output']:sampler[key]=accessor(sampler[key])
@@ -58,4 +58,4 @@ def append_guards(target,source,clip_prefixes=None,allowed_clips=()):
  temporary=target.with_suffix('.guard-update.glb');temporary.write_bytes(result);temporary.replace(target)
  print('APPENDED',target.name,len(new['animations']),'clips; preserved',len(preserved),'animations and',len(binary),'existing binary bytes',flush=True)
 if __name__=='__main__':
- parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('target',type=pathlib.Path);parser.add_argument('source',type=pathlib.Path);parser.add_argument('--allow-clip',action='append',default=[]);args=parser.parse_args();append_guards(args.target,args.source,allowed_clips=args.allow_clip)
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('target',type=pathlib.Path);parser.add_argument('source',type=pathlib.Path);parser.add_argument('--allow-clip',action='append',default=[]);parser.add_argument('--remove-clip',action='append',default=[],help='Retire a replaced animation name while preserving unrelated buffer offsets');args=parser.parse_args();append_guards(args.target,args.source,allowed_clips=args.allow_clip,removed_clips=args.remove_clip)

@@ -14,7 +14,7 @@ try{
  page.on('console',m=>{if(m.type()==='error')console.error(m.text());});
  if(baseline){
   for(const name of ['ronin','shinobi','monk','kaede','ayame','sora'])await page.route(`**/models/${name}.glb?*`,route=>route.fulfill({path:path.join(baseline,name+'.glb')}));
-  for(const name of ['actors','foot-placement','main','travel-pose']){
+  for(const name of ['actors','foot-placement','main','travel-pose','warriors']){
    const file=path.join(baseline,'src',name+'.js');if(fs.existsSync(file))await page.route(`**/src/${name}.js*`,async route=>{
     // Reuse Vite's resolved import URLs. Mixing timestamped and bare modules would
     // create duplicate asset registries and invalidate the baseline controller.

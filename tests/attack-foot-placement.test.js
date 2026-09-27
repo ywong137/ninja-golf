@@ -56,7 +56,7 @@ test('Authored downhill support stays reachable across six native bodies and fou
  const {COURSE_SETS,heightAt,ellipse}=await import('../src/course.js');
  const {courseSurfaceHeight}=await import('../src/terrain.js');
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
- for(const [hero,prefix]of [['ronin',''],['shinobi','Twin_'],['monk',''],['kaede','Fan_'],['ayame','Ring_'],['sora','Sickle_']]){
+ for(const [hero,prefix]of [['ronin',''],['shinobi','Twin_'],['monk','Naginata_'],['kaede','Fan_'],['ayame','Ring_'],['sora','Sickle_']]){
   const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===prefix+'Heavy_Cleave');
   let maxReach=0,maxExtraGap=0,maxGripChange=0;
   for(let theme=0;theme<4;theme++){
@@ -69,7 +69,13 @@ test('Authored downhill support stays reachable across six native bodies and fou
     placement.apply(1/60,ground,{preserveAuthored:true,...attackFootContacts(data,time,nearest)});
     maxGripChange=Math.max(maxGripChange,position(bones.hand_l).sub(position(bones.hand_r)).distanceTo(span));
     const gaps=soleGaps({bones,placement},ground);
-    for(const [i,foot]of placement.report.feet.entries())if(foot.stance){maxReach=Math.max(maxReach,foot.reachError);maxExtraGap=Math.max(maxExtraGap,Math.abs(gaps[i]-foot.sourceSoleGap));}
+    for(const [i,foot]of placement.report.feet.entries())if(foot.stance){
+     maxReach=Math.max(maxReach,foot.reachError);const extra=Math.abs(gaps[i]-foot.sourceSoleGap);
+     // Contact fades before a step. Its remaining downhill gap follows that fade.
+     const blendedGap=Math.abs(foot.offset)*(1-foot.weight)/foot.weight;
+     assert.ok(extra<blendedGap+.003,`${hero}: gap exceeds its contact blend`);
+     if(foot.weight>.999)maxExtraGap=Math.max(maxExtraGap,extra);
+    }
    }
   }
   assert.ok(maxExtraGap<.003,`${hero}: added terrain gap ${maxExtraGap}`);

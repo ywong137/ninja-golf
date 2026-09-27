@@ -44,7 +44,7 @@ test('Fan, ring, and sickle have complete independent animation families',()=>{
  for(const prefix of ['Fan_','Ring_','Sickle_'])for(const name of names){
   const clip=motions[prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,false);
   for(const p of clip.poses){assert.ok(Number.isFinite(p.roll));assert.ok(p.freeHand>0,'The free hand uses a distinct open guard');}
-  if(name==='Musou_Flow'){assert.equal(clip.headings.length,6);assert.equal(clip.headings.at(-1),Math.PI*2);}
+  if(name==='Musou_Flow'){assert.equal(clip.headings.length,6);assert.ok(Math.abs(clip.poses.at(-1).hip-clip.headings.at(-1))<1e-6,'Recovery preserves the final authored heading');}
   if(name==='Ready')assert.deepEqual(clip.poses[0].grip,clip.poses.at(-1).grip,'Stance loop closes without a hand jump');
   else {assert.equal(clip.duration,motions[name].duration);assert.notDeepEqual(clip.poses.map(p=>p.grip),motions[name].poses.map(p=>p.grip),'A new weapon needs its own trajectory');}
  }

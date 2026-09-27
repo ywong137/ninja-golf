@@ -38,3 +38,28 @@ All four enemy bodies use separate Rocketbox identities. Quaternius remains the 
 `append-native-guard-clips.py` fits these poses to the six native hero rigs.
 It replaces only guard clips and preserves every existing mesh and other animation byte.
 The regular native-human build also includes the guard family.
+
+# Full-body combat authoring
+
+`author-roster-motion.py` regenerates the Ronin, Monk, Shinobi, Ayame, and Sora families. Its `author(data)` API changes the supplied mapping in memory. It preserves Kaede, golf, guard, and unrelated records.
+
+Preview and verify authoring before changing shipping data:
+
+```sh
+python3 tools/author-roster-motion.py --output /tmp/ninja-roster-authored.json
+python3 tools/author-roster-motion.py --source /tmp/ninja-roster-authored.json --output /tmp/ninja-roster-repeat.json
+cmp /tmp/ninja-roster-authored.json /tmp/ninja-roster-repeat.json
+```
+
+Run `python3 tools/author-roster-motion.py` to update the shipping motion JSON. For Kaede plus the full roster, run `python3 tools/author-athletic-combat.py`. That entry point runs the Kaede author, then the roster author after its legacy pilot. It cannot restore the old partial attack families.
+
+After authoring, bake the shared source and each affected native model:
+
+```sh
+/Applications/Blender.app/Contents/MacOS/Blender --background --python-exit-code 1 --python tools/build-authored-motion.py -- --attacks-only
+/Applications/Blender.app/Contents/MacOS/Blender --background --python-exit-code 1 --python tools/build-rocketbox-warriors.py -- --attacks-only --hero ronin
+```
+
+Repeat the native command for each affected hero. Rebuild enemy Guard when the shared `Heavy_Cleave` record changes. Attack append mode preserves body data and unrelated clips. The source bake includes matching weapon-ready poses marked `nativeAttackReady`.
+
+Coordinate Blender and GPU ownership before baking or rendering. Do not regenerate shared motion data while another asset bake is running.

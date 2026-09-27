@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {WARRIORS} from '../src/warriors.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const pilot=Object.entries(motions).filter(([,clip])=>clip.athleticAttack);
 test('Athletic attacks keep support targets fixed and lift before foot travel',()=>{
@@ -14,7 +15,30 @@ test('Athletic attacks keep support targets fixed and lift before foot travel',(
   }
   for(let i=1;i<clip.poses.length;i++){
    const a=clip.poses[i-1],b=clip.poses[i];assert.ok(b.t-a.t>1e-8,`${name}: duplicate phase`);
-   if(Math.hypot(a.footR[0]-b.footR[0],a.footR[1]-b.footR[1])>.00001)assert.ok(Math.min(a.footR[2],b.footR[2])>.025,`${name}: moving foot lacks clearance`);
+   for(const key of ['footR','footL'])if(Math.hypot(a[key][0]-b[key][0],a[key][1]-b[key][1])>.00001)assert.ok(Math.min(a[key][2],b[key][2])>.025,`${name}: moving ${key} lacks clearance`);
+  }
+ }
+});
+test('Every hero uses a complete distinct family of full-body attacks',()=>{
+ const names=['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'];
+ assert.equal(new Set(WARRIORS.map(w=>w.motionPrefix)).size,WARRIORS.length);
+ for(const hero of WARRIORS)for(const name of names){
+  const clip=motions[hero.motionPrefix+name];assert.ok(clip?.athleticAttack,hero.model+'/'+name);
+  assert.equal(clip.duration,motions[name].duration);
+  assert.deepEqual(clip.impacts,motions[name].impacts);
+  assert.ok(['footR','footL'].some(key=>Math.max(...clip.poses.map(p=>p[key][2]))>.04),`${hero.model}/${name}: no authored step`);
+  for(const hit of clip.impacts)assert.ok(['r','l'].some(side=>clip.footPlants[side].some(([a,b])=>hit>=a&&hit<=b)),`${hero.model}/${name}: unsupported impact`);
+ }
+});
+test('New weapon-ready stances keep each male hero at the attack hand and foot positions',()=>{
+ for(const hero of WARRIORS.slice(0,3)){
+  const ready=motions[hero.readyClip];assert.ok(ready?.nativeAttackReady,hero.model);
+  assert.ok(!ready.athleticAttack,'A ready stance must not activate attack footwork');
+  const pose=ready.poses[0];
+  for(const name of ['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam']){
+   for(const endpoint of [motions[hero.motionPrefix+name].poses[0],motions[hero.motionPrefix+name].poses.at(-1)]){
+    for(const key of ['grip','tip','offGrip','offTip','footR','footL'])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-7,`${hero.model}/${name}: ${key} returns to another stance`);
+   }
   }
  }
 });

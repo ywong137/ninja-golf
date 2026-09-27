@@ -13,7 +13,7 @@ async function rig(hero,prefix){
  const gltf=await new GLTFLoader().parseAsync(JSON.stringify(doc),''),root=new T.Group();root.scale.setScalar(1.1);root.add(gltf.scene);const bones={};gltf.scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  return{root,bones,mixer:new T.AnimationMixer(gltf.scene),clips:gltf.animations,steps:new AttackLocomotion(root,gltf.scene,bones,gltf.animations,prefix,motions)};
 }
-const heroes=[['ronin','Odachi',''],['shinobi','Twin','Twin_'],['monk','Naginata',''],['kaede','Fan','Fan_'],['ayame','Ring','Ring_'],['sora','Sickle','Sickle_']];
+const heroes=[['ronin','Odachi',''],['shinobi','Twin','Twin_'],['monk','Naginata','Naginata_'],['kaede','Fan','Fan_'],['ayame','Ring','Ring_'],['sora','Sickle','Sickle_']];
 test('Moving attacks step in eight directions with native legs across all six heroes',async()=>{
  for(const [hero,prefix,attackPrefix]of heroes){
   const {root,bones,mixer,clips,steps}=await rig(hero,prefix),clip=clips.find(c=>c.name===attackPrefix+'Cut_Diagonal'),action=mixer.clipAction(clip).play();

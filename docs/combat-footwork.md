@@ -29,7 +29,7 @@ The gameplay check covers 96 cases: six heroes, eight movement directions, and l
 
 The release regression samples seven headings and 40 gait phases on the native Kaede model. Maximum first-frame ankle displacement fell from 65.6 cm to 3.84 cm at 60 Hz.
 
-Steady cardinal support drift averaged 0.4–0.6 cm/s in the CPU audit. Diagonal blends averaged 7.5–10.5 cm/s. These blends retain some sliding. Other heroes retain their existing standing choreography, with shared terrain and movement fixes. Shinobi and Ayame also receive the native arm corrections described in `native-arm-reach.md`.
+Steady cardinal support drift averaged 0.4–0.6 cm/s in the CPU audit. Diagonal blends averaged 7.5–10.5 cm/s. These blends retain some sliding. The later roster pass adds distinct standing choreography for the other five heroes. See `roster-combat.md` for the native interpolation repair and current build procedure.
 
 ## Performance
 

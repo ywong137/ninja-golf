@@ -55,7 +55,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   clip_names={name for name in clip_names if ('_Guard_Walk_' if args.guard_walk_only else '_Guard_') in name}
  if args.locomotion_only:clip_names=set(json.loads((ROOT/'src/locomotion-data.json').read_text()))
  if args.attacks_only:
-  attack_names={name for name,clip in json.loads((ROOT/'src/motion-data.json').read_text()).items() if clip.get('athleticAttack')}
+  attack_names={name for name,clip in json.loads((ROOT/'src/motion-data.json').read_text()).items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
   clip_names&=attack_names
   if not clip_names:raise ValueError(f'No athletic attack clips selected for {hero}')
  if args.attack_name:
@@ -77,7 +77,9 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  output=ROOT/'public/models'/f'{hero}.glb';temporary=output.with_name(f'{hero}.guard-building.glb' if append_only else f'{hero}.building.glb')
  bpy.ops.export_scene.gltf(filepath=str(temporary),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='NLA_TRACKS',export_extras=True,export_image_format='AUTO')
  if append_only:
-  subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in args.attack_name for argument in ['--allow-clip',name]],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
+  # The Monk now owns a polearm family. Retire the former shared odachi clips.
+  retired=[name.removeprefix('Naginata_') for name in clip_names if name.startswith('Naginata_') and any(part in name for part in ['Cut_','Heavy_','Musou_'])] if hero=='monk' and args.attacks_only else []
+  subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in args.attack_name for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
  subprocess.run(['python3',str(ROOT/'tools/compress-glb-textures.py'),'--max-size','1024' if args.enemies else '2048','--alpha-size','512' if args.enemies else '1024',str(temporary)],check=True)
  temporary.replace(output)
  print('EXPORTED',hero,flush=True)

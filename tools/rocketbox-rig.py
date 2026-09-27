@@ -159,7 +159,7 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
   for _ in range(24):
    for side in ['r','l']:
     upper=rig.pose.bones['upperarm_'+side];lower=rig.pose.bones['lowerarm_'+side]
-    radius=(upper.bone.length+lower.bone.length)*.985
+    radius=(upper.bone.length+lower.bone.length)*clip.get('nativeReachLimit',.985)
     offset=ik['hands'][side].location+translation-upper.head
     if offset.length>radius:translation+=offset.normalized()*(radius-offset.length)
   for hand in ik['hands'].values():hand.location+=translation
@@ -172,7 +172,7 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
    offset=ik['hands'][side].location-upper.head
    if offset.length>radius:ik['hands'][side].location=upper.head+offset.normalized()*radius
  bpy.context.view_layer.update()
- if 'freeHand' in pose and not clip['twoHanded']:
+ if pose.get('freeHand',0)>0 and not clip['twoHanded']:
   # An empty guarding hand follows the forearm instead of an imaginary weapon shaft.
   relative=rig.data.bones['lowerarm_l'].matrix_local.to_quaternion().inverted()@rig.data.bones['hand_l'].matrix_local.to_quaternion()
   ik['hands']['l'].rotation_quaternion=rig.pose.bones['lowerarm_l'].matrix.to_quaternion()@relative
@@ -240,14 +240,14 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
  filenames=['warrior-motion.glb','golf-motion.glb']
  if (ROOT/'public/models/guard-motion.glb').exists():filenames.append('guard-motion.glb')
  sources=[import_motion_source(filename) for filename in filenames]
- athletic={name for name,clip in data.items() if clip.get('athleticAttack')}
- attack_source=import_motion_source('attack-motion.glb') if athletic and (clip_names is None or athletic&set(clip_names)) else None
+ attack_source_names={name for name,clip in data.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
+ attack_source=import_motion_source('attack-motion.glb') if attack_source_names and (clip_names is None or attack_source_names&set(clip_names)) else None
  if attack_source:
   for _,actions,_ in sources:
    for original in actions:
-    if original.name.split('.')[0] in athletic:original.name='superseded_'+original.name
+    if original.name.split('.')[0] in attack_source_names:original.name='superseded_'+original.name
   sources.append(attack_source)
- if clip_names and set(clip_names)<=set(locomotion)|athletic:scene.render.fps=max(60,max((data.get(name,{}).get('nativeSampleRate',60) for name in clip_names),default=60))
+ if clip_names and set(clip_names)<=set(locomotion)|attack_source_names:scene.render.fps=max(60,max((data.get(name,{}).get('nativeSampleRate',60) for name in clip_names),default=60))
  # Preserve explicit dense clips during a later full-character export as well.
  scene.render.fps=max(scene.render.fps,max((data.get(name,{}).get('nativeSampleRate',30) for name in (clip_names or data)),default=30))
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
@@ -260,27 +260,27 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
   jobs=[(a,a.name.split('.')[0]) for a in sorted(actions,key=lambda a:a.name)]
   jobs.extend((a,name) for a in actions for name,spec in locomotion.items() if a.name.split('.')[0]==spec['source'])
   for original,name in jobs:
-   if name in athletic and attack_source and source!=attack_source[0]:continue
+   if name in attack_source_names and attack_source and source!=attack_source[0]:continue
    if clip_names is not None and name not in clip_names:continue
    if name in {a.name for a in outputs}:continue
    start,end=original.frame_range;duration=(end-start)/30;clip=data.get(name);gait=locomotion.get(name)
    if gait:duration=gait['duration']
    if clip:duration=clip['duration']
    original.name='source_'+name;action=bpy.data.actions.new(name);rig.animation_data.action=action
-   source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in athletic else 30) if clip else 60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
+   source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in attack_source_names else 30) if clip else 60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2
-   ik['palm_previous']={}
+   ik['palm_previous']={};previous_rotations={}
    for frame in range(count+1):
-    source_phase=min(frame/sample_rate,duration)/duration if name in athletic else frame/count
+    source_phase=min(frame/sample_rate,duration)/duration if name in attack_source_names else frame/count
     if gait:source_phase=(source_phase+(0 if name=='Run_Backward' else .5))%1
     source_frame=start+(end-start)*source_phase;scene.frame_set(int(source_frame),subframe=source_frame%1)
     retarget_frame(rig,source,*mapping)
     if gait:apply_native_locomotion(rig,ik,gait,frame/count)
     if clip:
      pose=sample_authored(clip,source_phase)
-     if name in athletic:pose['_phase']=source_phase
+     if name in attack_source_names:pose['_phase']=source_phase
      apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'))
     if clip:max_error=max(max_error,*[(rig.pose.bones['hand_'+side].head-ik['hands'][side].location).length for side in ['r','l']])
     matrices={b.name:b.matrix.copy() for b in rig.pose.bones}
@@ -288,7 +288,19 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
      kwargs={'parent_matrix':matrices[bone.parent.name],'parent_matrix_local':bone.parent.bone.matrix_local} if bone.parent else {}
      local=bone.bone.convert_local_to_pose(matrices[bone.name],bone.bone.matrix_local,invert=True,**kwargs)
      bone.location,bone.rotation_quaternion,bone.scale=local.decompose()
+     # q and -q encode the same rotation. Blender interpolates their components
+     # before glTF export, so alternating signs can turn a valid wrist upside down.
+     previous=previous_rotations.get(bone.name)
+     if previous is not None and bone.rotation_quaternion.dot(previous)<0:bone.rotation_quaternion.negate()
+     previous_rotations[bone.name]=bone.rotation_quaternion.copy()
      for path in ['location','rotation_quaternion','scale']:bone.keyframe_insert(data_path=path,frame=frame*scene.render.fps/sample_rate,group=bone.name)
+   # These keys already sample the solved motion. Automatic Bezier handles add
+   # unrequested overshoot between solved support and wrist positions.
+   for layer in action.layers:
+    for strip in layer.strips:
+     for bag in strip.channelbags:
+      for curve in bag.fcurves:
+       for key in curve.keyframe_points:key.interpolation='LINEAR'
    rig.animation_data.action=None;track=rig.animation_data.nla_tracks.new();track.name=name;track.strips.new(name,0,action);track.mute=True;outputs.append(action)
    print('NATIVE_CLIP',name,count+1,'max_wrist_error',round(max_error,4),flush=True)
  if clip_names is not None:

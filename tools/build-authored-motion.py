@@ -6,7 +6,7 @@ DATA=json.loads((ROOT/'src/motion-data.json').read_text())
 GUARDS_ONLY='--guards-only' in sys.argv
 ATTACKS_ONLY='--attacks-only' in sys.argv
 if ATTACKS_ONLY and GUARDS_ONLY:raise ValueError('Choose --attacks-only or --guards-only, not both')
-if ATTACKS_ONLY:DATA={name:clip for name,clip in DATA.items() if clip.get('athleticAttack')}
+if ATTACKS_ONLY:DATA={name:clip for name,clip in DATA.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
 if GUARDS_ONLY:DATA={name:clip for name,clip in DATA.items() if '_Guard_' in name}
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=str(ROOT/'assets/source/UAL1_Standard.glb'))

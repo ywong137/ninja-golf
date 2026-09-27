@@ -13,7 +13,7 @@ import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='athletic-combat-2';
+const MODEL_REVISION='roster-footwork-3';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -202,7 +202,7 @@ export class Warrior {
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf)this.travelPose?.reset();
-    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.athleticAttack?.10:.12):action?.kind==='heavy'?.22:.16});
+    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?.22:.16});
     if(this.facialPose){
       let gazeYaw=0,gazePitch=0;
       const eye=this.bones.Bip01_REye;
