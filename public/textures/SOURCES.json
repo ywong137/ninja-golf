@@ -53,5 +53,10 @@
     "parts": "twig color, normal and alpha textures",
     "license": "CC0-1.0",
     "source": "https://polyhaven.com/a/pine_tree_01"
+  },
+  {
+    "asset": "shanghai_bund",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/shanghai_bund"
   }
 ]

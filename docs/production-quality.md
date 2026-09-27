@@ -19,11 +19,11 @@ The reference asks for repeated, multi-view inspection, believable materials and
 
 Capture title, selection, tee, fairway, tree interior, shoreline, green, melee crowd, heavy attack, Musou, and scorecard views. Inspect still frames and movement. Check GPU cost after each major rendering change. Preserve before/after screenshots outside the shipping build.
 
-## Status
+## Earlier baseline
 
 Baseline: 94baeb3. Active combat averaged 46 FPS at 1440×900, Balanced, DPR 1, with 64 enemies. Main visual shortcomings: sparse angular crowns, flat water, coarse course boundaries, plain architecture, repetitive cloth folds, and weak material variation. Gameplay shortcomings: crowd compression, limited shot planning, weak impact response, and little encounter pacing.
 
-## Implemented production pass
+## Earlier production pass
 
 - Four tree assets with bark maps, leaf cards, wind, and eight-angle distant views. Dithered transitions reduce visible changes between tree representations.
 - Analytic fairway cuts, collars, sand edges, and mowing stripes. Denser geometry follows shorelines, bunkers, and greens.
@@ -37,7 +37,7 @@ Baseline: 94baeb3. Active combat averaged 46 FPS at 1440×900, Balanced, DPR 1, 
 - Camera collision, adjustable sensitivity, inverted vertical look, reduced camera effects, and adaptive resolution in Balanced mode.
 - Shipping 2K textures retain their dimensions with optimized JPEG encoding. This removes about 9.7 MB of downloads.
 
-The underlying human art remains derived from the Quaternius base. Facial expression and cloth simulation remain simpler than current AAA character systems. The golf simulation does not model every aerodynamic or turf interaction. These limits should remain explicit when describing this release.
+That release used Quaternius-derived bodies. The current release replaces those bodies with licensed textured Rocketbox humans. Facial expression and cloth simulation remain simpler than current AAA systems. The golf simulation does not model every aerodynamic or turf interaction.
 
 ## Previous release verification
 
@@ -63,7 +63,7 @@ Run the public gameplay smoke check with `GAME_URL=https://ywong137.github.io/ni
 All automated browser runs mute system audio.
 
 
-## Four-course expansion
+## Earlier four-course expansion
 
 The game now has four original nine-hole courses and six heroes. Each course has its own scenery, architecture, lighting, and preview.
 Fairway decorations supply visible ambush cover without occupying the central landing corridor.
@@ -111,4 +111,53 @@ Each run measures ten seconds after warmup. Other applications were also active.
 | Neo-Tokyo After Dark | 1440×900 | 1.00 | 58.5 | 16.8 ms |
 | Crane Coast, Retina DPR 2 | 1440×900 | 1.05 after adaptation | 46.8 | 33.4 ms |
 
-These results describe this machine and these scenarios. The assets remain stylized and do not match modern photorealistic AAA character art.
+These earlier results describe this machine and these scenarios. They predate the native human and scanned landscape replacement.
+
+
+## Native human and landscape replacement
+
+All six heroes and four enemies now use separate Microsoft Rocketbox humans under MIT.
+Their source anatomy, skinning, faces, hair, clothing, UV coordinates, and texture maps remain intact.
+Native arm and leg solvers transfer the game’s golf and combat trajectories without replacing human proportions.
+Heroes retain only their required movement, golf, and weapon clips. Enemies retain thirteen required clips.
+
+The landscape uses CC0 Poly Haven trees, shrubs, ferns, boulders, and cliffs.
+Near trees use detailed geometry. Distant trees use eight-angle images. Repeated objects use instancing.
+The ground shader preserves scanned grass and sand contrast. A coarse outer landscape removes the visible terrain boundary.
+The city uses a licensed night panorama. Limited bloom highlights prevent bright panorama lights from flooding the scene.
+
+All 36 holes have separate authored layouts. These include forks, islands, separated landing pads, elbows, hairpins, and spirals.
+Maps, terrain, water masks, bridges, and walking routes share the same geometry data.
+Every route passes 801 dry-ground samples from tee to green. Tee and green discs remain dry.
+
+These assets improve human anatomy and natural surface detail. They do not establish parity with modern AAA games.
+Buildings and props still use generated geometry. Full facial performance and cloth simulation remain outside this implementation.
+
+### Current verification
+
+- All 49 unit and asset checks pass.
+- The browser suite passes audio, movement, combat, golf, penalties, revival, saved rounds, and all 36 cups.
+- All six selection screens and all four course previews received visual inspection.
+- All 385 weapon-grip samples stay within 8.4 mm of the measured finger cavity.
+- Native golf contact error stays below 3 micrometres. Lead-foot drift stays below 0.15 mm.
+- Musou support-foot drift stays below 3.85 cm. Sampled knees bend forward throughout each sequence.
+- The production build and whitespace checks pass.
+
+The geometric measurements validate attachment and contact constraints. They do not measure animation quality by themselves.
+Rendered pose checks accompany them.
+
+### Current performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440×900 viewport.
+Each run holds 64 enemies alive and repeats attacks for ten seconds after warmup.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 54.1 | 33.3 ms |
+| Heather & Crown | 1.00 | 60.0 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.7 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 53.8 | 33.3 ms |
+
+The HUD retains full display resolution. These results describe these local scenarios, not every device or camera position.
+Both 1440×900 and 1280×720 visual layouts pass. Automated tests mute system audio.

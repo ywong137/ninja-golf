@@ -25,3 +25,26 @@ test('The three women have separate weapon silhouettes and motion families',asyn
   assert.deepEqual(WARRIORS.slice(3).map(w=>w.combatStyle),['fan','ring','sickle']);
   for(const w of WARRIORS.slice(3)){const held=createWeapon(w.weaponKind);assert.equal(held.userData.kind,w.weaponKind);assert.ok(held.getObjectByName('Wrapped hand grip'));assert.equal(w.dualWield,false);assert.ok(w.readyClip.startsWith(w.motionPrefix));}
 });
+
+test('Playable heroes retain licensed textured human meshes and native motion',()=>{
+  const identities=['Male_Adult_10','Male_Adult_09','Male_Adult_05','Female_Adult_03','Female_Adult_08','Female_Adult_12'];
+  for(const [index,name]of ['ronin','shinobi','monk','kaede','ayame','sora'].entries()){
+    const g=glb(name),rig=g.nodes.find(n=>n.extras?.nativeMotion);
+    assert.ok(rig,`${name}: native anatomical rig`);assert.equal(rig.extras.sourceAvatar,identities[index]);assert.equal(rig.extras.license,'MIT');
+    for(const side of ['R','L']){assert.equal(rig.extras['palmGrip'+side].length,3);assert.equal(rig.extras['shaftAxis'+side].length,3);assert.ok(Object.keys(rig.extras['closedFingers'+side]).length>=15);}
+    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',['','Twin_','','Fan_','Ring_','Sickle_'][index]+'Musou_Flow'])assert.ok(clips.has(clip),`${name}: ${clip}`);
+    assert.ok(clips.size<=24,`${name}: own weapon family only`);
+    assert.ok(g.materials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
+    assert.ok(g.materials.some(m=>m.normalTexture),`${name}: source surface normals`);
+    assert.ok(!g.nodes.some(n=>n.name==='SamuraiCostume'),`${name}: preserve original clothing anatomy`);
+  }
+});
+
+test('Enemy bodies use native human clips and distinct source identities',()=>{
+  const names=['ninja','enemy-guard','enemy-lancer','enemy-skirmisher'],sources=['Male_Adult_18','Male_Adult_04','Male_Adult_11','Female_Adult_13'],attacks=['Twin_Cut_Diagonal','Heavy_Cleave','Enemy_Thrust','Enemy_Throw'];
+  for(const [i,name]of names.entries()){
+    const g=glb(name),rig=g.nodes.find(n=>n.extras?.nativeMotion);assert.equal(rig?.extras.sourceAvatar,sources[i]);assert.equal(rig.extras.license,'MIT');
+    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Golf_Address','Sword_Idle','Jump_Loop','Jump_Land','Death01','Hit_Chest',attacks[i]])assert.ok(clips.has(clip),`${name}: ${clip}`);assert.ok(clips.size<=14,`${name}: keep only crowd clips`);
+    assert.ok(g.materials.every(m=>m.pbrMetallicRoughness?.baseColorTexture));
+  }
+});

@@ -1,25 +1,25 @@
-Human meshes and source motion clips: Quaternius
+Playable and enemy human models: Microsoft Rocketbox
+MIT License. Copyright (c) 2020 Microsoft.
+The complete notice is in ROCKETBOX-LICENSE.txt in this directory.
+https://github.com/microsoft/Microsoft-Rocketbox
+Source commit: 0943055db6ec570bcef9f2c8b41c9e5467c808f9
+
+Each of the ten characters preserves a separate source body, face, clothing mesh,
+and texture set. Native motion and hand markers fit each original skeleton.
+Source identities and build details: docs/rocketbox-roster.md.
+
+Original locomotion and reference skeleton: Quaternius
 CC0 1.0 Universal Public Domain Dedication
 https://creativecommons.org/publicdomain/zero/1.0/
-
-Universal Base Characters (Standard, free edition)
-https://quaternius.com/packs/universalbasecharacters.html
-https://quaternius.itch.io/universal-base-characters
-Source used: Superhero_Male_FullBody, with skeleton, skin, eyes, brows, and textures.
-
-Universal Animation Library (Standard, free edition)
-https://quaternius.com/packs/universalanimationlibrary.html
-https://quaternius.itch.io/universal-animation-library
+Universal Base Characters: https://quaternius.com/packs/universalbasecharacters.html
+Universal Animation Library: https://quaternius.com/packs/universalanimationlibrary.html
 Source clips: Idle_Loop, Sword_Idle, Walk_Loop, Jog_Fwd_Loop,
-Sprint_Loop, Sword_Attack, Roll, Death01, Hit_Chest, Jump_Start, Jump_Loop, and Jump_Land.
+Sprint_Loop, Sword_Attack, Roll, Death01, Hit_Chest, Jump_Start, Jump_Loop, Jump_Land.
 
-Modifications for Ninja Golf:
-- Original fitted clothing, armor, helmets, footwear, and skin weights.
-- Covered body surfaces removed; embedded textures resized and compressed.
-- Source motion retargeted to the human skeleton during loading.
-- Golf and combat clips authored and baked with palm and foot IK.
-- Four distinct enemy costumes and blade profiles.
+Ninja Golf additions:
+- Original weapons, golf animations, and authored combat motion families.
+- Native palm and foot IK; source animation retargeting before export.
+- Embedded texture compression and per-character animation filtering.
 - Motion references and phase analysis: docs/character-motion-study.md.
 
-The Quaternius source assets retain their CC0 dedication.
 No assets from Samurai Warriors or Dynasty Warriors are included.

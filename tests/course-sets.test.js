@@ -1,48 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {COURSE_SETS,COURSES,lieAt,heightAt,center,ellipse} from '../src/course.js';
-import {World} from '../src/world.js';
+import {COURSE_SETS,COURSES,lieAt,heightAt,fairwayDistance,routePoint,waterAt,waterBasins,mapOutlines} from '../src/course.js';
+import {MAX_FAIRWAY_SEGMENTS,MAX_BRIDGES,MAX_ISLANDS,MAX_WATERS} from '../src/course-layout.js';
 import {courseMaterial} from '../src/terrain.js';
-import {buildThemeScenery,buildFairwayCover} from '../src/course-themes.js';
+import {createPond} from '../src/water.js';
 
-test('Four complete rounds have unique identities and original layouts',()=>{
+test('Four rounds contain 36 independently authored topology plans',()=>{
  assert.equal(COURSE_SETS.length,4);assert.equal(COURSES,COURSE_SETS[0].holes);
- const all=COURSE_SETS.flatMap(s=>s.holes);assert.equal(all.length,36);assert.equal(new Set(all.map(c=>c.id)).size,36);assert.equal(new Set(all.map(c=>c.name)).size,36);
- for(const s of COURSE_SETS){assert.equal(s.holes.length,9);assert.ok(s.holes.reduce((v,c)=>v+c.par,0)>=35);for(const c of s.holes){assert.equal(c.courseId,s.id);assert.equal(c.theme,s.theme);assert.ok(c.bunkers.length<=4);}}
+ const all=COURSE_SETS.flatMap(s=>s.holes);assert.equal(all.length,36);assert.equal(new Set(all.map(c=>c.layout.kind)).size,36);
+ for(const set of COURSE_SETS){assert.equal(set.holes.length,9);assert.equal(set.holes.reduce((v,c)=>v+c.par,0),36);for(const c of set.holes){assert.equal(c.courseId,set.id);assert.ok(c.strategy.length>45);assert.ok(c.layout.segments.length<=MAX_FAIRWAY_SEGMENTS);assert.ok(c.layout.bridgeSegments.length<=MAX_BRIDGES);assert.ok(c.layout.islands.length<=MAX_ISLANDS);assert.ok(c.waters.length<=MAX_WATERS);assert.ok(c.bunkers.length<=4);}}
 });
-test('All 36 tees and greens are dry; hazards remain distinct',()=>{
- for(const s of COURSE_SETS)for(const c of s.holes){
+test('All 36 tee and green discs remain dry and every walking route reaches the cup',()=>{
+ for(const set of COURSE_SETS)for(const c of set.holes){
   assert.equal(lieAt(c,0,0),'Tee',c.name);assert.equal(lieAt(c,c.greenX,c.length),'Green',c.name);
-  assert.ok(heightAt(c,0,0)>3.1);assert.ok(heightAt(c,c.greenX,c.length)>3.1);
-  assert.equal(lieAt(c,c.pond[0],c.pond[1]),'Water');assert.ok(heightAt(c,c.pond[0],c.pond[1])<3.1);
+  for(const [x,z] of [[0,0],[c.greenX,c.length]]){assert.ok(heightAt(c,x,z)>3.1);for(let a=0;a<6.28;a+=.5)assert.equal(waterAt(c,x+Math.cos(a)*4,z+Math.sin(a)*4),false,c.name);}
+  const end=routePoint(c,1);assert.ok(Math.hypot(end.x-c.greenX,end.z-c.length)<1e-8);
+  for(let i=0;i<=800;i++){const p=routePoint(c,i/800);assert.ok(!['Water','Out of bounds'].includes(lieAt(c,p.x,p.z)),`${c.name} route ${i}`);assert.ok(Number.isFinite(heightAt(c,p.x,p.z)));}
   for(const b of c.bunkers)assert.equal(lieAt(c,b[0],b[1]),'Bunker',c.name);
-  for(let z=0;z<=c.length;z+=4){const x=center(c,z),y=heightAt(c,x,z);assert.ok(Number.isFinite(y));if(ellipse(x,z,c.pond)>1.2)assert.ok(y>.8,c.name);}
  }
 });
-test('Inland courses do not inherit an invisible coastal water hazard',()=>{
- for(const s of COURSE_SETS.filter(s=>['desert','cyberpunk'].includes(s.theme)))for(const c of s.holes){assert.notEqual(lieAt(c,190,20),'Water');assert.ok(heightAt(c,190,20)>.8);}
+test('Layouts include real disconnected pads, forks, elbows, and backward hairpins',()=>{
+ const crane=COURSE_SETS[0].holes[0];assert.equal(lieAt(crane,54,crane.length*.70),'Fairway');assert.equal(lieAt(crane,0,crane.length*.70),'Rough');
+ const fork=COURSE_SETS[1].holes[0];assert.ok(fairwayDistance(fork,-51,fork.length*.6)<0);assert.ok(fairwayDistance(fork,42,fork.length*.6)<0);assert.ok(fairwayDistance(fork,0,fork.length*.6)>10);
+ const packets=COURSE_SETS[3].holes[3];assert.ok(fairwayDistance(packets,64,packets.length*.4)<0);assert.ok(fairwayDistance(packets,0,packets.length*.55)>15);
+ const noodle=COURSE_SETS[3].holes[6];assert.ok(noodle.layout.route.some((p,i,a)=>i&&p[1]<a[i-1][1]));
+ const island=COURSE_SETS[0].holes[1];assert.equal(waterAt(island,island.greenX,island.length),false);assert.equal(waterAt(island,island.greenX,island.length-38),true);
+ assert.ok(COURSE_SETS.flatMap(s=>s.holes).filter(c=>c.layout.fairways.length>1).length>=18);
 });
-test('Neon winding routes end at the cup and have shader parity',()=>{
- for(const c of COURSE_SETS[3].holes){assert.ok(Math.abs(center(c,0))<1e-10);assert.ok(Math.abs(center(c,c.length)-c.greenX)<1e-10);for(let z=0;z<=c.length;z+=10){const t=Math.max(0,Math.min(1,z/c.length));assert.equal(center(c,z),Math.sin(t*Math.PI)*c.bend+c.greenX*t+c.weave*Math.sin(t*Math.PI*2));}}
- const c=COURSE_SETS[3].holes[0],m=courseMaterial(c,{grassColor:null,grassNormal:null}),shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};m.onBeforeCompile(shader);assert.equal(shader.uniforms.courseWeave.value,c.weave);assert.equal(shader.uniforms.courseCoastal.value,0);assert.ok(shader.fragmentShader.includes('courseWeave*sin(t*6.2831853)'));m.dispose();
+test('Walking bridges cross real water without creating broad fairways',()=>{
+ const c=COURSE_SETS[3].holes[7],s=c.layout.bridgeSegments[2],x=(s[0]+s[2])*.5,z=(s[1]+s[3])*.5;
+ assert.equal(waterAt(c,x,z),false);assert.ok(heightAt(c,x,z)>3.1);assert.ok(fairwayDistance(c,x,z)>0);
+ const dx=s[2]-s[0],dz=s[3]-s[1],len=Math.hypot(dx,dz),xx=x-dz/len*7,zz=z+dx/len*7;
+ assert.equal(waterAt(c,xx,zz),true);assert.ok(heightAt(c,xx,zz)<3.1);
 });
-test('Each new theme uses batched scenery and registers useful cover',()=>{
- for(const s of COURSE_SETS.slice(1)){const root=new THREE.Group(),sites=[];buildThemeScenery(root,s.holes[0],sites);assert.ok(root.children.length<22,`${s.theme}: ${root.children.length} draw calls`);assert.ok(root.children.some(o=>o.isInstancedMesh));assert.ok(sites.filter(o=>o.kind==='lantern').length>=10);assert.ok(sites.some(o=>o.kind==='tree'));root.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}
+test('CPU coverage supplies shader primitives and map boundaries for every hole',()=>{
+ for(const set of COURSE_SETS)for(const c of set.holes){const m=courseMaterial(c,{grassColor:null,grassNormal:null}),shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};m.onBeforeCompile(shader);assert.equal(shader.uniforms.routeCount.value,c.layout.segments.length);assert.ok(shader.fragmentShader.includes('float edge=routeDistance(p)'));assert.ok(!shader.fragmentShader.includes('cx=sin('));
+  const outlines=mapOutlines(c);assert.equal(outlines.length,c.layout.segments.length);for(const polygon of outlines)assert.ok(polygon.length>=16&&polygon.every(p=>p.every(Number.isFinite)));m.dispose();}
 });
-
-test('All 36 holes have dry interior cover outside the landing centre',()=>{
- for(const set of COURSE_SETS)for(const c of set.holes){const root=new THREE.Group(),sites=[];assert.ok(buildFairwayCover(root,c,sites)>=2,c.name);for(const site of sites){assert.equal(lieAt(c,site.x,site.z),'Fairway');assert.equal(site.fairway,true);assert.ok(Math.abs(site.x-center(c,site.z))>c.width*.5,c.name);assert.ok(site.y>3.1);}}
-});
-
-test('Landmarks and background rocks stay outside all new landing corridors',()=>{
- for(const set of COURSE_SETS.slice(1))for(const c of set.holes){
-  const root=new THREE.Group();buildThemeScenery(root,c,[]);
-  for(const landmark of root.userData.landmarks)for(let z=landmark.z-landmark.halfDepth;z<=landmark.z+landmark.halfDepth;z+=2){assert.ok(landmark.x+landmark.halfWidth<center(c,z)-c.width,c.name);}
-  root.traverse(o=>{if(o.isInstancedMesh)o.dispose();o.geometry?.dispose();o.material?.dispose();});
-  const rocksRoot=new THREE.Group();World.prototype.makeRocks.call({root:rocksRoot,course:c,texture:()=>null},(()=>{let seed=17;return()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};})());
-  const rocks=rocksRoot.children[0],matrix=new THREE.Matrix4(),position=new THREE.Vector3();
-  for(let i=0;i<rocks.count-20;i++){rocks.getMatrixAt(i,matrix);position.setFromMatrixPosition(matrix);assert.ok(Math.abs(position.x-center(c,position.z))>=c.width+11.99,c.name);assert.ok(Math.hypot(position.x-c.greenX,position.z-c.length)>=27.99,c.name);}
-  rocks.dispose();rocks.geometry.dispose();rocks.material.dispose();
- }
+test('Multiple water basins share dry masks and release all reflection targets',()=>{
+ const c=COURSE_SETS[3].holes[8],u={time:{value:0},skyMap:{value:null},hasSky:{value:0}},group=createPond(c,u);assert.equal(group.children.length,waterBasins(c).length);let disposed=0;for(const mesh of group.children){mesh.getRenderTarget().addEventListener('dispose',()=>disposed++);assert.equal(mesh.material.uniforms.time,u.time);assert.equal(mesh.material.uniforms.bridgeCount.value,c.layout.bridgeSegments.length);assert.ok(mesh.material.fragmentShader.includes('dryDistance(p)<0.'));}group.dispose();assert.equal(disposed,2);group.children.forEach(m=>m.geometry.dispose());
 });

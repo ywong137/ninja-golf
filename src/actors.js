@@ -8,7 +8,7 @@ import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='production-art-6';
+const MODEL_REVISION='human-roster-1';
 const templates=[];
 const retargeted=new Map();
 const motionSources=[];
@@ -34,6 +34,8 @@ function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materia
 function part(parent,kind,color,x,y,z,sx,sy,sz,metal=0){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):new THREE.CylinderGeometry(1,1,1,10));const mesh=new THREE.Mesh(geometries.get(kind),mat(color,metal));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;}
 function clipsFor(index){
   if(retargeted.has(index))return retargeted.get(index);
+  // Native human clips retain each model's actual limb lengths and joint axes.
+  if(templates[index].animations.length){retargeted.set(index,templates[index].animations);return templates[index].animations;}
   const target=templates[index].scene,clips=[];target.updateMatrixWorld(true);
   for(const source of motionSources){source.scene.updateMatrixWorld(true);
     for(const original of source.animations){const clip=original.clone();const tracks=[];
@@ -57,7 +59,13 @@ export class Warrior {
   constructor(type=0,enemy=false){
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+type:type;
     this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
+    this.rigMetadata={};this.model.traverse(o=>{if(o.userData.nativeMotion)this.rigMetadata=o.userData;});
+    this.nativeHuman=!!this.rigMetadata.nativeMotion;
+    this.palmGrips={r:new THREE.Vector3().fromArray(this.rigMetadata.palmGripR||PALM_GRIPS.r.toArray()),l:new THREE.Vector3().fromArray(this.rigMetadata.palmGripL||PALM_GRIPS.l.toArray())};
+    this.shaftAxes={r:new THREE.Vector3().fromArray(this.rigMetadata.shaftAxisR||[0,0,1]),l:new THREE.Vector3().fromArray(this.rigMetadata.shaftAxisL||[0,0,1])};
     this.bones={};this.ownedMaterials=[];this.resolveTargets=[];this.model.traverse(o=>{if(o.morphTargetDictionary?.Resolve!==undefined)this.resolveTargets.push([o,o.morphTargetDictionary.Resolve]);if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
+    this.root.updateMatrixWorld(true);
+    if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
@@ -66,10 +74,11 @@ export class Warrior {
     part(this.club,'cyl','#252a27',0,.04,0,.018,.20,.018);part(this.club,'cyl','#b7c4c2',0,.60,0,.008,1.0,.008,.85);const head=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);head.rotation.z=-.15;this.club.visible=false;
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
     const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
-    if(enemy)bag.visible=false;
+    if(enemy||this.nativeHuman)bag.visible=false;
     this.overlays=[];this.coreScales=[];this.restModelRotation=this.model.quaternion.clone();this.tip=new THREE.Vector3();this.hilt=new THREE.Vector3();
-    this.play('Idle_Loop',0);this.mixer.update(Math.random()*.7);
+    this.play(this.nativeHuman?'Golf_Address':'Idle_Loop',0);this.mixer.update(this.nativeHuman?0:Math.random()*.7);
     this.closedFingerGroups={r:[],l:[]};for(const bone of Object.values(this.bones))if(/^(index|middle|ring|pinky|thumb)_/.test(bone.name)){const side=bone.name.endsWith('_r')?'r':'l';this.closedFingerGroups[side].push([bone,bone.quaternion.clone()]);}
+    if(this.nativeHuman){this.mixer.stopAllAction();this.current='';this.play('Idle_Loop',0);this.mixer.update(0);}
     if(!enemy&&WARRIORS[type].readyClip&&this.actions.has(WARRIORS[type].readyClip)){this.play(WARRIORS[type].readyClip,0);this.mixer.update(0);}this.syncHeldObjects();
   }
   play(name,fade=.16,once=false,speed=1){const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
@@ -102,7 +111,7 @@ export class Warrior {
       for(const side of this.offhand?['r','l']:['r']){
         const bone=this.bones['hand_'+side],before=bone.quaternion.clone();
         const world=bone.getWorldQuaternion(new THREE.Quaternion());
-        const currentAxis=new THREE.Vector3(0,0,1).applyQuaternion(world);
+        const currentAxis=this.shaftAxes[side].clone().applyQuaternion(world);
         const desiredAxis=new THREE.Vector3(side==='r'?-.85:.85,.42,.18).normalize().applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion()));
         world.premultiply(new THREE.Quaternion().setFromUnitVectors(currentAxis,desiredAxis));
         const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
@@ -128,7 +137,7 @@ export class Warrior {
     const attach=(held,side,from,to,roll=0)=>{
       const hand=this.bones['hand_'+side];
       if(held.parent!==this.root)this.root.add(held);
-      held.position.copy(gripPosition.copy(PALM_GRIPS[side]).applyMatrix4(hand.matrixWorld).applyMatrix4(rootInverse));
+      held.position.copy(gripPosition.copy(this.palmGrips[side]).applyMatrix4(hand.matrixWorld).applyMatrix4(rootInverse));
       if(from&&to){
         shaftDirection.set(to[0]-from[0],to[2]-from[2],from[1]-to[1]);
         if(golf)held.scale.setScalar(shaftDirection.length()/1.12);
@@ -136,7 +145,7 @@ export class Warrior {
       }else{
         // Across the palm, perpendicular to wrist-to-knuckle direction.
         hand.matrixWorld.decompose(decomposedPosition,handRotation,decomposedScale);
-        shaftDirection.set(0,0,1).applyQuaternion(handRotation).applyQuaternion(rootRotation);
+        shaftDirection.copy(this.shaftAxes[side]).applyQuaternion(handRotation).applyQuaternion(rootRotation);
         held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());
       }
     };

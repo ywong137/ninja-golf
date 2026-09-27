@@ -22,7 +22,7 @@ export class Rendering {
     this.contact=new ContactPass(scene,camera,innerWidth,innerHeight);
     this.contact.updateGtaoMaterial({radius:.75,thickness:.7,distanceFallOff:1,samples:8});
     this.contact.updatePdMaterial({radius:5,samples:8});this.contact.blendIntensity=.8;
-    this.composer.addPass(this.contact);this.bloom=new UnrealBloomPass(new Vector2(innerWidth,innerHeight),.32,.55,1.05);this.bloom.enabled=false;this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
+    this.composer.addPass(this.contact);this.bloom=new UnrealBloomPass(new Vector2(innerWidth,innerHeight),.32,.55,1.05);this.bloom.materialHighPassFilter.fragmentShader=this.bloom.materialHighPassFilter.fragmentShader.replace('float v = luminance( texel.xyz );','texel.rgb=min(texel.rgb,vec3(6.));float v = luminance( texel.xyz );');this.bloom.enabled=false;this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
     this.resize();renderer.info.autoReset=false;renderer.shadowMap.autoUpdate=false;
   }
   resize(){this.composer.setPixelRatio(this.renderer.getPixelRatio());this.composer.setSize(innerWidth,innerHeight);}

@@ -1,3 +1,4 @@
+import {applyAuthoredLayouts} from './course-layout-data.js';
 // Original layouts. Distances are metres. Each course has its own terrain and scenery theme.
 const original = [
   { name: 'The Crane’s Landing', subtitle: 'A quiet opening. Allegedly.', par: 4, length: 330, bend: 28, width: 23, greenX: 8, wind: [1.3, .5], seed: 18,
@@ -51,7 +52,7 @@ const cyberpunk=[
  hole('The Hologram Orchard','The trees glow. The bunkers still count.',4,387,38,25,17,405,{weave:31}),
  hole('Pocket Universe','A tiny green at the end of a large idea.',3,177,-10,19,-5,406,{weave:29}),
  hole('Infinite Noodle','Three shots. Two bends. One hungry golfer.',5,537,-34,27,-14,407,{weave:-63}),
- hole('Moon Rabbit Circuit','Cut the corner under the floating moon.',4,354,16,24,7,408,{weave:58}),
+ hole('Moon Rabbit Circuit','Skip a landing island beneath the city lights.',4,354,16,24,7,408,{weave:58}),
  hole('The Final Upload','Leave a score the city cannot forget.',4,431,-28,25,11,409,{weave:-43}),
 ];
 // Individual hazard plans define the intended landing decision on each hole.
@@ -103,9 +104,10 @@ for(const [theme,holes] of Object.entries({japanese,highlands,desert,cyberpunk})
 original.forEach((h,i)=>{h.strategy=['The right bend opens a wide landing; keep the approach away from the two green bunkers.','Carry the water towards the raised green, or follow the dry bank for a safer route.','Aim for the first landing left of the pond, then choose a layup before the narrow approach.'][i];});
 const set=(id,name,subtitle,description,theme,accent,holes,extra)=>({id,name,subtitle,description,theme,accent,preview:{hole:0},holes:holes.map((h,i)=>({...h,...extra,id:`${id}-${i+1}`,number:i+1,courseId:id,theme}))});
 export const COURSE_SETS=[
- set('crane-coast','Crane Coast','Japan · Coastal gardens','Temple gardens, pine groves, and a deeply unreliable promise of peace.','japanese','#bc5949',japanese,{coastal:true,relief:1}),
+ set('crane-coast','Crane Coast','Japan · Coastal gardens','Temple gardens, woodland groves, and a deeply unreliable promise of peace.','japanese','#bc5949',japanese,{coastal:true,relief:1}),
  set('heather-crown','Heather & Crown','Scotland · Highland links','Ancient stone, stubborn winds, and several men who object to your backswing.','highlands','#a08bb2',highlands,{coastal:true,relief:1.3}),
- set('copper-saguaro','Copper Saguaro','Arizona · Sonoran resort','Perfect resort conditions. The cacti are the friendliest things here.','desert','#d9a36b',desert,{coastal:false,relief:.9}),
- set('neo-tokyo','Neo-Tokyo After Dark','Japan, 2099 · Neon absurdity','Glowing gardens, floating moons, and fairways with unusual opinions.','cyberpunk','#73e4ec',cyberpunk,{coastal:false,relief:.65}),
+ set('copper-saguaro','Copper Saguaro','Arizona · Sonoran resort','Perfect resort conditions. The landscaping is the friendliest thing here.','desert','#d9a36b',desert,{coastal:false,relief:.9}),
+ set('neo-tokyo','Neo-Tokyo After Dark','Japan, 2099 · Neon absurdity','City lights, island constellations, and fairways with unusual opinions.','cyberpunk','#73e4ec',cyberpunk,{coastal:false,relief:.65}),
 ];
+applyAuthoredLayouts(COURSE_SETS);
 export const COURSES=COURSE_SETS[0].holes;

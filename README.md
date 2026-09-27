@@ -60,12 +60,12 @@ Choose a warrior, then select a course from four scenic in-game previews. The ti
 
 | Course | Setting |
 | --- | --- |
-| Crane Coast | Japanese coastal gardens, pines, temples, and water carries |
-| Heather & Crown | Scottish links, gorse, heather, ruins, and exposed approaches |
-| Copper Saguaro | Sonoran desert, palms, cacti, mesas, and elevated greens |
-| Neo-Tokyo After Dark | Neon skyline, winding fairways, crystal trees, and giant floating koi |
+| Crane Coast | Japanese coastal gardens, scanned trees, temples, and water carries |
+| Heather & Crown | Scottish links, woodland, scanned cliffs, ruins, and exposed approaches |
+| Copper Saguaro | Desert resort, sculptural trees, scanned boulders, and elevated greens |
+| Neo-Tokyo After Dark | Photographic night skyline, neon towers, island constellations, and spiral fairways |
 
-The original three holes open Crane Coast. [Course design notes](docs/course-design.md) describe the other holes and official references.
+All 36 holes use individually authored routes. Doglegs, split fairways, landing islands, switchbacks, and island greens change the shot strategy. Dry bridges connect routes across water. Both maps show the same fairways, islands, and bridges as the terrain. Displayed hole yardage follows the planned route; distance to the pin stays direct. [Course design notes](docs/course-design.md) describe the layouts and official references.
 
 The Ronin favors power, the Shinobi favors speed and accuracy, and the Monk favors health and reach.
 Kaede uses a bladed fan for close, broad cuts and forceful gust finishers. Ayame carries a crescent ring for wider circular cuts and turning entries. Sora uses a hooked sickle to pull enemies into rising attacks. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
@@ -105,11 +105,11 @@ Both recordings ship unchanged and loop during play. The game crossfades between
 
 CC0 recordings supply wind, surf, birds, footsteps, splashes, and weapon swishes. Web Audio synthesis adds impact accents. The game does not generate music. Pause suspends all audio. A second active tab silences the first tab within the same browser profile. See the [recording credits](public/audio/field/CREDITS.md).
 
-Three.js uses the MIT license. Vite uses the MIT license. Human base meshes and the Universal Animation Library come from [Quaternius](https://quaternius.com/), under CC0. Costumes, weapons, and golf animations are original adaptations. See [model credits](public/models/LICENSE.txt).
+Three.js and Vite use the MIT license. All six heroes and four enemies use distinct textured humans from [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox), under MIT. The [Quaternius](https://quaternius.com/) Universal Animation Library supplies CC0 motion references. The native motion conversion, weapons, and golf trajectories are original adaptations. See [model credits](public/models/LICENSE.txt) and [the human roster](docs/rocketbox-roster.md).
 
-Vegetation uses Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
+Earlier tree assets use Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The retained generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
 
-Scanned materials, pine textures, and the HDR sky come from [Poly Haven](https://polyhaven.com/), under CC0. See [texture credits](public/textures/SOURCES.json). No Samurai Warriors game assets are included. The official [Samurai Warriors 4 character artwork](https://www.koeitecmoamerica.com/sw4/chara05.html) informed costume proportions and silhouettes.
+Current trees, shrubs, ferns, boulders, cliffs, ground materials, and daylight/night HDR skies come from [Poly Haven](https://polyhaven.com/), under CC0. See [landscape credits](public/models/nature/SOURCES.json) and [texture credits](public/textures/SOURCES.json). No Samurai Warriors game assets are included. Official Samurai Warriors 4 and 5 artwork and descriptions inform weapon families and combat styles.
 
 ## Code layout
 
@@ -145,19 +145,13 @@ Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All br
 
 ## Motion and character study
 
-See [the character study](docs/character-motion-study.md) for references, pose checkpoints, controls, and enemy counters. `tools/build-warriors.py` builds the costumes. `tools/build-motion.py` exports the source locomotion library. Run `tools/build-authored-motion.py` last to bake the shared golf and blade trajectories from `src/motion-data.json`. The runtime uses those same trajectories to position the weapons.
+See [the character study](docs/character-motion-study.md) for references, pose checkpoints, controls, and enemy counters. `tools/build-rocketbox-warriors.py` converts the licensed native human meshes and rigs. `tools/rocketbox-rig.py` transfers motion while preserving their proportions. The source locomotion library and `src/motion-data.json` supply shared golf and blade trajectories. The runtime uses those same trajectories to position the weapons. See [the asset tool guide](tools/README.md) for the full build sequence.
 
 ## Production art and performance checks
 
 See [the production quality record](docs/production-quality.md) for the reference, visual gates, and measured results. Camera sensitivity, inverted vertical look, and reduced camera effects persist locally.
 
-Rebuild vegetation with the development server running:
-
-```sh
-PLAYWRIGHT_CHANNEL=chrome node tools/build-trees.mjs
-python3 tools/compress-glb-textures.py public/models/vegetation/*.glb
-PLAYWRIGHT_CHANNEL=chrome node tools/bake-tree-impostors.mjs
-```
+See [the scanned landscape guide](docs/landscape-assets.md) for download, geometry reduction, texture conversion, and distant-tree baking.
 
 The texture tools require Pillow. Character tools require Blender. Shipping assets do not require either tool.
 

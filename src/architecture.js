@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {heightAt} from './course.js';
+import {heightAt,lieAt,fairwayDistance} from './course.js';
+export function pagodaLocation(c){
+ for(const radius of [65,85,105,125])for(const dz of [8,-24,28,-48])for(const side of [-1,1]){const x=c.greenX+side*radius,z=c.length+dz;let clear=true;for(let dx=-13;dx<=13;dx+=6.5)for(let offset=-12;offset<=12;offset+=6){const xx=x+dx,zz=z+offset;if(fairwayDistance(c,xx,zz)<12||Math.hypot(xx-c.greenX,zz-c.length)<34||['Water','Out of bounds'].includes(lieAt(c,xx,zz)))clear=false;}if(clear)return{x,z};}
+ throw new Error(`No safe pagoda site for ${c.name}`);
+}
 // A compact material palette keeps carved structures cheap enough for crowd combat.
 function surface(color,roughness=.85,metalness=0,grain=false){
  const m=new THREE.MeshStandardMaterial({color,roughness,metalness});
@@ -27,7 +31,8 @@ export function buildArchitecture(root,c,stoneTextures){
  box(red,tx,ty+6.35,tz,10.4,.38,.6);box(gold,tx,ty+7.27,tz-.19,.74,1.16,.12);
  for(let i=0;i<24;i++){const a=(i+.5)/24*12.8-6.4,h=.38*Math.pow(Math.abs(a)/6.4,4),slope=.38*4*Math.pow(Math.abs(a)/6.4,3)/6.4*Math.sign(a);box(red,tx+a,ty+8.1+h,tz,.57,.38,.75,Math.atan(slope));box(tile,tx+a,ty+8.4+h,tz,.57,.22,1.08,Math.atan(slope));}
  // Layered hip roofs, open galleries, lattice panels, steps, and exposed rafters.
- const px=-85,pz=c.length+8,py=heightAt(c,px,pz);
+ const {x:px,z:pz}=pagodaLocation(c),py=heightAt(c,px,pz);
+ (root.userData.landmarks??=[]).push({x:px,z:pz,halfWidth:13,halfDepth:12});
  box(stone,px,py+.6,pz,20,1.2,15);
  for(let i=0;i<5;i++)box(stone,px,py+.10+i*.2,pz-9+i*.42,8,.2,2.4);
  for(let level=0;level<3;level++){

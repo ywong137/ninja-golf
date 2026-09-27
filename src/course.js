@@ -1,3 +1,5 @@
+import {fairwayDistance,dryLandDistance,waterAt,waterBasins} from './course-layout.js';
+export {fairwayDistance,dryLandDistance,waterAt,waterBasins,routeNearest,routePoint,fairwayPrimitives,mapOutlines} from './course-layout.js';
 export { COURSE_SETS, COURSES } from './course-data.js';
 export { WARRIORS } from './warriors.js';
 export const CLUBS = [
@@ -13,35 +15,36 @@ export const CLUBS = [
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t*t*(3-2*t); };
 export function random(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t ^= t + Math.imul(t ^ t >>> 7, 61 | t); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-export function center(c, z) { const t = clamp(z / c.length, 0, 1); return Math.sin(t * Math.PI) * c.bend + c.greenX * t + (c.weave || 0) * Math.sin(t * Math.PI * 2); }
+export function center(c,z){if(c.layout){const p=c.layout.route;let x=p[0][0],best=Infinity;for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i],t=clamp((z-a[1])/(b[1]-a[1]||1),0,1),zz=a[1]+(b[1]-a[1])*t,d=Math.abs(z-zz);if(d<best){best=d;x=a[0]+(b[0]-a[0])*t;}}return x;}const t=clamp(z/c.length,0,1);return Math.sin(t*Math.PI)*c.bend+c.greenX*t;}
 export function greenDistance(c, x, z) { return Math.hypot((x-c.greenX)/1.05, z-c.length); }
 export function ellipse(x, z, e) { return Math.hypot((x-e[0])/e[2], (z-e[1])/e[3]); }
 export const COURSE_BOUNDS={minX:-240,maxX:240,minZ:-90,endMargin:120};
 export function lieAt(c, x, z) {
   if (x < COURSE_BOUNDS.minX || x > COURSE_BOUNDS.maxX || z < COURSE_BOUNDS.minZ || z > c.length + COURSE_BOUNDS.endMargin) return 'Out of bounds';
-  if (ellipse(x,z,c.pond) < .95 || c.coastal !== false && x > 138 + Math.sin(z*.014)*28) return 'Water';
+  if (waterAt(c,x,z) || c.coastal !== false && x > 138 + Math.sin(z*.014)*28) return 'Water';
   if (c.bunkers.some(b => ellipse(x,z,b) < 1)) return 'Bunker';
   if (greenDistance(c,x,z) < 17) return 'Green';
   if (Math.abs(x) < 5 && Math.abs(z) < 7) return 'Tee';
-  const w = c.width*(.84+.18*Math.sin(z*.031));
-  if (z > -12 && z < c.length+6 && Math.abs(x-center(c,z)) < w) return 'Fairway';
+  if (fairwayDistance(c,x,z)<0) return 'Fairway';
   return 'Rough';
 }
 export function heightAt(c,x,z) {
-  const d = Math.abs(x-center(c,z));
+  const d = fairwayDistance(c,x,z);
   const g = greenDistance(c,x,z);
   const t=clamp(z/c.length,0,1),elevation=(c.rise||0)*t+(c.swell||0)*Math.sin(t*Math.PI);
   const base = 7.5 + Math.sin(z*.012)*2.2 + z*.003 + elevation;
   const hill = (c.relief || 1) * (Math.sin(x*.031+z*.008)*5 + Math.cos(z*.023-x*.009)*3 + Math.sin(x*.079+z*.05)*.6);
   const greenBase = 7.5 + Math.sin(c.length*.012)*2.2 + c.length*.003 + (c.rise||0);
   const green = greenBase + (x-c.greenX)*.011 + (z-c.length)*.008;
-  let y = base + hill*smooth(c.width-3, c.width+42,d);
+  let y = base + hill*smooth(-3,42,d);
   y = y*(smooth(16,26,g)) + green*(1-smooth(16,26,g));
   for (const b of c.bunkers) y -= (1-smooth(.6,1.2,ellipse(x,z,b)))*.8;
   // Inland hollows stay above sea level. Only the designed coast descends into the ocean.
   y=.8+Math.log1p(Math.exp(y-.8));
-  const pond = 1-smooth(.86,1.16,ellipse(x,z,c.pond));
-  y = y*(1-pond)+(1.8)*pond;
+  const dry=dryLandDistance(c,x,z),landBlend=dry<=0?1:0;
+  let wetY=y;
+  for(const basin of waterBasins(c)){const e=ellipse(x,z,basin);if(e<1.16){const bed=e<1?1.8+1.3*smooth(.88,1,e):3.1+(y-3.1)*smooth(1,1.16,e);wetY=Math.min(wetY,bed);}}
+  y=wetY*(1-landBlend)+Math.max(4.3,y)*landBlend;
   const coast = c.coastal === false ? 0 : smooth(112+Math.sin(z*.014)*28,163+Math.sin(z*.014)*28,x);
   y = y*(1-coast)-12*coast;
   return y;

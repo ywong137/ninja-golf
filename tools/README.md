@@ -2,13 +2,18 @@
 
 The checked-in GLBs are ready to load. Blender is only needed to change the assets.
 
-1. Download the free Standard editions of Quaternius Universal Base Characters and Universal Animation Library.
-2. Extract `Superhero_Male_FullBody.gltf`, its BIN and textures, and `UAL1_Standard.glb` into `assets/source/`.
-3. Run Blender 5.1 with `--background --python tools/build-warriors.py`.
-4. Run Blender with `--background --python tools/build-motion.py`.
+The ten character bodies use Microsoft Rocketbox assets under MIT. See `docs/rocketbox-roster.md` for source identities and licensing.
 
-The scripts export to `public/models/`. Source archives remain outside version control.
-See `public/models/LICENSE.txt` for source links and modification details.
+1. Place the listed source FBX and texture folders in `assets/source/rocketbox/`.
+2. Run Blender with `--background --python tools/build-rocketbox-warriors.py` for heroes.
+3. Add `-- --enemies` to export the four enemies with smaller textures and filtered clips.
+
+`build-warriors.py` forwards to this native-human pipeline. Source archives remain outside version control.
+The build uses a system Python with Pillow to compress embedded textures.
+
+The original locomotion reference still comes from the Quaternius Universal Animation Library under CC0.
+`build-motion.py` prepares that reference. `build-authored-motion.py` prepares the authored golf and combat poses.
+The native-human builder fits those motions to each body's actual limb proportions and stores them inside each character GLB.
 
 # Environment materials
 
@@ -16,3 +21,13 @@ The download scripts retrieve the licensed assets listed in `public/textures/SOU
 They use the web-retrieval skill's T1 browser headers. Set `NINJA_BROWSER_UA_FILE`
 to a JSON file containing the current local Chrome user-agent string before running them.
 The material downloader verifies checksums from the Poly Haven API.
+
+# Scanned landscape builds
+
+See `docs/landscape-assets.md` for the download, reduction, texture compression, and distant-view bake steps.
+Source scans remain in `/private/tmp/ninja-nature-sources`. The game loads only the optimized GLBs and view images.
+
+# Textured human builds
+
+The playable heroes now use separate licensed Rocketbox identities. See `docs/rocketbox-roster.md`.
+All four enemy bodies use separate Rocketbox identities. Quaternius remains the original motion reference only.

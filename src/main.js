@@ -1,7 +1,7 @@
 import './style.css';
 import * as THREE from 'three';
 import { Rendering } from './rendering.js';
-import { loadVegetation } from './vegetation.js';
+import { loadNature } from './nature.js';
 import {PuttingGuide,previewShot} from './golf-guide.js';
 import { World } from './world.js';
 import { Warrior, Effects, CrowdRenderer, loadWarriorAssets } from './actors.js';
@@ -14,7 +14,7 @@ import {musouHeadings} from './motion.js';
 import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { UI } from './ui.js';
-import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, lieAt, clamp, carryFor, launchShot, scoreName } from './course.js';
+import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, lieAt, waterBasins, clamp, carryFor, launchShot, scoreName } from './course.js';
 
 const v1=new THREE.Vector3(),v2=new THREE.Vector3(),camTarget=new THREE.Vector3(),camLook=new THREE.Vector3();
 const YARD=1.09361, BALL_RADIUS=.13;
@@ -109,6 +109,7 @@ class Game {
     this.spawnWave(14);this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast('Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
   }
   selectBestClub(){const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;}
+  slideOnLand(position,radius=.38){const x=position.x,z=position.z;this.world.collision.slide(position,radius);if(['Water','Out of bounds'].includes(lieAt(this.course,position.x,position.z))){position.x=x;position.z=z;}}
   spawnWave(count){
     const p=this.player.root.position,yaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);
     const sites=chooseAmbushSites(this.world.ambushSites,p,yaw,this.time);if(!sites.length)return;
@@ -116,7 +117,7 @@ class Game {
       const site=sites[i%Math.min(5,sites.length)],slot=this.enemiesSpawned,enemy=new Warrior(enemyTypeForSlot(slot),true);
       // Entrances always begin at visible scenery, then land on a verified dry point.
       const dx=p.x-site.x,dz=p.z-site.z,length=Math.hypot(dx,dz)||1;let x=site.x+dx/length*2.5,z=site.z+dz/length*2.5;
-      if(site.kind==='water'){const [px,pz,rx,rz]=this.course.pond;const angle=Math.atan2((site.z-pz)/rz,(site.x-px)/rx);x=px+Math.cos(angle)*rx*1.22;z=pz+Math.sin(angle)*rz*1.22;}
+      if(site.kind==='water'){const [px,pz,rx,rz]=waterBasins(this.course).reduce((a,b)=>Math.hypot((site.x-a[0])/a[2],(site.z-a[1])/a[3])<Math.hypot((site.x-b[0])/b[2],(site.z-b[1])/b[3])?a:b);const angle=Math.atan2((site.z-pz)/rz,(site.x-px)/rx);x=px+Math.cos(angle)*rx*1.22;z=pz+Math.sin(angle)*rz*1.22;}
       if(lieAt(this.course,x,z)==='Water'||lieAt(this.course,x,z)==='Out of bounds')continue;
       enemy.root.position.set(site.x,site.y,site.z);enemy.root.visible=false;
       enemy.emerging={site,delay:Math.floor(i/5)*.22+Math.random()*.18,time:0,duration:site.kind==='tree'?1.05:.85,landing:new THREE.Vector3(x,heightAt(this.course,x,z),z)};
@@ -170,7 +171,7 @@ class Game {
     if(this.action)this.player.root.rotation.y=this.attackYaw;
     else if(this.focused)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,this.cameraYaw,dt*20);
     else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18);
-    this.world.collision.slide(p);p.y=heightAt(this.course,p.x,p.z);
+    this.slideOnLand(p);p.y=heightAt(this.course,p.x,p.z);
     if(moving){this.stepTime=(this.stepTime||0)+dt;if(this.stepTime>(sprinting?.26:.37)){this.audio.play('step',lieAt(this.course,p.x,p.z));this.stepTime=0;}}
     if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
     this.player.update(this.time,dt,{moving,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveAngle:Math.atan2(dx,dz)-this.player.root.rotation.y});
@@ -199,7 +200,7 @@ class Game {
         if(lieAt(this.course,nx,nz)!=='Water'){e.root.position.x=nx;e.root.position.z=nz;enemyMoving=speed>.4;}else{const tx=e.root.position.x+v1.z*speed*dt,tz=e.root.position.z-v1.x*speed*dt;if(lieAt(this.course,tx,tz)!=='Water'){e.root.position.x=tx;e.root.position.z=tz;enemyMoving=speed>.4;}}
       }
       for(let j=0;j<i;j++){const other=this.enemies[j];if(other.dead||other.emerging)continue;v2.copy(e.root.position).sub(other.root.position);v2.y=0;const d=v2.length();if(d<1.15&&d>.001){const sx=e.root.position.x+v2.x*(1.15-d)/d*dt*4,sz=e.root.position.z+v2.z*(1.15-d)/d*dt*4;if(lieAt(this.course,sx,sz)!=='Water'){e.root.position.x=sx;e.root.position.z=sz;}}}
-      this.world.collision.slide(e.root.position,.3);e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z)+e.lift;
+      this.slideOnLand(e.root.position,.3);e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z)+e.lift;
       const toward=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.root.rotation.y=turnToward(e.root.rotation.y,e.enemyAction?e.enemyAction.yaw:enemyMoving&&!definition.ranged?(e.moveYaw??toward):toward,dt*12);
       if(engaged.has(e)&&distance<definition.reach&&e.cooldown<=0&&e.lift<.1&&e.stun<=0&&!e.enemyAction){
         e.enemyAction={token:`enemy-${++this.enemyActionSerial}`,duration:definition.duration,time:0,hitIndex:0,yaw:toward,target:p.clone().add(new THREE.Vector3(this.playerVelocity.x*.22,1,this.playerVelocity.z*.22))};e.cooldown=definition.duration+definition.recovery+Math.random()*.6;e.readyAt=this.time+e.cooldown+(Math.random()<.65?1.6+Math.random()*2.6:0);
@@ -277,5 +278,5 @@ class Game {
     this.crowd.update(this.enemies);this.scene.userData.crowdCount=this.enemies.length;this.scene.userData.musou=this.action?.kind==='musou'&&!this.input.reducedMotion;this.rendering.render(this.quality);this.input.end();this.frameCount++;this.fpsTime+=realDt;if(this.fpsTime>1.2){const fps=this.frameCount/this.fpsTime;this.ui.$('performance').textContent=`${Math.round(fps)} FPS`;if(this.quality==='balanced'&&!this.paused&&this.time>(this.resolutionChangedAt||0)+3){const current=this.renderer.getPixelRatio(),ceiling=Math.min(devicePixelRatio,1.5);const next=fps<42?Math.max(.75,current-.15):fps>58&&this.time>(this.resolutionChangedAt||0)+10?Math.min(ceiling,current+.1):current;if(Math.abs(next-current)>.01){this.renderer.setPixelRatio(next);this.renderer.setSize(innerWidth,innerHeight);this.rendering.resize();this.resolutionChangedAt=this.time;}}this.frameCount=0;this.fpsTime=0;}
   }
 }
-async function boot(){try{document.querySelector('#app').innerHTML='<div class="loading-screen"><div class="brand-mark">忍</div><h2>Preparing the course.</h2><p id="loading-detail">Loading rigged warriors and animations…</p></div>';await Promise.all([loadVegetation(),loadWarriorAssets((done,total)=>{document.getElementById('loading-detail').textContent=`Preparing warriors · ${done} / ${total}`;})]);new Game();}catch(error){console.error(error.stack||error);document.querySelector('#app').insertAdjacentHTML('beforeend',`<div style="position:fixed;inset:0;display:grid;place-content:center;background:#19362f;color:#eee;padding:40px;font-family:Arial"><h1 style="font-size:36px;letter-spacing:0">The course could not load.</h1><p>Reload the page. If this continues, try a browser with WebGL 2 enabled.</p><button onclick="location.reload()" style="padding:16px">Try again</button></div>`);}}
+async function boot(){try{document.querySelector('#app').innerHTML='<div class="loading-screen"><div class="brand-mark">忍</div><h2>Preparing the course.</h2><p id="loading-detail">Loading rigged warriors and animations…</p></div>';await Promise.all([loadNature(),loadWarriorAssets((done,total)=>{document.getElementById('loading-detail').textContent=`Preparing warriors · ${done} / ${total}`;})]);new Game();}catch(error){console.error(error.stack||error);document.querySelector('#app').insertAdjacentHTML('beforeend',`<div style="position:fixed;inset:0;display:grid;place-content:center;background:#19362f;color:#eee;padding:40px;font-family:Arial"><h1 style="font-size:36px;letter-spacing:0">The course could not load.</h1><p>Reload the page. If this continues, try a browser with WebGL 2 enabled.</p><button onclick="location.reload()" style="padding:16px">Try again</button></div>`);}}
 boot();

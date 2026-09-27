@@ -100,3 +100,19 @@ Kaede uses a single bladed fan. Her raised guard, open free hand, lateral cuts, 
 Each style has a separate stance loop, four light attacks, four heavy attacks, and a six-cut Musou sequence. These clips use the `Fan_`, `Ring_`, and `Sickle_` prefixes. They retain the combat hit times. The `roll` value turns each weapon around its shaft; the baker applies the same rotation to the palm. The free hand uses its own trajectory and partly open fingers.
 
 The runtime helper `combatMotionName` selects the correct family from warrior metadata. The motion check renders four Musou phases for each woman and verifies knee direction throughout each sequence.
+
+## Native human rig bridge
+
+The player roster now uses six licensed Microsoft Rocketbox humans. Their native meshes, skin weights, and limb lengths remain intact. The earlier fixed palm coordinates apply only to the source mannequin.
+
+`tools/rocketbox-rig.py` maps the native Biped bones to the game names. It aligns bone axes with anatomical child joints. The bridge transfers motion relative to each native rest pose. Hand and foot IK then restores the authored contacts. The arm chains use the upper arm and forearm. Knee and elbow pole angles come from each model's actual joint geometry.
+
+The builder embeds common movement and golf clips with each hero’s own combat family. Runtime prefers these native clips. It does not apply the mannequin's joint transforms to the human mesh. Grip markers transfer the measured closed-finger center through the GLB coordinate conversion.
+
+Use `MOTION_HERO=3 PLAYWRIGHT_CHANNEL=chrome node tests/browser-motion.mjs` for a single hero check. Omit `MOTION_HERO` to check the full roster. The check saves rendered poses before reporting failed contacts, so numerical results cannot hide visible defects.
+
+Native clips start at frame zero. This keeps the authored 1.4-second golf contact and the combat impact times exact after GLB export.
+
+For two-handed combat, the bridge moves the shared handle into both native arms' reach. Both wrist targets receive the same translation. This preserves their spacing along the shaft. The browser check measures the second palm against that shaft throughout Musou.
+
+Native free hands follow the solved forearm orientation. They keep the authored wrist position without copying an unused weapon direction. This prevents a sharply bent wrist in relaxed guards.

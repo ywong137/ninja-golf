@@ -51,3 +51,25 @@ test('Fan, ring, and sickle have complete independent animation families',()=>{
  const guards=['Fan_','Ring_','Sickle_'].map(prefix=>motions[prefix+'Ready'].poses[0].grip);
  for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++)assert.ok(Math.hypot(...guards[i].map((x,k)=>x-guards[j][k]))>.07,'Distinct resting silhouettes');
 });
+
+test('Native human golf clips start at zero and preserve authored contact timing',()=>{
+ for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora']){
+  const bytes=readFileSync(new URL(`../public/models/${hero}.glb`,import.meta.url));
+  assert.equal(bytes.readUInt32LE(0),0x46546c67,`${hero}: GLB header`);
+  const jsonLength=bytes.readUInt32LE(12),gltf=JSON.parse(bytes.subarray(20,20+jsonLength).toString());
+  const binaryStart=20+jsonLength+8;
+  assert.ok(gltf.nodes.some(node=>node.extras?.nativeMotion),`${hero}: missing native motion rig`);
+  for(const name of ['Golf_Swing','Golf_Putt']){
+   const clip=gltf.animations.find(animation=>animation.name===name);assert.ok(clip,`${hero}: ${name}`);
+   let clipEnd=0;
+   for(const sampler of clip.samplers){
+    const accessor=gltf.accessors[sampler.input],view=gltf.bufferViews[accessor.bufferView];
+    assert.equal(accessor.componentType,5126,`${hero}/${name}: floating point times`);
+    const start=binaryStart+(view.byteOffset||0)+(accessor.byteOffset||0),stride=view.byteStride||4;
+    assert.equal(bytes.readFloatLE(start),0,`${hero}/${name}: a frame offset changes impact timing`);
+    clipEnd=Math.max(clipEnd,bytes.readFloatLE(start+(accessor.count-1)*stride));
+   }
+   assert.ok(Math.abs(clipEnd-motions[name].duration)<1e-5,`${hero}/${name}: clip duration changed`);
+  }
+ }
+});
