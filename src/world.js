@@ -5,6 +5,7 @@ import {loadRegionalTerrain} from './regional-terrain.js';
 import {createPond,createOceanMaterial} from './water.js';
 import { NaturalLandscape,forestAtlasSource,queueSceneryRock } from './nature.js';
 import {buildDistantForest} from './distant-forest.js';
+import {buildDistantCity} from './distant-city.js';
 import {SceneryCollision} from './scenery-collision.js';
 import {BuildingNavigation} from './building-navigation.js';
 import {buildArchitectureGround} from './architecture-ground.js';
@@ -38,7 +39,7 @@ export class World {
       float cloud=sin(n.x*13.+n.z*4.)*sin(n.z*19.-n.y*9.);col+=vec3(.025,.012,.045)*pow(max(0.,cloud),3.)*(1.-h);col+=star*vec3(.7,.8,1.);gl_FragColor=vec4(col,1.);
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
-      }`}));this.nightSky.visible=false;scene.add(this.nightSky);
+      }`}));this.nightSky.visible=false;this.nightSky.renderOrder=-100;scene.add(this.nightSky);
     const sun=SUN_OFFSET.clone().normalize();const u=sky.material.uniforms;
     u.turbidity.value=3.5;u.rayleigh.value=1.7;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.83;u.sunPosition.value.copy(sun);
     this.sun=new THREE.DirectionalLight('#ffedd0',3.0);this.sun.position.copy(sun).multiplyScalar(150);this.sun.castShadow=true;
@@ -51,7 +52,7 @@ export class World {
     this.waterMaterial=createOceanMaterial({time:{value:0},skyMap:{value:null},hasSky:{value:0}});
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
     this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');this.cliffNormal=this.texture('cliff-normal.jpg');
-    this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
+    this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(this.course.theme),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
     this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=.8;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentIntensity=.52;scene.environmentRotation.y=.8;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
     this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
   }
@@ -61,14 +62,16 @@ export class World {
   }
   waitForAssets(){return Promise.all([this.ready,this.nightReady,this.terrainReady,...this.texturePromises]);}
   buildHorizon(c){
+    this.distantCity?.dispose();this.distantCity=null;
     if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
     this.horizon=new THREE.Mesh(landscapeHorizon(c,this.regions?.[c.theme]),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=(c.theme==='japanese'||c.theme==='highlands')?createTerrainSurfaceSampler(this.horizon.geometry):null;
+    this.distantCity=buildDistantCity(this.root,c,this.regions?.[c.theme]);
   }
   applyTheme(c){
     const theme=c?.theme||'japanese',t=THEME_LIGHTS[theme];
-    this.scene.background=theme==='cyberpunk'?(this.citySky||new THREE.Color(t.sky)):(this.coastalSky||new THREE.Color(t.sky));
+    this.scene.background=theme==='cyberpunk'?new THREE.Color(t.sky):(this.coastalSky||new THREE.Color(t.sky));
     this.scene.environment=theme==='cyberpunk'&&this.nightEnvironment?this.nightEnvironment.texture:this.environment.texture;
-    this.sky.visible=theme!=='cyberpunk'&&!this.coastalSky;this.nightSky.visible=theme==='cyberpunk'&&!this.citySky;
+    this.sky.visible=theme!=='cyberpunk'&&!this.coastalSky;this.nightSky.visible=theme==='cyberpunk';
     this.scene.backgroundIntensity=theme==='cyberpunk'?.02:theme==='highlands'?.63:theme==='desert'?.94:.78;this.scene.backgroundRotation.y=theme==='cyberpunk'?4.5:theme==='desert'?2.4:theme==='highlands'?1.6:.8;
     this.scene.fog.color.set(t.fog);this.scene.fog.density=theme==='cyberpunk'?.0006:theme==='highlands'?.00014:theme==='desert'?.00013:.00022;
     this.sun.color.set(t.sun);this.sun.intensity=t.intensity;
@@ -81,7 +84,7 @@ export class World {
   clear(){
     this.pond?.dispose();
     const materials=new Set(),geos=new Set();this.root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry)geos.add(o.geometry);if(o.customDepthMaterial)materials.add(o.customDepthMaterial);if(o.material&&o.material!==this.waterMaterial)materials.add(o.material);});
-    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.distantCity=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
@@ -91,7 +94,7 @@ export class World {
     if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.rockColor,normal:this.rockNormal});
     buildFairwayCover(this.root,c,this.ambushSites,{color:this.rockColor,normal:this.rockNormal});
     buildArchitectureGround(this.root,c,this.path,this.ambushSites);
-    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
+    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(c.theme),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
     buildTeeMarkers(this.root,c,{stoneColor:this.rockColor,stoneNormal:this.rockNormal});
   }
   makeGrass(r){

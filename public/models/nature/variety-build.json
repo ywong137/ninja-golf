@@ -1,0 +1,158 @@
+[
+  {
+    "name": "woody-scrub",
+    "source": "searsia_burchellii",
+    "sourceObject": "searsia_burchellii_small_LOD0",
+    "height": 1.5,
+    "triangles": [
+      [
+        "LOD0_0",
+        1100
+      ],
+      [
+        "LOD1_0",
+        400
+      ],
+      [
+        "LOD0_1",
+        4500
+      ],
+      [
+        "LOD1_1",
+        650
+      ],
+      [
+        "LOD0_2",
+        2200
+      ],
+      [
+        "LOD1_2",
+        1899
+      ]
+    ],
+    "bytes": 9177676
+  },
+  {
+    "name": "pine-open",
+    "source": "pine_tree_01",
+    "sourceObject": "pine_tree_01_a_LOD2",
+    "height": 17,
+    "triangles": [
+      [
+        "LOD0_0",
+        1000
+      ],
+      [
+        "LOD1_0",
+        300
+      ],
+      [
+        "LOD0_1",
+        345915
+      ],
+      [
+        "LOD1_1",
+        119997
+      ],
+      [
+        "LOD0_2",
+        3999
+      ],
+      [
+        "LOD1_2",
+        899
+      ],
+      [
+        "LOD0_3",
+        23710
+      ],
+      [
+        "LOD1_3",
+        8500
+      ]
+    ],
+    "bytes": 33524784
+  },
+  {
+    "name": "pine-young",
+    "source": "pine_tree_01",
+    "sourceObject": "pine_tree_01_b_LOD2",
+    "height": 12,
+    "triangles": [
+      [
+        "LOD0_0",
+        1000
+      ],
+      [
+        "LOD1_0",
+        300
+      ],
+      [
+        "LOD0_1",
+        209250
+      ],
+      [
+        "LOD1_1",
+        119997
+      ],
+      [
+        "LOD0_2",
+        3999
+      ],
+      [
+        "LOD1_2",
+        900
+      ],
+      [
+        "LOD0_3",
+        14046
+      ],
+      [
+        "LOD1_3",
+        8478
+      ]
+    ],
+    "bytes": 27716120
+  },
+  {
+    "name": "fir-layered",
+    "source": "fir_tree_01",
+    "sourceObject": "fir_tree_01_a_LOD2",
+    "height": 19,
+    "triangles": [
+      [
+        "LOD0_0",
+        1000
+      ],
+      [
+        "LOD1_0",
+        300
+      ],
+      [
+        "LOD0_1",
+        17872
+      ],
+      [
+        "LOD1_1",
+        8500
+      ],
+      [
+        "LOD0_2",
+        4000
+      ],
+      [
+        "LOD1_2",
+        899
+      ],
+      [
+        "LOD0_3",
+        33753
+      ],
+      [
+        "LOD1_3",
+        33753
+      ]
+    ],
+    "bytes": 18265936
+  }
+]

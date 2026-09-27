@@ -49,7 +49,7 @@ Small props supply ambush positions near the route. Pagoda placement checks its 
 ## Rendering and checks
 
 Repeated plant components use instanced meshes. Static buildings merge by material.
-Daytime courses use the photographic sky. The city uses a photographic night panorama and its own environment lighting.
+Daytime courses use the photographic sky. The city uses modeled districts and an atmospheric night sky. Its photographic panorama supplies lighting and reflections.
 Terrain shares scanned ground textures. Theme scenery and landscape assets have their own credits in the project.
 Each water basin has a reflection target. Rebuilding a course releases all basin targets.
 

@@ -601,3 +601,69 @@ Dynamic shadows remain active. Balanced mode suspends contact shading at this cr
 The earlier architecture baseline measured 59.7–60.1 FPS at desktop resolution and 52.8 FPS for Retina.
 These single-run comparisons cannot isolate normal timing variation.
 The measurements describe this machine and these scenarios, not every device or camera position.
+
+## Ground, tree variety, and city horizon
+
+Rough grass now combines rotated close texture patches with broad photographed growth variation.
+Fine blade contrast fades when the screen cannot resolve it.
+Desert turf grades through dry grass into textured mineral soil.
+Golf boundaries, ground heights, and route geometry remain unchanged.
+
+Japanese groves mix two authored pine forms with the previous broadleaf tree.
+Highland groves use those pines, firs, and low woody scrub with more open spacing.
+The conifers preserve native close foliage and use faithful distant views.
+Separate species retain matching shadows and independent vertical centers.
+The added assets total 48.54 MB, including four models and three atlas sets.
+See [tree sources and conversion](nature-variety.md) for licenses, geometry costs, and botanical limits.
+
+The city uses three modeled building bands with scaled windows and sparse lit rooms.
+The photographic panorama supplies reflections and lighting without visible background towers.
+This removes the mismatched tower scale and the straight photographic horizon seam.
+The new districts use two static batches and approximately 11,600 triangles.
+
+### Environment review limits
+
+Matched views cover four previews, four turf edges, and four city bearings.
+Fifteen tree views cover near geometry, middle geometry, transitions, and distant images.
+Review rejected triangular branch artifacts, sparse crowns, and overly flat distant grass before the final versions.
+
+City architecture and decorative lights still look simplified at close range.
+Conifer needles can lose coverage when they become smaller than a pixel.
+The Highland scrub is a South African shape substitute, not native Scottish planting.
+The distant tree images have limited parallax.
+Characters still need further motion and close-up refinement.
+The game remains below the requested AAA and photorealistic standard.
+
+### Environment-pass performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run keeps 64 enemies alive and repeats attacks for ten seconds after warmup.
+No other automated capture or asset conversion ran during these measurements.
+
+| Course / scenario | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.1 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.4 | 16.8 ms |
+| Copper Saguaro | 1.00 | 59.9 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.8 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 50.5 | 33.4 ms |
+| City building detours | 1.00 | 60.0 | 16.8 ms |
+| Crane Coast, dense grove | 1.00 | 59.2 | 16.8 ms |
+| Heather & Crown, dense grove | 1.00 | 58.6 | 16.8 ms |
+| Crane dense grove, Retina DPR 2 | 1.50 | 51.6 | 33.4 ms |
+
+The dense-grove cases place combat inside each theme's most crowded safe tree cluster.
+The Crane grove contains 13 nearby trees and submits about 8.3 million triangles during the measured frame.
+The city routing case recorded 96 routes and a largest combat update of 32.6 ms.
+Dynamic shadows remain active. Balanced mode suspends contact shading at this crowd size.
+These local measurements do not guarantee performance on every device or camera position.
+The previous architecture pass measured 59.6–60.1 FPS in standard views and 51.5 FPS in its Retina case.
+
+### Environment verification
+
+All 161 unit and asset checks pass. The production build succeeds.
+Thirteen relevant browser scripts pass, including all 36 cups, navigation, combat, building collision, and putting previews.
+The environment capture verifies hero framing, dry ground, collision clearance, and clear torso sightlines.
+Its city hero moves 1.2 metres from an obstructed test position while the comparison camera remains fixed.
+Fifteen tree views verify actual instances across near, middle, transition, and distant representations.
+All test browsers remain muted. Course-selection previews now show the revised environments.

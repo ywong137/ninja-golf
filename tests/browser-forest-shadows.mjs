@@ -17,10 +17,10 @@ try{
     g.camera.fov=48;g.camera.updateProjectionMatrix();g.world.update(g.time,0,g.camera.position,g.camera.position);
    },view);
    for(const state of ['before','after']){
-    await page.evaluate(state=>{const g=window.__golfTest;g.world.distantForest.shadow.visible=state==='after';g.rendering.render(g.quality);},state);
+    await page.evaluate(state=>{const g=window.__golfTest;for(const shadow of g.world.distantForest.shadows)shadow.visible=state==='after';g.rendering.render(g.quality);},state);
     await page.screenshot({path:`/tmp/ninja-forest-shadows-${theme}-${view}-${state}.png`});
    }
   }
  }
- assert.deepEqual(errors,[]);console.log('Japanese and Highland forest silhouettes rendered in one static mesh without shader errors.');
+ assert.deepEqual(errors,[]);console.log('Japanese and Highland forest silhouettes rendered across all species without shader errors.');
 }finally{await browser.close();}

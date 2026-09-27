@@ -40,5 +40,23 @@
     "license": "CC0-1.0",
     "source": "https://polyhaven.com/a/boulder_01",
     "licenseSource": "https://polyhaven.com/license"
+  },
+  {
+    "asset": "pine_tree_01",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/pine_tree_01",
+    "licenseSource": "https://polyhaven.com/license"
+  },
+  {
+    "asset": "fir_tree_01",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/fir_tree_01",
+    "licenseSource": "https://polyhaven.com/license"
+  },
+  {
+    "asset": "searsia_burchellii",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/searsia_burchellii",
+    "licenseSource": "https://polyhaven.com/license"
   }
 ]

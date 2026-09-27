@@ -1,15 +1,16 @@
 import {chromium} from 'playwright';
-import {writeFileSync} from 'node:fs';
+import {writeFileSync,readFileSync} from 'node:fs';
+const names=process.argv.slice(2);const selected=names.length?names:['forest-canopy','dry-tree'];
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try {
  const page=await browser.newPage();await page.route('**/@vite/client',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.goto('http://localhost:5173/tools/tree-bake.html');
- const result=await page.evaluate(async()=>{
+ const result=await page.evaluate(async(selected)=>{
   const T=await import('/node_modules/three/build/three.module.js'),{GLTFLoader}=await import('/node_modules/three/examples/jsm/loaders/GLTFLoader.js');
   const renderer=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});renderer.setSize(512,512);renderer.setClearColor(0,0);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.NoToneMapping;
   const scene=new T.Scene(),output=[],angles=8,elevations=[0,Math.PI/6,Math.PI/3];
   const encode=async(canvas,type='image/webp',quality=.96)=>Array.from(new Uint8Array(await(await new Promise(resolve=>canvas.toBlob(resolve,type,quality))).arrayBuffer()));
-  for(const name of ['forest-canopy','dry-tree']){
-   const model=(await new GLTFLoader().loadAsync('/models/nature/'+name+'.glb')).scene,meshes=[];model.traverse(o=>{if(!o.isMesh)return;if(o.name.startsWith('LOD1')){o.visible=false;return;}meshes.push(o);const original=o.material;o.userData.albedo=new T.MeshBasicMaterial({map:original.map,color:original.color,alphaTest:Math.max(.4,original.alphaTest||0),side:T.DoubleSide});o.userData.normals=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{map:{value:original.map},cutoff:{value:original.alphaTest||0}},vertexShader:'varying vec2 vUv;varying vec3 n;void main(){vUv=uv;n=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D map;uniform float cutoff;varying vec2 vUv;varying vec3 n;void main(){if(texture2D(map,vUv).a<cutoff)discard;gl_FragColor=vec4(normalize(n)*(gl_FrontFacing?.5:-.5)+.5,1.);}'});});scene.add(model);model.updateMatrixWorld(true);
+  for(const name of selected){
+   const model=(await new GLTFLoader().loadAsync('/models/nature/'+name+'.glb')).scene,meshes=[];model.traverse(o=>{if(!o.isMesh)return;if(o.name.startsWith('LOD1')){o.visible=false;return;}meshes.push(o);const original=o.material;o.userData.albedo=new T.MeshBasicMaterial({map:original.map,color:original.color,alphaTest:Math.max(.4,original.alphaTest||0),side:T.DoubleSide});o.userData.normals=new T.ShaderMaterial({side:T.DoubleSide,uniforms:{map:{value:original.map},cutoff:{value:Math.max(.4,original.alphaTest||0)}},vertexShader:'varying vec2 vUv;varying vec3 n;void main(){vUv=uv;n=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'uniform sampler2D map;uniform float cutoff;varying vec2 vUv;varying vec3 n;void main(){if(texture2D(map,vUv).a<cutoff)discard;gl_FragColor=vec4(normalize(n)*(gl_FrontFacing?.5:-.5)+.5,1.);}'});});scene.add(model);model.updateMatrixWorld(true);
    const bounds=new T.Box3().setFromObject(model),size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3()),span=size.length()*1.04;
    const camera=new T.OrthographicCamera(-span/2,span/2,span/2,-span/2,.1,100),atlases={};
    for(const mode of ['albedo','normals']){
@@ -28,6 +29,6 @@ try {
    output.push({name,span,center:center.y,columns:angles,rows:elevations.length,elevations,shadowViews,...atlases,shadow:await encode(shadowAtlas)});scene.remove(model);meshes.forEach(o=>{o.geometry.dispose();o.material.dispose();o.userData.albedo.dispose();o.userData.normals.dispose();});
   }
   renderer.dispose();return output;
- });
- const metadata={};for(const {name,albedo,normals,shadow,...data}of result){for(const [kind,bytes]of Object.entries({views:albedo,normals,shadow})){writeFileSync(`public/models/nature/${name}-${kind}.webp`,Buffer.from(bytes));console.log(name,kind,bytes.length);}metadata[name]=data;}writeFileSync('src/nature-views.json',JSON.stringify(metadata));
+ },selected);
+ const metadata=JSON.parse(readFileSync('src/nature-views.json','utf8'));for(const {name,albedo,normals,shadow,...data}of result){for(const [kind,bytes]of Object.entries({views:albedo,normals,shadow})){writeFileSync(`public/models/nature/${name}-${kind}.webp`,Buffer.from(bytes));console.log(name,kind,bytes.length);}metadata[name]=data;}writeFileSync('src/nature-views.json',JSON.stringify(metadata));
 }finally{await browser.close();}

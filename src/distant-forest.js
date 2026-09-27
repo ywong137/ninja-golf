@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {COURSE_BOUNDS,random} from './course.js';
 import {landscapeHeight} from './regional-terrain.js';
 import {treeImpostor} from './foliage-materials.js';
+import {selectForestSpecies} from './nature-species.js';
 import {buildForestShadows} from './forest-shadows.js';
 export const DISTANT_FOREST_LIMITS={japanese:2800,highlands:1200};
 
@@ -30,22 +31,29 @@ export function distantForestPlacements(c,region,sampledHeight=null){
    const cellX=Math.floor(x/spacing),cellZ=Math.floor(z/spacing);let crowded=false;
    for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if(occupied.has(`${cellX+dx},${cellZ+dz}`))crowded=true;
    if(crowded)continue;occupied.add(`${cellX},${cellZ}`);
-   records.push({x,z,y:y-.12,scale:(japanese?.82:.72)+r()*.56,angle:r()*Math.PI*2,grove});
+   records.push({x,z,y:y-.12,scale:(japanese?.82:.72)+r()*.56,angle:r()*Math.PI*2,grove,species:selectForestSpecies(c.theme,r())});
   }
  }
  return records;
 }
 
-// Uses the loaded forest-canopy atlas only. Root's normal geometry/material cleanup owns disposal.
+// Uses a bounded set of loaded tree atlases. World cleanup owns per-course meshes/materials.
 export function buildDistantForest(root,c,region,source,sampledHeight=null,materialFactory=treeImpostor){
  if(!DISTANT_FOREST_LIMITS[c.theme])return{mesh:null,records:[]};
  if(!source?.map||!source?.normalMap||!Number.isFinite(source.span)||!Number.isFinite(source.center))throw new Error('Distant forest needs the loaded forest-canopy atlas and normal atlas.');
  const records=distantForestPlacements(c,region,sampledHeight);if(!records.length)return{mesh:null,records};
+ const meshes=[],shadows=[],allRecords=records;
+ for(const entry of source.species||[{source}]){
+ const records=entry.name?allRecords.filter(p=>p.species===entry.name):allRecords,source=entry.source;
+ if(!records.length)continue;
+ if(!source?.map||!source?.normalMap)throw new Error(`Missing forest atlas for ${entry.name}`);
  const geometry=new THREE.PlaneGeometry(source.span,source.span);geometry.translate(0,source.center,0);
  const material=materialFactory(source,{nearFade:false}),mesh=new THREE.InstancedMesh(geometry,material,records.length),transform=new THREE.Object3D();
- mesh.name='Distant forest belt';mesh.castShadow=false;mesh.receiveShadow=false;
+ mesh.name='Distant forest belt';mesh.userData.species=entry.name||'forest-canopy';mesh.castShadow=false;mesh.receiveShadow=false;
  for(const [i,p]of records.entries()){transform.position.set(p.x,p.y,p.z);transform.rotation.set(0,p.angle,0);transform.scale.setScalar(p.scale);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);}
  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();
  const shadow=buildForestShadows(records,source,(x,z)=>sampledHeight?.(x,z)??landscapeHeight(c,region,x,z));
- root.add(shadow,mesh);return{mesh,shadow,records};
+ root.add(shadow,mesh);meshes.push(mesh);shadows.push(shadow);
+ }
+ return{mesh:meshes[0],shadow:shadows[0],meshes,shadows,records:allRecords};
 }

@@ -22,10 +22,39 @@ export function courseMaterial(c, textures, distant=false) {
        return mix(mix(textureGrad(source,uv+a,dx,dy).rgb,textureGrad(source,uv+b,dx,dy).rgb,f.x),mix(textureGrad(source,uv+c,dx,dy).rgb,textureGrad(source,uv+d,dx,dy).rgb,f.x),f.y);
       }
       vec3 groundSample(sampler2D source,vec2 uv){return groundSample(source,uv,dFdx(uv),dFdy(uv));}
+      // Quarter-turn each patch. Translation alone preserves the source's long
+      // directional grain. Rotate encoded normal XY back into the ground frame.
+      vec3 grassPatch(sampler2D source,vec2 uv,vec2 cell,vec2 dx,vec2 dy,bool normalData){
+       float turn=floor(groundHash(cell+41.7)*4.);
+       vec2 axis=turn<.5?vec2(1,0):turn<1.5?vec2(0,1):turn<2.5?vec2(-1,0):vec2(0,-1);
+       mat2 rotation=mat2(axis.x,-axis.y,axis.y,axis.x);
+       vec2 offset=vec2(groundHash(cell),groundHash(cell+19.1))*7.;
+       vec3 value=textureGrad(source,rotation*uv+offset,rotation*dx,rotation*dy).rgb;
+       if(normalData)value.xy=transpose(rotation)*(value.xy*2.-1.)*.5+.5;
+       return value;
+      }
+      vec3 grassSample(sampler2D source,vec2 uv,vec2 dx,vec2 dy,bool normalData){
+       vec2 cell=floor(uv),f=fract(uv);f=f*f*(3.-2.*f);
+       vec4 weights=vec4((1.-f.x)*(1.-f.y),f.x*(1.-f.y),(1.-f.x)*f.y,f.x*f.y);
+       vec3 value=grassPatch(source,uv,cell,dx,dy,normalData)*weights.x
+        +grassPatch(source,uv,cell+vec2(1,0),dx,dy,normalData)*weights.y
+        +grassPatch(source,uv,cell+vec2(0,1),dx,dy,normalData)*weights.z
+        +grassPatch(source,uv,cell+vec2(1,1),dx,dy,normalData)*weights.w;
+       // Preserve source contrast where patches overlap; plain bilinear blending
+       // otherwise reveals its lattice as alternating sharp and blurred regions.
+       vec3 mean=textureLod(source,vec2(.5),16.).rgb;if(normalData)mean.xy=vec2(.5);
+       vec3 result=clamp(mean+(value-mean)*inversesqrt(dot(weights,weights)),0.,1.);
+       if(normalData)result.z=value.z;
+       // Merge blade-scale contrast as its screen footprint becomes too small.
+       // This suppresses coherent aerial grain without blurring close turf.
+       float resolved=1.-smoothstep(.008,.05,max(length(dx),length(dy)));
+       return mix(mean,result,resolved);
+      }
       `+(distant?LANDSCAPE_GLSL:'')+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
-      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.;vec2 turfUV=p/1.4;
+      vec2 grassUV=p/2.7,grassDx=dFdx(grassUV),grassDy=dFdy(grassUV);
+      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.,desertSoil=0.;vec2 turfUV=p/1.4;
       ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));float landBlend=courseTheme>2.5?0.:smoothstep(50.,850.,outerDistance);float rockMask=0.;if(landBlend<1.){`:''}
       for(int i=0;i<4;i++){float bd=bunkerDistance(p,bunkers[i],bunkerProfiles[i]);sandMask=max(sandMask,1.-smoothstep(-.10,.10,bd));turfLip=max(turfLip,smoothstep(-.10,.10,bd)*(1.-smoothstep(.4,1.4,bd)));}
       float edge=routeDistance(p);
@@ -57,14 +86,34 @@ export function courseMaterial(c, textures, distant=false) {
       cut*=mowing*(.98+turfCondition*.24);
       cut=mix(cut,cut*vec3(1.12,1.015,.86),dryPatch*.44);
       putting*=.995+turfCondition*.065;
-      vec3 rough=mix(vec3(.080,.135,.038),vec3(.115,.172,.060),groundNoise(p*.06));
-      if(courseTheme>.5&&courseTheme<1.5){rough=mix(vec3(.16,.16,.07),vec3(.22,.17,.16),groundNoise(p*.035));cut*=vec3(1.13,1.02,.92);}
-      if(courseTheme>1.5&&courseTheme<2.5){rough=mix(texture2D(sandColor,p/7.).rgb,texture2D(sandColor,mat2(.8,-.6,.6,.8)*p/13.).rgb,.45)*vec3(.72,.53,.37);cut*=vec3(1.06,1.10,.92);}
-      if(courseTheme>2.5){rough=mix(vec3(.04,.060,.032),vec3(.068,.085,.045),groundNoise(p*.04));cut*=vec3(.68,.88,.92);putting*=vec3(.80,.96,1.04);}
-      vec2 grassUV=p/2.7;float tileMix=smoothstep(.2,.8,groundNoise(p*.021));vec3 roughSample=mix(texture2D(map,grassUV).rgb,texture2D(map,grassUV+vec2(.37,.61)).rgb,tileMix);
+      // Randomized source offsets break the fixed 2.7m grass pattern. Color and
+      // normals use the same coordinates, preserving the photographed blade detail.
+      vec3 roughSample=grassSample(map,grassUV,grassDx,grassDy,false);
+      // Broader photographed growth patches remain visible from survey height
+      // after individual blades merge. Their scale is independent of the fine cut.
+      vec3 broadRough=groundSample(map,p/18.,grassDx*.15,grassDy*.15);
+      float roughMean=dot(textureLod(map,vec2(.5),16.).rgb,vec3(.299,.587,.114));
+      float broadCondition=clamp(dot(broadRough,vec3(.299,.587,.114))/max(.02,roughMean),.55,1.6);
+      roughSample*=.55+.45*broadCondition;
       float detail=clamp(dot(roughSample,vec3(.299,.587,.114))*6.3,.50,1.4);
-      rough=mix(rough,vec3(.090,.175,.046),firstCut)*detail;
-      if(courseTheme<1.5)rough=mix(rough,texture2D(map,p/6.).rgb*vec3(.8,1.1,.64),.27);
+      vec3 rough=mix(vec3(.080,.135,.038),vec3(.115,.172,.060),groundNoise(p*.06))*detail;
+      if(courseTheme>.5&&courseTheme<1.5){rough=mix(vec3(.16,.16,.07),vec3(.22,.17,.16),groundNoise(p*.035))*detail;cut*=vec3(1.13,1.02,.92);}
+      if(courseTheme>2.5){rough=mix(vec3(.04,.060,.032),vec3(.068,.085,.045),groundNoise(p*.04))*detail;cut*=vec3(.68,.88,.92);putting*=vec3(.80,.96,1.04);}
+      if(courseTheme<1.5)rough=mix(rough,roughSample*vec3(.8,1.1,.64),.27);
+      vec3 firstCutColor=mix(rough,roughSample*vec3(.60,1.18,.43),.58);
+      if(courseTheme>1.5&&courseTheme<2.5){
+       // Irrigated turf grades into dry grass before the surrounding mineral soil.
+       // The worn fringe lies outside the analytic fairway boundary used by golf.
+       float wear=groundNoise(p*.32)+groundNoise(p*.083)*.65;
+       float fringe=1.-smoothstep(2.3,7.0,edge+(wear-.825)*2.1);
+       desertSoil=1.-fringe;
+       vec3 soil=groundSample(sandColor,p/4.8)*mix(vec3(.65,.49,.35),vec3(.81,.64,.46),groundNoise(p*.055));
+       vec3 dryGrass=roughSample*vec3(1.10,.98,.67)*(.94+groundNoise(p*.19)*.12);
+       rough=mix(soil,dryGrass,fringe*.72);
+       firstCutColor=roughSample*vec3(.68,1.10,.46);
+       cut*=vec3(1.06,1.10,.92);
+      }
+      rough=mix(rough,firstCutColor,firstCut);
       vec3 grass=mix(rough,cut,shortGrass);grass=mix(grass,putting,green);
       float macro=.945+.075*groundNoise(p*.045)+.035*groundNoise(p*.22);
       vec3 sand=texture2D(sandColor,p/4.).rgb*.81;
@@ -83,7 +132,8 @@ export function courseMaterial(c, textures, distant=false) {
       ${distant?'}roughnessFactor=mix(roughnessFactor,.96,landBlend);':''}`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       ${distant?'if(landBlend<1.){':''}
-      vec3 gn=texture2D(normalMap,p/2.7).xyz*2.-1.;gn.xy*=normalScale;
+      vec3 gn=grassSample(normalMap,grassUV,grassDx,grassDy,true).xyz*2.-1.;gn.xy*=normalScale;
+      if(courseTheme>1.5&&courseTheme<2.5){vec3 soilNormal=groundSample(sandNormal,p/4.8).xyz*2.-1.;soilNormal.xy*=.22;gn=mix(gn,soilNormal,desertSoil);}
       vec3 tn=texture2D(turfNormal,turfUV).xyz*2.-1.;tn.xy*=mix(.15,.045,green);
       vec3 sn=texture2D(sandNormal,p/4.).xyz*2.-1.;sn.xy*=normalScale;
       vec3 terrainNormal=mix(mix(gn,tn,shortGrass),sn,max(sandMask,beach));
@@ -91,7 +141,7 @@ export function courseMaterial(c, textures, distant=false) {
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-authored-v7-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-authored-v12-${distant}`;
   return mat;
 }
 
