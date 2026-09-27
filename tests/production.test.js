@@ -18,6 +18,12 @@ test('Scenery collision slides around trunks and retracts an obstructed camera',
  const collision=new SceneryCollision([{kind:'tree',x:0,z:0,y:0,height:9}]);const p=collision.slide({x:.1,z:.1});assert.ok(Math.hypot(p.x,p.z)>=.69);const camera=collision.camera({x:0,y:1.7,z:4},{x:0,y:3,z:-4});assert.ok(camera.z>0);const clear=collision.camera({x:4,y:1.7,z:4},{x:4,y:3,z:-4});assert.equal(clear.z,-4);
 });
 
+test('Scanned scenery can retain an authored collision radius',()=>{
+ const collision=new SceneryCollision([{kind:'rock',x:0,z:0,y:0,height:2.2,radius:.7}]);
+ const p=collision.slide({x:.1,z:0});assert.ok(Math.abs(p.x-1.08)<1e-8);
+ const clear=collision.slide({x:1.2,z:0});assert.equal(clear.x,1.2);
+});
+
 test('Inland hollows do not expose the ocean plane',()=>{for(const c of COURSES)for(let x=-230;x<70;x+=7)for(let z=-70;z<c.length+95;z+=7)assert.ok(heightAt(c,x,z)>-1,'Inland water artifact');});
 
 test('Attack warnings face the strike and follow hills without cutting through them',()=>{

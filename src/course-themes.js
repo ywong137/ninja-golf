@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {shrubGeometry} from './theme-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {heightAt,lieAt,routePoint,fairwayDistance,waterBasins,random,greenDistance} from './course.js';
+import {queueSceneryRock} from './scenery-rocks.js';
 
 export const THEME_LIGHTS={
  japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#ffedd0',ground:'#777a49',intensity:3,ambient:.8},
@@ -31,14 +32,14 @@ export function buildThemeScenery(root,c,sites,textures={}){
   if(instanced){const key=`${geo.uuid}/${m.uuid}`;if(!instances.has(key))instances.set(key,{geo,m,matrices:[]});instances.get(key).matrices.push(transform.matrix.clone());}
   else {if(!batches.has(m))batches.set(m,[]);batches.get(m).push((geo.index?geo.toNonIndexed():geo.clone()).applyMatrix4(transform.matrix));}
  };
- const register=(kind,x,z,height)=>sites.push({id:`${theme}-${sites.length}`,kind,x,z,y:heightAt(c,x,z),height,fairway:lieAt(c,x,z)==='Fairway'});
+ const register=(kind,x,z,height,radius)=>sites.push({id:`${theme}-${sites.length}`,kind,x,z,y:heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
  // Tall monuments remain outside the playable corridor. Small cover follows the fairway edges.
  for(let k=0;k<12;k++)for(const side of [-1,1]){
   const p=routePoint(c,(k+.5)/12),x=p.x+p.tangentZ*side*(p.width+6),z=p.z-p.tangentX*side*(p.width+6),y=heightAt(c,x,z);if(['Water','Bunker','Green'].includes(lieAt(c,x,z)))continue;
-  if(theme==='highlands'){emit(box,stone,x,y+1.1,z,1.6,2.2,1.1,0,.2*k);emit(ball,dark,x+1.3,y+.4,z+.5,1,.65,.9);}
-  if(theme==='desert'){emit(ball,stone,x,y+1,z,1.6,1.8,1.2,0,.7*k);emit(box,gold,x,y+2.2,z,1.6,.2,1.3);}
+  const rockHeight=1.6*(theme==='desert'?.54:.8)*(1+Math.sin(k*1.73+side)*.12);
+  if(theme==='highlands'||theme==='desert')queueSceneryRock(root,{x,z,y,height:rockHeight,radius:1.6,source:theme==='desert'?'desert-rock':'coastal-rock',angle:r()*Math.PI*2,burial:.08+r()*.13});
   if(theme==='cyberpunk'){emit(box,dark,x,y+1.25,z,1.3,2.5,1.3);emit(box,k%2?leaf:flower,x,y+2.55,z,1.65,.16,1.65);emit(ball,leaf,x,y+3.3,z,.55,.55,.55);}
-  register('lantern',x,z,theme==='cyberpunk'?3.5:2.4);
+  register(theme==='cyberpunk'?'lantern':'rock',x,z,theme==='cyberpunk'?3.5:rockHeight,.7);
  }
  const landmarkCount=theme==='cyberpunk'?5:2;
  for(let k=0;k<landmarkCount;k++){
@@ -55,7 +56,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
    }
    for(let i=0;i<7;i++)for(let row=0;row<3;row++)emit(box,(i+row)%3?stone:dark,x-12+i*3.7+(row%2)*.4,y+.25+row*.45,z+11,3.5,.4,1.1);
    for(let i=0;i<11;i++){const a=i*Math.PI/10;emit(box,stone,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,1,.8,.7,0,0,a-Math.PI/2);}
-   for(let j=0;j<12;j++)emit(ball,stone,x-10+r()*20,y+.25,z-7+r()*4,.3+r()*.5,.3,.4,0,r()*6,0);
+   for(let j=0;j<12;j++){const rx=x-10+r()*20,rz=z-7+r()*4;queueSceneryRock(root,{x:rx,z:rz,y:heightAt(c,rx,rz),height:.24+r()*.2,radius:.35+r()*.3,angle:r()*Math.PI*2,burial:.12+r()*.15});}
   }else if(theme==='desert'){
    emit(box,stone,x,y+3,z,24,6,14);emit(box,gold,x,y+6.1,z,26,.45,16);emit(box,dark,x,y+2.3,z-7.1,9,3.5,.1);
    for(const side of [-1,1])emit(cyl,gold,x+side*10,y+2.5,z-10,.45,5,.45);
@@ -93,7 +94,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
 export function buildFairwayCover(root,c,sites,textures={}){
  const stone=new THREE.MeshStandardMaterial({color:c.theme==='desert'?'#a58363':'#818c83',roughness:.95,map:textures.color,normalMap:textures.normal});
  const accent=new THREE.MeshStandardMaterial({color:c.theme==='cyberpunk'?'#63d9df':c.theme==='japanese'?'#9c483e':'#544b43',emissive:c.theme==='cyberpunk'?'#40c2ce':'#000000',emissiveIntensity:.65,roughness:.6});
- const chunks=[[],[]],box=new THREE.BoxGeometry(1,1,1),rock=new THREE.DodecahedronGeometry(1,0);let count=0;
+ const chunks=[[],[]],box=new THREE.BoxGeometry(1,1,1);let count=0;
  const add=(geometry,material,x,y,z,sx,sy,sz)=>{transform.position.set(x,y,z);transform.rotation.set(0,.27,0);transform.scale.set(sx,sy,sz);transform.updateMatrix();chunks[material].push((geometry.index?geometry.toNonIndexed():geometry.clone()).applyMatrix4(transform.matrix));};
  for(const fraction of [.25,.48,.72,.34,.61,.82]){
   if(count>=3)break;const p=routePoint(c,fraction);
@@ -101,16 +102,17 @@ export function buildFairwayCover(root,c,sites,textures={}){
   for(const side of [count%2?-1:1,count%2?1:-1]){
    const x=p.x+p.tangentZ*side*(p.width-3.2),z=p.z-p.tangentX*side*(p.width-3.2),y=heightAt(c,x,z);
    if(lieAt(c,x,z)!=='Fairway'||y<3.8||greenDistance(c,x,z)<28||Math.hypot(x,z)<22)continue;
-   if(c.theme==='highlands'||c.theme==='desert'){
-    for(let j=0;j<4;j++)add(rock,0,x,y+.27+j*.39,z,.77-j*.13,.35,.64-j*.10);
-    add(box,1,x,y+1.63,z,.63,.12,.50);
+   const rockCover=c.theme==='highlands'||c.theme==='desert',coverHeight=rockCover?(c.theme==='desert'?.7:.9):1.95;
+   if(rockCover){
+    queueSceneryRock(root,{x,z,y,height:coverHeight,radius:1.15,source:c.theme==='desert'?'desert-rock':'coastal-rock',angle:c.seed*.37+count*2.39,burial:.10+count*.04});
    }else{
     add(box,0,x,y+.14,z,1.35,.28,1.25);add(box,0,x,y+.8,z,.55,1.15,.55);
     add(box,1,x,y+1.52,z,1.1,.45,.76);add(box,0,x,y+1.85,z,1.45,.2,1.1);
    }
-   sites.push({id:`fairway-cover-${count}`,kind:c.theme==='highlands'||c.theme==='desert'?'rock':'lantern',x,z,y,height:1.95,fairway:true});count++;break;
+   sites.push({id:`fairway-cover-${count}`,kind:c.theme==='highlands'||c.theme==='desert'?'rock':'lantern',x,z,y,height:coverHeight,radius:rockCover?1.15:.7,fairway:true});count++;break;
   }
  }
  for(let i=0;i<2;i++)if(chunks[i].length){const mesh=new THREE.Mesh(mergeGeometries(chunks[i]),i?accent:stone);chunks[i].forEach(g=>g.dispose());mesh.castShadow=true;mesh.receiveShadow=true;root.add(mesh);}
- box.dispose();rock.dispose();return count;
+ for(let i=0;i<2;i++)if(!chunks[i].length)(i?accent:stone).dispose();
+ box.dispose();return count;
 }

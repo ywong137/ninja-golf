@@ -62,7 +62,8 @@ It does not reproduce actual golf courses from these surveys.
 
 A graded mesh joins the original detailed course edge exactly.
 Every playable position still uses the existing golf height field.
-The current horizon uses about 135,000 triangles, compared with 258,000 in the first regional implementation.
+The current horizon uses adaptive detail with a 198,000-triangle limit.
+The first regional implementation used approximately 258,000 triangles.
 Each failed region falls back separately, preserving other downloaded regions.
 
 Japanese and Highland forest belts use one additional atlas draw each.

@@ -364,3 +364,54 @@ The next foreground priorities are subtle turf-condition variation and replaceme
 The desert has conspicuous repeated orange boulders. Large cube tee markers also need a more convincing golf design.
 The current scanned rocks can replace those boulders with varied scale, rotation, and ground embedding.
 Buildings, distant city integration, foliage transitions, and combat performance still need further visual review.
+
+## Foreground scenery pass
+
+Short turf now uses a darker base, weaker mowing bands, and broad growth variation beneath the photographic detail.
+Small roughness changes follow the same growth pattern. Greens retain finer, more uniform grass.
+These material changes do not alter physical lies, course boundaries, or the shared maps.
+
+Scanned boulders replace repeated polygonal rocks in Japanese gardens, Highland cover, desert cover, and ruin rubble.
+Their low proportions preserve natural rock shapes. Their registered heights match their visible tops.
+Existing collision radii remain explicit, and the rocks share the landscape's instancing and distance-detail system.
+Course reloads release cloned geometry and materials while retaining shared source textures.
+
+Small rounded tee markers replace the large white cubes.
+Their finishes match each theme, and the pair follows the opening route.
+Their bases and small contact shadows follow the rendered terrain.
+Daytime airborne particles are smaller, softer, and closer to the ground.
+
+### Foreground verification
+
+All 101 unit checks and seven targeted browser scripts pass.
+The browser checks cover all 36 cups, navigation, golf and combat, terrain views, tree detail, rock emergence, and tee markers.
+The rock test verifies rendered instances, their registered heights, and resource disposal through course reloads.
+All development browser sessions mute audio.
+
+Dense-combat measurements use Chrome, Metal, Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run holds 64 enemies alive and repeats light and heavy attacks for ten seconds after warmup.
+Balanced mode disables contact shading for this crowd size. Dynamic shadows remain active.
+
+| Course | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.8 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.7 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.7 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 53.1 | 33.3 ms |
+
+These local measurements do not establish performance on every device or camera position.
+
+### Remaining character work
+
+A separate CPU audit found a low running posture and weak pelvic rotation.
+Forward running turns the hips approximately 1.6 degrees, while shoulders turn approximately 60–64 degrees relative to them.
+Flat-ground support samples permit a conservative 3 cm posture lift with the existing foot targets.
+This remains a proposal. Slopes, transitions, and rendered movement need verification before implementation.
+
+The native eye, eyelid, jaw, and brow bones deform vertices, but their existing animation channels remain effectively constant.
+The models have no expression morph targets, so the older morph-based expression layer has no effect.
+Athletic body motion remains the first character priority. Facial bone animation can follow after per-character calibration.
+
+The game still falls short of full AAA presentation and photorealism.
+The buildings, city integration, character movement, and close-up detail require further work.

@@ -25,7 +25,7 @@ export function courseMaterial(c, textures, distant=false) {
       `+(distant?LANDSCAPE_GLSL:'')+shader.fragmentShader;
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
-      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.;vec2 turfUV=p/1.4;
+      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.;vec2 turfUV=p/1.4;
       ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));float landBlend=courseTheme>2.5?0.:smoothstep(50.,850.,outerDistance);float rockMask=0.;if(landBlend<1.){`:''}
       for(int i=0;i<4;i++){float bd=bunkerDistance(p,bunkers[i],bunkerProfiles[i]);sandMask=max(sandMask,1.-smoothstep(-.10,.10,bd));turfLip=max(turfLip,smoothstep(-.10,.10,bd)*(1.-smoothstep(.4,1.4,bd)));}
       float edge=routeDistance(p);
@@ -40,14 +40,23 @@ export function courseMaterial(c, textures, distant=false) {
       vec2 viewDirection=normalize(cameraPosition.xz-p+vec2(.001));
       float stripe=smoothstep(-.16,.16,sin(dot(p,mowingDirection)*3.14159265/5.5))*2.-1.;
       if(courseTheme>.5&&courseTheme<1.5)stripe=tanh((p.x-courseShape.z*p.y/courseShape.x)*.35);
-      float mowing=1.-.055*stripe*dot(viewDirection,mowingDirection);
+      float mowing=1.-.032*stripe*dot(viewDirection,mowingDirection);
       vec2 greenDirection=vec2(cos(mowingAngle+.7),sin(mowingAngle+.7));
       float greenStripe=smoothstep(-.2,.2,sin(dot(p,greenDirection)*3.14159265/1.7))*2.-1.;
       turfUV=p/mix(mix(1.4,1.1,tee),.46,green);
-      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.75,.92,1.4);
+      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.55,.72,1.13);
       cut=mix(cut,vec3(dot(cut,vec3(.2126,.7152,.0722))),.12);
       vec3 putting=cut*vec3(1.18,1.10,1.12)*(1.-.023*greenStripe*dot(viewDirection,greenDirection));
-      cut*=mowing;
+      // Broad moisture and growth variation sits beneath the photographic blade detail.
+      // Domain warping prevents a visible square noise grid at aerial distances.
+      vec2 conditionUV=p+courseShape.zx*.19;
+      float broadGrowth=groundNoise(conditionUV*.031);
+      vec2 warped=conditionUV+vec2(broadGrowth,groundNoise(conditionUV*.043+13.))*12.;
+      turfCondition=(groundNoise(warped*.072)-.5)*.72+(groundNoise(warped*.23)-.5)*.28;
+      float dryPatch=smoothstep(.06,.34,turfCondition)*(1.-green*.75);
+      cut*=mowing*(.98+turfCondition*.24);
+      cut=mix(cut,cut*vec3(1.12,1.015,.86),dryPatch*.44);
+      putting*=.995+turfCondition*.065;
       vec3 rough=mix(vec3(.080,.135,.038),vec3(.115,.172,.060),groundNoise(p*.06));
       if(courseTheme>.5&&courseTheme<1.5){rough=mix(vec3(.16,.16,.07),vec3(.22,.17,.16),groundNoise(p*.035));cut*=vec3(1.13,1.02,.92);}
       if(courseTheme>1.5&&courseTheme<2.5){rough=mix(texture2D(sandColor,p/7.).rgb,texture2D(sandColor,mat2(.8,-.6,.6,.8)*p/13.).rgb,.45)*vec3(.72,.53,.37);cut*=vec3(1.06,1.10,.92);}
@@ -68,7 +77,7 @@ export function courseMaterial(c, textures, distant=false) {
       float roughnessFactor=.96;
       ${distant?'if(landBlend<1.){':''}
       float turfRough=texture2D(turfRoughness,turfUV).r;
-      roughnessFactor=mix(.97,mix(.82,.96,turfRough),shortGrass);
+      roughnessFactor=mix(.97,clamp(mix(.82,.96,turfRough)+turfCondition*.065,.8,.98),shortGrass);
       roughnessFactor=mix(roughnessFactor,mix(.80,.91,turfRough),green);
       roughnessFactor=mix(roughnessFactor,.97,max(sandMask,beach));
       ${distant?'}roughnessFactor=mix(roughnessFactor,.96,landBlend);':''}`);
@@ -82,7 +91,7 @@ export function courseMaterial(c, textures, distant=false) {
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-authored-v6-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-authored-v7-${distant}`;
   return mat;
 }
 

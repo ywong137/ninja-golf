@@ -3,6 +3,8 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import views from './nature-views.json' with {type:'json'};
 import {TREE_DETAIL,foliageEye,shadowFocus,treeTransition,treeImpostor,canopyShadowMaterial} from './foliage-materials.js';
+import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
+export {queueSceneryRock} from './scenery-rocks.js';
 const ATLAS_REVISION='relit-tree-1';
 const SOURCES=['forest-canopy','dry-tree','understory','fern','coastal-rock','desert-rock','sea-cliff'];
 const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
@@ -12,7 +14,7 @@ export async function loadNature(){
   const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}.glb`);model.scene.updateMatrixWorld(true);
   const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
   let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
-  assets.set(name,{parts,map,normalMap,shadowMap,...views[name]});
+  assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
  }));
 }
 function sway(material,foliage){
@@ -26,6 +28,12 @@ export class NaturalLandscape{
  constructor(root,c,sites){
   this.records=[];this.groups=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),desert=c.theme==='desert',highland=c.theme==='highlands';
   const add=(name,x,z,scale=1,angle=r()*Math.PI*2,depth=0)=>{if(!placements.has(name))placements.set(name,[]);const rec={x,z,y:heightAt(c,x,z)-depth,scale,angle};placements.get(name).push(rec);return rec;};
+  for(const rock of root.userData.sceneryRocks||[]){
+   const source=assets.get(rock.source);if(!source)throw new Error(`Missing scenery scan ${rock.source}; await loadNature before building the course`);
+   if(!placements.has(rock.source))placements.set(rock.source,[]);
+   placements.get(rock.source).push(fitSceneryRock(rock,source.bounds));
+  }
+  delete root.userData.sceneryRocks;
   const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
   const tree=desert?'dry-tree':'forest-canopy',spacing=desert?15:10,occupied=[];
   for(let i=0;i<900;i++){
@@ -88,7 +96,7 @@ export class NaturalLandscape{
    for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree?TREE_DETAIL.nearEnd:plant?25:75,far=isTree?TREE_DETAIL.farEnd:plant?110:1200;
     if(lod===0?d>=near:lod===1?(d<(isTree?TREE_DETAIL.nearStart:near)||d>=far):d<TREE_DETAIL.farStart)continue;
     if(lod===1&&isTree&&!atlas&&d>450)continue;
-    transform.position.set(rec.x,rec.y,rec.z);transform.rotation.set(0,rec.angle,0);transform.scale.setScalar(rec.scale);transform.updateMatrix();mesh.setMatrixAt(count++,transform.matrix);
+    transform.position.set(rec.x,rec.y,rec.z);transform.rotation.set(0,rec.angle,0);transform.scale.set(rec.scaleX??rec.scale,rec.scaleY??rec.scale,rec.scaleZ??rec.scale);transform.updateMatrix();mesh.setMatrixAt(count++,transform.matrix);
    }mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
   }
  }

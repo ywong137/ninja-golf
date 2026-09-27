@@ -61,3 +61,9 @@ These CPU checks do not establish a hardware frame rate. Browser checks must mea
 
 `tools/capture-course-previews.mjs` frames all route geometry when it captures the four selection images.
 It mutes browser audio. Run it only when the shared GPU is available.
+
+Foreground rock cover uses the existing CC0 scans listed in `public/models/nature/SOURCES.json`. Highland and Japanese gardens use `coastal-rock`; desert cover uses `desert-rock`. Ruin rubble uses smaller instances of the same scans.
+
+Call `queueSceneryRock(root, {x, z, y, height, radius, angle, source, burial})` before constructing `NaturalLandscape`. The `y` value is the ground height. The `height` value specifies exposed height, and `radius` bounds the horizontal footprint. Burial defaults to 12%. Fitting preserves the scan's horizontal proportions and centers its rotation using the bounds of both LODs. NaturalLandscape consumes the queue once and includes these rocks in its existing source batches. It clones course geometry and materials but retains shared source textures. Cover sites remain separate records, so decoration does not add unplanned collision or combat sites.
+
+`tests/scenery-rocks.test.js` checks both GLB source bounds, rotated footprints, exposed heights, burial, theme cover visibility, and queue limits.
