@@ -90,5 +90,8 @@ if __name__=='__main__':
  argparse.ArgumentParser(description=__doc__).parse_args()
  path=ROOT/'src/motion-data.json';data=json.loads(path.read_text())
  for name in PILOT:data[name]=make_clip(name,data[name])
+ # Preserve the complete fan choreography when regenerating the generic pilot.
+ import importlib.util
+ spec=importlib.util.spec_from_file_location('kaede_motion',ROOT/'tools/author-kaede-motion.py');kaede=importlib.util.module_from_spec(spec);spec.loader.exec_module(kaede);kaede.author(data)
  path.write_text(json.dumps(data,separators=(',',':'))+'\n')
  print('Authored',', '.join(PILOT))

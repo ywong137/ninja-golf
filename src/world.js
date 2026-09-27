@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {DAY_SKY_YAW,SUN_DIRECTION} from './lighting.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import {loadRegionalTerrain} from './regional-terrain.js';
@@ -21,7 +22,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { heightAt, lieAt, routePoint, waterBasins, waterSurfaceAt, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
-const SUN_OFFSET=new THREE.Vector3(-100,95,-100);
+const SUN_OFFSET=new THREE.Vector3(...SUN_DIRECTION).multiplyScalar(170);
 const color = new THREE.Color();
 function material(hex, roughness=.9, metalness=0) { return new THREE.MeshStandardMaterial({color:hex,roughness,metalness}); }
 function addMesh(g, geo, mat, x,y,z, sx=1,sy=1,sz=1) {
@@ -53,7 +54,7 @@ export class World {
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
     this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');this.cliffNormal=this.texture('cliff-normal.jpg');
     this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(this.course.theme),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
-    this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=.8;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentIntensity=.52;scene.environmentRotation.y=.8;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
+    this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=DAY_SKY_YAW;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentIntensity=.52;scene.environmentRotation.y=DAY_SKY_YAW;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
     this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
   }
   texture(file,srgb=false){
@@ -72,10 +73,10 @@ export class World {
     this.scene.background=theme==='cyberpunk'?new THREE.Color(t.sky):(this.coastalSky||new THREE.Color(t.sky));
     this.scene.environment=theme==='cyberpunk'&&this.nightEnvironment?this.nightEnvironment.texture:this.environment.texture;
     this.sky.visible=theme!=='cyberpunk'&&!this.coastalSky;this.nightSky.visible=theme==='cyberpunk';
-    this.scene.backgroundIntensity=theme==='cyberpunk'?.02:theme==='highlands'?.63:theme==='desert'?.94:.78;this.scene.backgroundRotation.y=theme==='cyberpunk'?4.5:theme==='desert'?2.4:theme==='highlands'?1.6:.8;
+    this.scene.backgroundIntensity=theme==='cyberpunk'?.02:theme==='highlands'?.63:theme==='desert'?.94:.78;this.scene.backgroundRotation.y=theme==='cyberpunk'?4.5:DAY_SKY_YAW;
     this.scene.fog.color.set(t.fog);this.scene.fog.density=theme==='cyberpunk'?.0006:theme==='highlands'?.00014:theme==='desert'?.00013:.00022;
     this.sun.color.set(t.sun);this.sun.intensity=t.intensity;
-    this.hemisphere.color.set(t.sun);this.hemisphere.groundColor.set(t.ground);this.hemisphere.intensity=t.ambient;
+    this.hemisphere.color.set(t.fill);this.hemisphere.groundColor.set(t.ground);this.hemisphere.intensity=t.ambient;
     this.scene.environmentIntensity=theme==='cyberpunk'?.4:theme==='highlands'?.32:.52;
     this.ocean.visible=c?.coastal!==false;
     this.scene.environmentRotation.y=this.scene.backgroundRotation.y;this.waterMaterial.uniforms.skyRotation.value=this.scene.backgroundRotation.y;this.waterMaterial.uniforms.skyIntensity.value=this.scene.backgroundIntensity;this.waterMaterial.uniforms.waterFog.value.copy(this.scene.fog.color);this.waterMaterial.uniforms.skyMap.value=theme==='cyberpunk'?this.citySky:this.coastalSky;this.waterMaterial.uniforms.hasSky.value=this.waterMaterial.uniforms.skyMap.value?1:0;

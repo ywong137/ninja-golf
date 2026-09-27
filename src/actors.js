@@ -4,15 +4,16 @@ import {finishCharacterMaterial,awaitCharacterMaterials} from './character-mater
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, combatMotionName } from './motion.js';
-import {FootPlacement} from './foot-placement.js';
+import {FootPlacement,attackFootContacts} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
+import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='athletic-combat-1';
+const MODEL_REVISION='athletic-combat-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -78,6 +79,7 @@ export class Warrior {
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
+    this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].weaponKind],motions):null;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
     if(!enemy&&WARRIORS[type].dualWield||enemy&&type===0){this.offhand=createWeapon(enemy?'scout':'twin');this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
@@ -95,8 +97,13 @@ export class Warrior {
   play(name,fade=.16,once=false,speed=1){
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
-    const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
+    let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const previous=this.actions.get(this.current);
+    if(previous===next&&once&&fade>0){
+      // Repeated attacks need two actions to crossfade instead of rewinding live bones.
+      this.repeatActions??=new Map();const alternate=this.repeatActions.get(name)||this.mixer.clipAction(next.getClip().clone());
+      this.repeatActions.set(name,next);this.actions.set(name,alternate);next=alternate;
+    }
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
     this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
       ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone()}:null;
@@ -136,7 +143,7 @@ export class Warrior {
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null}={}){
-    this.footPlacement?.restore();this.travelPose?.restore();this.facialPose?.restore();
+    this.footPlacement?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
@@ -188,7 +195,12 @@ export class Warrior {
       contactWeights={};stance={};const running=this.running,phase=running?this.runPhase:this.guardWalkPhase,support=running ? .28 : .5;
       for(const [side,offset]of running?[['r',0],['l',.5]]:[['r',.25],['l',.75]]){const p=(phase+offset)%1;stance[side]=p<support;contactWeights[side]=p<support?1:p<support+.10?1-THREE.MathUtils.smoothstep(p,support,support+.10):THREE.MathUtils.smoothstep(p,.90,1);}
     }
-    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    const authoredAttack=!!action;
+    if(authoredAttack)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
+    if(golf||dodge||emerging||selection||cinematic||action?.kind==='musou')this.attackLocomotion?.reset();
+    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
+    if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.athleticAttack?.10:.12):action?.kind==='heavy'?.22:.16});
     if(this.facialPose){
@@ -241,7 +253,7 @@ export class Warrior {
   }
 
   weaponPoints(offhand=false){const held=offhand&&this.offhand?this.offhand:this.weapon;this.root.updateMatrixWorld(true);held.localToWorld(this.tip.fromArray(held.userData.tip));held.getWorldPosition(this.hilt);return [this.hilt,this.tip];}
-  dispose(){this.facialPose?.restore();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
+  dispose(){this.facialPose?.restore();this.attackLocomotion?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {
   constructor(scene){this.scene=scene;this.active=new Set();}

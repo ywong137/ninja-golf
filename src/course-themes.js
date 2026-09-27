@@ -9,10 +9,10 @@ import {architecturalSurface} from './architecture-materials.js';
 import {CYBER_FIXTURES,queueCyberFixture,flushCyberFixtures} from './cyber-fixtures.js';
 
 export const THEME_LIGHTS={
- japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#ffedd0',ground:'#777a49',intensity:3,ambient:.8},
- highlands:{sky:'#a1adb9',fog:'#a6b2bd',sun:'#e6edff',ground:'#766e59',intensity:2.1,ambient:1.1},
- desert:{sky:'#9ecbdc',fog:'#e0b996',sun:'#ffdb9b',ground:'#b68a66',intensity:3.4,ambient:.9},
- cyberpunk:{sky:'#121b39',fog:'#172342',sun:'#c8d7eb',ground:'#394239',intensity:2.4,ambient:.85},
+ japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#fcfff5',fill:'#c7ddf1',ground:'#62695c',intensity:2.7,ambient:1.65},
+ highlands:{sky:'#a1adb9',fog:'#a6b2bd',sun:'#f4f8ff',fill:'#c1d2e8',ground:'#64615a',intensity:1.85,ambient:1.65},
+ desert:{sky:'#9ecbdc',fog:'#e0b996',sun:'#fff5df',fill:'#bdd9ef',ground:'#ac937a',intensity:3.0,ambient:.85},
+ cyberpunk:{sky:'#121b39',fog:'#172342',sun:'#c8d7eb',fill:'#aec8eb',ground:'#394239',intensity:2.1,ambient:.65},
 };
 const transform=new THREE.Object3D();
 // Each plant component is a single instanced draw. Static architecture is merged by material.

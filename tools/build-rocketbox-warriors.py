@@ -10,10 +10,13 @@ ROSTER=[('ronin','Male_Adult_10'),('shinobi','Male_Adult_09'),('monk','Male_Adul
 ENEMIES=[('ninja','Male_Adult_18'),('enemy-guard','Male_Adult_04'),('enemy-lancer','Male_Adult_11'),('enemy-skirmisher','Female_Adult_13')]
 ENEMY_CLIPS={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address'}
 ENEMY_ATTACKS=['Twin_Cut_Diagonal','Heavy_Cleave','Enemy_Thrust','Enemy_Throw']
-parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--attacks-only',action='store_true',help='Append only authored athletic attack clips');parser.add_argument('--locomotion-only',action='store_true',help='Append native speed-matched locomotion only');parser.add_argument('--preview',action='store_true');parser.add_argument('--enemies',action='store_true');parser.add_argument('--guard-walk-only',action='store_true',help='Append only directional guard locomotion');parser.add_argument('--guards-only',action='store_true',help='Append only new native guard clips to existing hero models');parser.add_argument('--hero',choices=[r[0] for r in ROSTER+ENEMIES]);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--attack-name',action='append',default=[],help='Append exactly this existing attack clip; repeat for multiple clips');parser.add_argument('--native-reach-limit',type=float,help='Bake-only maximum arm reach fraction for explicitly selected attacks');parser.add_argument('--attacks-only',action='store_true',help='Append only authored athletic attack clips');parser.add_argument('--locomotion-only',action='store_true',help='Append native speed-matched locomotion only');parser.add_argument('--preview',action='store_true');parser.add_argument('--enemies',action='store_true');parser.add_argument('--guard-walk-only',action='store_true',help='Append only directional guard locomotion');parser.add_argument('--guards-only',action='store_true',help='Append only new native guard clips to existing hero models');parser.add_argument('--hero',choices=[r[0] for r in ROSTER+ENEMIES]);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+if args.attack_name and not args.hero:parser.error('--attack-name requires --hero to avoid unintended roster exports')
+if args.native_reach_limit is not None and (not args.attack_name or not .85<=args.native_reach_limit<=.98):parser.error('--native-reach-limit requires --attack-name and a fraction from .85 to .98')
+if args.attack_name and (args.attacks_only or args.guards_only or args.guard_walk_only or args.locomotion_only or args.preview):parser.error('--attack-name cannot be combined with another export mode')
 if args.guard_walk_only:args.guards_only=True
 if args.attacks_only and (args.guards_only or args.locomotion_only):parser.error('--attacks-only cannot be combined with another motion-only mode')
-append_only=args.guards_only or args.locomotion_only or args.attacks_only
+append_only=args.guards_only or args.locomotion_only or args.attacks_only or bool(args.attack_name)
 spec=importlib.util.spec_from_file_location('rocketbox_rig',ROOT/'tools/rocketbox-rig.py');bridge=importlib.util.module_from_spec(spec);spec.loader.exec_module(bridge)
 clip_spec=importlib.util.spec_from_file_location('character_clips',ROOT/'tools/filter-character-clips.py');clip_filter=importlib.util.module_from_spec(clip_spec);clip_spec.loader.exec_module(clip_filter)
 def materials(folder):
@@ -55,7 +58,13 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   attack_names={name for name,clip in json.loads((ROOT/'src/motion-data.json').read_text()).items() if clip.get('athleticAttack')}
   clip_names&=attack_names
   if not clip_names:raise ValueError(f'No athletic attack clips selected for {hero}')
- bridge.bake_rocketbox_actions(rig,clip_names=clip_names)
+ if args.attack_name:
+  requested=set(args.attack_name)
+  valid={name for name in clip_names if any(part in name for part in ['Cut_','Heavy_','Musou_','Enemy_'])}
+  if not requested<=valid:raise ValueError(f'{hero}: invalid or unavailable attack clips: {sorted(requested-valid)}')
+  clip_names=requested
+ overrides={name:{'nativeReachLimit':args.native_reach_limit} for name in args.attack_name} if args.native_reach_limit is not None else None
+ bridge.bake_rocketbox_actions(rig,clip_names=clip_names,clip_overrides=overrides)
  for side in ['r','l']:
   bone=rig.pose.bones['hand_'+side];center=Vector(rig['palmGrip'+side.upper()]);axis=Vector(rig['shaftAxis'+side.upper()])
   for label,point in [('PalmGrip',center),('PalmShaft',center+axis*.1)]:
@@ -68,7 +77,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  output=ROOT/'public/models'/f'{hero}.glb';temporary=output.with_name(f'{hero}.guard-building.glb' if append_only else f'{hero}.building.glb')
  bpy.ops.export_scene.gltf(filepath=str(temporary),export_format='GLB',use_selection=True,export_animations=True,export_animation_mode='NLA_TRACKS',export_extras=True,export_image_format='AUTO')
  if append_only:
-  subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
+  subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in args.attack_name for argument in ['--allow-clip',name]],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
  subprocess.run(['python3',str(ROOT/'tools/compress-glb-textures.py'),'--max-size','1024' if args.enemies else '2048','--alpha-size','512' if args.enemies else '1024',str(temporary)],check=True)
  temporary.replace(output)
  print('EXPORTED',hero,flush=True)

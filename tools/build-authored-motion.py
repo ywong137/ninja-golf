@@ -54,9 +54,9 @@ for name,clip in DATA.items():
   for bone in rig.pose.bones:bone.rotation_quaternion=Quaternion();bone.location=(0,0,0);bone.scale=(1,1,1)
   hip=pose['hip'];chest=pose['chest'];bend=pose['bend'];shift=Vector(pose['shift'])
   pelvis=rig.pose.bones['pelvis'];pelvis.location=pelvis.bone.matrix_local.to_quaternion().inverted()@shift
-  rotate('pelvis',(0,0,1),hip);rotate('pelvis',(1,0,0),bend*.5)
+  rotate('pelvis',(0,0,1),hip);rotate('pelvis',(1,0,0),pose.get('pelvisBend',bend*.5))
   for bn,f in [('spine_01',.35),('spine_02',.35),('spine_03',.30)]:
-   rotate(bn,(0,0,1),(chest-hip)*f);rotate(bn,(1,0,0),bend*.5*f)
+   rotate(bn,(0,0,1),(chest-hip)*f);rotate(bn,(1,0,0),(bend-pose.get('pelvisBend',bend*.5))*f)
   rotate('neck_01',(0,0,1),-chest*(.65 if t<.62 else .2) if golf else -(chest-hip)*.35);rotate('Head',(1,0,0),.18 if golf and t<.62 else -.04)
   if not golf:
    rotate('clavicle_r',(0,0,1),-.10);rotate('clavicle_l',(0,0,1),.10)

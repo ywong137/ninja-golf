@@ -57,7 +57,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
       vec2 grassUV=p/2.7,grassDx=dFdx(grassUV),grassDy=dFdy(grassUV);
-      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.,desertSoil=0.;vec2 turfUV=p/1.4;
+      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.,desertSoil=0.,turfResolved=0.;vec2 turfUV=p/1.4;
       ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));float landBlend=courseTheme>2.5?0.:smoothstep(50.,850.,outerDistance);float rockMask=0.;if(landBlend<1.){`:''}
       for(int i=0;i<4;i++){float bd=bunkerDistance(p,bunkers[i],bunkerProfiles[i]);sandMask=max(sandMask,1.-smoothstep(-.10,.10,bd));turfLip=max(turfLip,smoothstep(-.10,.10,bd)*(1.-smoothstep(.4,1.4,bd)));}
       float edge=routeDistance(p);
@@ -76,7 +76,9 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       vec2 greenDirection=vec2(cos(mowingAngle+.7),sin(mowingAngle+.7));
       float greenStripe=smoothstep(-.2,.2,sin(dot(p,greenDirection)*3.14159265/1.7))*2.-1.;
       turfUV=p/mix(mix(1.4,1.1,tee),.46,green);
-      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.55,.72,1.13);
+      // Retain the source blade colour and mute saturation without a strong blue tint.
+      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.66,.76,.94);
+      turfResolved=1.-smoothstep(.008,.05,max(length(dFdx(turfUV)),length(dFdy(turfUV))));
       cut=mix(cut,vec3(dot(cut,vec3(.2126,.7152,.0722))),.12);
       vec3 putting=cut*vec3(1.18,1.10,1.12)*(1.-.023*greenStripe*dot(viewDirection,greenDirection));
       // Broad moisture and growth variation sits beneath the photographic blade detail.
@@ -86,7 +88,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       vec2 warped=conditionUV+vec2(broadGrowth,groundNoise(conditionUV*.043+13.))*12.;
       turfCondition=(groundNoise(warped*.072)-.5)*.72+(groundNoise(warped*.23)-.5)*.28;
       float dryPatch=smoothstep(.06,.34,turfCondition)*(1.-green*.75);
-      cut*=mowing*(.98+turfCondition*.24);
+      cut*=mowing*(.98+turfCondition*.29);
       cut=mix(cut,cut*vec3(1.12,1.015,.86),dryPatch*.44);
       putting*=.995+turfCondition*.065;
       // Randomized source offsets break the fixed 2.7m grass pattern. Color and
@@ -138,22 +140,28 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       float roughnessFactor=.96;
       ${distant?'if(landBlend<1.){':''}
       float turfRough=texture2D(turfRoughness,turfUV).r;
-      roughnessFactor=mix(.97,clamp(mix(.82,.96,turfRough)+turfCondition*.065,.8,.98),shortGrass);
-      roughnessFactor=mix(roughnessFactor,mix(.80,.91,turfRough),green);
+      // Keep the photographed roughness spread. Unresolved blades converge to a
+      // dry broad response instead of leaving subpixel specular variation.
+      float cutRough=clamp(.64+.32*turfRough+turfCondition*.09,.78,.95);
+      float greenRough=clamp(.69+.23*turfRough+turfCondition*.035,.79,.93);
+      roughnessFactor=mix(.97,mix(.89+turfCondition*.06,cutRough,turfResolved),shortGrass);
+      roughnessFactor=mix(roughnessFactor,mix(.86,greenRough,turfResolved),green);
       roughnessFactor=mix(roughnessFactor,.97,max(sandMask,beach));
       ${distant?'}roughnessFactor=mix(roughnessFactor,.96,landBlend);':''}`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`
       ${distant?'if(landBlend<1.){':''}
       vec3 gn=grassSample(normalMap,grassUV,grassDx,grassDy,true).xyz*2.-1.;gn.xy*=normalScale;
       if(courseTheme>1.5&&courseTheme<2.5){vec3 soilNormal=groundSample(sandNormal,p/4.8).xyz*2.-1.;soilNormal.xy*=.22;gn=mix(gn,soilNormal,desertSoil);}
-      vec3 tn=texture2D(turfNormal,turfUV).xyz*2.-1.;tn.xy*=mix(.15,.045,green);
+      vec3 tn=texture2D(turfNormal,turfUV).xyz*2.-1.;
+      tn.xy*=mix(.26,.085,green)*turfResolved;
+      tn=normalize(tn);
       vec3 sn=texture2D(sandNormal,p/4.).xyz*2.-1.;sn.xy*=normalScale;
       vec3 terrainNormal=mix(mix(gn,tn,shortGrass),sn,max(sandMask,beach));
       normal=normalize(mix(normal,normalize(tbn*terrainNormal),${distant?'1.-landBlend':'1.'}));
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-shorelines-v13-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-turf-response-v14-${distant}`;
   return mat;
 }
 

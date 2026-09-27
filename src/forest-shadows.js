@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// The atlas projects the scanned tree along (-100,95,-100), the World's fixed sun.
+// The atlas projects the scanned tree along SUN_DIRECTION from lighting.js.
 // Its eight bounds already include tree rotation. Do not rotate the projected quad again.
 export const FOREST_SHADOW_GRID=4;
 export function forestShadowGeometry(records,source,height){

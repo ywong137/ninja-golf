@@ -6,6 +6,7 @@ try {
  const page=await browser.newPage();await page.route('**/@vite/client',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.goto('http://localhost:5173/tools/tree-bake.html');
  const result=await page.evaluate(async(selected)=>{
   const T=await import('/node_modules/three/build/three.module.js'),{GLTFLoader}=await import('/node_modules/three/examples/jsm/loaders/GLTFLoader.js');
+  const {SUN_DIRECTION}=await import('/src/lighting.js'),shadowSlope=new T.Vector2(-SUN_DIRECTION[0]/SUN_DIRECTION[1],-SUN_DIRECTION[2]/SUN_DIRECTION[1]);
   const renderer=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});renderer.setSize(512,512);renderer.setClearColor(0,0);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.NoToneMapping;
   const scene=new T.Scene(),output=[],angles=8,elevations=[0,Math.PI/6,Math.PI/3];
   const encode=async(canvas,type='image/webp',quality=.96)=>Array.from(new Uint8Array(await(await new Promise(resolve=>canvas.toBlob(resolve,type,quality))).arrayBuffer()));
@@ -21,9 +22,9 @@ try {
    // Project the actual crown and trunk onto the ground under the game's fixed sun.
    const shadowAtlas=document.createElement('canvas');shadowAtlas.width=2048;shadowAtlas.height=1024;const context=shadowAtlas.getContext('2d'),shadowViews=[];
    renderer.outputColorSpace=T.LinearSRGBColorSpace;
-   for(const o of meshes){const original=o.userData.albedo;o.material=new T.ShaderMaterial({side:T.DoubleSide,depthTest:false,depthWrite:false,uniforms:{map:{value:original.map},cutoff:{value:original.alphaTest}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;vec4 p=modelMatrix*vec4(position,1.);p.xz+=p.y*vec2(100./95.);p.y=0.;gl_Position=projectionMatrix*viewMatrix*p;}',fragmentShader:'uniform sampler2D map;uniform float cutoff;varying vec2 vUv;void main(){if(texture2D(map,vUv).a<cutoff)discard;gl_FragColor=vec4(1.);}'});}
+   for(const o of meshes){const original=o.userData.albedo;o.material=new T.ShaderMaterial({side:T.DoubleSide,depthTest:false,depthWrite:false,uniforms:{map:{value:original.map},cutoff:{value:original.alphaTest},shadowSlope:{value:shadowSlope}},vertexShader:'uniform vec2 shadowSlope;varying vec2 vUv;void main(){vUv=uv;vec4 p=modelMatrix*vec4(position,1.);p.xz+=p.y*shadowSlope;p.y=0.;gl_Position=projectionMatrix*viewMatrix*p;}',fragmentShader:'uniform sampler2D map;uniform float cutoff;varying vec2 vUv;void main(){if(texture2D(map,vUv).a<cutoff)discard;gl_FragColor=vec4(1.);}'});}
    for(let view=0;view<angles;view++){
-    model.rotation.y=view*Math.PI*2/angles;model.updateMatrixWorld(true);const b=new T.Box2();for(const o of meshes){const pos=o.geometry.attributes.position,v=new T.Vector3();for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i).applyMatrix4(o.matrixWorld);b.expandByPoint(new T.Vector2(v.x+v.y*100/95,v.z+v.y*100/95));}}b.expandByScalar(.6);
+    model.rotation.y=view*Math.PI*2/angles;model.updateMatrixWorld(true);const b=new T.Box2();for(const o of meshes){const pos=o.geometry.attributes.position,v=new T.Vector3();for(let i=0;i<pos.count;i++){v.fromBufferAttribute(pos,i).applyMatrix4(o.matrixWorld);b.expandByPoint(new T.Vector2(v.x+v.y*shadowSlope.x,v.z+v.y*shadowSlope.y));}}b.expandByScalar(.6);
     const w=b.max.x-b.min.x,h=b.max.y-b.min.y,cx=(b.min.x+b.max.x)/2,cz=(b.min.y+b.max.y)/2;const shadowCamera=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,100);shadowCamera.position.set(cx,40,cz);shadowCamera.up.set(0,0,-1);shadowCamera.lookAt(cx,0,cz);renderer.render(scene,shadowCamera);context.drawImage(renderer.domElement,(view%4)*512,Math.floor(view/4)*512);shadowViews.push([b.min.x,b.min.y,b.max.x,b.max.y]);
    }
    output.push({name,span,center:center.y,columns:angles,rows:elevations.length,elevations,shadowViews,...atlases,shadow:await encode(shadowAtlas)});scene.remove(model);meshes.forEach(o=>{o.geometry.dispose();o.material.dispose();o.userData.albedo.dispose();o.userData.normals.dispose();});

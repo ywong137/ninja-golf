@@ -1,6 +1,27 @@
 import * as THREE from 'three';
 export const TREE_DETAIL={nearStart:34,nearEnd:36,farStart:108,farEnd:112};
 export const foliageEye={value:new THREE.Vector3()},shadowFocus={value:new THREE.Vector3()};
+// Reuse the shadowed incident light. This adds thin-leaf transmission without
+// another shadow lookup, emissive glow, or a second lighting direction.
+export function leafTransmission(material){
+ const before=material.onBeforeCompile,cache=material.customProgramCacheKey();
+ material.onBeforeCompile=shader=>{
+  before?.(shader);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_pars_fragment>',`#include <lights_physical_pars_fragment>
+   void RE_Direct_Leaf(const in IncidentLight light,const in vec3 position,const in vec3 n,const in vec3 view,const in vec3 clearcoatNormal,const in PhysicalMaterial material,inout ReflectedLight reflectedLight){
+    RE_Direct_Physical(light,position,n,view,clearcoatNormal,material,reflectedLight);
+    float greenRatio=material.diffuseColor.g/max(.001,max(material.diffuseColor.r,material.diffuseColor.b));
+    float leafMask=smoothstep(.98,1.25,greenRatio);
+    float back=saturate((-dot(n,light.direction)+.25)/1.25);
+    float through=pow(saturate(dot(view,-light.direction)),3.);
+    reflectedLight.directDiffuse+=light.color*BRDF_Lambert(material.diffuseColor)*leafMask*back*(.12+.30*through);
+   }
+   #undef RE_Direct
+   #define RE_Direct RE_Direct_Leaf
+  `);
+ };
+ material.customProgramCacheKey=()=>`${cache}-leaf-transmission-v1`;
+}
 const fadeDeclarations='uniform vec3 natureEye;varying float natureDistance;';
 const fadeVertex='vec3 treeOrigin=instanceMatrix[3].xyz;natureDistance=length(vec3(treeOrigin.x-natureEye.x,max(0.,natureEye.y-treeOrigin.y-5.),treeOrigin.z-natureEye.z));';
 function fadeFragment(lod,detail=TREE_DETAIL){return `float nearMix=smoothstep(${detail.nearStart.toFixed(1)},${detail.nearEnd.toFixed(1)},natureDistance),farMix=smoothstep(${detail.farStart.toFixed(1)},${detail.farEnd.toFixed(1)},natureDistance);float screenNoise=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);float low=${lod===0?'0.':lod===1?'1.-nearMix':'1.-farMix'},high=${lod===0?'1.-nearMix':lod===1?'1.-farMix':'1.'};if(screenNoise<low||screenNoise>=high)discard;`;}
@@ -10,7 +31,7 @@ export function treeTransition(material,lod,detail=TREE_DETAIL){
  material.alphaToCoverage=true;material.customProgramCacheKey=()=>`${cache}-tree-fade-${lod}-${Object.values(detail).join("-")}`;
 }
 export function treeImpostor(source,{nearFade=true,detail=TREE_DETAIL}={}){
- const material=new THREE.MeshStandardMaterial({map:source.map,alphaTest:.25,side:THREE.DoubleSide,roughness:.92,metalness:0,envMapIntensity:.45,alphaToCoverage:true});
+ const material=new THREE.MeshStandardMaterial({map:source.map,alphaTest:.25,side:THREE.DoubleSide,roughness:.92,metalness:0,envMapIntensity:.85,alphaToCoverage:true});
  material.onBeforeCompile=shader=>{
   shader.uniforms.natureEye=foliageEye;shader.uniforms.treeNormalAtlas={value:source.normalMap};shader.uniforms.treeCenterHeight={value:source.center};
   shader.vertexShader=fadeDeclarations+'uniform float treeCenterHeight;varying vec4 treeFrames;varying vec2 treeBlend;varying vec2 treeYaw;\n'+shader.vertexShader;
@@ -39,7 +60,7 @@ export function treeImpostor(source,{nearFade=true,detail=TREE_DETAIL}={}){
    vec3 worldNormal=vec3(sourceNormal.x*treeYaw.x+sourceNormal.z*treeYaw.y,sourceNormal.y,-sourceNormal.x*treeYaw.y+sourceNormal.z*treeYaw.x);
    normal=normalize(mat3(viewMatrix)*worldNormal);`);
  };
- material.customProgramCacheKey=()=> `relit-multi-elevation-tree-v2-${nearFade}-${Object.values(detail).join("-")}`;return material;
+ material.customProgramCacheKey=()=> `relit-multi-elevation-tree-v2-${nearFade}-${Object.values(detail).join("-")}`;leafTransmission(material);return material;
 }
 export function canopyShadowMaterial(map,night=false){
  return new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:map},shadowFocus,opacity:{value:night?.24:.40}},vertexShader:`uniform vec3 shadowFocus;attribute vec2 treeAnchor;varying vec2 vUv;varying float strength;void main(){vUv=uv;strength=smoothstep(34.,62.,distance(treeAnchor,shadowFocus.xz));gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D map;uniform float opacity;varying vec2 vUv;varying float strength;void main(){vec2 pixel=vec2(1./2048.,1./1024.);float a=texture2D(map,vUv).a*.4;for(int i=0;i<4;i++){vec2 d=vec2(i<2?-1.:1.,i==0||i==2?-1.:1.);a+=texture2D(map,vUv+pixel*d*1.2).a*.15;}a*=opacity*strength;if(a<.005)discard;gl_FragColor=vec4(.015,.021,.009,a);}`});

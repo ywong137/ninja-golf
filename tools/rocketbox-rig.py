@@ -163,6 +163,14 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False):
     offset=ik['hands'][side].location+translation-upper.head
     if offset.length>radius:translation+=offset.normalized()*(radius-offset.length)
   for hand in ik['hands'].values():hand.location+=translation
+ if clip.get('nativeReachLimit') and not clip['twoHanded']:
+  # Keep each native arm flexed without translating the clavicle or stretching the limb.
+  bpy.context.view_layer.update()
+  for side in ['r','l']:
+   upper=rig.pose.bones['upperarm_'+side];lower=rig.pose.bones['lowerarm_'+side]
+   radius=(upper.bone.length+lower.bone.length)*clip['nativeReachLimit']
+   offset=ik['hands'][side].location-upper.head
+   if offset.length>radius:ik['hands'][side].location=upper.head+offset.normalized()*radius
  bpy.context.view_layer.update()
  if 'freeHand' in pose and not clip['twoHanded']:
   # An empty guarding hand follows the forearm instead of an imaginary weapon shaft.
@@ -222,10 +230,13 @@ def apply_native_locomotion(rig,ik,spec,phase):
  world=pelvis.matrix.copy();world.translation.z+=lift;pelvis.matrix=world
  bpy.context.view_layer.update()
 
-def bake_rocketbox_actions(rig,clip_names=None):
+def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
  """Bake native anatomical poses into named NLA clips for per-avatar export."""
  import json
  data=json.loads((ROOT/'src/motion-data.json').read_text());locomotion=json.loads((ROOT/'src/locomotion-data.json').read_text());scene=bpy.context.scene;scene.render.fps=30;scene.frame_start=0
+ for name,values in (clip_overrides or {}).items():
+  if name not in data:raise ValueError(f'Unknown authored clip override: {name}')
+  data[name]={**data[name],**values}
  filenames=['warrior-motion.glb','golf-motion.glb']
  if (ROOT/'public/models/guard-motion.glb').exists():filenames.append('guard-motion.glb')
  sources=[import_motion_source(filename) for filename in filenames]
@@ -236,7 +247,9 @@ def bake_rocketbox_actions(rig,clip_names=None):
    for original in actions:
     if original.name.split('.')[0] in athletic:original.name='superseded_'+original.name
   sources.append(attack_source)
- if clip_names and set(clip_names)<=set(locomotion)|athletic:scene.render.fps=60
+ if clip_names and set(clip_names)<=set(locomotion)|athletic:scene.render.fps=max(60,max((data.get(name,{}).get('nativeSampleRate',60) for name in clip_names),default=60))
+ # Preserve explicit dense clips during a later full-character export as well.
+ scene.render.fps=max(scene.render.fps,max((data.get(name,{}).get('nativeSampleRate',30) for name in (clip_names or data)),default=30))
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
  address=next(a for a in authored[1] if a.name.split('.')[0]=='Golf_Address')
  source.animation_data.action=address;scene.frame_set(round(address.frame_range[0]));retarget_frame(rig,source,*mapping);grips=measure_grips(rig)
@@ -254,7 +267,7 @@ def bake_rocketbox_actions(rig,clip_names=None):
    if gait:duration=gait['duration']
    if clip:duration=clip['duration']
    original.name='source_'+name;action=bpy.data.actions.new(name);rig.animation_data.action=action
-   source.animation_data.action=original;sample_rate=60 if gait or name in athletic else 30;count=max(1,round(duration*sample_rate));max_error=0
+   source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in athletic else 30) if clip else 60 if gait else 30;count=max(1,round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
     if constraint.type=='IK' and constraint.target.name.startswith('native_palm_'):constraint.chain_count=2

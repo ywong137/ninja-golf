@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
-import {TREE_DETAIL,foliageEye,shadowFocus,treeTransition,treeImpostor,canopyShadowMaterial} from './foliage-materials.js';
+import {TREE_DETAIL,foliageEye,shadowFocus,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
 import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.js';
 export {queueSceneryRock} from './scenery-rocks.js';
@@ -15,7 +15,7 @@ export async function loadNature(){
  await Promise.all(SOURCES.map(async name=>{
   const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}.glb`);model.scene.updateMatrixWorld(true);
   const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(['pine-open','pine-young','fir-layered'].includes(name))material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
-  let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
+  let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${kind==='shadow'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
   assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
  }));
 }
@@ -86,7 +86,7 @@ export class NaturalLandscape{
    const source=assets.get(name);if(!source)continue;const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
    for(const part of source.parts){
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
-    if(plant)sway(material,material.alphaTest>0);if(isTree)treeTransition(material,part.lod,detail);
+    if(plant){material.envMapIntensity=.85;sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
     const mesh=new THREE.InstancedMesh(part.geometry.clone(),material,records.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
     if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree)treeTransition(mesh.customDepthMaterial,part.lod,detail);}
     root.add(mesh);this.groups.push({mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map});

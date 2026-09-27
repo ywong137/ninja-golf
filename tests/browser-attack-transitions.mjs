@@ -10,12 +10,13 @@ try{
  const page=await browser.newPage(),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://localhost:5173/tests/rig-stage.html');
  const reports=await page.evaluate(async()=>{
-  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{ATTACKS}=await import('/src/combat.js'),{sampleMotion}=await import('/src/motion.js');await loadWarriorAssets();
+  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{ATTACKS}=await import('/src/combat.js'),{WARRIORS}=await import('/src/warriors.js'),{sampleMotion,combatMotionName}=await import('/src/motion.js');await loadWarriorAssets();
   const reports=[];
-  for(let hero=0;hero<6;hero++)for(const source of ['idle','guard','run'])for(const kind of ['light','heavy']){
+  for(let hero=0;hero<6;hero++)for(const source of ['idle','guard','run','repeat'])for(const kind of ['light','heavy']){
    const p=new Warrior(hero);
    for(let frame=0;frame<60;frame++)p.update(frame/60,1/60,source==='guard'?{blocking:true}:source==='run'?{moving:true,moveSpeed:5.6}:{});
    const definition=ATTACKS[kind][0],attack={...definition,kind,step:0,token:1,time:0};
+   if(source==='repeat'){const name=combatMotionName(WARRIORS[hero],kind,0);p.play(name,0,true);p.actions.get(name).time=definition.duration*.4;p.mixer.update(0);p.syncHeldObjects();}
    const prior=p.weapon.quaternion.clone(),initialShaft=new T.Vector3(0,1,0).applyQuaternion(prior);let firstTurn=0,maxFrameTurn=0,maxPalmGap=0,impactPathError=0;
    for(let frame=0;frame<=Math.ceil(definition.duration*120);frame++){
     attack.time=frame/120;p.update(2+attack.time,1/120,{action:attack});p.root.updateMatrixWorld(true);

@@ -4,10 +4,10 @@ const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function worldRotation(bone,rotation){bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)).normalize();bone.updateWorldMatrix(false,true);}
 
 // Solve in world space so native proportions and arbitrary imported bone axes remain intact.
-export function solveLeg(thigh,calf,foot,target,footRotation){
+export function solveLeg(thigh,calf,foot,target,footRotation,bendHint=null){
  const hip=thigh.getWorldPosition(new THREE.Vector3()),knee=calf.getWorldPosition(new THREE.Vector3()),ankle=foot.getWorldPosition(new THREE.Vector3());
  const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee),axis=target.clone().sub(hip),distance=clamp(axis.length(),Math.abs(upper-lower)+.015,(upper+lower)*.985);axis.normalize();
- const previous=ankle.clone().sub(hip).normalize(),bend=knee.clone().sub(hip);bend.addScaledVector(previous,-bend.dot(previous));bend.addScaledVector(axis,-bend.dot(axis));
+ const previous=ankle.clone().sub(hip).normalize(),bend=(bendHint??knee).clone().sub(hip);if(!bendHint)bend.addScaledVector(previous,-bend.dot(previous));bend.addScaledVector(axis,-bend.dot(axis));
  if(bend.lengthSq()<1e-8)bend.set(0,0,1).addScaledVector(axis,-axis.z);bend.normalize();
  const along=(upper*upper-lower*lower+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,upper*upper-along*along));
  const solvedKnee=hip.clone().addScaledVector(axis,along).addScaledVector(bend,height),solvedAnkle=hip.clone().addScaledVector(axis,distance);
@@ -15,6 +15,27 @@ export function solveLeg(thigh,calf,foot,target,footRotation){
  const nowKnee=calf.getWorldPosition(new THREE.Vector3()),nowAnkle=foot.getWorldPosition(new THREE.Vector3());rotation.setFromUnitVectors(nowAnkle.sub(nowKnee).normalize(),solvedAnkle.clone().sub(nowKnee).normalize()).multiply(calf.getWorldQuaternion(new THREE.Quaternion()));worldRotation(calf,rotation);
  worldRotation(foot,footRotation);
  return solvedAnkle.distanceTo(target);
+}
+
+export function attackFootContacts(clip,time,motion){
+ const weights={},stance={};
+ for(const side of ['r','l']){
+  const intervals=clip?.footPlants?.[side];
+  if(intervals){
+   let weight=0;
+   for(const [start,end]of intervals)if(time>=start&&time<=end){
+    const blend=Math.min(.04,(end-start)/3);
+    weight=Math.max(weight,(start===0?1:smooth(start,start+blend,time))*(end>=clip.duration?1:1-smooth(end-blend,end,time)));
+   }
+   weights[side]=weight;
+  }else{
+   // Old clips have no support schedule. Any authored lift remains free.
+   const lift=motion?.[side==='r'?'footR':'footL']?.[2];
+   weights[side]=Number.isFinite(lift)?1-smooth(.001,.006,lift):0;
+  }
+  stance[side]=weights[side]>.95;
+ }
+ return {contactWeights:weights,stance};
 }
 
 export class FootPlacement {
@@ -28,8 +49,9 @@ export class FootPlacement {
  }
  restore(){for(const [bone,position,rotation]of this.saved){bone.position.copy(position);bone.quaternion.copy(rotation);}this.saved=[];}
  reset(){this.report=null;this.pelvisOffset=0;for(const foot of Object.values(this.feet)){foot.offset=0;foot.toeRoll=0;foot.normal.copy(UP);}}
- apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null}={}){
+ apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null,preserveAuthored=false}={}){
   if(!enabled||!groundHeight){this.reset();return;}
+  if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance);return;}
   const root=this.root,bones=this.bones;root.updateMatrixWorld(true);const response=1-Math.exp(-24*Math.min(dt,.05)),samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),height=groundHeight(ankle.x,ankle.z);
@@ -72,4 +94,63 @@ export class FootPlacement {
    this.report.feet.push({side:s.side,offset:s.target.y-s.ankle.y,lift:s.lift,weight:s.weight,stance:stance?.[s.side]??s.weight>.95,reachError:error,toeRoll,terrainDelta:s.terrainDelta});
   }
  }
+ // Attack animation supplies the foot lift and pivot. Only terrain deviation from
+ // the actor's reference plane changes that pose; flat ground is an exact no-op.
+ applyAuthored(dt,groundHeight,contactWeights,stance){
+  const previousPelvisOffset=this.pelvisOffset;this.reset();const {root,bones}=this;root.updateMatrixWorld(true);const samples=[];
+  for(const side of ['r','l']){
+   const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),rotation=foot.getWorldQuaternion(new THREE.Quaternion()),original=rotation.clone(),weight=contactWeights?.[side]??0;
+   const e=.12,heights=[groundHeight(ankle.x-e,ankle.z),groundHeight(ankle.x+e,ankle.z),groundHeight(ankle.x,ankle.z-e),groundHeight(ankle.x,ankle.z+e)];
+   if(!heights.every(Number.isFinite)){this.reset();return;}
+   const normal=new THREE.Vector3(heights[0]-heights[1],2*e,heights[2]-heights[3]).normalize(),tilt=Math.acos(clamp(normal.y,-1,1));
+   if(tilt>.55)normal.lerp(UP,1-.55/tilt).normalize();
+   rotation.premultiply(new THREE.Quaternion().setFromUnitVectors(UP,normal).slerp(new THREE.Quaternion(),1-weight));
+   let terrainDelta=-Infinity,penetration=-Infinity,sourceSoleGap=Infinity;
+   for(const point of state.contacts){
+    const old=point.clone().applyQuaternion(original),relative=point.clone().applyQuaternion(rotation),height=groundHeight(ankle.x+relative.x,ankle.z+relative.z);
+    if(!Number.isFinite(height)){this.reset();return;}
+    terrainDelta=Math.max(terrainDelta,height-root.position.y);
+    // Do not reinterpret a source pivot's calibrated sole proxy as penetration.
+    sourceSoleGap=Math.min(sourceSoleGap,ankle.y+old.y-root.position.y);
+    penetration=Math.max(penetration,height-ankle.y-relative.y);
+   }
+   const supportOffset=penetration+sourceSoleGap;
+   const offset=clamp(Math.max(supportOffset*weight,penetration-Math.max(0,-sourceSoleGap)),-.32,.32);
+   samples.push({side,ankle,target:ankle.clone().addScaledVector(UP,offset),rotation,weight,offset,terrainDelta,sourceSoleGap,changed:Math.abs(offset)>1e-7||original.clone().normalize().angleTo(rotation.clone().normalize())>1e-6});
+  }
+  let pelvisLimit=0;
+  const terrainChanged=samples.some(s=>s.changed);
+  if(terrainChanged)for(const s of samples){
+   const hip=bones['thigh_'+s.side].getWorldPosition(new THREE.Vector3()),knee=bones['calf_'+s.side].getWorldPosition(new THREE.Vector3());
+   const length=(hip.distanceTo(knee)+knee.distanceTo(s.ankle))*.985,horizontal=Math.hypot(s.target.x-hip.x,s.target.z-hip.z);
+   const available=Math.sqrt(Math.max(.01,length*length-horizontal*horizontal));
+   pelvisLimit=Math.min(pelvisLimit,s.target.y+available-hip.y);
+  }
+  pelvisLimit=clamp(pelvisLimit,-.20,0);
+  // Prepare the body for the next support before a clip changes contact weights.
+  // The probes depend on terrain, not the current attack phase or crossfade.
+  let downhill=0;const reach=.7*root.scale.x;
+  for(let i=0;i<8;i++){
+   const a=i*Math.PI/4,height=groundHeight(root.position.x+Math.cos(a)*reach,root.position.z+Math.sin(a)*reach);
+   if(Number.isFinite(height))downhill=Math.min(downhill,height-root.position.y);
+  }
+  const pelvisWanted=clamp(Math.min(downhill,pelvisLimit),-.20,0);
+  // Reach remains a hard bound; the terrain reserve avoids a late support snap.
+  this.pelvisOffset=terrainChanged||pelvisWanted<-.0000001?Math.min(pelvisLimit,THREE.MathUtils.lerp(previousPelvisOffset,pelvisWanted,1-Math.exp(-24*Math.min(dt,.05)))):0;
+  if(Math.abs(this.pelvisOffset)>1e-7){
+   const pelvis=bones.pelvis;this.saved.push([pelvis,pelvis.position.clone(),pelvis.quaternion.clone()]);
+   const position=pelvis.getWorldPosition(new THREE.Vector3()).addScaledVector(UP,this.pelvisOffset);
+   pelvis.position.copy(pelvis.parent.worldToLocal(position));root.updateMatrixWorld(true);
+  }
+  this.report={pelvisOffset:this.pelvisOffset,pelvisWanted,pelvisLimit,preserveAuthored:true,feet:[]};
+  for(const s of samples){
+   let error=0;
+   if(s.changed||Math.abs(this.pelvisOffset)>1e-7){
+    for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
+    error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation);
+   }
+   this.report.feet.push({side:s.side,offset:s.offset,weight:s.weight,stance:stance?.[s.side]??s.weight>.95,reachError:error,terrainDelta:s.terrainDelta,sourceSoleGap:s.sourceSoleGap});
+  }
+ }
+
 }

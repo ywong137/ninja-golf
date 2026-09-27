@@ -156,7 +156,7 @@ class Game {
     if(this.time>(this.chainExpires||0))this.lightChain=0;
     const step=kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1),definition=attackDefinition(kind,step,this.warrior.combatStyle);
     const motion=motions[combatMotionName(this.warrior,kind,step)];
-    this.action={...definition,rootAdvance:motion.rootAdvance,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    this.action={...definition,rootAdvance:motion.rootAdvance??0,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
   }
@@ -179,10 +179,10 @@ class Game {
     const m=input.move;this.camera.getWorldDirection(v1);const movementYaw=Math.atan2(v1.x,v1.z);let {x:dx,z:dz}=cameraRelativeMove(m.x,m.y,movementYaw);
     const pd=p.distanceTo(this.ball.position),moving=Math.hypot(dx,dz)>.1,sprinting=input.down('ShiftLeft','ShiftRight')||input.padSprint;
     updatePlayerGuard(this.guard,{time:this.time,dt,held:input.guarding,allowed:!this.action&&this.dodgeTimer===0});
-    this.focused=input.focused||this.guard.active;const speed=(this.dodgeTimer>.18?11:this.time<this.guard.breakPoseUntil?2:this.guard.active?2.3:sprinting?8:this.focused?5.3:5.6)*this.warrior.speed*(this.action?.kind==='musou'?.2:this.action?.45:1);
+    this.focused=input.focused||this.guard.active;const speed=(this.dodgeTimer>.18?11:this.time<this.guard.breakPoseUntil?2:this.guard.active?2.3:sprinting?8:this.focused?5.3:5.6)*this.warrior.speed*(this.action?.kind==='musou'?0:this.action?.45:1);
     const norm=Math.max(1,Math.hypot(dx,dz));dx/=norm;dz/=norm;this.playerVelocity={x:dx*speed,z:dz*speed};
     let mx=dx*speed,mz=dz*speed;
-    if(this.action){this.action.time+=dt;this.attackTimer=Math.max(0,this.action.duration-this.action.time);const a=this.action;const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*(a.rootAdvance===undefined?a.lunge:a.rootAdvance*Math.PI/(2*a.duration));mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;
+    if(this.action){this.action.time+=dt;this.attackTimer=Math.max(0,this.action.duration-this.action.time);const a=this.action;const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.rootAdvance*Math.PI/(2*a.duration);mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;
       while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}
     }
     const movementStartX=p.x,movementStartZ=p.z,movementStart={x:p.x,y:p.y,z:p.z};
