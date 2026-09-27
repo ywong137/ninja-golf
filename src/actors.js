@@ -3,6 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
+// Refresh revised rigs in browsers that cached the previous release's model URLs.
+const MODEL_REVISION='core-rig-2';
 const templates=[];
 const retargeted=new Map();
 const motionSources=[];
@@ -14,7 +16,7 @@ const swingShaft=[[0,[0,-.90,.60]],[.3,[.8,-.25,.5]],[.63,[.35,.86,-.40]],[.83,[
 export async function loadWarriorAssets(progress=()=>{}) {
   const loader=new GLTFLoader();let done=0;
   const urls=['ronin','shinobi','monk','ninja','warrior-motion','golf-motion'];
-  const results=await Promise.all(urls.map(async name=>{const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb`);progress(++done,urls.length);return model;}));
+  const results=await Promise.all(urls.map(async name=>{const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb?v=${MODEL_REVISION}`);progress(++done,urls.length);return model;}));
   const clipNames=new Set(results.slice(4).flatMap(model=>model.animations.map(clip=>clip.name)));
   for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
   templates.push(...results.slice(0,4));motionSources.push(...results.slice(4));
