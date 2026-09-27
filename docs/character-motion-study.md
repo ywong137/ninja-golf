@@ -67,7 +67,7 @@ Combat mouse movement controls the camera after a click captures it. Escape rele
 
 Inspect front and side views at address, top, transition, impact, and finish. Check hand separation, foot drift, and blade silhouette. Exercise each enemy's different threat and counter. Measure a mixed 64-enemy fight at the same viewport and quality settings as the previous release.
 
-## Results from this build
+## Results from the previous three-hole build
 
 - Rebuilt 23 authored golf and combat clips at 60 samples per second.
 - Golf uses the game's left-handed stance. The right foot leads; the left heel rises through the finish.
@@ -78,3 +78,25 @@ Inspect front and side views at address, top, transition, impact, and finish. Ch
 - A 64-enemy scene averaged 48 FPS without attacks and 46 FPS during active combat at 1440×900, Balanced quality, device pixel ratio 1, on an Apple M1 Max.
 
 These remain authored animations on the existing game skeleton. They are not motion capture. Close-up hand and costume detail can improve further.
+
+## Athletic motion revision
+
+Combat now uses separate loading, hip initiation, contact, follow-through, and recovery poses. The chest stays within 0.9 radians of the pelvis. Explicit elbow and knee targets keep the joints bent in useful directions.
+
+Musou lasts 3.3 seconds. Six cuts make one complete turn, with impacts at 0.42, 0.86, 1.30, 1.78, 2.25, and 2.82 seconds. The sequence combines diagonal, returning, rising, sweeping, and downward cuts. Each foot stays still while the other foot steps. The final pose completes the turn without reversing the animation angle.
+
+Twin clips have independent secondary hand and blade paths. The second sword guards during preparation and counters during recovery.
+
+The wrist targets include the measured grip center between the curled fingers. The right center is `(-0.028, 0.096, 0)`. The left center is `(0.028, 0.096, 0)`. Local Z follows the shaft. Combat limits clavicle rotation and projects the shared handle into the reach of both arms. Golf allows the clavicle to move. Runtime weapons follow the evaluated palms.
+
+Run `python3 tools/author-combat-motion.py` to regenerate combat landmarks. This command preserves the golf landmarks. Run Blender with `tools/build-authored-motion.py` to export the clips. The export reports the largest palm target error for each clip.
+
+Run `PLAYWRIGHT_CHANNEL=chrome node tests/browser-motion.mjs` to check all six heroes. The check measures golf grip position, the planted lead foot, and Musou support feet. It checks knee direction at 100 points through Musou. It also saves four Musou views under `/tmp/ninja-musou-*.png`.
+
+## Three independent female weapon styles
+
+Kaede uses a single bladed fan. Her raised guard, open free hand, lateral cuts, and wrist turns show the fan face between attacks. Ayame holds a crescent ring. Her compact guard, lower stance, crossing arcs, and circular recoveries keep the weapon close to her body. Sora uses a hooked sickle. She prepares from an asymmetric low guard, extends the hook, and draws it back toward her hip.
+
+Each style has a separate stance loop, four light attacks, four heavy attacks, and a six-cut Musou sequence. These clips use the `Fan_`, `Ring_`, and `Sickle_` prefixes. They retain the combat hit times. The `roll` value turns each weapon around its shaft; the baker applies the same rotation to the palm. The free hand uses its own trajectory and partly open fingers.
+
+The runtime helper `combatMotionName` selects the correct family from warrior metadata. The motion check renders four Musou phases for each woman and verifies knee direction throughout each sequence.

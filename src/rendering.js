@@ -2,6 +2,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { Vector2 } from 'three';
 
 class ContactPass extends GTAOPass {
   setSize(width,height){super.setSize(Math.max(1,Math.round(width*.65)),Math.max(1,Math.round(height*.65)));}
@@ -20,9 +22,17 @@ export class Rendering {
     this.contact=new ContactPass(scene,camera,innerWidth,innerHeight);
     this.contact.updateGtaoMaterial({radius:.75,thickness:.7,distanceFallOff:1,samples:8});
     this.contact.updatePdMaterial({radius:5,samples:8});this.contact.blendIntensity=.8;
-    this.composer.addPass(this.contact);this.composer.addPass(new OutputPass());
+    this.composer.addPass(this.contact);this.bloom=new UnrealBloomPass(new Vector2(innerWidth,innerHeight),.32,.55,1.05);this.bloom.enabled=false;this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
     this.resize();renderer.info.autoReset=false;renderer.shadowMap.autoUpdate=false;
   }
   resize(){this.composer.setPixelRatio(this.renderer.getPixelRatio());this.composer.setSize(innerWidth,innerHeight);}
-  render(quality){this.renderer.info.reset();this.renderer.shadowMap.needsUpdate=true;if(quality==='low')this.renderer.render(this.scene,this.camera);else this.composer.render();}
+  render(quality){
+    this.renderer.info.reset();this.renderer.shadowMap.needsUpdate=true;
+    // Avoid drawing every skinned crowd member a third time in Balanced mode.
+    // Separate thresholds keep the pass stable as waves enter and leave.
+    const crowd=this.scene.userData.crowdCount||0;
+    if(quality==='high'||crowd<24)this.contact.enabled=true;else if(crowd>32)this.contact.enabled=false;
+    this.bloom.enabled=this.scene.userData.courseTheme==='cyberpunk'||!!this.scene.userData.musou;this.bloom.strength=this.scene.userData.musou?.45:.32;
+    if(quality==='low')this.renderer.render(this.scene,this.camera);else this.composer.render();
+  }
 }

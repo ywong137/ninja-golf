@@ -1,0 +1,22 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio','--use-angle=metal']});
+try{
+ const page=await browser.newPage({viewport:{width:1200,height:1000}});await page.route('**/@vite/client',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.goto('http://localhost:5173/tests/rig-stage.html');
+ const report=await page.evaluate(async()=>{
+  const THREE=await import('/node_modules/three/build/three.module.js');const {Warrior,loadWarriorAssets}=await import('/src/actors.js');const {WARRIORS}=await import('/src/warriors.js');const {sampleMotion,combatMotionName}=await import('/src/motion.js');await loadWarriorAssets();
+  const scene=new THREE.Scene();scene.background=new THREE.Color('#56616a');const camera=new THREE.PerspectiveCamera(35,1.2,.01,100);camera.position.set(3,2.7,5);camera.lookAt(0,1,0);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(1200,1000);document.body.append(renderer.domElement);scene.add(new THREE.HemisphereLight(0xffffff,0x343545,2));const light=new THREE.DirectionalLight(0xffe6ca,3);light.position.set(2,5,3);scene.add(light);const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),new THREE.MeshStandardMaterial({color:'#454c4f'}));floor.rotation.x=-Math.PI/2;floor.position.y=-.01;scene.add(floor);const results=[];
+  function sample(p,name,t){p.mixer.stopAllAction();p.current='';p.play(name,0,true);p.actions.get(name).time=t;p.mixer.update(0);p.syncHeldObjects(undefined,name.startsWith('Golf'));p.root.updateMatrixWorld(true);return {r:p.bones.foot_r.getWorldPosition(new THREE.Vector3()),l:p.bones.foot_l.getWorldPosition(new THREE.Vector3())};}
+  for(let i=0;i<WARRIORS.length;i++){
+   const p=new Warrior(i),base=sample(p,'Golf_Swing',0);let leadDrift=0;for(const t of [.53,.96,1.15,1.4,1.9,2.4])leadDrift=Math.max(leadDrift,sample(p,'Golf_Swing',t).r.distanceTo(base.r));
+   sample(p,'Golf_Swing',1.4);const grip=p.club.getWorldPosition(new THREE.Vector3()),target=p.root.localToWorld(new THREE.Vector3(0,.95,.34));const golfGripError=grip.distanceTo(target);
+   const name=combatMotionName(WARRIORS[i],'musou');let supportDrift=0;for(const [a,b,side]of [[.60,.70,'l'],[1.05,1.13,'r'],[1.51,1.59,'l'],[1.97,2.05,'r'],[2.46,2.56,'l']]){const start=sample(p,name,a);supportDrift=Math.max(supportDrift,sample(p,name,b)[side].distanceTo(start[side]));}
+   let minimumKneeBend=Infinity,kneeTime=0;for(let frame=0;frame<=99;frame++){const time=frame/30;sample(p,name,time);const pose=sampleMotion(name,time);for(const side of ['r','l']){const hip=p.bones['thigh_'+side].getWorldPosition(new THREE.Vector3()),knee=p.bones['calf_'+side].getWorldPosition(new THREE.Vector3()),ankle=p.bones['foot_'+side].getWorldPosition(new THREE.Vector3()),chord=ankle.sub(hip),bend=knee.sub(hip);bend.addScaledVector(chord,-bend.dot(chord)/chord.lengthSq());const yaw=pose['yaw'+side.toUpperCase()],forward=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)).applyQuaternion(p.root.quaternion);if(bend.dot(forward)<minimumKneeBend){minimumKneeBend=bend.dot(forward);kneeTime=time;}}}
+   results.push({hero:i,leadDrift,golfGripError,supportDrift,minimumKneeBend,kneeTime});window.__motionStages??=[];window.__motionStages.push({scene,camera,renderer,p,sample,name});p.root.visible=false;scene.add(p.root);
+  }
+  return results;
+ });
+ for(const r of report){assert.ok(r.minimumKneeBend>.02,`Backward knee ${JSON.stringify(r)}`);assert.ok(r.leadDrift<.04,`Golf lead drift ${JSON.stringify(r)}`);assert.ok(r.golfGripError<.06,`Golf grip ${JSON.stringify(r)}`);assert.ok(r.supportDrift<.04,`Musou support drift ${JSON.stringify(r)}`);}
+ for(const hero of [0,3,4,5])for(const t of [.42,1.3,1.78,2.82]){await page.evaluate(({hero,t})=>{for(const stage of window.__motionStages)stage.p.root.visible=false;const {scene,camera,renderer,p,sample,name}=window.__motionStages[hero];p.root.visible=true;sample(p,name,t);renderer.render(scene,camera);},{hero,t});await page.screenshot({path:hero===0?`/tmp/ninja-musou-${t}.png`:`/tmp/ninja-musou-hero${hero}-${t}.png`});}
+ console.log(JSON.stringify(report,null,2));
+}finally{await browser.close();}

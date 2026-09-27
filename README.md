@@ -2,7 +2,7 @@
 
 A peaceful round. An unreasonable number of ninjas.
 
-Ninja Golf is a browser game built with Three.js. Play an original three-hole coastal course, then fight your way to each shot.
+Ninja Golf is a browser game built with Three.js. Choose one of six warriors and four original nine-hole courses, then fight your way to each shot.
 
 ## Run locally
 
@@ -29,6 +29,7 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | --- | --- | --- |
 | Aim | A / D or left / right arrows | Left stick |
 | Survey shot | R or survey button | Y during golf |
+| Pan / orbit / zoom in survey | Drag / right-drag / wheel | Left stick / right stick / triggers |
 | Change club | Q / E or club buttons | LB / RB |
 | Start swing, then strike | Space or swing button | A |
 | Speed up ball tracking | Space | A |
@@ -45,25 +46,30 @@ The production build lives in `dist/`. All game assets and music ship with the b
 
 The power meter repeats. Press the swing button again at the desired power. Carry scales with the square of power.
 
-Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. The landing preview includes wind and terrain. Survey mode shows the planned shot from above. Putting grids show slope, with moving dots pointing downhill. Shot results report distance and the next lie. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
+Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. The landing preview includes wind and terrain. Survey mode initially fits the full planned shot. Drag to explore the course, orbit with the right mouse button, and scroll to zoom. Putting grids show slope, with moving dots pointing downhill. Shot results report distance and the next lie. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
 
-After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. Four melee attackers and two ranged attackers can commit at once. Others take positions around the fight. Ground warnings show committed attacks. Heavy cuts break guards, and a well-timed dodge earns Resolve. Blade ribbons, sparks, and brief impact pauses reinforce contact. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a screen slash and a 2.85-second face close-up. A six-cut sequence then launches enemies through sparks and shock waves. Hold the focused stance to move independently of facing. Enemies flank and intercept. Three melee attackers and one ranged attacker can commit at once. Grunts often hold a ready stance before attacking. Enemy damage is half the previous release. Ground warnings show committed attacks. Heavy cuts break guards, and a well-timed dodge earns Resolve. Blade ribbons, sparks, and brief impact pauses reinforce contact. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 
-The game saves completed holes in local browser storage. The title screen offers to continue an unfinished round after a reload. It does not save mid-hole progress.
+The game saves completed holes in local browser storage. The title screen offers to continue an unfinished round on the correct course after a reload. Scorecards identify included penalty strokes. It does not save mid-hole progress.
 
 ## Course and characters
 
-Kazekage Coast has three original holes:
+Choose a warrior, then select a course from four scenic in-game previews. The title shows a random course. Each course has nine original holes and par 36.
 
-- The Crane’s Landing: par 4, 361 yards.
-- Across the Still Water: par 3, 168 yards.
-- The Shogun’s Approach: par 5, 499 yards.
+| Course | Setting |
+| --- | --- |
+| Crane Coast | Japanese coastal gardens, pines, temples, and water carries |
+| Heather & Crown | Scottish links, gorse, heather, ruins, and exposed approaches |
+| Copper Saguaro | Sonoran desert, palms, cacti, mesas, and elevated greens |
+| Neo-Tokyo After Dark | Neon skyline, winding fairways, crystal trees, and giant floating koi |
 
-The course uses coastal golf design principles, including broad landing areas, a water carry, guarded greens, and a longer dogleg. The official [Pebble Beach hole guide](https://www.pebblebeach.com/golf/pebble-beach-golf-links/) informed the design. This is a fictional course, not a surveyed recreation.
+The original three holes open Crane Coast. [Course design notes](docs/course-design.md) describe the other holes and official references.
 
-The Ronin has more driving power. The Shinobi moves faster and has less shot dispersion. The Monk has more health and wider attacks.
+The Ronin favors power, the Shinobi favors speed and accuracy, and the Monk favors health and reach.
+Kaede uses a bladed fan for close, broad cuts and forceful gust finishers. Ayame carries a crescent ring for wider circular cuts and turning entries. Sora uses a hooked sickle to pull enemies into rising attacks. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
+Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms.
 
 ## Graphics and scope
 
@@ -71,9 +77,9 @@ This release uses skinned human characters with 65-bone skeletons, fitted samura
 
 The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Nearby trees retain branches and leaf cards, with wind deformation. Distant trees use eight baked viewing angles and a dithered transition. Grass uses instancing and fades smoothly at distance. Ponds reflect the scene, with ripples and shoreline foam. The architecture uses curved tiled roofs, galleries, lattice panels, and stone foundations. Weapon fittings and blade faces use three draw calls per blade. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
-This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, a full 18-hole course, licensed course replicas, or motion-captured combat.
+This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, licensed course replicas, or motion-captured combat.
 
-Choose Performance, Balanced, or High quality from the pause menu. Balanced adjusts rendering resolution to maintain frame rate, up to 1.5 device pixels. Performance disables dynamic shadows and ambient occlusion. Balanced and High add contact shading with GTAO. High quality caps rendering at 2 device pixels.
+Choose Performance, Balanced, or High quality from the pause menu. Balanced adjusts rendering resolution to maintain frame rate, up to 1.5 device pixels. Performance disables dynamic shadows and ambient occlusion. Balanced and High add contact shading with GTAO. Balanced suspends this extra pass during dense combat, while keeping dynamic shadows. High quality caps rendering at 2 device pixels.
 
 Gamepad bindings use the browser Gamepad API and standard button mapping. Physical-controller testing is still needed across controller models.
 
@@ -135,7 +141,7 @@ node tests/browser-scenarios.mjs
 node tests/browser-production.mjs
 ```
 
-Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All browser processes mute audio output. The dedicated audio test still verifies playback internally. Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.
+Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All browser processes mute audio output. The dedicated audio test still verifies playback internally. Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all nine-hole scorecards. Screenshots go to `/private/tmp/` on this development machine.
 
 ## Motion and character study
 
@@ -154,3 +160,11 @@ PLAYWRIGHT_CHANNEL=chrome node tools/bake-tree-impostors.mjs
 ```
 
 The texture tools require Pillow. Character tools require Blender. Shipping assets do not require either tool.
+
+## Expansion validation
+
+Run `PLAYWRIGHT_CHANNEL=chrome npm run test:browser` with the development server active.
+The expansion checks exercise six selections, four previews, mouse survey controls, all 36 cups, scorecards, and saved-course identity.
+Grip checks compare handles with the actual curled finger joints. Motion checks include forward knee flexion and supporting feet.
+Run `node tools/benchmark.mjs --course=0` through `--course=3` to measure each environment. Add `--retina` for the adaptive-resolution check.
+All automated browser tests mute audio.

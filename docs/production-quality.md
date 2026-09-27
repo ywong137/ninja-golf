@@ -13,7 +13,7 @@ The reference asks for repeated, multi-view inspection, believable materials and
 - Presentation: legible HUD at 1280×720 and 1440×900, unobstructed hero selection, smooth transitions, useful settings and tutorials.
 - Audio: licensed recordings for environment and movement, clear attack feedback, controlled music transitions, silent automated testing.
 - Performance: target at least 40–50 FPS during dense combat on the current M1 Max. Measure resolution and graphics settings explicitly.
-- Stability: complete all three holes, revisit menus, change characters, pause/resume, mute/unmute, and recover saved progress without errors.
+- Stability: complete all 36 holes across four nine-hole courses, revisit menus, change characters, pause/resume, mute/unmute, and recover saved progress without errors.
 
 ## Inspection procedure
 
@@ -39,7 +39,7 @@ Baseline: 94baeb3. Active combat averaged 46 FPS at 1440×900, Balanced, DPR 1, 
 
 The underlying human art remains derived from the Quaternius base. Facial expression and cloth simulation remain simpler than current AAA character systems. The golf simulation does not model every aerodynamic or turf interaction. These limits should remain explicit when describing this release.
 
-## Verification results
+## Previous release verification
 
 Chrome on Apple M1 Max, Metal renderer, Balanced settings, 1440×900 CSS pixels. Each performance run holds 64 active enemies and repeatedly attacks for ten seconds after warmup. These are local measurements, not guarantees for other devices.
 
@@ -61,3 +61,54 @@ Reproduce with `npm test`, `PLAYWRIGHT_CHANNEL=chrome npm run test:browser`, and
 Run performance checks with `PLAYWRIGHT_CHANNEL=chrome node tools/benchmark.mjs`, then repeat with `--retina`.
 Run the public gameplay smoke check with `GAME_URL=https://ywong137.github.io/ninja-golf/ PLAYWRIGHT_CHANNEL=chrome node tests/browser-smoke.mjs`.
 All automated browser runs mute system audio.
+
+
+## Four-course expansion
+
+The game now has four original nine-hole courses and six heroes. Each course has its own scenery, architecture, lighting, and preview.
+Fairway decorations supply visible ambush cover without occupying the central landing corridor.
+The title selects a random course. The selection flow chooses a hero before a course.
+
+The three female heroes have independent fan, ring, and sickle weapon families.
+They have separate ready stances, eight fast/heavy attacks, and six-cut Musou sequences.
+The roster study uses official Samurai Warriors 4 and 5 artwork and descriptions.
+The designs and animations remain original adaptations of the shared base rigs.
+
+Grip checks now compare each handle against the actual curled finger joints.
+All six heroes have separate faces, hair, and costume shapes.
+Combat motion uses stepping turns, coupled pelvis/chest motion, and forward knee flexion.
+The longer Musou intro lasts 2.85 seconds, followed by a 3.3-second attack.
+Its damage sectors use the headings from the actual animation family.
+
+Enemy damage is half the previous release. Most grunts pause before committing to an attack.
+Enemies carry smaller blades and polearms. Musou defeats launch and tumble enemies before the ground impact.
+The survey camera supports mouse pan, orbit, and zoom without changing shot aim.
+Saved progress includes the selected course, hero, nine-hole scores, and penalty counts.
+
+
+### Expansion verification
+
+- All 45 unit and asset checks pass.
+- Browser checks cover audio, navigation, combat, all 36 cups, penalties, revival, saves, survey controls, and course selection.
+- Character checks cover 385 physical hand-grip samples and 100 Musou knee samples for each hero.
+- Maximum handle-to-finger-cavity distance is 1.72 cm. Maximum supporting-foot drift during Musou is 1.55 cm.
+- Both 1440×900 and 1280×720 layouts pass. Preview lighting keeps faces readable on the night course.
+- The production build and whitespace checks pass.
+
+The first dense-crowd measurements missed the target. Profiling found repeated skeleton matrix work and a costly crowd shading pass.
+Hand updates now use only the required ancestor chains and cached transforms.
+Balanced mode suspends GTAO above 32 enemies and restores it below 24. Dynamic shadows remain active.
+High quality retains GTAO. Golf and character selection retain the full contact shading.
+
+Final local measurements use Chrome, Metal, Apple M1 Max, Balanced, 64 active enemies, and repeated attacks.
+Each run measures ten seconds after warmup. Other applications were also active.
+
+| Course / display | CSS size | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | --- | ---: | ---: | ---: |
+| Crane Coast | 1440×900 | 1.00 | 51.8 | 33.4 ms |
+| Heather & Crown | 1440×900 | 1.00 | 54.9 | 33.3 ms |
+| Copper Saguaro | 1440×900 | 1.00 | 58.5 | 16.8 ms |
+| Neo-Tokyo After Dark | 1440×900 | 1.00 | 58.5 | 16.8 ms |
+| Crane Coast, Retina DPR 2 | 1440×900 | 1.05 after adaptation | 46.8 | 33.4 ms |
+
+These results describe this machine and these scenarios. The assets remain stylized and do not match modern photorealistic AAA character art.

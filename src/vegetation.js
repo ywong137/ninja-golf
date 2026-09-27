@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import viewData from './tree-views.json';
+import viewData from './tree-views.json' with {type:'json'};
 import {heightAt,lieAt,center,greenDistance,ellipse,random} from './course.js';
 const templates=[],matrix=new THREE.Object3D();
 const clock={value:0},eye={value:new THREE.Vector3()};
@@ -49,10 +49,10 @@ function animateMaterial(mat,near,leaf,depth=false){
 export class Vegetation{
  constructor(root,course,sites){
   this.groups=[];this.records=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(course.seed+342);const occupied=[];
-  for(let i=0;i<850;i++){
+  for(let i=0;i<(course.vegetationCount||850);i++){
    const z=-85+r()*(course.length+215),x=-265+r()*390,d=Math.abs(x-center(course,z));
    if(Math.abs(x+85)<18&&Math.abs(z-course.length-8)<18||d<course.width+15||greenDistance(course,x,z)<33||lieAt(course,x,z)==='Water'||heightAt(course,x,z)<4||ellipse(x,z,course.pond)<1.3||occupied.some(t=>Math.hypot(x-t.x,z-t.z)<6.5))continue;
-   occupied.push({x,z});const type=r()<.60?(r()<.7?0:1):(r()<.65?2:3),scale=.62+r()*.65;
+   occupied.push({x,z});const type=course.conifersOnly?(r()<.65?0:1):r()<.60?(r()<.7?0:1):(r()<.65?2:3),scale=.62+r()*.65;
    const rec={x,z,y:heightAt(course,x,z)-.07,type,scale,angle:r()*Math.PI*2,tint:new THREE.Color().setHSL(.22+r()*.025,.08+r()*.1,.78+r()*.16)};this.records.push(rec);
    sites.push({id:`tree-${sites.length}`,kind:'tree',x,z,y:rec.y,height:scale*(type===0?9:6)});
   }

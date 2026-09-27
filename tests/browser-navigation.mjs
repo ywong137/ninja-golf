@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');await page.click('#start-round');
 // The same screen-right input must turn a shot right and move a warrior right.
 const initialAim=await page.evaluate(()=>window.ninjaGolf.state().aim);
 await page.keyboard.down('KeyD');await page.waitForTimeout(250);await page.keyboard.up('KeyD');
@@ -29,6 +29,6 @@ await page.waitForTimeout(200);assert.equal(await page.evaluate(()=>window.ninja
 await page.mouse.click(720,440,{button:'left'});await page.waitForFunction(()=>window.ninjaGolf.state().kills===1);
 assert.equal(await page.evaluate(()=>window.ninjaGolf.state().enemies),1,'Forward slash leaves the enemy behind alive');
 await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.player.root.position.copy(g.ball.position);g.player.root.position.x-=1;});await page.keyboard.press('KeyE');await page.waitForFunction(()=>window.ninjaGolf.state().phase==='aim');
-await page.waitForFunction(()=>document.querySelector('#map-title').textContent==='KAZEKAGE COAST');
+await page.waitForFunction(()=>document.querySelector('#map-title').textContent===window.__golfTest.roundCourse.name.toUpperCase());
 assert.equal(await page.locator('#combat-hud').isVisible(),false);assert.equal(await page.locator('#swing-button').isVisible(),true);
 assert.deepEqual(errors,[]);console.log('Camera-relative A/D, manual facing, directional slashes, waypoint, and HUD transition passed');await browser.close();

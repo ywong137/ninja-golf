@@ -9,3 +9,11 @@ export function sampleMotion(name,seconds){
   return Object.fromEntries(Object.keys(a).filter(k=>k!=='t').map(k=>[k,Array.isArray(a[k])?a[k].map((_,j)=>interp(k,j)):interp(k)]));
 }
 export const ATTACK_CLIPS={light:['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep'],heavy:['Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'],musou:['Musou_Flow']};
+export function combatMotionName(warrior,kind,step=0){
+  const prefix=warrior?.motionPrefix||(warrior?.dualWield?'Twin_':'');
+  if(kind==='ready')return warrior?.readyClip||(motions[`${prefix}Ready`]?`${prefix}Ready`:'Idle_Loop');
+  const family=ATTACK_CLIPS[kind];
+  if(!family)throw new Error(`Unknown combat motion kind: ${kind}`);
+  return prefix+family[kind==='musou'?0:Math.max(0,Math.min(family.length-1,step))];
+}
+export function musouHeadings(warrior){return motions[combatMotionName(warrior,'musou')].headings;}

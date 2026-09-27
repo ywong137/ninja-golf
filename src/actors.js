@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {finishCharacterMaterial} from './character-materials.js';
+import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
-import { motions, sampleMotion, ATTACK_CLIPS } from './motion.js';
+import { motions, sampleMotion, combatMotionName } from './motion.js';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='production-art-4';
+const MODEL_REVISION='production-art-6';
 const templates=[];
 const retargeted=new Map();
 const motionSources=[];
@@ -15,13 +16,18 @@ const materials=new Map();
 const geometries=new Map();
 const q=new THREE.Quaternion();
 const shaftDirection=new THREE.Vector3(),axisY=new THREE.Vector3(0,1,0);
+export const PALM_GRIP=new THREE.Vector3(-.028,.096,0);
+export const PALM_GRIPS={r:PALM_GRIP,l:new THREE.Vector3(.028,.096,0)};
+const handRotation=new THREE.Quaternion(),rootRotation=new THREE.Quaternion(),gripPosition=new THREE.Vector3();
+const rootInverse=new THREE.Matrix4(),decomposedPosition=new THREE.Vector3(),decomposedScale=new THREE.Vector3();
 export async function loadWarriorAssets(progress=()=>{}) {
   const loader=new GLTFLoader();let done=0;
-  const urls=['ronin','shinobi','monk',...ENEMY_TYPES.map(e=>e.model),'warrior-motion','golf-motion'];
+  const characterCount=WARRIORS.length+ENEMY_TYPES.length;
+  const urls=[...WARRIORS.map(w=>w.model),...ENEMY_TYPES.map(e=>e.model),'warrior-motion','golf-motion'];
   const results=await Promise.all(urls.map(async name=>{const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb?v=${MODEL_REVISION}`);progress(++done,urls.length);return model;}));
-  const clipNames=new Set(results.slice(7).flatMap(model=>model.animations.map(clip=>clip.name)));
+  const clipNames=new Set(results.slice(characterCount).flatMap(model=>model.animations.map(clip=>clip.name)));
   for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
-  templates.push(...results.slice(0,7));motionSources.push(...results.slice(7));
+  templates.push(...results.slice(0,characterCount));motionSources.push(...results.slice(characterCount));
   for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}finishCharacterMaterial(mat);if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
 }
 function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.28:.78,metalness:metal}));return materials.get(key);}
@@ -49,13 +55,13 @@ function clipsFor(index){
 }
 export class Warrior {
   constructor(type=0,enemy=false){
-    this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?3+type:type;
+    this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+type:type;
     this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
-    this.bones={};this.ownedMaterials=[];this.model.traverse(o=>{if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
+    this.bones={};this.ownedMaterials=[];this.resolveTargets=[];this.model.traverse(o=>{if(o.morphTargetDictionary?.Resolve!==undefined)this.resolveTargets.push([o,o.morphTargetDictionary.Resolve]);if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     const hand=this.bones.hand_r;
-    this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:['odachi','twin','naginata'][type]);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
-    if(type===1&&!enemy||enemy&&type===0){this.offhand=createWeapon(enemy?'scout':'twin');this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
+    this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
+    if(!enemy&&WARRIORS[type].dualWield||enemy&&type===0){this.offhand=createWeapon(enemy?'scout':'twin');this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
     this.club=new THREE.Group();this.club.position.set(0,.04,0);this.root.add(this.club);
     part(this.club,'cyl','#252a27',0,.04,0,.018,.20,.018);part(this.club,'cyl','#b7c4c2',0,.60,0,.008,1.0,.008,.85);const head=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);head.rotation.z=-.15;this.club.visible=false;
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
@@ -63,20 +69,22 @@ export class Warrior {
     if(enemy)bag.visible=false;
     this.overlays=[];this.coreScales=[];this.restModelRotation=this.model.quaternion.clone();this.tip=new THREE.Vector3();this.hilt=new THREE.Vector3();
     this.play('Idle_Loop',0);this.mixer.update(Math.random()*.7);
+    this.closedFingerGroups={r:[],l:[]};for(const bone of Object.values(this.bones))if(/^(index|middle|ring|pinky|thumb)_/.test(bone.name)){const side=bone.name.endsWith('_r')?'r':'l';this.closedFingerGroups[side].push([bone,bone.quaternion.clone()]);}
+    if(!enemy&&WARRIORS[type].readyClip&&this.actions.has(WARRIORS[type].readyClip)){this.play(WARRIORS[type].readyClip,0);this.mixer.update(0);}this.syncHeldObjects();
   }
   play(name,fade=.16,once=false,speed=1){const next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;const previous=this.actions.get(this.current);next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}this.current=name;this.oneShot=once?next.getClip().duration/speed:0;}
-  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,cinematic=false,enemyAction=null}={}){
+  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,cinematic=false,enemyAction=null,selection=false}={}){
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     if(emerging){this.play(emerging.progress<.68?'Jump_Loop':'Jump_Land',.10,false,1.8);}
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
-    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const base=ATTACK_CLIPS[action.kind][action.kind==='musou'?0:action.step],name=(this.type===1?'Twin_':'')+base;this.play(name,.07,true,motions[name].duration/action.duration);}
+    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,.07,true,motions[name].duration/action.duration);}
     else if(swing>0&&!this.wasSwing)this.play(putting?'Golf_Putt':'Golf_Swing',.10,true,1);
     else if(!action&&!enemyAction&&attack>0&&!this.wasAttack)this.play('Sword_Attack',.07,true,2.2);
     else if(dodge&&!this.wasDodge)this.play('Roll',.06,true,1.4);
-    else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
+    else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;
     if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current))this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1));
     this.mixer.update(dt);
@@ -89,18 +97,55 @@ export class Warrior {
       if(action){for(const name of ['spine_01','spine_02']){const bone=this.bones[name];this.coreScales.push([bone,bone.scale.clone()]);const squash=1-Math.sin(action.time/action.duration*Math.PI)*.012;bone.scale.multiply(new THREE.Vector3(1/Math.sqrt(squash),squash,1/Math.sqrt(squash)));}}
 
     }
-    this.model.traverse(o=>{if(o.morphTargetDictionary?.Resolve!==undefined)o.morphTargetInfluences[o.morphTargetDictionary.Resolve]=cinematic?1:action?.kind==='musou'?.9:attack?.4:0;});
+    if(selection&&!WARRIORS[this.type]?.readyClip){
+      this.root.updateMatrixWorld(true);
+      for(const side of this.offhand?['r','l']:['r']){
+        const bone=this.bones['hand_'+side],before=bone.quaternion.clone();
+        const world=bone.getWorldQuaternion(new THREE.Quaternion());
+        const currentAxis=new THREE.Vector3(0,0,1).applyQuaternion(world);
+        const desiredAxis=new THREE.Vector3(side==='r'?-.85:.85,.42,.18).normalize().applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion()));
+        world.premultiply(new THREE.Quaternion().setFromUnitVectors(currentAxis,desiredAxis));
+        const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
+        bone.quaternion.copy(parentWorld.invert().multiply(world));
+        this.overlays.push([bone,before.invert().multiply(bone.quaternion)]);
+      }
+    }
+    const resolve=cinematic?1:action?.kind==='musou'?.9:attack?.4:0;for(const [mesh,index]of this.resolveTargets)mesh.morphTargetInfluences[index]=resolve;
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
-    if(motion&&(golf||action||enemyAction)){
-      // The same curve drives baked palm IK and the live club/blade transform.
-      const held=golf?this.club:this.weapon;this.root.add(held);held.position.set(motion.grip[0],motion.grip[2],-motion.grip[1]);
-      shaftDirection.set(motion.tip[0]-motion.grip[0],motion.tip[2]-motion.grip[2],motion.grip[1]-motion.tip[1]);
-      if(golf)held.scale.setScalar(shaftDirection.length()/1.12);held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());
-      if(this.offhand&&!golf){this.root.add(this.offhand);const t=(this.actions.get(this.current)?.time||0)/motions[this.current].duration;this.offhand.position.set(-motion.grip[0],1.15+.2*Math.sin(t*Math.PI*2),.43);this.offhand.quaternion.setFromUnitVectors(axisY,shaftDirection.clone().setX(-shaftDirection.x));}
-    }else if(!golf){this.bones.hand_r.add(this.weapon);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,-.25);if(this.offhand){this.bones.hand_l.add(this.offhand);this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,.25);}}
+    this.syncHeldObjects(motion,golf);
+  }
+  syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
+    // Anchor the handle to the evaluated palm after every mixer and torso update.
+    // Authored directions control the blade, while live bones control its position.
+    // Keep the measured closed grip when a source idle clip opens its free hand.
+    for(const [bone,rotation]of this.closedFingerGroups.r)bone.quaternion.copy(rotation);
+    if(this.offhand||golf||motions[this.current]?.twoHanded)for(const [bone,rotation]of this.closedFingerGroups.l)bone.quaternion.copy(rotation);
+    // Only the hand ancestor chains are needed here. Rendering updates the other bones.
+    this.bones.hand_r.updateWorldMatrix(true,false);
+    if(this.offhand&&!golf)this.bones.hand_l.updateWorldMatrix(true,false);
+    rootInverse.copy(this.root.matrixWorld).invert();
+    this.root.matrixWorld.decompose(decomposedPosition,rootRotation,decomposedScale);rootRotation.invert();
+    const attach=(held,side,from,to,roll=0)=>{
+      const hand=this.bones['hand_'+side];
+      if(held.parent!==this.root)this.root.add(held);
+      held.position.copy(gripPosition.copy(PALM_GRIPS[side]).applyMatrix4(hand.matrixWorld).applyMatrix4(rootInverse));
+      if(from&&to){
+        shaftDirection.set(to[0]-from[0],to[2]-from[2],from[1]-to[1]);
+        if(golf)held.scale.setScalar(shaftDirection.length()/1.12);
+        held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());held.rotateY(roll);
+      }else{
+        // Across the palm, perpendicular to wrist-to-knuckle direction.
+        hand.matrixWorld.decompose(decomposedPosition,handRotation,decomposedScale);
+        shaftDirection.set(0,0,1).applyQuaternion(handRotation).applyQuaternion(rootRotation);
+        held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());
+      }
+    };
+    attach(golf?this.club:this.weapon,'r',motion?.grip,motion?.tip,motion?.roll||0);
+    if(this.offhand&&!golf)attach(this.offhand,'l',motion?.offGrip,motion?.offTip,motion?.offRoll||0);
+
   }
 
-  weaponPoints(){this.root.updateMatrixWorld(true);this.weapon.localToWorld(this.tip.fromArray(this.weapon.userData.tip));this.weapon.getWorldPosition(this.hilt);return [this.hilt,this.tip];}
+  weaponPoints(offhand=false){const held=offhand&&this.offhand?this.offhand:this.weapon;this.root.updateMatrixWorld(true);held.localToWorld(this.tip.fromArray(held.userData.tip));held.getWorldPosition(this.hilt);return [this.hilt,this.tip];}
   dispose(){this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {

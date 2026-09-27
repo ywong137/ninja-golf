@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await (await browser.newContext({viewport:{width:1440,height:900}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');await page.click('#start-round');
 await page.waitForFunction(()=>window.__golfTest.audio.music.currentTime>.2);
 await page.evaluate(()=>{const g=window.__golfTest;g.phase='combat';g.combatTime=0;g.spawnTime=100;g.enemyBudget=0;g.ball.position.z=120;});
 await page.waitForFunction(()=>window.__golfTest.audio.combatMusic.currentTime>.2);

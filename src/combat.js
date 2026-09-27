@@ -12,9 +12,61 @@ export const ATTACKS={
     {name:'Sweeping finish',duration:.82,hits:[.28,.53],reach:8,arc:Math.PI,damage:62,lunge:2,flourish:2},
     {name:'Earthshaker',duration:.94,hits:[.47],reach:10,arc:Math.PI,damage:150,lunge:3,flourish:0,launch:7},
   ],
-  musou:{name:'Musou',duration:2.1,hits:[.14,.46,.8,1.16,1.65],reach:19,arc:Math.PI,damage:120,lunge:1,flourish:3,launch:8},
+  musou:{name:'Musou',duration:3.3,hits:[.42,.86,1.30,1.78,2.25,2.82],reach:19,arc:Math.PI,damage:220,lunge:1,flourish:3,launch:8},
 };
-export function attackDefinition(kind,chain=0){if(kind==='musou')return ATTACKS.musou;return ATTACKS[kind][clamp(kind==='light'?chain%4:chain,0,3)];}
+// Each style shares input timing but has its own coverage, movement, and crowd control.
+const STYLE_ATTACKS={
+  fan:{
+    light:[
+      {name:'Opening petal',reach:4.5,arc:2.1,damage:28,lunge:2.6},
+      {name:'Silk return',reach:4.7,arc:2.3,damage:32,lunge:1.7},
+      {name:'Rising breeze',reach:5,arc:1.8,damage:35,lunge:3.6,launch:2},
+      {name:'Petal circle',reach:5.4,arc:Math.PI,damage:27,lunge:.8},
+    ],
+    heavy:[
+      {name:'Gale palm',reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
+      {name:'Updraft',reach:5.6,arc:2.4,damage:91,lunge:1.7,launch:7},
+      {name:'Silk whirlwind',reach:6.5,arc:Math.PI,damage:60,lunge:.5},
+      {name:'Falling blossoms',reach:7.5,arc:Math.PI,damage:140,lunge:1,launch:5},
+    ],
+    musou:{name:'Thousand-petal gale',reach:17,launch:10,lunge:.5},
+  },
+  ring:{
+    light:[
+      {name:'Crescent pass',reach:6.2,arc:2,damage:30,lunge:3.5},
+      {name:'Returning orbit',reach:6.4,arc:2.6,damage:34,lunge:2.2},
+      {name:'Moonrise',reach:6,arc:1.6,damage:42,lunge:4,launch:3},
+      {name:'Full orbit',reach:7,arc:Math.PI,damage:29,lunge:1},
+    ],
+    heavy:[
+      {name:'Crescent wheel',reach:7,arc:2.5,damage:90,lunge:4},
+      {name:'Lunar ascent',reach:6.5,arc:1.8,damage:104,lunge:3,launch:6},
+      {name:'Double orbit',reach:8.5,arc:Math.PI,damage:63,lunge:.6},
+      {name:'Eclipse',reach:9,arc:Math.PI,damage:145,lunge:1.2,launch:7},
+    ],
+    musou:{name:'Seven-moon eclipse',reach:20,launch:8,lunge:.8},
+  },
+  sickle:{
+    light:[
+      {name:'Low hook',reach:4.8,arc:1.3,damage:38,lunge:4.2},
+      {name:'Reaping return',reach:5,arc:1.7,damage:41,lunge:1.2,pull:true},
+      {name:'Rising talon',reach:5.3,arc:1.5,damage:48,lunge:3.4,launch:4},
+      {name:'Harvest circle',reach:6,arc:Math.PI,damage:33,lunge:1.5},
+    ],
+    heavy:[
+      {name:'Anchor hook',reach:6.4,arc:1.6,damage:100,lunge:3.8,pull:true},
+      {name:'Sky snare',reach:6,arc:1.5,damage:110,lunge:2,launch:8},
+      {name:'Reaping spiral',reach:7,arc:Math.PI,damage:69,lunge:.6,pull:true},
+      {name:'Harvest fall',reach:8,arc:2.7,damage:160,lunge:3,launch:9},
+    ],
+    musou:{name:'Jade harvest',reach:18,launch:12,lunge:1.2},
+  },
+};
+export function attackDefinition(kind,chain=0,style='sword'){
+  const step=clamp(kind==='light'?chain%4:chain,0,3),base=kind==='musou'?ATTACKS.musou:ATTACKS[kind][step];
+  const variation=kind==='musou'?STYLE_ATTACKS[style]?.musou:STYLE_ATTACKS[style]?.[kind]?.[step];
+  return variation?{...base,...variation,style}:base;
+}
 export function strikeContains(dx,dz,facing,reach,arc){const angle=Math.atan2(dx,dz)-facing;return Math.hypot(dx,dz)<reach&&Math.abs(Math.atan2(Math.sin(angle),Math.cos(angle)))<=arc;}
 export function interceptTarget(enemy,player,velocity){
   const distance=Math.hypot(player.x-enemy.x,player.z-enemy.z);
@@ -32,10 +84,10 @@ export function chooseAmbushSites(sites,player,heading,now){
 }
 
 export const ENEMY_TYPES=[
-  {name:'Scout',model:'ninja',weapon:'scout',hp:50,speed:5.9,reach:2.7,duration:.50,hits:[.24,.37],damage:5,recovery:1.25,clip:'Twin_Cut_Diagonal',role:2},
-  {name:'Guard',model:'enemy-guard',weapon:'guard',hp:135,speed:3.7,reach:3.6,duration:1.12,hits:[.53],damage:17,recovery:2.25,clip:'Heavy_Cleave',role:0,armor:true},
-  {name:'Lancer',model:'enemy-lancer',weapon:'lancer',hp:80,speed:4.4,reach:5.3,duration:1.05,hits:[.714],damage:13,recovery:2.1,clip:'Enemy_Thrust',role:1},
-  {name:'Skirmisher',model:'enemy-skirmisher',weapon:'skirmisher',hp:45,speed:4.9,reach:16,duration:.85,hits:[.544],damage:8,recovery:2.8,clip:'Enemy_Throw',role:2,ranged:true},
+  {name:'Scout',model:'ninja',weapon:'scout',hp:50,speed:5.9,reach:2.7,duration:.50,hits:[.24,.37],damage:2.5,recovery:2.2,clip:'Twin_Cut_Diagonal',role:2},
+  {name:'Guard',model:'enemy-guard',weapon:'guard',hp:135,speed:3.7,reach:3.6,duration:1.12,hits:[.53],damage:8.5,recovery:3.2,clip:'Heavy_Cleave',role:0,armor:true},
+  {name:'Lancer',model:'enemy-lancer',weapon:'lancer',hp:80,speed:4.4,reach:5.3,duration:1.05,hits:[.714],damage:6.5,recovery:2.8,clip:'Enemy_Thrust',role:1},
+  {name:'Skirmisher',model:'enemy-skirmisher',weapon:'skirmisher',hp:45,speed:4.9,reach:16,duration:.85,hits:[.544],damage:4,recovery:3.5,clip:'Enemy_Throw',role:2,ranged:true},
 ];
 export function enemyTypeForSlot(slot){return [0,0,1,0,2,0,3,0][slot%8];}
 export function enemyIntent(enemy,player,velocity){
@@ -57,3 +109,6 @@ export function engagementTarget(enemy,player,velocity,engaged){
  const radius=engaged?ENEMY_TYPES[enemy.type].reach*.72:6.3+(enemy.slot%3)*1.1;
  return{x:player.x+Math.sin(angle)*radius,z:player.z+Math.cos(angle)*radius};
 }
+
+export const MUSOU_CINEMATIC_DURATION=2.85;
+export function enemyReadyToAttack(enemy,time){return !enemy.dead&&!enemy.emerging&&!(enemy.stun>0)&&enemy.cooldown<.4&&time>=(enemy.readyAt||0);}
