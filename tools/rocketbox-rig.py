@@ -189,11 +189,38 @@ def apply_native_arm_clearance(rig,ik,grips,pose,clip,seconds):
  bpy.context.view_layer.update()
 
 def apply_native_targets(rig,ik,grips,pose,clip,golf=False,palm_rotations=None,seconds=0):
+ if clip.get('nativeSelectionIdle') and clip.get('selectionStandingKneeDegrees'):
+  # Solve height from both native legs and their fixed ankle targets. The more
+  # extended leg sets the bound; never straighten it to raise the other knee.
+  lateral=clip.get('selectionPelvisLateralCorrection',0)
+  angle=math.radians(clip['selectionStandingKneeDegrees']);lifts=[]
+  for side in ['r','l']:
+   upper=rig.pose.bones['thigh_'+side];lower=rig.pose.bones['calf_'+side]
+   ankle=ik['footBase'][side].copy();pos=pose['foot'+side.upper()]
+   ankle.x=pos[0];ankle.y=pos[1];ankle.z+=max(0,pos[2])
+   delta=upper.head-ankle;delta.x+=lateral
+   a,b=upper.bone.length,lower.bone.length
+   reach_squared=a*a+b*b+2*a*b*math.cos(angle)
+   vertical_squared=reach_squared-delta.x*delta.x-delta.y*delta.y
+   if vertical_squared<=0:raise ValueError('Selection stance exceeds native leg reach')
+   lifts.append(math.sqrt(vertical_squared)-delta.z)
+  lift=min(lifts)
+  if abs(lift)>.05:raise ValueError('Selection pelvis correction exceeds 5 cm; inspect stance')
+  pelvis=rig.pose.bones['pelvis'];matrix=pelvis.matrix.copy()
+  matrix.translation+=Vector((lateral,0,lift));pelvis.matrix=matrix
+  bpy.context.view_layer.update()
  for side in ['r','l']:
   sign=-1 if side=='r' else 1;center,_,q,_=palm_target(pose,clip,grips,side)
   if palm_rotations:q=palm_rotations[side]
   ik['hands'][side].rotation_quaternion=q;ik['hands'][side].location=center-q@grips[side]['center']
   ik['poles'][side].location=pose.get('elbow'+side.upper(),(sign*.6,-.22,1.05))
+  if clip.get('nativeSelectionIdle'):
+   # Direct native wrist targets keep the forearm forward when the authored
+   # shaft changes palm orientation. Guides below each shoulder keep elbows low.
+   upper=rig.pose.bones['upperarm_'+side];lower=rig.pose.bones['lowerarm_'+side]
+   length=upper.bone.length+lower.bone.length;turn=Quaternion((0,0,1),pose['chest'])
+   ik['hands'][side].location=upper.head+turn@Vector(clip['selectionWristOffsets'][side])*length
+   ik['poles'][side].location=upper.head+turn@Vector(clip['selectionElbowOffsets'][side])*length
   foot=ik['feet'][side];foot.location=ik['footBase'][side].copy()
   if 'foot'+side.upper() in pose:
    pos=pose['foot'+side.upper()];foot.location.x=pos[0];foot.location.y=pos[1];foot.location.z+=max(0,pos[2])
@@ -283,6 +310,10 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
  """Bake native anatomical poses into named NLA clips for per-avatar export."""
  import json
  data=json.loads((ROOT/'src/motion-data.json').read_text());locomotion=json.loads((ROOT/'src/locomotion-data.json').read_text());scene=bpy.context.scene;scene.render.fps=30;scene.frame_start=0
+ selection_path=ROOT/'src/selection-data.json'
+ selection=json.loads(selection_path.read_text()) if selection_path.exists() else {}
+ if set(selection)&set(data):raise ValueError('Selection clip names must be separate from combat/golf names')
+ data.update(selection)
  for name,values in (clip_overrides or {}).items():
   if name not in data:raise ValueError(f'Unknown authored clip override: {name}')
   data[name]={**data[name],**values}
@@ -296,7 +327,11 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
    for original in actions:
     if original.name.split('.')[0] in attack_source_names:original.name='superseded_'+original.name
   sources.append(attack_source)
- if clip_names and set(clip_names)<=set(locomotion)|attack_source_names:scene.render.fps=max(60,max((data.get(name,{}).get('nativeSampleRate',60) for name in clip_names),default=60))
+ selection_names={name for name,clip in selection.items() if clip.get('nativeSelectionIdle')}
+ if selection_names and (clip_names is None or selection_names&set(clip_names)):
+  sources.append(import_motion_source('selection-motion.glb'))
+ authored_source_names=attack_source_names|selection_names
+ if clip_names and set(clip_names)<=set(locomotion)|authored_source_names:scene.render.fps=max(60,max((data.get(name,{}).get('nativeSampleRate',60) for name in clip_names),default=60))
  # Preserve explicit dense clips during a later full-character export as well.
  scene.render.fps=max(scene.render.fps,max((data.get(name,{}).get('nativeSampleRate',30) for name in (clip_names or data)),default=30))
  authored=sources[1];source=authored[0];mapping=retarget_setup(rig,source)
@@ -319,7 +354,7 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
    source.animation_data.action=original;sample_rate=clip.get('nativeSampleRate',60 if gait or name in attack_source_names else 30) if clip else 60 if gait else 30
    # Include the exact end of authored clips, even when duration is not an
    # integer number of samples. Rounding down left the .72 s cut in mid-return.
-   authored_attack=name in attack_source_names
+   authored_attack=name in authored_source_names
    count=max(1,math.ceil(duration*sample_rate-1e-9) if authored_attack else round(duration*sample_rate));max_error=0
    for constraint in ik['constraints']:
     constraint.influence=1 if clip or (gait and constraint.target.name.startswith(('native_ankle_','native_knee_'))) else 0
@@ -327,7 +362,7 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
    palm_frames=plan_palm_recovery(clip,grips,count,sample_rate) if clip and clip.get('athleticAttack') else None
    previous_rotations={}
    for frame in range(count+1):
-    source_phase=min(frame/sample_rate,duration)/duration if name in attack_source_names else frame/count
+    source_phase=min(frame/sample_rate,duration)/duration if name in authored_source_names else frame/count
     if gait:source_phase=(source_phase+(0 if name=='Run_Backward' else .5))%1
     source_frame=start+(end-start)*source_phase;scene.frame_set(int(source_frame),subframe=source_frame%1)
     retarget_frame(rig,source,*mapping)

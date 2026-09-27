@@ -6,7 +6,10 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {WARRIORS} from '../src/warriors.js';
 
 const data=readFileSync(new URL('../src/motion-data.json',import.meta.url),'utf8');
-const source=readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+data+';');
+const selection=readFileSync(new URL('../src/selection-data.json',import.meta.url),'utf8');
+const source=readFileSync(new URL('../src/motion.js',import.meta.url),'utf8')
+ .replace("import motions from './motion-data.json';",'const motions='+data+';')
+ .replace("import selectionMotions from './selection-data.json';",'const selectionMotions='+selection+';');
 const {motions,sampleMotion}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 globalThis.ProgressEvent??=class{};
 

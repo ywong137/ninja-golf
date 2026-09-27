@@ -1,8 +1,9 @@
 import motions from './motion-data.json';
-export {motions};
+import selectionMotions from './selection-data.json';
+export {motions,selectionMotions};
 // Cubic Hermite curves keep velocity continuous through authored phase landmarks.
 export function sampleMotion(name,seconds){
-  const clip=motions[name];if(!clip)return null;const t=Math.max(0,Math.min(1,seconds/clip.duration)),rows=clip.poses;
+  const clip=motions[name]||selectionMotions[name];if(!clip)return null;const t=Math.max(0,Math.min(1,seconds/clip.duration)),rows=clip.poses;
   let i=0;while(i<rows.length-2&&t>rows[i+1].t)i++;const a=rows[i],b=rows[i+1],prev=rows[Math.max(0,i-1)],next=rows[Math.min(rows.length-1,i+2)],span=b.t-a.t,u=(t-a.t)/span;
   const h00=2*u*u*u-3*u*u+1,h10=u*u*u-2*u*u+u,h01=-2*u*u*u+3*u*u,h11=u*u*u-u*u;
   const interp=(key,k)=>{const value=(row)=>k===undefined?row[key]:row[key][k];const m0=i===0?0:(value(b)-value(prev))/(b.t-prev.t),m1=i+1===rows.length-1?0:(value(next)-value(a))/(next.t-a.t);return h00*value(a)+h10*span*m0+h01*value(b)+h11*span*m1;};

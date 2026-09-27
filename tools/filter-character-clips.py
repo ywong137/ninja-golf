@@ -2,10 +2,11 @@
 import argparse,json,pathlib,struct
 PREFIX={'ronin':'','shinobi':'Twin_','monk':'Naginata_','kaede':'Fan_','ayame':'Ring_','sora':'Sickle_'}
 GUARD_PREFIX={'ronin':'Odachi','shinobi':'Twin','monk':'Naginata','kaede':'Fan','ayame':'Ring','sora':'Sickle'}
+SELECTION={'ronin':'Ronin_Selection_Idle','shinobi':'Twin_Selection_Idle','monk':'Naginata_Selection_Idle','kaede':'Fan_Selection_Idle','ayame':'Ring_Selection_Idle','sora':'Sickle_Selection_Idle'}
 COMMON={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address','Golf_Swing','Golf_Putt'}
 def clip_names(hero,names):
  prefix=PREFIX[hero]
- return {n for n in names if n in COMMON or n.startswith(('Run_','Sprint_Forward')) or n.startswith(GUARD_PREFIX[hero]+'_Guard_') or (n.startswith(prefix) and n[len(prefix):].startswith(('Cut_','Heavy_','Musou_','Ready')))}
+ return {n for n in names if n==SELECTION[hero] or n in COMMON or n.startswith(('Run_','Sprint_Forward')) or n.startswith(GUARD_PREFIX[hero]+'_Guard_') or (n.startswith(prefix) and n[len(prefix):].startswith(('Cut_','Heavy_','Musou_','Ready')))}
 def prune(path,hero):
  raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0];doc=json.loads(raw[20:20+length]);binary=raw[28+length:];assert len(doc['buffers'])==1,'Expected one embedded GLB buffer'
  keep=clip_names(hero,[a['name'] for a in doc['animations']]);doc['animations']=[a for a in doc['animations'] if a['name'] in keep]

@@ -14,7 +14,7 @@ import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='roster-body-7';
+const MODEL_REVISION='selection-pose-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -36,6 +36,7 @@ export async function loadWarriorAssets(progress=()=>{}) {
   for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
   for(const [i,warrior]of WARRIORS.entries())for(const phase of ['Loop','Impact','Break','Walk_Forward','Walk_Right','Walk_Backward','Walk_Left']){const name=`${GUARD_PREFIX[warrior.combatStyle]}_Guard_${phase}`;if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native guard animation ${name} in ${warrior.model}.glb`);}
   for(const [i,warrior]of WARRIORS.entries())for(const name of Object.keys(locomotion))if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native locomotion ${name} in ${warrior.model}.glb`);
+  for(const [i,warrior]of WARRIORS.entries())if(!results[i].animations.some(clip=>clip.name===warrior.selectionClip))throw new Error(`Missing selection pose ${warrior.selectionClip} in ${warrior.model}.glb`);
   templates.push(...results.slice(0,characterCount));motionSources.push(...results.slice(characterCount));
   for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}finishCharacterMaterial(mat);if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
   await awaitCharacterMaterials();
@@ -170,7 +171,8 @@ export class Warrior {
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
-    if(dodge&&!this.wasDodge)this.play('Roll',.06,true,1.4);
+    if(selection){this.oneShot=0;this.play(WARRIORS[this.type].selectionClip,0);}
+    else if(dodge&&!this.wasDodge)this.play('Roll',.06,true,1.4);
     else if(guardEnabled&&guardBreak>0&&!this.wasGuardBreak&&!action&&!dodge)this.play(`${guardPrefix}_Guard_Break`,.045,true);
     else if(emerging){this.play(emerging.progress<.68?'Jump_Loop':'Jump_Land',.10,false,1.8);}
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
@@ -189,25 +191,12 @@ export class Warrior {
     this.mixer.update(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
-    if(!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
+    if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
       const gait=moving?Math.sin(time*(sprinting?15:11)):Math.sin(time*2)*.12;
       for(const [i,name] of ['spine_01','spine_02','spine_03'].entries())overlay(name,(moving?.025:0)+gait*.018,gait*.035*(i===2?-1:1),gait*.022);
       if(focused&&moving){const twist=Math.sin(moveAngle)*.6;overlay('pelvis',0,twist,0);overlay('spine_01',0,-twist*.4,0);overlay('spine_02',0,-twist*.6,0);}
       if(action){for(const name of ['spine_01','spine_02']){const bone=this.bones[name];this.coreScales.push([bone,bone.scale.clone()]);const squash=1-Math.sin(action.time/action.duration*Math.PI)*.012;bone.scale.multiply(new THREE.Vector3(1/Math.sqrt(squash),squash,1/Math.sqrt(squash)));}}
 
-    }
-    if(selection&&!WARRIORS[this.type]?.readyClip){
-      this.root.updateMatrixWorld(true);
-      for(const side of this.offhand?['r','l']:['r']){
-        const bone=this.bones['hand_'+side],before=bone.quaternion.clone();
-        const world=bone.getWorldQuaternion(new THREE.Quaternion());
-        const currentAxis=this.shaftAxes[side].clone().applyQuaternion(world);
-        const desiredAxis=new THREE.Vector3(side==='r'?-.85:.85,.42,.18).normalize().applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion()));
-        world.premultiply(new THREE.Quaternion().setFromUnitVectors(currentAxis,desiredAxis));
-        const parentWorld=bone.parent.getWorldQuaternion(new THREE.Quaternion());
-        bone.quaternion.copy(parentWorld.invert().multiply(world));
-        this.overlays.push([bone,before.invert().multiply(bone.quaternion)]);
-      }
     }
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
     let contactWeights=null,stance=null;
@@ -221,7 +210,7 @@ export class Warrior {
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
-    if(golf)this.travelPose?.reset();
+    if(golf||selection)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){
       let gazeYaw=0,gazePitch=0;

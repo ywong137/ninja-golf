@@ -5,12 +5,22 @@ def read_glb(path):
  raw=path.read_bytes();length=struct.unpack_from('<I',raw,12)[0]
  return json.loads(raw[20:20+length]),raw[28+length:]
 
+def authored_motions():
+ root=pathlib.Path(__file__).resolve().parents[1]
+ motions=json.loads((root/'src/motion-data.json').read_text())
+ selection=root/'src/selection-data.json'
+ if selection.exists():
+  extra=json.loads(selection.read_text())
+  if set(extra)&set(motions):raise ValueError('Selection and combat clip names overlap')
+  motions.update(extra)
+ return motions
+
 def align_authored_end_times(doc,binary,motions):
  """Place the baked endpoint at its authored time after whole-frame NLA export."""
  binary=bytearray(binary);aligned={}
  for clip in doc.get('animations',[]):
   spec=motions.get(clip['name'],{})
-  if not(spec.get('athleticAttack') or spec.get('nativeAttackReady')):continue
+  if not(spec.get('athleticAttack') or spec.get('nativeAttackReady') or spec.get('nativeSelectionIdle')):continue
   duration=spec['duration'];rate=spec.get('nativeSampleRate',60)
   for index in {sampler['input'] for sampler in clip['samplers']}:
    if index in aligned:
@@ -28,7 +38,7 @@ def align_authored_end_times(doc,binary,motions):
 
 def normalize_authored_end_times(path):
  doc,binary=read_glb(path)
- motions=json.loads((pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json').read_text())
+ motions=authored_motions()
  binary=align_authored_end_times(doc,binary,motions)
  header=json.dumps(doc,separators=(',',':')).encode();header+=b' '*(-len(header)%4)
  result=struct.pack('<III',0x46546c67,2,28+len(header)+len(binary))+struct.pack('<II',len(header),0x4e4f534a)+header+struct.pack('<II',len(binary),0x004e4942)+binary
@@ -57,9 +67,8 @@ def trim_replaced_tail(doc,binary):
 
 def append_guards(target,source,clip_prefixes=None,allowed_clips=(),removed_clips=()):
  old,binary=read_glb(target);new,incoming=read_glb(source)
- motion_path=pathlib.Path(__file__).resolve().parents[1]/'src/motion-data.json'
- motions=json.loads(motion_path.read_text())
- attack_source_names={name for name,clip in motions.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
+ motions=authored_motions()
+ attack_source_names={name for name,clip in motions.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady') or clip.get('nativeSelectionIdle')}
  incoming=align_authored_end_times(new,incoming,motions)
  if clip_prefixes:new['animations']=[a for a in new['animations'] if a['name'].startswith(clip_prefixes)]
  nodes={node.get('name'):i for i,node in enumerate(old['nodes'])}

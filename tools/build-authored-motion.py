@@ -1,10 +1,19 @@
 """Bake study-based whole-body golf and blade motions with shared grip trajectories."""
-import bpy,json,math,pathlib,sys
+import bpy,json,math,pathlib,sys,argparse
 from mathutils import Vector,Quaternion,Matrix
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-DATA=json.loads((ROOT/'src/motion-data.json').read_text())
-GUARDS_ONLY='--guards-only' in sys.argv
-ATTACKS_ONLY='--attacks-only' in sys.argv
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--guards-only',action='store_true');parser.add_argument('--attacks-only',action='store_true')
+parser.add_argument('--selection-only',action='store_true',help='Bake separate relaxed selection poses')
+parser.add_argument('--motion-data',type=pathlib.Path);parser.add_argument('--output',type=pathlib.Path)
+args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+DATA=json.loads((args.motion_data or ROOT/('src/selection-data.json' if args.selection_only else 'src/motion-data.json')).read_text())
+GUARDS_ONLY=args.guards_only
+ATTACKS_ONLY=args.attacks_only
+if sum([GUARDS_ONLY,ATTACKS_ONLY,args.selection_only])>1:parser.error('Choose one source bake mode')
+if args.selection_only:
+ DATA={name:clip for name,clip in DATA.items() if clip.get('nativeSelectionIdle')}
+ if not DATA:raise ValueError('No nativeSelectionIdle records found; run author-selection-motion.py first')
 if ATTACKS_ONLY and GUARDS_ONLY:raise ValueError('Choose --attacks-only or --guards-only, not both')
 if ATTACKS_ONLY:DATA={name:clip for name,clip in DATA.items() if clip.get('athleticAttack') or clip.get('nativeAttackReady')}
 if GUARDS_ONLY:DATA={name:clip for name,clip in DATA.items() if '_Guard_' in name}
@@ -61,7 +70,7 @@ for name,clip in DATA.items():
    # Keep lateral torso flex above the native rig's thigh attachment.
    for bn,f in [('spine_02',.60),('spine_03',.40)]:rotate(bn,(0,1,0),pose['torsoSideBend']*f)
   rotate('neck_01',(0,0,1),-chest*(.65 if t<.62 else .2) if golf else -(chest-hip)*.35);rotate('Head',(1,0,0),.18 if golf and t<.62 else -.04)
-  if not golf:
+  if not golf and not clip.get('nativeSelectionIdle'):
    rotate('clavicle_r',(0,0,1),-.10);rotate('clavicle_l',(0,0,1),.10)
   grip=Vector(pose['grip']);direction=(Vector(pose['tip'])-grip).normalized()
   for side in ['r','l']:
@@ -129,4 +138,6 @@ for track in rig.animation_data.nla_tracks:track.mute=False
 for o in list(scene.objects):
  if o!=rig:bpy.data.objects.remove(o,do_unlink=True)
 mesh=bpy.data.meshes.new('RigCarrier');mesh.from_pydata([(0,0,0),(.001,0,0),(0,.001,0)],[],[(0,1,2)]);obj=bpy.data.objects.new('RigCarrier',mesh);scene.collection.objects.link(obj);obj.vertex_groups.new(name='pelvis').add([0,1,2],1,'REPLACE');mod=obj.modifiers.new('Rig','ARMATURE');mod.object=rig;obj.parent=rig
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models'/('attack-motion.glb' if ATTACKS_ONLY else 'guard-motion.glb' if GUARDS_ONLY else 'golf-motion.glb')),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)
+output=args.output or ROOT/'public/models'/('selection-motion.glb' if args.selection_only else 'attack-motion.glb' if ATTACKS_ONLY else 'guard-motion.glb' if GUARDS_ONLY else 'golf-motion.glb')
+output.parent.mkdir(parents=True,exist_ok=True)
+bpy.ops.export_scene.gltf(filepath=str(output),export_format='GLB',export_animations=True,export_animation_mode='NLA_TRACKS',export_force_sampling=True,export_frame_range=False,export_skins=True)

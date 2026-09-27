@@ -8,7 +8,7 @@ const args=process.argv.slice(2),option=(key,fallback)=>{const index=args.indexO
 if(args.includes('--help')){console.log('node tools/check-native-combat.mjs --before DIRECTORY [--heroes ronin,kaede]');process.exit(0);}
 const before=option('--before',null);if(!before)throw new Error('Pass --before DIRECTORY containing baseline hero GLBs and motion-data.json');
 const data=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url))),heroes=option('--heroes','ronin,kaede').split(',');
-const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(data)+';');
+const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(data)+';').replace("import selectionMotions from './selection-data.json';",'const selectionMotions={};');
 const {sampleMotion}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 globalThis.ProgressEvent??=class{};
 function read(file){const raw=fs.readFileSync(file),size=raw.readUInt32LE(12);return{doc:JSON.parse(raw.subarray(20,20+size)),bin:raw.subarray(28+size)};}

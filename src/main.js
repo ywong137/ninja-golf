@@ -268,7 +268,7 @@ class Game {
   updateCamera(dt){
     const p=this.player.root.position,b=this.ball.position;let speed=3.5;
     if(this.mode==='home'||this.mode==='courses'){const a=this.time*.014,c=this.course;camTarget.set(85+Math.sin(a)*18,Math.max(72,c.length*.19),c.length*.19-100+Math.cos(a)*12);camLook.set(c.greenX*.3,8,c.length*.57);speed=this.mode==='courses'?2:.7;}
-    else if(this.mode==='selection'){camTarget.set(p.x+1,p.y+2.4,p.z+9);camLook.set(p.x-2.6,p.y+1.9,p.z);speed=3;}
+    else if(this.mode==='selection'){camTarget.set(p.x+1,p.y+2.4,p.z+9);camLook.set(p.x-2.35*this.camera.aspect,p.y+1.9,p.z);speed=3;}
     else if(this.phase==='aim'&&this.survey){camLook.copy(this.surveyView.target);camTarget.copy(surveyPosition(this.surveyView));speed=7;}
     else if(this.phase==='flight'){const dir=this.velocity.clone().normalize();const height=this.rolling?4:7;camTarget.copy(b).add(new THREE.Vector3(-Math.sin(this.aim)*13+6,height,-Math.cos(this.aim)*13));camLook.copy(b).addScaledVector(dir,3);speed=this.fastFlight?12:5;}
     else if(this.phase==='combat'&&this.cinematic>0){
