@@ -30,7 +30,7 @@ Neo-Tokyo keeps normal golf physics. Its unusual routes, islands, and neon skyli
 ## Shared geometry and playable ground
 
 `course-layout-data.js` defines separate fairway paths, walking routes, water ellipses, dry islands, and bridges.
-`course-layout.js` converts fairway paths into segments with a width at each end.
+`course-layout.js` builds smooth centerlines around the authored landing areas. Short, broad elbow connectors spread their centers within those areas to prevent folded inner banks. Every original landing anchor retains at least 60% of its original clear radius. Broad width changes form landing lobes and narrower approaches. Two-point routes bend gently, and isolated pads have asymmetric outlines. The curves bake into 12–40 shared segments per hole, with a width at each end. Separate paths and walking bridges retain their original connectivity.
 `fairwayDistance` and the terrain shader evaluate the same segment data. The old sine centre line no longer defines playable fairways.
 `routePoint` and `routeNearest` support scenery placement along the walking route.
 
@@ -41,7 +41,7 @@ Each hole uses at most four bunkers, which matches the terrain shader limit.
 
 Both UI maps use `mapOutlines` and `waterBasins`. Their water layer removes the union of dry islands and bridges.
 The full map includes every route branch and walking detour within its bounds.
-Map outlines approximate curved segment ends with small polygons. The terrain and lie queries evaluate their analytic curves directly.
+Map outlines approximate the shared segment ends with small polygons. The terrain and lie queries evaluate the same tapered segments analytically.
 
 Every hole has a dry tee, a dry green, and a connected dry walking route to the cup.
 Small props supply ambush positions near the route. Pagoda placement checks its full footprint against fairways, water, bounds, and greens.
@@ -55,6 +55,7 @@ Each water basin has a reflection target. Rebuilding a course releases all basin
 
 `tests/course-sets.test.js` checks all 36 layouts, dry endpoints, hazard centres, walking routes, shader capacities, and water disposal.
 `tests/course-map.test.js` checks map bounds and pagoda footprint clearance across all 36 holes.
+`tests/fairway-curves.test.js` checks real centerline curvature, preserved landing anchors, asymmetric pads, and map/lie agreement across all 36 holes. It also checks that the broad Highland elbow has no folded inner bank.
 `tests/course.test.js` checks course queries and shot calculations.
 These CPU checks do not establish a hardware frame rate. Browser checks must measure the complete game.
 

@@ -1,3 +1,4 @@
+import {sculptFairways} from './course-layout.js';
 import {applyAuthoredLayouts} from './course-layout-data.js';
 // Original layouts. Distances are metres. Each course has its own terrain and scenery theme.
 const original = [
@@ -110,4 +111,5 @@ export const COURSE_SETS=[
  set('neo-tokyo','Neo-Tokyo After Dark','Japan, 2099 · Neon absurdity','City lights, island constellations, and fairways with unusual opinions.','cyberpunk','#73e4ec',cyberpunk,{coastal:false,relief:.65}),
 ];
 applyAuthoredLayouts(COURSE_SETS);
+for(const course of COURSE_SETS)for(const hole of course.holes)sculptFairways(hole);
 export const COURSES=COURSE_SETS[0].holes;

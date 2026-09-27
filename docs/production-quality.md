@@ -273,7 +273,7 @@ Distant groves gain terrain-following shadows without another dynamic shadow pas
 
 These changes improve grounding and surface detail. They do not establish full AAA quality or photorealism.
 
-### Remaining art priorities
+### Art priorities identified after the ground pass
 
 The latest visual review identifies three larger gaps:
 
@@ -301,3 +301,66 @@ Each measurement holds 64 enemies alive and repeats attacks after warmup.
 | Crane Coast, Retina DPR 2 | 1.20 | 51.8 | 33.4 ms |
 
 These local measurements include adaptive resolution. They do not establish performance on every device or camera position.
+
+## Curved fairways, mountain surfaces, and travel poses
+
+All 36 fairways now use curved centerlines and varying widths through their existing landing areas.
+Detached pads have asymmetric outlines. Short, broad elbows spread their turns to prevent folded inner banks.
+Terrain, physical lies, scenery exclusions, and both maps share the same baked segments.
+The authored tees, cups, route branches, water carries, and walking bridges remain intact.
+
+The regional mountain mesh shares vertices and uses normals from its rendered faces.
+Adaptive detail reduces interpolation error while keeping a 198,000-triangle limit.
+RGB rock and grass photographs replace the previous mostly flat mountain colors.
+Stochastic triplanar mapping reduces repeated rock patterns and stretching on steep faces.
+The desert material uses elevation bands with broad weathering breaks.
+
+Each hero has a separate weapon carry during travel.
+The arm solver follows native proportions and keeps the weapon at the calibrated palm grip.
+Native legs, core motion, and terrain foot placement continue to supply the running motion.
+Odachi and naginata blades have less bulk. Enemy weapons retain their original dimensions.
+
+### Verification
+
+All 95 unit checks and 25 browser scripts pass.
+The complete browser suite covers all 36 cups, six heroes, controls, audio, saves, guard actions, and terrain contact.
+New checks cover curved boundaries, mountain topology, travel grips, and early movement transitions.
+Golf club paths match the control from the first frame through impact.
+Light and heavy weapon paths match the control from the first gameplay hit.
+Rendered comparisons cover all three natural regions and all six weapon carries.
+All automated browser sessions mute audio.
+
+The performance review found a grass-cache defect near cell corners.
+It compared the player's distance against a cell origin instead of comparing cell identities.
+Some stationary positions therefore rebuilt 14,400 ground samples every frame.
+The corrected cache retains the grass buffer until the player enters another cell.
+A regression checks positive cells, negative cells, and repeated updates at the far corner.
+At one fixed position with 64 enemies, this correction reduced frame time from 30.34 ms to 12.52 ms.
+That controlled comparison used rendering ratio 1 and measured 32.4 versus 59.9 FPS.
+Separate live-combat measurements follow below.
+
+### Live-combat performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run holds 64 enemies alive and repeats attacks for ten seconds after warmup.
+Balanced mode retains dynamic shadows and disables contact shading for this crowd size.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.6 | 16.7 ms |
+| Heather & Crown | 1.00 | 59.7 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.1 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 53.6 | 33.3 ms |
+
+These local measurements do not establish performance on every device or camera position.
+The final terrain, foot-contact, and gameplay smoke checks pass after the cache correction.
+All four course previews show the revised surfaces and fairway curves.
+
+### Remaining visual work
+
+The latest multi-view review still falls short of full photorealism and AAA presentation.
+The next foreground priorities are subtle turf-condition variation and replacement of repeated primitive props.
+The desert has conspicuous repeated orange boulders. Large cube tee markers also need a more convincing golf design.
+The current scanned rocks can replace those boulders with varied scale, rotation, and ground embedding.
+Buildings, distant city integration, foliage transitions, and combat performance still need further visual review.

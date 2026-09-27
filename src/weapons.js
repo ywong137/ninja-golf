@@ -3,10 +3,10 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {weaponSteel as steel,weaponEdge as edge,weaponBrass,weaponCord,weaponGrip,enamelMaterial} from './weapon-materials.js';
 const cache=new Map();
 const fittings=new THREE.MeshStandardMaterial({vertexColors:true,map:weaponBrass.map,roughnessMap:weaponBrass.roughnessMap,metalness:.55,roughness:.48});
-export const BLADE_PROFILES={odachi:{length:1.40,width:.16,curve:.16,grip:.34},twin:{length:.94,width:.13,curve:.12,grip:.25},naginata:{length:1.10,width:.22,curve:.22,grip:.48},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
+export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.94,width:.13,curve:.12,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
 export function bladeGeometry(profile){
   const positions=[],uvs=[],groups=[];const segments=48;
-  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.007,profile.width*.045)*(.9-t*.35)*tip;const cross=[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]][side];return [profile.curve*t*t+cross[0],.17+t*profile.length,cross[1]];};
+  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.0045,profile.width*.045)*(.9-t*.35)*tip;const cross=[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]][side];return [profile.curve*t*t+cross[0],.17+t*profile.length,cross[1]];};
   const triangle=(a,b,c,ta,tb,tc)=>{positions.push(...a,...b,...c);uvs.push(...ta,...tb,...tc);};
   // Separate strip vertices keep flat faces and sharpened bevels physically distinct.
   for(const sides of [[0,1,4],[2,3]]){const start=positions.length/3;for(const side of sides)for(let i=0;i<segments;i++){

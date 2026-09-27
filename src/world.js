@@ -47,7 +47,7 @@ export class World {
     this.pathColor=this.texture('path-color-2k.jpg',true);this.pathNormal=this.texture('path-normal-2k.jpg');this.pathRoughness=this.texture('path-roughness-2k.jpg');
     this.waterMaterial=createOceanMaterial({time:{value:0},skyMap:{value:null},hasSky:{value:0}});
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
-    this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);
+    this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');this.cliffNormal=this.texture('cliff-normal.jpg');
     this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
     this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=.8;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentIntensity=.52;scene.environmentRotation.y=.8;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
     this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
@@ -107,8 +107,11 @@ export class World {
     this.grass=new THREE.InstancedMesh(geo,mat,15000);this.grass.receiveShadow=true;this.grass.frustumCulled=false;this.grassAnchor=new THREE.Vector2(Infinity,Infinity);this.root.add(this.grass);this.updateGrass(new THREE.Vector3(0,0,0));
   }
   updateGrass(focus){
-    if(!this.grass||Math.hypot(focus.x-this.grassAnchor.x,focus.z-this.grassAnchor.y)<5)return;
-    const x0=Math.floor(focus.x/5)*5,z0=Math.floor(focus.z/5)*5;this.grassAnchor.set(x0,z0);let n=0;
+    if(!this.grass)return;
+    const x0=Math.floor(focus.x/5)*5,z0=Math.floor(focus.z/5)*5;
+    // Compare cell identities: a cell corner can be more than 5 m from its origin.
+    if(this.grassAnchor.x===x0&&this.grassAnchor.y===z0)return;
+    this.grassAnchor.set(x0,z0);let n=0;
     for(let z=z0-30;z<z0+30;z+=.5)for(let x=x0-30;x<x0+30;x+=.5){
       const hash=Math.sin(x*127.1+z*311.7)*43758.5453,j=hash-Math.floor(hash),xx=x+j*.45,zz=z+(1-j)*.45;
       if(this.course.theme==='desert'||this.course.theme==='cyberpunk'||lieAt(this.course,xx,zz)!=='Rough'||heightAt(this.course,xx,zz)<3.5||this.root.userData.pathContains?.(xx,zz,.2))continue;

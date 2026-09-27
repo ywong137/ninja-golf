@@ -5,6 +5,7 @@ import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, combatMotionName } from './motion.js';
 import {FootPlacement} from './foot-placement.js';
+import {TravelPose} from './travel-pose.js';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
@@ -82,7 +83,7 @@ export class Warrior {
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
     const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
     if(enemy||this.nativeHuman)bag.visible=false;
-    this.overlays=[];this.coreScales=[];this.restModelRotation=this.model.quaternion.clone();this.tip=new THREE.Vector3();this.hilt=new THREE.Vector3();
+    this.travelPose=!enemy&&this.nativeHuman?new TravelPose(this,WARRIORS[type].weaponKind):null;this.overlays=[];this.coreScales=[];this.restModelRotation=this.model.quaternion.clone();this.tip=new THREE.Vector3();this.hilt=new THREE.Vector3();
     this.play(this.nativeHuman?'Golf_Address':'Idle_Loop',0);this.mixer.update(this.nativeHuman?0:Math.random()*.7);
     this.closedFingerGroups={r:[],l:[]};for(const bone of Object.values(this.bones))if(/^(index|middle|ring|pinky|thumb)_/.test(bone.name)){const side=bone.name.endsWith('_r')?'r':'l';this.closedFingerGroups[side].push([bone,bone.quaternion.clone()]);}
     if(this.nativeHuman){this.mixer.stopAllAction();this.current='';this.play('Idle_Loop',0);this.mixer.update(0);}
@@ -121,7 +122,7 @@ export class Warrior {
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null}={}){
-    this.footPlacement?.restore();
+    this.footPlacement?.restore();this.travelPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
@@ -175,6 +176,8 @@ export class Warrior {
       for(const [side,offset]of running?[['r',0],['l',.5]]:[['r',.25],['l',.75]]){const p=(phase+offset)%1;stance[side]=p<support;contactWeights[side]=p<support?1:p<support+.10?1-THREE.MathUtils.smoothstep(p,support,support+.10):THREE.MathUtils.smoothstep(p,.90,1);}
     }
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    if(golf)this.travelPose?.reset();
+    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,exitDuration:blocking?.30:action?.kind==='light'?.12:action?.kind==='heavy'?.22:.16});
     this.syncHeldObjects(motion,golf);
   }
   syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
@@ -192,12 +195,15 @@ export class Warrior {
       const hand=this.bones['hand_'+side];
       if(held.parent!==this.root)this.root.add(held);
       held.position.copy(gripPosition.copy(this.palmGrips[side]).applyMatrix4(hand.matrixWorld).applyMatrix4(rootInverse));
-      if(from&&to){
+      if(this.travelPose?.shaftDirections[side]){
+        held.quaternion.setFromUnitVectors(axisY,this.travelPose.shaftDirections[side]);held.rotateY(roll*(1-this.travelPose.weight));
+      }else if(from&&to&&!(this.travelPose?.weight>0)){
         shaftDirection.set(to[0]-from[0],to[2]-from[2],from[1]-to[1]);
         if(golf)held.scale.setScalar(shaftDirection.length()/1.12);
         held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());held.rotateY(roll);
       }else{
         // Across the palm, perpendicular to wrist-to-knuckle direction.
+        if(golf&&from&&to)held.scale.setScalar(Math.hypot(...to.map((v,i)=>v-from[i]))/1.12);
         hand.matrixWorld.decompose(decomposedPosition,handRotation,decomposedScale);
         shaftDirection.copy(this.shaftAxes[side]).applyQuaternion(handRotation).applyQuaternion(rootRotation);
         held.quaternion.setFromUnitVectors(axisY,shaftDirection.normalize());
