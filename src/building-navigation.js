@@ -6,9 +6,14 @@ export class BuildingNavigation {
  constructor(course,collision){this.course=course;this.collision=collision;this.nodes=[];this.edges=new Map();this.endpointLinks=new Map();this.corridors=[];const seen=new Set();
   const add=(x,z)=>{const y=heightAt(course,x,z),key=`${x.toFixed(3)},${z.toFixed(3)}`,p={x,y,z};if(seen.has(key)||!this.dry(p)||collision.blocked(p,RADIUS,HEIGHT,true))return;seen.add(key);this.nodes.push(p);};
   for(const b of collision.buildings){
-   if(b.minY>heightAt(course,b.x,b.z)+HEIGHT||b.maxY<heightAt(course,b.x,b.z))continue;
-   if(b.kind==='box'){const c=Math.cos(b.yaw||0),s=Math.sin(b.yaw||0);for(const x of [-b.halfWidth-.75,b.halfWidth+.75])for(const z of [-b.halfDepth-.75,b.halfDepth+.75])add(b.x+c*x+s*z,b.z-s*x+c*z);}
-   else for(let i=0;i<8;i++){const a=i*Math.PI/4;add(b.x+Math.cos(a)*(b.radius+.75),b.z+Math.sin(a)*(b.radius+.75));}
+   if(b.navigationSkip)continue;
+   const footprint=b.navigationFootprint;
+   if(!footprint&&(b.minY>heightAt(course,b.x,b.z)+HEIGHT||b.maxY<heightAt(course,b.x,b.z)))continue;
+   // Grouping reduces graph corners only. All route checks still use every real solid.
+   const shape=footprint?{...footprint,kind:'box'}:b;
+   if(footprint&&(![shape.x,shape.z,shape.halfWidth,shape.halfDepth,shape.yaw??0].every(Number.isFinite)||shape.halfWidth<=0||shape.halfDepth<=0))throw new Error(`Invalid navigation footprint: ${b.id}`);
+   if(shape.kind==='box'){const c=Math.cos(shape.yaw||0),s=Math.sin(shape.yaw||0);for(const x of [-shape.halfWidth-.75,shape.halfWidth+.75])for(const z of [-shape.halfDepth-.75,shape.halfDepth+.75])add(shape.x+c*x+s*z,shape.z-s*x+c*z);}
+   else for(let i=0;i<8;i++){const a=i*Math.PI/4;add(shape.x+Math.cos(a)*(shape.radius+.75),shape.z+Math.sin(a)*(shape.radius+.75));}
   }
  }
  dry(p){for(const [dx,dz]of [[0,0],[RADIUS,0],[-RADIUS,0],[0,RADIUS],[0,-RADIUS]])if(['Water','Out of bounds'].includes(lieAt(this.course,p.x+dx,p.z+dz)))return false;return true;}

@@ -26,12 +26,19 @@ export function createCoursePath(c,textures){
   occupiedRows.add(i);occupiedRows.add(i+1);
   indices.push(a,a+1,b,a+1,b+1,b);
  }
- const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geometry.setAttribute('pathCoverage',new THREE.Float32BufferAttribute(coverage,1));geometry.setIndex(indices);geometry.computeVertexNormals();
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geometry.setAttribute('pathCoverage',new THREE.Float32BufferAttribute(coverage,1));geometry.setAttribute('courtPaving',new THREE.Float32BufferAttribute(new Float32Array(coverage.length),1));geometry.setIndex(indices);geometry.computeVertexNormals();
  const material=new THREE.MeshStandardMaterial({map:textures.pathColor||textures.rockColor||null,normalMap:textures.pathNormal||null,roughnessMap:textures.pathRoughness||null,normalScale:new THREE.Vector2(.32,.32),color:c.theme==='cyberpunk'?'#606f7a':c.theme==='desert'?'#d3b68d':c.theme==='highlands'?'#bcb6a6':'#d3cec1',roughness:.97,transparent:true,depthWrite:false});
- material.onBeforeCompile=s=>{s.vertexShader='attribute float pathCoverage;varying float pathEdge;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\npathEdge=pathCoverage;');s.fragmentShader='varying float pathEdge;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\ndiffuseColor.a*=smoothstep(0.,.88,pathEdge);if(diffuseColor.a<.005)discard;');};material.customProgramCacheKey=()=> 'textured-course-path-v1';
+ material.onBeforeCompile=s=>{s.vertexShader='attribute float pathCoverage;attribute float courtPaving;varying float pathEdge;varying float pavingAmount;varying vec2 pavingUv;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\npathEdge=pathCoverage;pavingAmount=courtPaving;pavingUv=uv*2.5;');s.fragmentShader='varying float pathEdge;varying float pavingAmount;varying vec2 pavingUv;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+ diffuseColor.a*=smoothstep(0.,.88,pathEdge);if(diffuseColor.a<.005)discard;
+ vec2 brickUv=vec2(pavingUv.x+floor(pavingUv.y/.7)*.6,pavingUv.y)/vec2(1.2,.7);
+ vec2 edge=abs(fract(brickUv)-.5),aa=max(fwidth(brickUv),vec2(.0001));
+ float joint=max(smoothstep(.488-aa.x,.488+aa.x,edge.x),smoothstep(.482-aa.y,.482+aa.y,edge.y));
+ float tone=.96+.04*sin(dot(floor(brickUv),vec2(17.13,39.27)));
+ diffuseColor.rgb*=mix(1.,mix(tone,.68,joint),pavingAmount);`);};material.customProgramCacheKey=()=> 'textured-course-path-v2';
  const cells=new Map();
  for(const row of occupiedRows){const point=points[row*cross.length+2],key=`${Math.floor(point[0]/5)},${Math.floor(point[1]/5)}`;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(point);}
  const mesh=new THREE.Mesh(geometry,material);mesh.name='Course path';mesh.receiveShadow=true;
+ mesh.userData.samplePoints=[...occupiedRows].map(row=>points[row*cross.length+2]);
  mesh.userData.contains=(x,z,margin=0)=>{const radius=1.4+margin,reach=Math.ceil(radius/5),cx=Math.floor(x/5),cz=Math.floor(z/5);for(let iz=cz-reach;iz<=cz+reach;iz++)for(let ix=cx-reach;ix<=cx+reach;ix++)for(const p of cells.get(`${ix},${iz}`)||[])if((p[0]-x)**2+(p[1]-z)**2<radius*radius)return true;return false;};
  return mesh;
 }

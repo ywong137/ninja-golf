@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {heightAt} from './course.js';
+import {scaleBoxUV} from './architecture-uv.js';
+import {architecturalSurface as surface} from './architecture-materials.js';
 import {buildingFootprint,buildingBox,buildingCylinder} from './building-placement.js';
 export function pagodaStairs(c,site){
  const front=site.z-11.75,run=4.35,width=8,top=site.y+1.2;
@@ -25,14 +27,6 @@ export function pagodaLocation(c,root=null){
  if(best)return best;
  throw new Error(`No safe pagoda site for ${c.name}`);
 }
-// A compact material palette keeps carved structures cheap enough for crowd combat.
-function surface(color,roughness=.85,metalness=0,grain=false){
- const m=new THREE.MeshStandardMaterial({color,roughness,metalness});
- m.onBeforeCompile=s=>{s.vertexShader='varying vec3 carvingPosition;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ncarvingPosition=position;');s.fragmentShader='varying vec3 carvingPosition;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
- vec3 cp=carvingPosition;float patina=sin(cp.x*5.1+sin(cp.y*2.7))*sin(cp.z*8.3+cp.y*6.1);
- float fine=sin(cp.x*${grain?'92.':'35.'}+sin(cp.z*9.)*3.+cp.y*${grain?'2.':'27.'});
- diffuseColor.rgb*=.91+patina*.065+fine*.025;`);};m.customProgramCacheKey=()=>`architecture-${grain}`;return m;
-}
 function roof(width,depth,rise){
  const v=[],uv=[],ids=[],N=28;
  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){const a=x/N*2-1,b=z/N*2-1,q=Math.max(Math.abs(a),Math.abs(b));const h=rise*Math.pow(1-q,.86)+.32*Math.pow(q,9)+.18*Math.pow(Math.abs(a*b),3);v.push(a*width/2,h,b*depth/2);uv.push(x/N*width,z/N*depth);}
@@ -40,10 +34,10 @@ function roof(width,depth,rise){
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ids);g.computeVertexNormals();return g;
 }
 export function buildArchitecture(root,c,stoneTextures){
- const batches=new Map(),wood=surface('#4a2c1d',.82,0,true),red=surface('#8e3523',.57),plaster=surface('#d8c9a4'),stone=new THREE.MeshStandardMaterial({map:stoneTextures.color,normalMap:stoneTextures.normal,color:'#b4b5a5',roughness:.97}),gold=surface('#ba934b',.37,.75),tile=surface('#344441',.52,.15);
+ const batches=new Map(),wood=surface('#4a2c1d',.82,0,true),red=surface('#8e3523',.57),plaster=surface('#d8c9a4'),stone=new THREE.MeshStandardMaterial({map:stoneTextures.color,normalMap:stoneTextures.normal,color:'#b4b5a5',roughness:.97,normalScale:new THREE.Vector2(.2,.2)}),gold=surface('#ba934b',.37,.75),tile=surface('#344441',.52,.15);
  tile.side=THREE.DoubleSide;tile.onBeforeCompile=s=>{s.vertexShader='varying vec2 tileUv;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\ntileUv=uv;');s.fragmentShader='varying vec2 tileUv;\n'+s.fragmentShader;s.fragmentShader=s.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\nfloat fluting=.78+.22*smoothstep(.05,.30,abs(sin(tileUv.x*11.)));float rows=.92+.08*smoothstep(.02,.09,fract(tileUv.y*2.8));diffuseColor.rgb*=fluting*rows;');};tile.customProgramCacheKey=()=> 'ceramic-roof';
  const object=new THREE.Object3D();const emit=(geo,mat,x,y,z,sx=1,sy=1,sz=1,rz=0)=>{object.position.set(x,y,z);object.scale.set(sx,sy,sz);object.rotation.set(0,0,rz);object.updateMatrix();const g=(geo.index?geo.toNonIndexed():geo.clone()).applyMatrix4(object.matrix);if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push(g);geo.dispose();};
- const box=(m,x,y,z,sx,sy,sz,rz=0)=>emit(new THREE.BoxGeometry(1,1,1),m,x,y,z,sx,sy,sz,rz);
+ const box=(m,x,y,z,sx,sy,sz,rz=0)=>emit(scaleBoxUV(new THREE.BoxGeometry(1,1,1),sx,sy,sz),m,x,y,z,sx,sy,sz,rz);
  const cyl=(m,x,y,z,r,h)=>emit(new THREE.CylinderGeometry(r,r*1.04,h,12),m,x,y,z);
  const solid=(id,m,x,y,z,w,h,d)=>{box(m,x,y,z,w,h,d);buildingBox(root,id,x,y,z,w,h,d);};
  // Gate feet sit on stone sockets. The upper beam curves upward at both ends.

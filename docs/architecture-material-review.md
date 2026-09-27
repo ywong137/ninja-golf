@@ -1,6 +1,56 @@
 # Architecture material review
 
-Review date: 2026-09-27. This is a plan for the next pass. It changes no production files and uses no browser or GPU job.
+Review date: 2026-09-27. The original review and implementation plan follow the verified changes below.
+
+## Implemented changes
+
+Architectural box UVs now use physical face dimensions before merging. The 1.25m stone repeat is consistent across large walls and small blocks.
+Shared texture repeat and wrapping remain unchanged. Finished stone uses weaker normal detail.
+Wood and plaster use subtle nonperiodic finish variation.
+
+Desert walls now use pale plaster, service doors, side windows, coping, and shallow divisions.
+Highland masonry covers front, rear, inner, outer, and lower foundation faces.
+City facades have floor bands, mullions, framed shopfronts, paired doors, and handles.
+
+The 90 entrance courts reuse the course path material. Forty-one dry pedestrian spurs connect to existing paths where the full width fits.
+The placement checks exclude fairways, tees, greens, bunkers, water, cover objects, and building obstacles.
+Courts extend under opaque foundations and stairs to avoid grass gaps.
+Grass and vegetation use the expanded path exclusion map.
+
+City entrance stairs connect the court height to the door threshold. Slender handrails merge into the existing facade metal batch.
+The stairs add one stone material batch. They retain solid collision and do not create walkable building interiors.
+Each stair flight contributes one navigation outline. Route validation still checks every individual solid.
+
+All geometry and placement work runs when a course loads. This pass adds no texture downloads or render targets.
+
+## Matched visual review
+
+Saved comparisons use the same camera, time, hero position, and viewport for all four themes.
+The original revision is `46d3df2502a353e17eff5cfa7dc625376a648aec`.
+The capture script also checks shared texture settings, hero visibility, shader errors, and material counts.
+
+The final images show readable wall divisions, ground-level entrances, and paths connecting city compounds.
+Review found unfinished Highland foundations and a grass gap below the Japanese stairs. Both received corrections before acceptance. A final desert review also found a coping strip crossing a service door. The strip now stops beside the frame.
+The buildings still use simplified geometry. Repeated tower forms, window lighting, and close wall finishes need further artistic work.
+This pass does not establish photorealism.
+
+## Geometry measurements
+
+All nine city holes remain below the 20,000 additional triangle limit, including facades, courts, spurs, stairs, and rails.
+The range is 18,020–18,960 additional triangles. The Hologram Orchard has the largest increase.
+Each city hole adds one material batch. The reviewed theme-and-path total changes from eight to nine.
+
+Matched first-hole facade captures record these changes. Courts and stairs are separate from these facade counts.
+
+| Theme | Additional facade triangles | Material batch change |
+| --- | ---: | ---: |
+| Japanese | 0 | 0 |
+| Highland | 20,664 | -1 |
+| Desert | 1,140 | +1 |
+| City, including merged rails | 12,424 | 0 |
+
+Highland geometry increases because masonry now covers the full exposed foundations. It remains in one material batch.
+The original 20,000 limit applies to city geometry. Runtime measurements also cover the Highland change.
 
 ## Evidence
 
@@ -88,3 +138,40 @@ Inspect matched ground-level captures of a desert blank wall, Highland inner arc
 Inspect a wider cyber travel view showing the entrance court, its building, and the golf path. A close facade screenshot alone cannot establish connected composition. Also inspect an aerial view for repeated court shapes or accidental glowing plates.
 
 Run the existing movement/camera tests after facade changes. Run the dense cyber crowd benchmark with the same camera and scene state. Report added triangles, material draws, and median frame time against the current baseline. Accept the pass only when visual review and those checks agree.
+
+## Verification results
+
+All 153 unit tests pass. The full production build succeeds.
+Ten relevant browser scripts pass: architecture, buildings, expansion, scenery rocks, nature, production views, navigation, combat, putting previews, and smoke.
+The expansion check completes all 36 cups. Building checks use actual player movement, enemy pursuit, cameras, and golf updates.
+
+Two building fixtures previously started inside the new stairs. They now select dry, exposed ground around the actual solids.
+Camera shortening, collision clearance, pursuit distance, and detour assertions remain unchanged.
+
+The final visual review uses `/tmp/ninja-architecture-before/` and `/tmp/ninja-architecture-after/`.
+The additional `0-entrance.png` view shows the Japanese stair-to-court junction without a foreground tree.
+Runtime checks found no shader errors or changes to shared texture repeat settings.
+Development and verification browsers remain muted.
+
+
+### Architecture-pass performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run keeps 64 enemies alive and repeats attacks for ten seconds after warmup.
+No other rendering or capture jobs ran during these measurements.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.6 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.6 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.0 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 51.5 | 33.4 ms |
+| City building detours | 1.00 | 59.9 | 16.8 ms |
+
+The city routing scenario starts all 64 enemies across a solid podium from the hero.
+Its largest combat update took 31.2 ms. The run recorded 90 route requests, including setup and warmup.
+Dynamic shadows remain active. Balanced mode suspends contact shading at this crowd size.
+The earlier architecture baseline measured 59.7–60.1 FPS at desktop resolution and 52.8 FPS for Retina.
+These single-run comparisons cannot isolate normal timing variation.
+The measurements describe this machine and these scenarios, not every device or camera position.

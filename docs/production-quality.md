@@ -537,3 +537,67 @@ The measurement records 132 route requests across setup, warmup, and sampling.
 Steady average frame rate does not exclude that initial delay.
 Dynamic shadows remain active; Balanced mode suspends contact shading at this crowd size.
 These measurements describe this machine and these scenarios, not every device or camera position.
+
+## Architecture surfaces and entrances
+
+Architectural stone now has consistent texture density across walls, blocks, and foundations.
+Desert buildings use plaster with service doors and side windows.
+Highland masonry covers the lower foundations and inner walls.
+City buildings have framed glazing, floor bands, paired doors, and handrails.
+
+Ninety entrance courts and 41 dry path connections now organize the building surroundings across all 36 holes.
+Courts reuse the existing path material. They exclude playing surfaces and suppress grass beneath them.
+City stairs meet the raised entrances and retain solid collision.
+Grouped stair outlines limit navigation graph growth while route checks retain the individual solids.
+
+The city additions total 18,020–18,960 triangles per hole, including ground surfaces, stairs, rails, and facades.
+Each city hole adds one material batch. The pass adds no texture downloads or per-frame geometry generation.
+
+### Architecture review limits
+
+Matched captures verify the material scale, foundations, entrances, and path connections.
+The Japanese court now touches the bottom stair. Desert coping stops beside service door frames.
+Highland blocks remain oversized and repetitive at close range.
+The Japanese stair still leads to an uninterrupted screen facade without a clear doorway.
+City towers remain simplified, and the surrounding skyline needs further artistic work.
+Stairs, galleries, and interiors remain inaccessible.
+Character movement and close-up detail still need refinement.
+The game remains below the requested AAA and photorealistic standard.
+
+### Architecture verification
+
+All 153 unit tests pass. Ten relevant browser scripts pass, including all 36 cups and actual building navigation.
+Matched captures verify all four themes. The capture script checks shader errors, shared texture settings, and material counts.
+The city geometry measurements include all nine holes.
+Development and verification browsers remain muted.
+
+The refreshed course previews also show three broader environment problems:
+
+- Crane and Highland rough have regular texture stripes. Desert turf has a hard border against uniform sand.
+- Repeated forked trunks and compact crowns make the forests too uniform. Highland slopes need more low scrub and fewer repeated tree silhouettes.
+- The photographic city skyline meets the course at a straight horizontal boundary. A distant building layer and matched haze need evaluation.
+
+These observations need matched camera comparisons in later passes. They are not corrected by the architecture changes.
+
+
+### Architecture-pass performance
+
+Chrome uses Metal on Apple M1 Max, Balanced settings, and a 1440 × 900 viewport.
+Each run keeps 64 enemies alive and repeats attacks for ten seconds after warmup.
+No other rendering or capture jobs ran during these measurements.
+
+| Course / display | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast | 1.00 | 59.6 | 16.8 ms |
+| Heather & Crown | 1.00 | 59.6 | 16.8 ms |
+| Copper Saguaro | 1.00 | 60.1 | 16.8 ms |
+| Neo-Tokyo After Dark | 1.00 | 60.0 | 16.7 ms |
+| Crane Coast, Retina DPR 2 | 1.50 | 51.5 | 33.4 ms |
+| City building detours | 1.00 | 59.9 | 16.8 ms |
+
+The city routing scenario starts all 64 enemies across a solid podium from the hero.
+Its largest combat update took 31.2 ms. The run recorded 90 route requests, including setup and warmup.
+Dynamic shadows remain active. Balanced mode suspends contact shading at this crowd size.
+The earlier architecture baseline measured 59.7–60.1 FPS at desktop resolution and 52.8 FPS for Retina.
+These single-run comparisons cannot isolate normal timing variation.
+The measurements describe this machine and these scenarios, not every device or camera position.

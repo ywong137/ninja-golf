@@ -30,3 +30,16 @@ test('A valid moving-target route survives refresh without a new graph search',(
  nav.waypoint(from,target,state,0);assert.ok(state.buildingPath.length>1);
  nav.waypoint(point(-7.8,70),point(8,70.2),state,1);assert.equal(searches,1);assert.deepEqual(state.buildingPath.at(-1),point(8,70.2));
 });
+
+test('A grouped flight keeps four navigation corners while every stair remains solid',()=>{
+ const course=COURSE_SETS[0].holes[0],center={x:0,z:70},point=(x,z)=>({x,y:heightAt(course,x,z),z}),floor=heightAt(course,0,70);
+ const records=Array.from({length:25},(_,i)=>({id:`stair-${i}`,kind:'box',x:0,z:65.2+i*.4,halfWidth:2.1,halfDepth:.21,yaw:0,minY:floor-8,maxY:floor+.2+i*.19,...(i?{navigationSkip:true}:{navigationFootprint:{...center,halfWidth:2.1,halfDepth:5.01,yaw:0}})}));
+ const collision=new SceneryCollision([],records),nav=new BuildingNavigation(course,collision);
+ assert.equal(collision.buildings.length,25);assert.equal(nav.nodes.length,4);
+ const position=point(-8,70),target=point(8,70),state={};assert.equal(collision.segmentClear(position,target,.3,2,true),false);
+ const route=nav.route(position,target);assert.ok(route.length>1);let previous=position;for(const next of route){assert.equal(nav.clear(previous,next),true);previous=next;}
+ for(let frame=0;frame<600&&Math.hypot(position.x-target.x,position.z-target.z)>.4;frame++){
+  const before={...position},goal=nav.waypoint(position,target,state,frame/60),dx=goal.x-position.x,dz=goal.z-position.z,d=Math.hypot(dx,dz),step=Math.min(.08,d);if(d){position.x+=dx/d*step;position.z+=dz/d*step;}position.y=heightAt(course,position.x,position.z);collision.slide(position,.3,before);assert.equal(collision.blocked(position,.299,2,true),false);
+ }
+ assert.ok(Math.hypot(position.x-target.x,position.z-target.z)<.4);
+});

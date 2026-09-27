@@ -7,6 +7,7 @@ import { NaturalLandscape,forestAtlasSource,queueSceneryRock } from './nature.js
 import {buildDistantForest} from './distant-forest.js';
 import {SceneryCollision} from './scenery-collision.js';
 import {BuildingNavigation} from './building-navigation.js';
+import {buildArchitectureGround} from './architecture-ground.js';
 import {buildBridges} from './bridges.js';
 import {landscapeHorizon} from './landscape-horizon.js';
 import {createTerrainSurfaceSampler} from './terrain-surface.js';
@@ -80,7 +81,7 @@ export class World {
   clear(){
     this.pond?.dispose();
     const materials=new Set(),geos=new Set();this.root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry)geos.add(o.geometry);if(o.customDepthMaterial)materials.add(o.customDepthMaterial);if(o.material&&o.material!==this.waterMaterial)materials.add(o.material);});
-    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
@@ -89,6 +90,7 @@ export class World {
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);this.makePath();
     if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.rockColor,normal:this.rockNormal});
     buildFairwayCover(this.root,c,this.ambushSites,{color:this.rockColor,normal:this.rockNormal});
+    buildArchitectureGround(this.root,c,this.path,this.ambushSites);
     this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
     buildTeeMarkers(this.root,c,{stoneColor:this.rockColor,stoneNormal:this.rockNormal});
   }
@@ -160,7 +162,7 @@ export class World {
     addMesh(this.root,new THREE.CylinderGeometry(.04,.04,4.8,8),material('#ebe5d2',.4,.3),x,y+2.4,z);
     const fg=new THREE.PlaneGeometry(1.7,1,14,8);fg.translate(.85,0,0);this.flag=new THREE.Mesh(fg,new THREE.MeshStandardMaterial({color:'#b94938',side:THREE.DoubleSide,roughness:.8}));this.flag.position.set(x,y+4.1,z);this.root.add(this.flag);
   }
-  makePath(){const mesh=createCoursePath(this.course,this);this.root.add(mesh);this.root.userData.pathContains=mesh.userData.contains;}
+  makePath(){const mesh=createCoursePath(this.course,this);this.path=mesh;this.root.add(mesh);this.root.userData.pathContains=mesh.userData.contains;}
   makeBirds(){
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute([0,0,.32,-.13,0,-.35,.13,0,-.35, -.08,0,.1,-.85,.09,-.06,-.45,0,-.26, .08,0,.1,.45,0,-.26,.85,.09,-.06],3));geo.computeVertexNormals();
     const mat=new THREE.MeshBasicMaterial({color:'#d1d4c8',side:THREE.DoubleSide});this.birdTime={value:0};mat.onBeforeCompile=s=>{s.uniforms.birdTime=this.birdTime;s.vertexShader='uniform float birdTime;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>

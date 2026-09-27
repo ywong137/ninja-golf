@@ -59,8 +59,15 @@ try{
    await page.screenshot({path:`/tmp/ninja-buildings-${theme}-opening.png`});
   }
   result.camera=await page.evaluate(()=>{
-   const {g,records,position,reset,overlaps}=window.buildingTest;reset();const solid=records.filter(o=>o.kind==='box'&&o.maxY-o.minY>2&&o.minY<position(o.x,o.z).y+2.3).sort((a,b)=>b.halfWidth-a.halfWidth)[0];if(!solid)throw Error('No visible tall wall for camera test');
-   let p=position(solid.x,solid.z-solid.halfDepth-1);for(let i=0;i<12&&overlaps(p).length;i++)p=position(p.x,p.z-.5);if(overlaps(p).length)throw Error('Camera setup starts inside a building');g.player.root.position.copy(p);g.cameraYaw=Math.PI;g.cameraPitch=.08;g.camera.position.copy(p).add({x:0,y:2,z:-2});g.currentLook.copy(p);for(let i=0;i<90;i++)g.updateCamera(1/60);
+   const {g,records,position,reset,overlaps,dry}=window.buildingTest;reset();
+   // Use an exposed wall face. Entrance stairs can occupy the former front fixture.
+   let setup;for(const solid of records.filter(o=>o.kind==='box'&&o.maxY-o.minY>2&&o.minY<position(o.x,o.z).y+2.3).sort((a,b)=>b.halfWidth-a.halfWidth)){
+    for(const [dx,dz,extent]of [[0,1,solid.halfDepth],[0,-1,solid.halfDepth],[1,0,solid.halfWidth],[-1,0,solid.halfWidth]]){
+     const p=position(solid.x-dx*(extent+1),solid.z-dz*(extent+1)),origin=p.clone().add({x:0,y:1.7,z:0}),target=origin.clone().add({x:dx*7.7,y:.7,z:dz*7.7});
+     if(dry(p)&&!overlaps(p).length&&g.world.collision.sweepSphere(origin,target,.25,false)){setup={solid,p,dx,dz};break;}
+    }if(setup)break;
+   }if(!setup)throw Error('No dry exposed tall wall for camera test');
+   const {solid,p,dx,dz}=setup;g.player.root.position.copy(p);g.cameraYaw=Math.atan2(-dx,-dz);g.cameraPitch=.08;g.camera.position.copy(p).add({x:-dx*2,y:2,z:-dz*2});g.currentLook.copy(p);for(let i=0;i<90;i++)g.updateCamera(1/60);
    const origin=p.clone().add({x:0,y:1.7,z:0}),clear=g.world.collision.segmentClear(origin,g.camera.position,.25,0,true),shortened=origin.distanceTo(g.camera.position)<6;
    return {wall:solid.id,clear,shortened,camera:g.camera.position.toArray(),origin:origin.toArray()};
   });assert.equal(result.camera.clear,true,JSON.stringify(result.camera));assert.equal(result.camera.shortened,true,JSON.stringify(result.camera));
@@ -73,7 +80,7 @@ try{
   // Actual spawned enemy, attached through CrowdRenderer, pursues across a building.
   result.pursuit=await page.evaluate(()=>{
    const b=window.buildingTest,{g,T,body,position,reset,overlaps,step,dry}=b;reset();
-   let start,target,axis,detourExtent;for(const a of ['x','z']){const extent=a==='x'?body.halfWidth:body.halfDepth;start=position(body.x-(a==='x'?extent+2:0),body.z-(a==='z'?extent+2:0));target=position(body.x+(a==='x'?extent+2:0),body.z+(a==='z'?extent+2:0));if(dry(start)&&dry(target)&&!overlaps(start,.3).length&&!overlaps(target).length){axis=a;detourExtent=a==='x'?body.halfDepth:body.halfWidth;break;}}if(!axis)throw Error(`Pursuit setup blocked for ${body.id}`);
+   let start,target,axis,detourExtent;for(const offset of [2,4,6,8,10,12,14]){for(const a of ['x','z']){const extent=(a==='x'?body.halfWidth:body.halfDepth)+offset;start=position(body.x-(a==='x'?extent:0),body.z-(a==='z'?extent:0));target=position(body.x+(a==='x'?extent:0),body.z+(a==='z'?extent:0));if(dry(start)&&dry(target)&&!overlaps(start,.3).length&&!overlaps(target).length&&!g.world.collision.segmentClear(start,target,.3,2,true)){axis=a;detourExtent=a==='x'?body.halfDepth:body.halfWidth;break;}}if(axis)break;}if(!axis)throw Error(`Pursuit setup blocked for ${body.id}`);
    g.player.root.position.copy(target);g.enemyBudget=64;g.enemiesSpawned=0;g.ball.position.copy(target).add({x:0,y:0,z:40});for(const site of g.world.ambushSites)site.readyAt=0;g.spawnWave(8);const enemy=g.enemies.find(e=>e.type!==3);if(!enemy)throw Error('No native melee enemy spawned');
    for(const other of g.enemies)if(other!==enemy)other.dispose();g.enemies=[enemy];enemy.emerging=null;enemy.root.visible=true;enemy.root.position.copy(start);enemy.cooldown=0;enemy.readyAt=0;enemy.speed=4;enemy.enemyAction=null;enemy.knockback=new T.Vector3();g.enemyBudget=0;g.crowd.update(g.enemies);
    let blocked=0,firstBad=null,maxSide=0;const path=[];for(let frame=0;frame<1200;frame++){step();const bad=overlaps(enemy.root.position,.3);if(bad.length){blocked++;firstBad??=bad;}maxSide=Math.max(maxSide,Math.abs(axis==='x'?enemy.root.position.z-body.z:enemy.root.position.x-body.x));if(frame%30===0)path.push(enemy.root.position.toArray());if(enemy.root.position.distanceTo(g.player.root.position)<3)break;}
