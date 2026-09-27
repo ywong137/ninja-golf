@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
+const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
@@ -8,12 +8,14 @@ await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.phase='com
 await page.keyboard.down('KeyC');await page.keyboard.down('KeyD');await page.waitForTimeout(400);await page.keyboard.up('KeyD');
 let state=await page.evaluate(()=>window.ninjaGolf.state());assert.ok(state.player[0]<-1);assert.ok(Math.abs(state.facing)<.08,'Focused strafe keeps facing forward');
 const before=state.player[2];await page.keyboard.down('KeyS');await page.waitForTimeout(400);await page.keyboard.up('KeyS');await page.keyboard.up('KeyC');state=await page.evaluate(()=>window.ninjaGolf.state());assert.ok(state.player[2]<before-1);assert.ok(Math.abs(state.facing)<.08,'Focused backpedal keeps facing forward');
-// A left attack must not release a held right-button stance.
-await page.mouse.move(720,440);await page.mouse.down({button:'right'});await page.mouse.click(720,440,{button:'left'});await page.waitForFunction(()=>window.__golfTest.action?.kind==='light');assert.ok(await page.evaluate(()=>window.__golfTest.input.focused));await page.mouse.up({button:'right'});await page.waitForFunction(()=>!window.__golfTest.action);await page.evaluate(()=>{window.__golfTest.lightChain=0;});
+// Pointer capture permits mouse look while WASD and both attack buttons remain available.
+await page.mouse.click(720,440);await page.waitForFunction(()=>document.pointerLockElement);await page.waitForFunction(()=>window.__golfTest.action?.kind==='light');
+const yaw=await page.evaluate(()=>window.__golfTest.cameraYaw);await page.mouse.move(790,440);await page.waitForTimeout(150);assert.notEqual(await page.evaluate(()=>window.__golfTest.cameraYaw),yaw);
+await page.waitForFunction(()=>!window.__golfTest.action);await page.evaluate(()=>{window.__golfTest.lightChain=0;});
 // Buffer the second light attack, then branch to its heavy finisher.
-await page.keyboard.press('KeyJ');await page.waitForTimeout(160);await page.keyboard.press('KeyJ');await page.waitForFunction(()=>window.__golfTest.action?.step===1);await page.keyboard.press('KeyK');await page.waitForFunction(()=>window.__golfTest.action?.kind==='heavy');assert.equal(await page.evaluate(()=>window.__golfTest.action.name),'Skyward finish');
+await page.mouse.click(720,440,{button:'left'});await page.waitForTimeout(160);await page.mouse.click(720,440,{button:'left'});await page.waitForFunction(()=>window.__golfTest.action?.step===1);await page.mouse.click(720,440,{button:'right'});await page.waitForFunction(()=>window.__golfTest.action?.kind==='heavy');assert.equal(await page.evaluate(()=>window.__golfTest.action.name),'Skyward finish');
 await page.waitForFunction(()=>!window.__golfTest.action);
-await page.evaluate(()=>{const g=window.__golfTest;g.resolve=100;});await page.keyboard.press('KeyL');await page.waitForFunction(()=>window.__golfTest.cinematic>0);await page.waitForTimeout(250);await page.screenshot({path:'/tmp/ninja-musou.png'});await page.waitForFunction(()=>window.__golfTest.action?.kind==='musou');await page.waitForTimeout(350);await page.screenshot({path:'/tmp/ninja-musou-strike.png'});await page.waitForFunction(()=>!window.__golfTest.action);
+await page.evaluate(()=>{const g=window.__golfTest;g.resolve=100;});await page.keyboard.press('KeyF');await page.waitForFunction(()=>window.__golfTest.cinematic>0);await page.waitForTimeout(250);await page.screenshot({path:'/tmp/ninja-musou.png'});await page.waitForFunction(()=>window.__golfTest.action?.kind==='musou');await page.waitForTimeout(350);await page.screenshot({path:'/tmp/ninja-musou-strike.png'});await page.waitForFunction(()=>!window.__golfTest.action);
 // Every emergence has a real site and a finite trajectory, including hazards.
 for(const kind of ['lantern','pagoda','rock','tree','sand','water']){
  const result=await page.evaluate(async kind=>{const {lieAt}=await import('/src/course.js');const g=window.__golfTest;g.paused=true;g.clearEnemies();g.time+=10;const site=g.world.ambushSites.find(s=>s.kind===kind);const saved=g.world.ambushSites;g.world.ambushSites=[site];g.player.root.position.set(site.x,site.y,site.z-25);g.ball.position.set(site.x,site.y,site.z+50);g.enemiesSpawned=0;g.spawnWave(1);g.world.ambushSites=saved;const e=g.enemies[0];if(!e)return {missing:kind};const initial={visible:e.root.visible,site:e.spawnSite};for(let i=0;i<90;i++)g.updateCombat(1/60);g.crowd.update(g.enemies);return{...initial,kind,emerged:!e.emerging,finite:e.root.position.toArray().every(Number.isFinite),lie:lieAt(g.course,e.root.position.x,e.root.position.z)};},kind);

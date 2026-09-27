@@ -17,7 +17,9 @@ Modifications for Ninja Golf:
 - Original fitted clothing, armor, helmets, footwear, and skin weights.
 - Covered body surfaces removed; embedded textures resized and compressed.
 - Source motion retargeted to the human skeleton during loading.
-- Golf_Address, Golf_Swing, and Golf_Putt authored and baked with two-hand IK.
+- Golf and combat clips authored and baked with palm and foot IK.
+- Four distinct enemy costumes and blade profiles.
+- Motion references and phase analysis: docs/character-motion-study.md.
 
 The Quaternius source assets retain their CC0 dedication.
 No assets from Samurai Warriors or Dynasty Warriors are included.

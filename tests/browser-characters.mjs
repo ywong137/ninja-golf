@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio','--use-angle=metal']});
+const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
+await page.evaluate(()=>{const g=window.__golfTest;g.paused=true;g.audio.pause();document.querySelector('#hud').style.display='none';document.querySelector('#toast').style.display='none';});
+for(let hero=0;hero<3;hero++){
+ const measurements=await page.evaluate(hero=>{const g=window.__golfTest;g.selectWarrior(hero);g.placePlayer();const p=g.player;const result=[];for(const t of [0,.96,1.15,1.4,2.4]){p.mixer.stopAllAction();p.current='';p.play('Golf_Swing',0,true);p.actions.get('Golf_Swing').time=t;p.oneShot=99;p.wasSwing=true;p.update(0,0,{golf:true,swing:1});p.root.updateMatrixWorld(true);const v=p.root.position.clone(),q=p.root.quaternion.clone();result.push({t,lead:p.bones.foot_r.getWorldPosition(v).toArray(),rotation:p.bones.foot_r.getWorldQuaternion(q).toArray(),club:p.club.localToWorld(v.set(.047,1.12,0)).distanceTo(g.ball.position),finite:Object.values(p.bones).every(b=>b.quaternion.toArray().every(Number.isFinite))});}return result;},hero);
+ assert.ok(measurements.every(x=>x.finite));const base=measurements[0];for(const m of measurements){assert.ok(Math.hypot(...m.lead.map((v,i)=>v-base.lead[i]))<.04,'Lead foot stays planted');assert.ok(Math.abs(m.rotation.reduce((sum,v,i)=>sum+v*base.rotation[i],0))>.995,'Lead ankle stays stable');}assert.ok(measurements[3].club<.22,`Hero ${hero} contact distance ${measurements[3].club}`);console.log('Golf checkpoints',hero,measurements[3].club);
+}
+// Compare four silhouettes from the same viewpoint.
+await page.evaluate(async()=>{const g=window.__golfTest,{heightAt}=await import('/src/course.js');g.player.root.visible=false;g.ball.visible=false;g.aimLine.visible=false;g.aimMarker.visible=false;g.enemyBudget=80;g.enemiesSpawned=0;g.spawnWave(8);g.crowd.update(g.enemies);g.enemies.forEach(e=>e.root.visible=false);for(let i=0;i<4;i++){const e=g.enemies.find(e=>e.type===i);e.emerging=null;e.root.visible=true;e.root.position.set((i-1.5)*2,heightAt(g.course,0,50),50);e.root.rotation.y=.25;e.update(0,.1,{});g.scene.add(e.root);}const y=heightAt(g.course,0,50);g.camera.position.set(0,y+2.2,57.5);g.camera.lookAt(0,y+1,50);g.renderer.render(g.scene,g.camera);});await page.screenshot({path:'/tmp/ninja-enemy-lineup.png'});
+// Fairways contain designed ambush gardens on every hole.
+for(let hole=0;hole<3;hole++){const count=await page.evaluate(h=>{const g=window.__golfTest;g.loadHole(h);return g.world.ambushSites.filter(s=>s.fairway&&(s.kind==='lantern'||s.kind==='pagoda')).length;},hole);assert.ok(count>=1,`Hole ${hole+1} interior gardens`);console.log('Fairway gardens',hole+1,count);}
+assert.deepEqual(errors,[]);await browser.close();

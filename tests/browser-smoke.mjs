@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
+const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
 await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.ninjaGolf);
@@ -13,8 +13,8 @@ await page.waitForFunction(()=>window.ninjaGolf.state().phase==='flight');await 
 await page.waitForFunction(()=>window.ninjaGolf.state().phase==='combat',{},{timeout:20000});
 assert.equal(await page.evaluate(()=>window.ninjaGolf.state().strokes),1);
 await page.screenshot({path:'/private/tmp/ninja-combat.png'});
-await page.keyboard.press('KeyF');await page.waitForTimeout(500);await page.keyboard.down('KeyW');await page.keyboard.down('ShiftLeft');
-for(let i=0;i<65;i++){await page.keyboard.press('KeyJ');if(i%8===0)await page.keyboard.press('KeyK');await page.waitForTimeout(180);}
+await page.keyboard.press('KeyQ');await page.waitForTimeout(500);await page.keyboard.down('KeyW');await page.keyboard.down('ShiftLeft');
+for(let i=0;i<65;i++){await page.mouse.click(720,440,{button:'left'});if(i%8===0)await page.mouse.click(720,440,{button:'right'});await page.waitForTimeout(180);}
 await page.keyboard.up('KeyW');await page.keyboard.up('ShiftLeft');
 console.log('After combat',await page.evaluate(()=>window.ninjaGolf.state()));
 await page.screenshot({path:'/private/tmp/ninja-battle.png'});

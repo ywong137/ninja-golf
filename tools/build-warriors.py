@@ -32,6 +32,11 @@ def bind(o,bone=None):
             _,index,_=tree.find(v.co)
             for g in base.data.vertices[index].groups:
                 name=groups[g.group];vg=o.vertex_groups.get(name) or o.vertex_groups.new(name=name);vg.add([v.index],g.weight,'REPLACE')
+    uv=o.data.uv_layers.new(name='ClothUV')
+    for poly in o.data.polygons:
+        for index in poly.loop_indices:
+            v=o.data.vertices[o.data.loops[index].vertex_index].co
+            uv.data[index].uv=(math.atan2(v.y,v.x)*2.5,v.z*10)
     mod=o.modifiers.new('Humanoid skin','ARMATURE');mod.object=rig;o.parent=rig
     for p in o.data.polygons:p.use_smooth=True
     parts.append(o);return o
@@ -125,7 +130,7 @@ def setup(kind):
     # Crossed lapels follow the chest shape.
     for side in [-1,1]:
         curve('Kimono lapel',[(side*.08,-.055,1.52),(side*.14,-.12,1.45),(-side*.045,-.159,1.25),(-side*.13,-.147,1.13)],.018,cord,'core')
-    if kind not in ['monk','ninja']:
+    if kind in ['ronin','shinobi','enemy-guard']:
         for j in range(7):
             z=1.105+j*.046;rx=.21+(z-1.1)*.31;ry=.19
             torso('Lamellar cuirass',[(z,rx,ry),(z+.035,rx+.007,ry+.009)],armor,0,'core',N=48)
@@ -142,7 +147,7 @@ def setup(kind):
             for j in range(5):
                 z=.985-j*.047
                 for k in [-1,0,1]:plate('Kusazuri skirt plate',(side*(.11+abs(k)*.075),-.128+k*.011,z),(.067,.035,.04),armor,'thigh_l' if side>0 else 'thigh_r',bevel=.008)
-    if kind=='ronin':
+    if kind in ['ronin','enemy-guard']:
         # A shaped kabuto dome; hide the lower hemisphere rather than using a sphere helmet.
         verts=[];faces=[];N=48;R=14
         for j in range(R):
@@ -151,7 +156,8 @@ def setup(kind):
                 t=i*math.tau/N;verts.append((.116*math.sin(a)*math.cos(t),.024+.125*math.sin(a)*math.sin(t),1.737+.157*math.cos(a)))
         for j in range(R-1):
             for i in range(N):faces.append((j*N+i,j*N+(i+1)%N,(j+1)*N+(i+1)%N,(j+1)*N+i))
-        mesh('Kabuto helmet',verts,faces,armor,'Head');crest(gold)
+        mesh('Kabuto helmet',verts,faces,armor,'Head')
+        if kind=='ronin':crest(gold)
         for j in range(4):
             # Neck guard wraps the back and sides, leaving the face open.
             verts=[]
@@ -159,13 +165,17 @@ def setup(kind):
                 for i in range(33):a=math.pi*.04+i/32*math.pi*.92;verts.append((r*math.cos(a),.03+r*math.sin(a),z))
             mesh('Shikoro neck lamella',verts,[(i,i+1,34+i,33+i) for i in range(32)],armor,'Head')
         plate('Helmet brow',(0,-.10,1.757),(.26,.08,.022),armor,'Head',bevel=.008)
-    elif kind=='ninja':
+    elif kind in ['ninja','enemy-skirmisher']:
         # Cloth hood and mask preserve the eye opening and facial anatomy.
         uv_sphere('Shinobi hood',(0,.035,1.747),(.115,.116,.156),pants,'Head')
         plate('Face mask',(0,-.095,1.665),(.166,.063,.092),cloth,'Head',bevel=.022)
         curve('Headband',[(.11*math.cos(a),.024+.122*math.sin(a),1.763) for a in [i*math.tau/40 for i in range(41)]],.014,cloth,'Head')
         # Cut the front of the hood to expose the real face from cheekbones to brow.
         hood=parts[-3];bm=bmesh.new();bm.from_mesh(hood.data);kill=[v for v in bm.verts if v.co.y<-.043 and 1.69<v.co.z<1.79];bmesh.ops.delete(bm,geom=kill,context='VERTS');bm.to_mesh(hood.data);bm.free()
+        if kind=='enemy-skirmisher':
+            torso('High scarf',[(1.49,.13,.105),(1.57,.12,.09),(1.63,.10,.08)],cloth,.006,'spine_03')
+            curve('Scarf tail',[(.09,.11,1.59),(.15,.21,1.43),(.18,.23,1.17),(.24,.25,.98)],.048,cloth,'core')
+            for x in [-.14,.14]:plate('Throwing pouch',(x,-.18,1.03),(.10,.055,.16),leather,'pelvis',bevel=.014)
     elif kind=='shinobi':
         curve('Headband',[(.111*math.cos(a),.024+.122*math.sin(a),1.784) for a in [i*math.tau/40 for i in range(41)]],.012,cloth,'Head')
         uv_sphere('Tied hair',(0,.108,1.79),(.065,.060,.068),leather,'Head')
@@ -174,8 +184,17 @@ def setup(kind):
         # Woven kasa hat and a string of prayer beads.
         verts=[(0,.02,1.967)]+[(.27*math.cos(i*math.tau/64),.02+.27*math.sin(i*math.tau/64),1.803+.012*math.sin(i*math.tau/64)) for i in range(64)]
         mesh('Woven kasa',verts,[(0,i+1,(i+1)%64+1) for i in range(64)],cord,'Head')
-        for i in range(22):
+        for i in range(22 if kind=='monk' else 0):
             a=i/21*math.pi;uv_sphere('Prayer bead',(.145*math.cos(a),-.14-.024*math.sin(a),1.43-.16*math.sin(a)),(.015,.015,.015),leather,'spine_03',10,6)
+    if kind=='enemy-lancer':
+        for side in [-1,1]:
+            verts=[];N=18
+            for j in range(9):
+                z=1.03-j*.057
+                for i in range(N):
+                    a=-math.pi*.55+i/(N-1)*math.pi*1.1
+                    verts.append((side*(.115+(.11+j*.006)*math.cos(a)),.03+(.14+j*.002)*math.sin(a),z))
+            mesh('Split travel coat',verts,[(j*N+i,j*N+i+1,(j+1)*N+i+1,(j+1)*N+i) for j in range(8) for i in range(N-1)],cloth,'thigh_l' if side>0 else 'thigh_r')
     # Keep the source mesh only where skin is visible. Cloth supplies the covered silhouette.
     bm=bmesh.new();bm.from_mesh(base.data)
     bmesh.ops.delete(bm,geom=[v for v in bm.verts if (v.co.z<1.49 or (v.co.z<1.57 and abs(v.co.x)>.085)) and abs(v.co.x)<.713],context='VERTS');bm.to_mesh(base.data);bm.free()
@@ -192,7 +211,7 @@ def setup(kind):
     bpy.ops.object.select_all(action='DESELECT')
     for p in parts:p.select_set(True)
     bpy.context.view_layer.objects.active=parts[0];bpy.ops.object.join();costume=bpy.context.object;costume.name='SamuraiCostume'
-    if kind=='ninja':
+    if kind in ['ninja','enemy-guard','enemy-lancer','enemy-skirmisher']:
         # One vertex-colored cloth/armor draw per ninja keeps large crowds inexpensive.
         colors=costume.data.color_attributes.new(name='CostumeColor',type='FLOAT_COLOR',domain='CORNER')
         for poly in costume.data.polygons:
@@ -210,4 +229,4 @@ def setup(kind):
     print('EXPORTED',out,flush=True)
     return rig
 
-for kind in ['ronin','shinobi','monk','ninja']:setup(kind)
+for kind in ['ronin','shinobi','monk','ninja','enemy-guard','enemy-lancer','enemy-skirmisher']:setup(kind)

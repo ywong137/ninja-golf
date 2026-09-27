@@ -5,7 +5,8 @@
       "Charlotte Baglioni": "All"
     },
     "license": "CC0-1.0",
-    "source": "https://polyhaven.com/a/grass_ground"
+    "source": "https://polyhaven.com/a/grass_ground",
+    "resolution": "2K color and OpenGL normals"
   },
   {
     "asset": "aerial_grass_rock",
@@ -21,7 +22,8 @@
       "Rob Tuytel": "All"
     },
     "license": "CC0-1.0",
-    "source": "https://polyhaven.com/a/sand_01"
+    "source": "https://polyhaven.com/a/sand_01",
+    "resolution": "2K color and OpenGL normals"
   },
   {
     "asset": "japanese_cedar_bark",
@@ -38,7 +40,8 @@
       "Rico Cilliers": "Processing"
     },
     "license": "CC0-1.0",
-    "source": "https://polyhaven.com/a/rock_boulder_dry"
+    "source": "https://polyhaven.com/a/rock_boulder_dry",
+    "resolution": "2K color and OpenGL normals"
   },
   {
     "asset": "kloofendal_48d_partly_cloudy_puresky",

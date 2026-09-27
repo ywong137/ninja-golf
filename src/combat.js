@@ -30,3 +30,19 @@ export function chooseAmbushSites(sites,player,heading,now){
     return{site:s,score:Math.abs(d-28)-front*13};
   }).sort((a,b)=>a.score-b.score).map(x=>x.site);
 }
+
+export const ENEMY_TYPES=[
+  {name:'Scout',model:'ninja',weapon:'scout',hp:50,speed:5.9,reach:2.7,duration:.50,hits:[.24,.37],damage:5,recovery:1.25,clip:'Twin_Cut_Diagonal',role:2},
+  {name:'Guard',model:'enemy-guard',weapon:'guard',hp:135,speed:3.7,reach:3.6,duration:1.12,hits:[.53],damage:17,recovery:2.25,clip:'Heavy_Cleave',role:0,armor:true},
+  {name:'Lancer',model:'enemy-lancer',weapon:'lancer',hp:80,speed:4.4,reach:5.3,duration:1.05,hits:[.714],damage:13,recovery:2.1,clip:'Enemy_Thrust',role:1},
+  {name:'Skirmisher',model:'enemy-skirmisher',weapon:'skirmisher',hp:45,speed:4.9,reach:16,duration:.85,hits:[.544],damage:8,recovery:2.8,clip:'Enemy_Throw',role:2,ranged:true},
+];
+export function enemyTypeForSlot(slot){return [0,0,1,0,2,0,3,0][slot%8];}
+export function enemyIntent(enemy,player,velocity){
+  const d=Math.hypot(player.x-enemy.x,player.z-enemy.z),definition=ENEMY_TYPES[enemy.type],dx=(player.x-enemy.x)/Math.max(.01,d),dz=(player.z-enemy.z)/Math.max(.01,d),side=enemy.slot%2?1:-1;
+  if(definition.ranged&&d<8)return{x:enemy.x-dx*5-dz*side*2,z:enemy.z-dz*5+dx*side*2};
+  if((definition.ranged&&d<13)||(enemy.type===2&&d<4.5&&d>3.3))return{x:enemy.x-dz*side*2,z:enemy.z+dx*side*2};
+  if(enemy.type===1)return{x:player.x,z:player.z};
+  return interceptTarget({...enemy,role:definition.role},player,velocity);
+}
+export function guardDamageMultiplier(type,kind,front,stunned){return ENEMY_TYPES[type]?.armor&&kind==='light'&&front&&!stunned?.24:1;}

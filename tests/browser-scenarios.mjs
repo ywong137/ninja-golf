@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({headless:true});
+const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
 await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
@@ -12,7 +12,7 @@ for(const kind of ['water','bounds']){
 console.log('Water and out-of-bounds penalties passed');
 // Exercise crowd damage, multi-target hits, Resolve, and revival.
 await page.evaluate(()=>{const g=window.__golfTest;g.phase='combat';g.enemyBudget=80;g.enemiesSpawned=0;g.spawnWave(24);g.combatTime=0;g.spawnTime=100;g.health=g.warrior.health;g.attackTimer=0;g.resolve=100;g.enemies.forEach((e,i)=>{e.emerging=null;e.root.visible=true;e.root.position.copy(g.player.root.position);e.root.position.x+=Math.sin(i)*3;e.root.position.z+=Math.cos(i)*3;});});
-await page.keyboard.press('KeyL');await page.waitForFunction(()=>window.ninjaGolf.state().kills>=24);
+await page.keyboard.press('KeyF');await page.waitForFunction(()=>window.ninjaGolf.state().kills>=24);
 assert.ok(await page.evaluate(()=>window.ninjaGolf.state().resolve>=0));console.log('24-enemy special attack passed');
 await page.evaluate(()=>{window.__golfTest.health=0;});await page.waitForFunction(()=>window.ninjaGolf.state().health===110);console.log('Revival passed');
 // A virtual standard gamepad checks shared actions without relying on a physical controller.

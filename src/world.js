@@ -23,7 +23,7 @@ export class World {
     this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:400});this.sun.shadow.bias=-.0004;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=3;
     scene.add(this.sun,this.sun.target);scene.add(new THREE.HemisphereLight('#d7e6e4','#777a49',.8));
     const env=new THREE.PMREMGenerator(renderer);this.environment=env.fromScene(sky,.04,1,30000);scene.environment=this.environment.texture;scene.environmentIntensity=.18;env.dispose();
-    this.textureCache=new Map();this.shared=[];this.grassColor=this.texture('grass-color.jpg',true);this.grassNormal=this.texture('grass-normal.jpg');this.sandColor=this.texture('sand-color.jpg',true);this.sandNormal=this.texture('sand-normal.jpg');
+    this.textureCache=new Map();this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');
     this.waterMaterial=new THREE.ShaderMaterial({
       uniforms:{time:{value:0},sun:{value:sun},skyMap:{value:null},hasSky:{value:0},fogColor:{value:new THREE.Color('#b9ccc5')}},
       vertexShader:`varying vec3 vWorld; void main(){vec4 p=modelMatrix*vec4(position,1.); vWorld=p.xyz; gl_Position=projectionMatrix*viewMatrix*p;}`,
@@ -48,14 +48,17 @@ export class World {
   terrainMaterial(c){
     const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:this.grassColor,normalMap:this.grassNormal,normalScale:new THREE.Vector2(.35,.35),roughness:.93});
     mat.onBeforeCompile=shader=>{
-      shader.uniforms.sandColor={value:this.sandColor};shader.uniforms.sandNormal={value:this.sandNormal};shader.uniforms.bunkers={value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]};
+      shader.uniforms.courseShape={value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)};shader.uniforms.sandColor={value:this.sandColor};shader.uniforms.sandNormal={value:this.sandNormal};shader.uniforms.bunkers={value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]};
       shader.vertexShader='varying vec3 vTerrainWorld;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvTerrainWorld=(modelMatrix*vec4(position,1.)).xyz;');
-      shader.fragmentShader='varying vec3 vTerrainWorld;uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform vec4 bunkers[4];\n'+shader.fragmentShader;
+      shader.fragmentShader='varying vec3 vTerrainWorld;uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform vec4 bunkers[4];uniform vec4 courseShape;\n'+shader.fragmentShader;
       shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`float sandMask=0.;for(int i=0;i<4;i++){vec4 b=bunkers[i];sandMask=max(sandMask,1.-smoothstep(.94,1.06,length((vTerrainWorld.xz-b.xy)/b.zw)));}
-        vec3 grassSample=texture2D(map,vTerrainWorld.xz/3.).rgb;
-        float grassDetail=clamp(dot(grassSample,vec3(.299,.587,.114))*3.2,.48,1.4);
+        float courseT=clamp(vTerrainWorld.z/courseShape.x,0.,1.);float routeX=sin(courseT*3.14159265)*courseShape.y+courseShape.z*courseT;
+        float fairway=1.-smoothstep(courseShape.w-2.,courseShape.w+2.,abs(vTerrainWorld.x-routeX));
+        vec3 grassSample=mix(texture2D(map,vTerrainWorld.xz/2.7).rgb,texture2D(map,vTerrainWorld.xz/.85).rgb,fairway*.75);
+        float grassDetail=clamp(dot(grassSample,vec3(.299,.587,.114))*3.2,.55,1.45);
+        float macroVariation=.95+.04*sin(vTerrainWorld.x*.24+sin(vTerrainWorld.z*.17))+.02*sin(vTerrainWorld.z*.57);
         vec3 sandSample=texture2D(sandColor,vTerrainWorld.xz/4.).rgb;
-        diffuseColor.rgb=mix(diffuseColor.rgb*grassDetail,sandSample*.8,sandMask);`);
+        diffuseColor.rgb=mix(diffuseColor.rgb*grassDetail*macroVariation*mix(vec3(1.),grassSample*3.3,.22),sandSample*.85,sandMask);`);
       shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`vec3 terrainNormal=mix(texture2D(normalMap,vTerrainWorld.xz/3.).xyz,texture2D(sandNormal,vTerrainWorld.xz/4.).xyz,sandMask)*2.-1.;terrainNormal.xy*=normalScale;normal=normalize(tbn*terrainNormal);`);
     };return mat;
   }
@@ -132,7 +135,7 @@ export class World {
     this.grass.count=n;this.grass.instanceMatrix.needsUpdate=true;
   }
   makeRocks(r){
-    const geo=new THREE.IcosahedronGeometry(1,2);const positions=geo.attributes.position;for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);const d=1+.11*Math.sin(x*8+z*5)+.07*Math.sin(y*11+x*3);positions.setXYZ(i,x*d,y*d,z*d);}geo.computeVertexNormals();const rockMat=new THREE.MeshStandardMaterial({color:'#b7b5a0',map:this.texture('rock-color.jpg',true),normalMap:this.texture('rock-normal.jpg'),normalScale:new THREE.Vector2(.7,.7),roughness:.93});const rocks=new THREE.InstancedMesh(geo,rockMat,260);let n=0;
+    const geo=new THREE.IcosahedronGeometry(1,2);const positions=geo.attributes.position;for(let i=0;i<positions.count;i++){const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);const d=1+.11*Math.sin(x*8+z*5)+.07*Math.sin(y*11+x*3);positions.setXYZ(i,x*d,y*d,z*d);}geo.computeVertexNormals();const rockMat=new THREE.MeshStandardMaterial({color:'#b7b5a0',map:this.texture('rock-color-2k.jpg',true),normalMap:this.texture('rock-normal-2k.jpg'),normalScale:new THREE.Vector2(.7,.7),roughness:.93});const rocks=new THREE.InstancedMesh(geo,rockMat,260);let n=0;
     for(let i=0;i<260;i++){const z=-90+r()*(this.course.length+240),x=i<195?125+Math.sin(z*.014)*28+r()*28:-65-r()*75;const s=1+r()*6;obj.position.set(x,heightAt(this.course,x,z)-s*.25,z);obj.rotation.set(r(),r(),r());obj.scale.set(s,s*.7,s*.8);obj.updateMatrix();rocks.setMatrixAt(n++,obj.matrix);}
     rocks.castShadow=true;rocks.receiveShadow=true;this.root.add(rocks);
   }
@@ -157,14 +160,18 @@ export class World {
   }
   makeAmbushGardens(){
     const firstChild=this.root.children.length;
-    const c=this.course,stone=new THREE.MeshStandardMaterial({color:'#a5a59a',map:this.texture('rock-color.jpg',true),normalMap:this.texture('rock-normal.jpg'),roughness:.9});
+    const c=this.course,stone=new THREE.MeshStandardMaterial({color:'#a5a59a',map:this.texture('rock-color-2k.jpg',true),normalMap:this.texture('rock-normal-2k.jpg'),roughness:.9});
     const dark=material('#35443c'),bronze=material('#7c765b',.4,.6),box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,12);
     const rockGeo=new THREE.IcosahedronGeometry(1,2);
-    const register=(kind,x,z,height=0)=>this.ambushSites.push({id:`${kind}-${this.ambushSites.length}`,kind,x,z,y:kind==='water'?3.1:heightAt(c,x,z),height});
-    // Paired lanterns mark each section of the walking route; stone groups frame each shrine.
-    for(let station=0,z=24;z<c.length+10;z+=38,station++)for(const side of [-1,1]){
-      const x=center(c,z)+side*(c.width+6+(station%3)*2);if(lieAt(c,x,z)==='Water')continue;
+    const register=(kind,x,z,height=0)=>this.ambushSites.push({id:`${kind}-${this.ambushSites.length}`,kind,x,z,y:kind==='water'?3.1:heightAt(c,x,z),height,fairway:lieAt(c,x,z)==='Fairway'});
+    // Boundary pairs frame the walk. Alternating fairway islands create interior ambush locations.
+    const locations=[];
+    for(let station=0,z=24;z<c.length+10;z+=38,station++)for(const side of [-1,1])locations.push({station,side,z,x:center(c,z)+side*(c.width+6+(station%3)*2),interior:false});
+    for(let n=0,z=55;z<c.length-36;z+=52,n++){const side=n%2?-1:1;locations.push({station:n+1,side,z,x:center(c,z)+side*c.width*.38,interior:true});}
+    for(const {station,side,x,z,interior} of locations){
+      if(['Water','Green','Bunker'].includes(lieAt(c,x,z)))continue;
       const y=heightAt(c,x,z),g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=Math.atan2(center(c,z+8)-center(c,z-8),16);this.root.add(g);
+      if(interior){addMesh(g,cyl,stone,0,.04,0,2.1,.08,2.1);for(let j=0;j<12;j++){const a=j*Math.PI/6;addMesh(g,rockGeo,stone,Math.cos(a)*2.05,.10,Math.sin(a)*2.05,.17,.12,.15);}}
       addMesh(g,box,stone,0,.14,0,1.6,.28,1.6);addMesh(g,cyl,stone,0,.75,0,.26,1.1,.26);addMesh(g,box,stone,0,1.43,0,.93,.23,.93);
       for(const xx of [-.32,.32])for(const zz of [-.32,.32])addMesh(g,box,stone,xx,1.78,zz,.15,.6,.15);
       addMesh(g,cyl,bronze,0,1.65,0,.15,.15,.15);

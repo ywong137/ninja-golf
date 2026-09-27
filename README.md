@@ -32,21 +32,21 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Start swing, then strike | Space or swing button | A |
 | Speed up ball tracking | Space | A |
 | Move | W A S D or arrows | Left stick |
-| Look during combat | Hold right mouse button and drag | Right stick |
-| Fast attack | J or left mouse button | X or RT |
-| Heavy attack / combo finisher | K or middle mouse button | Y |
-| Musou | L, with full Resolve | RB during combat |
-| Focused strafe / backpedal | Hold C or right mouse button | Hold LT |
+| Look during combat | Mouse movement; click course to capture | Right stick |
+| Fast attack | Left mouse button | X or RT |
+| Heavy attack / combo finisher | Right mouse button | Y |
+| Musou | F, with full Resolve | RB during combat |
+| Focused strafe / backpedal | Hold C | Hold LT |
 | Sprint / dodge | Hold / tap Shift | Hold / tap B |
-| Face the ball waypoint | F | — |
-| Address the ball | Space, near the ball with no nearby enemies | A |
+| Face the ball waypoint | Q | — |
+| Address the ball | E, near the ball with no nearby enemies | A |
 | Pause | Escape | Start |
 
 The power meter repeats. Press the swing button again at the desired power. Carry scales with the square of power.
 
 Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
 
-After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. F turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a face close-up and clears a large area. Hold the focused stance to move independently of facing. Enemies flank and intercept. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 
@@ -68,7 +68,7 @@ The Ronin has more driving power. The Shinobi moves faster and has less shot dis
 
 This release uses skinned human characters with 65-bone skeletons, fitted samurai costumes, and blended walking, running, sword, roll, and death animations. Golf swings use a separate baked two-hand animation. The ball launches at the swing contact time.
 
-The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Trees and grass use instancing. Weapon parts share one mesh per sword. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
+The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Terrain, trees, rocks, and buildings remain generated geometry. Trees and grass use instancing. Weapon fittings and blade faces use three draw calls per blade. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
 This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, a full 18-hole course, licensed course replicas, or motion-captured combat.
 
@@ -125,8 +125,14 @@ With the development server running, install the test browser and run:
 npx playwright install chromium
 node tests/browser-audio.mjs
 node tests/browser-navigation.mjs
+node tests/browser-combat.mjs
+node tests/browser-characters.mjs
 node tests/browser-smoke.mjs
 node tests/browser-scenarios.mjs
 ```
 
-All browser tests mute the game except the dedicated audio test. Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.
+Set `PLAYWRIGHT_CHANNEL=chrome` to test with an installed Chrome browser. All browser processes mute audio output. The dedicated audio test still verifies playback internally. Audio tests verify decoding, playback, crossfades, pause, mute, and volume. Navigation tests check A/D under rotated cameras, manual facing, forward-only slashes, and both map modes. The smoke test uses real keyboard input through a swing, ball tracking, combat, and pause. Scenario tests use development-only state setup to verify water, out of bounds, revival, multi-target combat, standard gamepad actions, short putts, saved-round recovery, and all three scorecards. Screenshots go to `/private/tmp/` on this development machine.
+
+## Motion and character study
+
+See [the character study](docs/character-motion-study.md) for references, pose checkpoints, controls, and enemy counters. `tools/build-warriors.py` builds the costumes. `tools/build-motion.py` exports the source locomotion library. Run `tools/build-authored-motion.py` last to bake the shared golf and blade trajectories from `src/motion-data.json`. The runtime uses those same trajectories to position the weapons.
