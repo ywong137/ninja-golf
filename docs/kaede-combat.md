@@ -50,10 +50,18 @@ The current body pass adds distinct torso and weight-transfer curves to all eigh
 
 The cleave shifts horizontal hip projection from 35.8% to 68.0% along the rear-to-lead support span. The earlier clip shifted from 45.3% to 60.5%. This measures visible support transfer, not physical center of mass. Braced knee flexion remains 54.9–73.1 degrees.
 
-The free-arm Musou check samples the deformed skin at 240 Hz. All 794 samples have zero measured central forearm inset and zero arm/torso intersections. Peak elbow speed relative to the shoulder is 7.05 m/s. The independent previous model failed this check with severe folding and an abrupt elbow flip. The test excludes the elbow crease and shared mesh vertices. It does not certify every skin region or every other attack.
+The free-arm Musou check samples the deformed skin at 240 Hz. Every sampled pose has zero measured central forearm inset and zero arm/torso intersections. Peak elbow speed relative to the shoulder is 7.05 m/s. The independent previous model failed this check with severe folding and an abrupt elbow flip. The test excludes the elbow crease and shared mesh vertices. It does not certify every skin region or every other attack.
 
 Ayame's cleave also gains an outside windup path. Its sampled forearm inset falls from 46.3 mm to zero. The windup elbow speed falls from 29.6 to 5.45 m/s. Both the source endpoints and the .36-second hit remain unchanged.
 
 Run `tests/native-body-commitment.test.js` and `tests/native-arm-clearance.test.js` for these regressions. Their optional asset-directory variables allow verification against independent pre-fix models.
 
-Release checks pass: 208 unit and asset tests, plus browser grip, blade-frame, attack-transition, travel-transition, moving-attack, and grounded-attack suites. Moving attacks cover all six heroes and eight movement directions. The final Kaede crowd test measures 48.75 FPS with 64 enemies on an M1 Max using Metal. It uses a 1440×900 CSS viewport, device scale 2, and Balanced render ratio 1.5. The 95th-percentile frame time is 33.4 ms.
+Release checks pass: 224 unit and asset tests, plus browser grip, blade-frame, attack-transition, travel-transition, moving-attack, and grounded-attack suites. Moving attacks cover all six heroes and eight movement directions. The final Kaede crowd test measures 41.55 FPS with 64 enemies on an M1 Max using Metal. It uses a 1440×900 CSS viewport, device scale 2, and Balanced mode. Its adaptive render ratio reached 0.75 during this run. The 95th-percentile frame time is 33.4 ms.
+
+The free hand now follows a torso-relative guard during all eight regular attacks. It retains part of the original counter-gesture. The palm moves clear before the elbow guide turns. All nine free-arm clips pass the deformed-skin check at 240 Hz.
+
+The fan arm uses the opt-in `nativeArmClearance` bake constraint. It solves the original pose first, then measures the actual shoulder, wrist, and palm. It preserves lateral travel while keeping the wrist in front of the torso. The existing reach limit still prevents arm extension beyond 94%. This adds no runtime solver. It applies only to Kaede's eight regular attacks.
+
+All eight fan forearms clear the torso throughout their clips. During the active cuts, the measured central forearm inset is zero. Peak elbow speed in the heavy slam falls from 46.5 to 4.49 m/s. Existing recovery checks retain their stricter 8 m/s limit.
+
+The unchanged Ready pose still compresses the weapon arm's skin by about 10 mm. Some cross-body poses also retain upper-arm/shoulder contact. The primary-arm test separates those existing deformation limits from the active forearm checks. These results do not establish complete anatomical or AAA animation quality.

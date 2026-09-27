@@ -161,7 +161,34 @@ def plan_palm_recovery(clip,grips,count,sample_rate):
   result.append({side:Quaternion(track[frame][0],twists[side]*weight)@track[frame][1] for side,track in tracks.items()})
  return result
 
-def apply_native_targets(rig,ik,grips,pose,clip,golf=False,palm_rotations=None):
+def apply_native_arm_clearance(rig,ik,grips,pose,clip,seconds):
+ # Solve clearance on this human's actual anatomy. A radial minimum alone can
+ # push the forearm into the chest when the hand passes close to the shoulder.
+ if clip.get('twoHanded') or not clip.get('athleticAttack'):
+  raise ValueError('nativeArmClearance supports single-weapon athletic attacks only')
+ config=clip['nativeArmClearance'];duration=clip['duration']
+ def smooth(value):
+  value=max(0,min(1,value));return value*value*(3-2*value)
+ weight=smooth(seconds/min(.06,duration*.14))*smooth((duration-seconds)/min(.10,duration*.20))
+ if weight<1e-12:return
+ shoulder=rig.pose.bones['upperarm_r'].head.copy();elbow=rig.pose.bones['lowerarm_r'].head.copy()
+ bone=rig.pose.bones['hand_r'];wrist=bone.head.copy();palm=bone.matrix@grips['r']['center']
+ turn=Quaternion((0,0,1),pose['chest']);forward=turn@Vector((0,-1,0));lateral=turn@Vector((1,0,0))
+ target=wrist+Vector((0,0,(pose['shift'][2]+.07)*weight))-lateral*config['outward']*weight
+ deficit=config['forward']-(target-shoulder).dot(forward)
+ target+=forward*(.5*(deficit+math.sqrt(deficit*deficit+.0004))*weight)
+ reach=((elbow-shoulder).length+(wrist-elbow).length)*clip['nativeReachLimit']
+ chord=target-shoulder
+ if chord.length>reach:target=shoulder+chord.normalized()*reach
+ center=Vector(pose['grip']).lerp(palm,weight)+target-wrist
+ hand=ik['hands']['r'];hand.location=center-hand.rotation_quaternion@grips['r']['center']
+ chord=hand.location-shoulder
+ if chord.length>reach:hand.location=shoulder+chord.normalized()*reach
+ guide=turn@Vector(config['guide']);guide.x+=pose['shift'][0];guide.y+=pose['shift'][1];guide.z+=pose['shift'][2]*.4
+ ik['poles']['r'].location=ik['poles']['r'].location.lerp(guide,weight)
+ bpy.context.view_layer.update()
+
+def apply_native_targets(rig,ik,grips,pose,clip,golf=False,palm_rotations=None,seconds=0):
  for side in ['r','l']:
   sign=-1 if side=='r' else 1;center,_,q,_=palm_target(pose,clip,grips,side)
   if palm_rotations:q=palm_rotations[side]
@@ -198,6 +225,7 @@ def apply_native_targets(rig,ik,grips,pose,clip,golf=False,palm_rotations=None):
   relative=rig.data.bones['lowerarm_l'].matrix_local.to_quaternion().inverted()@rig.data.bones['hand_l'].matrix_local.to_quaternion()
   ik['hands']['l'].rotation_quaternion=rig.pose.bones['lowerarm_l'].matrix.to_quaternion()@relative
   bpy.context.view_layer.update()
+ if clip.get('nativeArmClearance'):apply_native_arm_clearance(rig,ik,grips,pose,clip,seconds)
 
 def apply_native_locomotion(rig,ik,spec,phase):
  """Keep licensed upper-body motion and solve native stance contacts explicitly."""
@@ -302,7 +330,7 @@ def bake_rocketbox_actions(rig,clip_names=None,clip_overrides=None):
     if gait:apply_native_locomotion(rig,ik,gait,frame/count)
     if clip:
      pose=sample_authored(clip,source_phase)
-     apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'),palm_frames[frame] if palm_frames else None)
+     apply_native_targets(rig,ik,grips,pose,clip,name.startswith('Golf_'),palm_frames[frame] if palm_frames else None,min(frame/sample_rate,clip['duration']))
     if clip:max_error=max(max_error,*[(rig.pose.bones['hand_'+side].head-ik['hands'][side].location).length for side in ['r','l']])
     matrices={b.name:b.matrix.copy() for b in rig.pose.bones}
     for bone in rig.pose.bones:

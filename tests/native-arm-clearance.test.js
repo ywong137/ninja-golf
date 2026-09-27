@@ -33,13 +33,13 @@ test('Ayame cleave windup keeps the forearm outside its upper arm and torso',asy
  assert.equal(failures.length,0,`Deformed windup skin or elbow continuity failed at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
 });
 
-test('Kaede Musou keeps the free arm clear and its elbow continuous through the full turn',async t=>{
+for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam','Fan_Musou_Flow'])test(`${name}: Kaede keeps the free arm clear and its elbow continuous`,async t=>{
  const file=process.env.NINJA_NATIVE_ARM_DIR
   ?path.join(process.env.NINJA_NATIVE_ARM_DIR,'kaede.glb')
   :new URL('../public/models/kaede.glb',import.meta.url);
  const g=await loadNativeSkin(file),metadata=skinGroups(g);
  for(const group of ['upperarm_l','lowerarm_l','torso'])assert.ok(metadata.triangles.filter(t=>t.group===group).length>10,`Missing ${group} skin coverage`);
- const clip=g.animations.find(c=>c.name==='Fan_Musou_Flow');assert.ok(clip,'Missing native Fan_Musou_Flow');
+ const clip=g.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
  const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
  const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  let previous=null;
@@ -58,4 +58,31 @@ test('Kaede Musou keeps the free arm clear and its elbow continuous through the 
  t.diagnostic(JSON.stringify({samples:rows.length,maxInset:worst('inset'),maxElbowSpeed:worst('elbowSpeed'),maxReach:worst('reach')}));
  const failures=rows.filter(r=>r.inset>.003||r.forearmTorsoPairs>0||r.upperarmTorsoPairs>0||r.elbowSpeed>8||r.reach>.95);
  assert.equal(failures.length,0,`Free arm intersects the body, flips, or locks straight at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
+});
+
+for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam'])test(`${name}: the fan forearm clears the torso during the cut`,async t=>{
+ const file=process.env.NINJA_NATIVE_ARM_DIR?path.join(process.env.NINJA_NATIVE_ARM_DIR,'kaede.glb'):new URL('../public/models/kaede.glb',import.meta.url);
+ const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
+ const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
+ const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
+ let previous=null;const rows=[];
+ for(let frame=0;frame<=Math.ceil(clip.duration*240);frame++){
+  const seconds=Math.min(clip.duration,frame/240);action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+  const elbow=point('lowerarm_r').sub(point('upperarm_r')),dt=previous?seconds-previous.seconds:0,skin=measureArmSkin(g,metadata,'r');
+  rows.push({seconds,inset:skin.fold_r.maxRadialPenetration,forearmTorsoPairs:skin.forearmTorso_r.pairs,elbowSpeed:dt>1e-7?elbow.distanceTo(previous.elbow)/dt:0});
+  previous={seconds,elbow};
+ }
+ // The existing Ready pose compresses this mesh at the elbow. Test active
+ // strokes separately from the initial 60 ms and final 100 ms of returning
+ // to that unchanged pose. Forearm/torso intersections remain forbidden
+ // throughout. Upper-arm/shoulder skin contact needs a separate deformation pass.
+ const active=rows.filter(r=>r.seconds>=.06&&r.seconds<=clip.duration-.10);
+ assert.ok(active.length>=30,'Insufficient active-cut samples');
+ const maxInset=active.reduce((a,b)=>b.inset>a.inset?b:a),maxSpeed=rows.reduce((a,b)=>b.elbowSpeed>a.elbowSpeed?b:a);
+ t.diagnostic(JSON.stringify({name,samples:rows.length,maxActiveInset:maxInset,maxElbowSpeed:maxSpeed}));
+ assert.ok(active.every(r=>r.inset<=.003),`Forearm folds into upper arm: ${JSON.stringify(maxInset)}`);
+ assert.ok(rows.every(r=>r.forearmTorsoPairs===0),'Forearm crosses the torso');
+ // Fast cross-body cuts may exceed the free-arm speed. This bound rejects
+ // the former 20–46 m/s bend-plane jumps. Recovery has a separate 8 m/s test.
+ assert.ok(maxSpeed.elbowSpeed<15,`Elbow plane jumps: ${JSON.stringify(maxSpeed)}`);
 });

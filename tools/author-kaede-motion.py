@@ -111,6 +111,18 @@ def assemble(sec,duration,hip,chest,bend,shift,grip,direction,off,feet,roll):
  pole_r=turn([-.44,-.18,1.03+shift[2]*.4],chest);pole_l=turn([.45,-.16,1.04+shift[2]*.4],chest)
  for pole in [pole_r,pole_l]:pole[0]+=shift[0];pole[1]+=shift[1]
  return dict(t=sec/duration,grip=grip,tip=[grip[k]+direction[k] for k in range(3)],offGrip=off,offTip=[off[0]-.3,off[1]-.72,off[2]+.46],hip=hip,chest=chest,bend=bend,shift=shift,heel=0,step=0,footR=feet['r'][0],footL=feet['l'][0],yawR=feet['r'][1],yawL=feet['l'][1],elbowR=pole_r,elbowL=pole_l,roll=roll,offRoll=-.3,freeHand=.85)
+def regular_free_guard(pose,t,duration):
+ # Let the free palm follow the loaded torso, retaining a small counter-gesture.
+ # Clear the hand before turning the elbow plane, then recover both gradually.
+ weight=smooth(t/.035)*smooth((duration-t)/.10)
+ anchor=turn([.55,-.20,1.23+pose['shift'][2]],pose['chest'])
+ for k in range(2):anchor[k]+=pose['shift'][k]
+ delta=[(anchor[k]-pose['offGrip'][k])*.85*weight for k in range(3)]
+ for key in ['offGrip','offTip']:pose[key]=[pose[key][k]+delta[k] for k in range(3)]
+ guide=turn([.8,.9,1.1+pose['shift'][2]*.4],pose['chest'])
+ for k in range(2):guide[k]+=pose['shift'][k]
+ pose['elbowL']=mix(pose['elbowL'],guide,smooth(t/.10)*smooth((duration-t)/.10))
+ return pose
 def regular(name,duration,index):
  hits=HITS[index];hit=hits[0];heavy=index>=4;side,delta,yaw=STEPS[index];sign=-1 if index in [1,6] else 1;prep=hit*.34;release=hit-(.075 if index==7 else .055);follow=hit+.065
  base={'r':[-.22,0,0],'l':[.22,.07,0]};endfoot=[base[side][k]+delta[k] for k in range(3)];recovery=duration-.16;events={'r':[],'l':[]};events[side]=[(.014,hit-.035,endfoot,yaw,.085 if heavy else .075),(recovery,duration-.015,base[side],0,.075)]
@@ -140,8 +152,8 @@ def regular(name,duration,index):
    arc=math.sin(math.pi*(t-follow)/(duration-follow))**2
    p['elbowR'][0]-=.24*arc;p['elbowR'][2]+=.30*arc
   regular_core(p,t,duration,name,index,hits,prep,release,follow)
-  poses.append(p)
- return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,nativeSampleRate=120,rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
+  poses.append(regular_free_guard(p,t,duration))
+ return dict(duration=duration,twoHanded=False,athleticAttack=True,nativeReachLimit=.94,nativeSampleRate=120,nativeArmClearance=dict(forward=.26,outward=.04,guide=[-.8,-.4,1.05]),rootAdvance=0,impacts=hits,footPlants={s:plants(events[s],duration) for s in base},poses=poses)
 def musou_free_guard(pose,t,duration):
  # The empty hand follows the lowered body and stays outside the shoulder.
  # Guide its elbow behind the hand: a guide along the wrist line flips during
