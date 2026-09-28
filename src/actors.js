@@ -18,7 +18,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS={shinobi:'native-dual-arms-body-5',ayame:'head-clearance-2',sora:'head-clearance-2'};
+const MODEL_REVISIONS={shinobi:'native-dual-sweep-9',ayame:'head-clearance-2',sora:'head-clearance-2'};
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();

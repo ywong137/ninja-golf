@@ -7,24 +7,29 @@ const ROWS=[
  [.17,4,-18,.30,-.025,.025,5,2],
  [.225,14,14,.55,-.020,.050,6,3],
  [.260,16,26,.68,-.06,.070,6,3],
- [.300,16,26,.68,-.06,.070,6,3],
+ [.300,16,29,.68,-.06,.070,6,3],
  [.340,13,30,.70,-.06,.060,4,1],
  [.385,12,22,.65,-.055,.040,4,2],
  [.430,4,20,.60,-.055,.040,5,2],
  [.480,-13,-13,.45,-.020,.060,6,3],
  [.512,-16,-26,.32,-.045,.070,6,3],
- [.555,-16,-26,.32,-.045,.070,6,3],
+ [.555,-16,-29,.32,-.045,.070,6,3],
  [.600,-13,-30,.30,-.045,.060,4,1],
  [.700,-5,-12,.43,-.010,.025,2,1],
  [.812,0,0,.50,0,0,0,0],
 ];
-function curve(column,time){
- let i=0;while(i<ROWS.length-2&&time>ROWS[i+1][0])i++;
- const a=ROWS[i],b=ROWS[i+1],h=b[0]-a[0],u=Math.max(0,Math.min(1,(time-a[0])/h));
- const slope=j=>{if(j===0||j===ROWS.length-1)return 0;const a=ROWS[j-1],b=ROWS[j],c=ROWS[j+1],h0=b[0]-a[0],h1=c[0]-b[0],d0=(b[column]-a[column])/h0,d1=(c[column]-b[column])/h1;if(d0*d1<=0)return 0;return(3*h0+3*h1)/((2*h1+h0)/d0+(h1+2*h0)/d1);};
+// The accepted hip frame also parents the thighs. Keep its original chest contribution.
+const SUPPORT_ROWS=ROWS.map(row=>row.slice());
+SUPPORT_ROWS.find(row=>row[0]===.300)[2]=26;
+SUPPORT_ROWS.find(row=>row[0]===.555)[2]=-26;
+function curve(column,time,rows=ROWS){
+ let i=0;while(i<rows.length-2&&time>rows[i+1][0])i++;
+ const a=rows[i],b=rows[i+1],h=b[0]-a[0],u=Math.max(0,Math.min(1,(time-a[0])/h));
+ const slope=j=>{if(j===0||j===rows.length-1)return 0;const a=rows[j-1],b=rows[j],c=rows[j+1],h0=b[0]-a[0],h1=c[0]-b[0],d0=(b[column]-a[column])/h0,d1=(c[column]-b[column])/h1;if(d0*d1<=0)return 0;return(3*h0+3*h1)/((2*h1+h0)/d0+(h1+2*h0)/d1);};
  return(2*u**3-3*u*u+1)*a[column]+(u**3-2*u*u+u)*h*slope(i)+(-2*u**3+3*u*u)*b[column]+(u**3-u*u)*h*slope(i+1);
 }
 export function shinobiSweepBody(time){return Object.fromEntries(['hip','chest','leftWeight','height','advance','bend','pelvisBend'].map((key,i)=>[key,curve(i+1,time)]));}
+export function shinobiSweepSupportChest(time){return curve(2,time,SUPPORT_ROWS);}
 export const shinobiSweepBodyTimes=ROWS.map(row=>row[0]);
 
 // Rear feet turn on the planted toe as weight passes to the opposite leg.

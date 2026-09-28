@@ -120,7 +120,14 @@ The largest body correction is 3.01 degrees. All arm and finger channels remain 
 The foot solver preserves the original foot positions and orientations.
 The three repaired clips retain 684 other channels and all 34 unrelated animations.
 
-The unchanged recovery test now passes. Terminal right-wrist speeds fall from 193–197 degrees per second to 22–26.
+The unchanged recovery test now passes.
+
+| Clip | Previous terminal right-wrist speed | Repaired speed |
+| --- | ---: | ---: |
+| Twin_Heavy_Rising | 192.6°/s | 24.7°/s |
+| Twin_Heavy_Slam | 194.4°/s | 22.2°/s |
+| Twin_Musou_Flow | 197.1°/s | 25.7°/s |
+
 The 480 Hz anatomy, skin, support, and blade/head checks pass too.
 This correction does not change damage timing or the Sweep body pilot.
 
@@ -135,3 +142,99 @@ node tools/smooth-native-recovery.mjs \
 
 Merge only the three emitted records into the complete motion catalog.
 The tool rejects an already-corrected clip to prevent repeated smoothing.
+
+
+## Sweep revision v9: accepted local refinement
+
+This revision changes the Sweep's upper torso and arm path. It leaves Ready and the fixed weapon mounts unchanged.
+The chest now continues through each hit instead of holding for approximately 40 ms.
+The second preparation moves outward, and its active cut takes longer.
+The duration remains 0.812 seconds. Damage still occurs at 0.280 seconds and 0.532 seconds.
+
+| Measured property | Accepted v5 | Candidate v9 |
+| --- | ---: | ---: |
+| Right contact speed | 10.26 m/s | 8.90 m/s |
+| Left contact speed | 25.50 m/s | 11.32 m/s |
+| Minimum blade/head clearance | 11.59 mm | 91.23 mm |
+| Cover-blade speed at either hit | 1.60 m/s | 0.90 m/s |
+
+The right and left sharp-edge alignments are 0.801 and 0.886.
+Contact retains 65% and 74% of each blade's peak speed.
+The source still has no measured elbow folds or arm/torso crossings at 480 Hz.
+Fist and forearm clearance from the head exceeds the scanner's 50 mm reporting cap.
+The exact blade scan includes the skinned head, eyes, and hair. It excludes rigid attachments.
+
+All 24 lower-body channels remain unchanged. The planted ankle and toe errors remain below 0.24 mm.
+The fitted fingers remain unchanged within numerical precision. All 36 other clips and the original geometry remain unchanged.
+The five native Shinobi tests pass. Ready, running, and guard transitions also pass with both visible wrists within 14 degrees.
+The largest recovery arm turn is 5.72 degrees per 240 Hz frame. No runtime blade/head crossings occur.
+The muted gameplay capture averaged 59.50 FPS at 1440×900 with 24–43 enemies.
+
+The large contact views show separate blade paths and retained weight transfer.
+The Ready squat and limited forward torso bend remain visible limitations.
+The extracted gameplay frames do not establish continuous artistic cadence.
+The actual Opus 5.5 High review accepts this as a local improvement and reports no blocking anatomy or grip fault.
+See [the complete review](opus-shinobi-sweep-v9.md).
+It still identifies reduced contact speed relative to each global peak and the unchanged broad Ready stance.
+The new regression checks reject the old hit-speed imbalance, the impact plateau, and the close blade/head path.
+
+The requested 480 Hz chest-speed check confirms continued rotation through both former plateaus.
+The source curve has matching derivatives across the relevant keys.
+The baked chest still brakes rapidly over approximately 30–40 ms. That remains an artistic timing limitation.
+A separate 480 Hz check found no blade crossings through 867 skinned torso/neck triangles, with clearance above the 200 mm reporting cap.
+The unchanged nine-attack recovery test also passes.
+
+Candidate files:
+
+- `/tmp/shinobi-sweep-v9.glb`, `.json`, and `.mount.json`.
+- `/tmp/shinobi-sweep-v9-Twin_Cut_Sweep.json` contains the only record needed for integration.
+- `/tmp/shinobi-sweep-v9.check.json`, `.head.json`, and `.runtime.json` contain the physical checks.
+- `/tmp/shinobi-sweep-v9.preservation.json` verifies geometry and unrelated animations.
+- `/tmp/shinobi-sweep-v9-support-finger-preservation.json` verifies the retained support and fingers.
+- `/tmp/shinobi-sweep-v9-sweep.png` and `-contact-0.532-three-quarter.png` show the rendered motion.
+- `/tmp/shinobi-sweep-v9-playback.webm` records the actual gameplay.
+
+The candidate model SHA-256 is `d0e0f48e5673ebd357ce695b29c4e4a947e4523293e26598b3b7c0b215474b94`.
+The single Sweep record SHA-256 is `4f714dfd6356ebc04357c82ac7ea06ceecf8259ebd71c258bb09a1e485e26259`.
+
+### Rebuild order
+
+The rig attaches both thighs to `spine_01` and the clavicles to `neck_01`.
+Retain the accepted lower torso rotation when revising the upper torso.
+Author the arms after the body pass so their reference frame matches the new chest.
+A fresh export and an incremental rebuild agree within 0.028 mm in joint position at 480 Hz.
+
+Start with the supported arm-family baseline from the earlier rebuild section.
+Use the current public model instead when it already contains the body pilot.
+The body tool detects that case and preserves the lower-body channels without applying the toe pivots twice.
+
+```sh
+node tools/author-native-shinobi-body.mjs \
+  --model /tmp/shinobi-final.glb --record /tmp/shinobi-final.json \
+  --frames /tmp/shinobi-final.mount.json \
+  --output /tmp/shinobi-body-stage.glb --output-record /tmp/shinobi-body-stage.json
+
+node tools/author-native-shinobi.mjs \
+  --input /tmp/shinobi-body-stage.glb --clip Twin_Cut_Sweep \
+  --output /tmp/shinobi-arm-stage.glb --record /tmp/shinobi-arm-stage.json
+
+node --input-type=module - <<'JS'
+import fs from 'node:fs';
+const records = JSON.parse(fs.readFileSync('/tmp/shinobi-body-stage.json'));
+Object.assign(records, JSON.parse(fs.readFileSync('/tmp/shinobi-arm-stage.json')));
+fs.writeFileSync('/tmp/shinobi-arm-stage.all.json', JSON.stringify(records));
+JS
+
+node tools/author-native-shinobi-body.mjs \
+  --model /tmp/shinobi-arm-stage.glb --record /tmp/shinobi-arm-stage.all.json \
+  --frames /tmp/shinobi-arm-stage.mount.json \
+  --output /tmp/shinobi-sweep.glb --output-record /tmp/shinobi-sweep.json
+
+cp /tmp/shinobi-arm-stage.mount.json /tmp/shinobi-sweep.mount.json
+
+NINJA_SHINOBI_CANDIDATE=/tmp/shinobi-sweep \
+  node --test tests/native-shinobi.test.js
+```
+
+The final body pass refreshes the hand and support metadata against the actual new arm frames.
+Merge only `Twin_Cut_Sweep` into the current motion catalog. Do not replace unrelated records from an older candidate catalog.

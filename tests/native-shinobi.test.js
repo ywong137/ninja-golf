@@ -67,3 +67,38 @@ test('both Shinobi blades clear the deformed head throughout every combat clip',
  const result=await inspectNativeBladeHeadClearance({model,modelKey:'shinobi',weaponKind:'twin',frames,record,clips:SHINOBI_CLIPS,dualWield:true,rate:480});
  assert.equal(result.passed,true,JSON.stringify(result.clips));
 });
+
+test('revised Shinobi Sweep keeps torso continuation, comparable cuts, and space around the head', {
+ skip:pending||(motions.Twin_Cut_Sweep?.nativeShinobiBodyPilotVersion??0)<2,
+},async()=>{
+ const name='Twin_Cut_Sweep';
+ const data=report??await inspectNativeShinobi({model,record,rate:480,clips:[name]});
+ const clip=data.clips[name],right=clip.contacts[0],left=clip.offhand.contacts[1];
+ assert.ok(Math.max(right.speed,left.speed)/Math.min(right.speed,left.speed)<1.6,
+  'The second blade must not snap through contact at several times the first blade speed.');
+ for(const hit of [right,left])assert.ok(hit.fractionOfGlobalPeak>.6,
+  'The active blade slows too far before the damage event.');
+ const frames=candidate?candidate+'.mount.json':{sword:JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).shinobi.sword};
+ const head=await inspectNativeBladeHeadClearance({model,modelKey:'shinobi',weaponKind:'twin',frames,record,
+  clips:[name],dualWield:true,rate:480,distanceCap:.06});
+ assert.ok(head.clips[name].minimumClearance>=.05,'The revised preparation needs visible clearance around the head.');
+ const g=await loadNativeSkin(model),chest=g.scene.getObjectByName('spine_03');
+ const ready=g.mixer.clipAction(g.animations.find(c=>c.name==='Twin_Ready')).reset().play();
+ ready.time=0;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+ const reference=chest.getWorldQuaternion(new T.Quaternion()).normalize().invert();
+ g.mixer.stopAllAction();const action=g.mixer.clipAction(g.animations.find(c=>c.name===name)).reset().play();
+ const yaw=time=>{
+  action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+  const delta=chest.getWorldQuaternion(new T.Quaternion()).normalize().multiply(reference);
+  const forward=new T.Vector3(0,0,1).applyQuaternion(delta);
+  return Math.atan2(forward.x,forward.z)*180/Math.PI;
+ };
+ for(const [start,end,sign]of [[.260,.300,1],[.512,.555,-1]]){
+  let previous=yaw(start),minimumSpeed=Infinity;
+  for(let time=start;time<end;){const next=Math.min(time+1/480,end),value=yaw(next);
+   minimumSpeed=Math.min(minimumSpeed,sign*(value-previous)/(next-time));previous=value;time=next;
+  }
+  assert.ok(minimumSpeed>10,'The chest stops during the former impact plateau.');
+  assert.ok(sign*(yaw(end)-yaw(start))>2.5,'The torso must continue through the braced hit.');
+ }
+});

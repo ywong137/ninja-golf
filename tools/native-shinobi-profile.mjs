@@ -42,8 +42,9 @@ function keysFor(name,duration,impacts){
   const rising=name.includes('Rising')||(name.includes('Heavy_Sweep')&&i===1)||(name.includes('Musou')&&i%2===1);
   let load=rising?UP_LOAD:name.includes('Heavy')?HIGH:LOAD.r,follow=rising?UP_FOLLOW:FOLLOW.r;
   if(name==='Twin_Cut_Sweep'&&i===0){load={...load,upper:[-.75,.08,.70],flex:75,twist:load.twist-40};follow={...follow,twist:follow.twist-40};}
-  if(name==='Twin_Cut_Sweep'&&i===1){load={...load,twist:load.twist-8};follow={...follow,twist:follow.twist-8};}
-  rows.push([hit-gap*(i===0?.38:.20),strikePose(side,load)],[hit+gap*(i===0?.22:.18),strikePose(side,follow)]);
+  if(name==='Twin_Cut_Sweep'&&i===1){load={...load,upper:[-.75,.08,.70],flex:75,twist:load.twist-8};follow={...follow,twist:follow.twist-8};}
+  const loadTime=name==='Twin_Cut_Sweep'&&i===1?.432:hit-gap*(i===0?.38:.20),followTime=name==='Twin_Cut_Sweep'&&i===1?.615:hit+gap*(i===0?.22:.18);
+  rows.push([loadTime,strikePose(side,load)],[followTime,strikePose(side,follow)]);
  }
  rows.push([duration,READY]);return rows;
 }
