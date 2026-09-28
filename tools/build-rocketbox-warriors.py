@@ -174,9 +174,12 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # revision too; never silently restore the older nose during a full rebuild.
   measured=output.with_name('monk.measured-building.glb')
   subprocess.run(['node',str(ROOT/'tools/preserve-vice-president-head.mjs'),'--input',str(likeness),'--recipe',str(ROOT/'assets/characters/vice-president-head-revision.json'),'--output',str(measured)],check=True)
+  brow=output.with_name('monk.brow-building.glb')
+  subprocess.run(['node',str(ROOT/'tools/author-vice-president-brow-weights.mjs'),'--input',str(measured),'--output',str(brow)],check=True)
   hair=output.with_name('monk.hair-building.glb')
-  subprocess.run(['python3',str(ROOT/'tools/author-vice-president-hair.py'),'--input',str(measured),'--output',str(hair)],check=True)
-  hair.replace(output);measured.unlink();likeness.unlink()
+  subprocess.run(['python3',str(ROOT/'tools/author-vice-president-hair.py'),'--input',str(brow),'--output',str(hair)],check=True)
+  hair.replace(output);brow.unlink();measured.unlink();likeness.unlink()
+  brow.with_suffix('.glb.json').unlink(missing_ok=True)
   hair.with_suffix('.json').unlink(missing_ok=True)
   patch_naginata_native_combat(output)
  if hero=='sora':

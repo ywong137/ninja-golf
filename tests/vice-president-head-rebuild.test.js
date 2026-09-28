@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {applyRevision,packedStream,readModel,replaceStream,serializeModel} from '../tools/preserve-vice-president-head.mjs';
+import {applyVicePresidentBrowWeights,restoreVicePresidentLegacyBrowWeights} from '../tools/author-vice-president-brow-weights.mjs';
 
 const recipe=JSON.parse(fs.readFileSync(new URL('../assets/characters/vice-president-head-revision.json',import.meta.url)));
 const publicBytes=fs.readFileSync(new URL('../public/models/monk.glb',import.meta.url));
@@ -11,6 +12,7 @@ test('The full-rebuild revision matches the currently published head',()=>{
 });
 function baseline(){
  const model=readModel(publicBytes),head=model.doc.meshes[0].primitives[1];
+ if(model.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(model);
  for(const name of ['POSITION','NORMAL'])replaceStream(model,head.attributes[name],Buffer.from(recipe.streams[name].source,'base64'));
  delete model.doc.extras.vicePresidentShapeFit;return model;
 }
@@ -32,6 +34,14 @@ test('A native head rebuild retains the reviewed geometry and newer animation pa
  }
  for(let i=0;i<before.length;i++)if(before[i]!==model.bin[i])assert.ok(allowed.has(i),`Unexpected non-head byte change at ${i}`);
  assert.deepEqual(packedStream(readModel(serializeModel(model)),id),bytes);
+});
+
+test('The full rebuild restores measured geometry before the reviewed brow weights',()=>{
+ const model=baseline();
+ assert.throws(()=>applyVicePresidentBrowWeights(model),/POSITION/,'Brow weights require the measured head first');
+ applyRevision(model,recipe);applyVicePresidentBrowWeights(model);
+ const released=readModel(publicBytes),head=model.doc.meshes[0].primitives[1],releasedHead=released.doc.meshes[0].primitives[1];
+ for(const name of Object.keys(head.attributes))assert.deepEqual(packedStream(model,head.attributes[name]),packedStream(released,releasedHead.attributes[name]),name);
 });
 
 test('A changed sculpt, changed skin, or duplicate application fails before mutation',()=>{

@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "id": "vice-president-inner-brow-weights-v1",
+  "description": "One reviewed graph-harmonic smoothing of the eight inner-crease skin rows. Geometry, eye weights, and all other skin rows stay exact.",
+  "method": "Inner-brow weights minimize the local graph Dirichlet energy with inverse native edge lengths and fixed outside weights. Only Head weights compensate.",
+  "material": "m009_head",
+  "vertexCount": 1713,
+  "streams": {
+    "POSITION": {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1713,
+      "sourceSha256": "53ee5c83597230a58d136b843e6ee9731c82317dbb67e8bdb7600c319e2859f5",
+      "resultSha256": "53ee5c83597230a58d136b843e6ee9731c82317dbb67e8bdb7600c319e2859f5"
+    },
+    "NORMAL": {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1713,
+      "sourceSha256": "ed09dbdeaaf74cfae9447e7c109593b4cd48050e81e6cb38333622e0d2913d3e",
+      "resultSha256": "ed09dbdeaaf74cfae9447e7c109593b4cd48050e81e6cb38333622e0d2913d3e"
+    },
+    "TEXCOORD_0": {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1713,
+      "sourceSha256": "9210ff232071ea866f11ec1b20584003560afa352af402e1dc779218455a92a5",
+      "resultSha256": "9210ff232071ea866f11ec1b20584003560afa352af402e1dc779218455a92a5"
+    },
+    "JOINTS_0": {
+      "type": "VEC4",
+      "componentType": 5121,
+      "count": 1713,
+      "sourceSha256": "8f9dd6a1805a3120bc2aa7586ce6047803d9fd61612c11afb70023086f2f50e6",
+      "resultSha256": "371dd73e7b830f7548cecc209adb5bd369b95455c0d65ab42b5794d9e64de321"
+    },
+    "WEIGHTS_0": {
+      "type": "VEC4",
+      "componentType": 5126,
+      "count": 1713,
+      "sourceSha256": "79c912cd4c8fcf9c839a13362beca18914411477bc0e7869f08cb5e328dfe1f6",
+      "resultSha256": "21f678d215606769115b7261fb9d11e9bc3c4ae094b17aa42c66f21c7febf63c"
+    },
+    "indices": {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9246,
+      "sourceSha256": "daeff28134d42621cd0a8ac9c95544cd75717d62d56dd32f66f7486147fb675b",
+      "resultSha256": "daeff28134d42621cd0a8ac9c95544cd75717d62d56dd32f66f7486147fb675b"
+    }
+  },
+  "rig": {
+    "jointNames": [
+      "pelvis",
+      "spine_01",
+      "spine_02",
+      "spine_03",
+      "neck_01",
+      "Head",
+      "Bip01 REye",
+      "Bip01 LEye",
+      "Bip01 MJaw",
+      "Bip01 MBottomLip",
+      "Bip01 MTongue",
+      "Bip01 LMouthBottom",
+      "Bip01 RMouthBottom",
+      "Bip01 RMasseter",
+      "Bip01 LMasseter",
+      "Bip01 MUpperLip",
+      "Bip01 RCaninus",
+      "Bip01 LCaninus",
+      "Bip01 REyeBlinkBottom",
+      "Bip01 LEyeBlinkBottom",
+      "Bip01 RUpperlip",
+      "Bip01 LUpperlip",
+      "Bip01 RMouthCorner",
+      "Bip01 LMouthCorner",
+      "Bip01 RCheek",
+      "Bip01 LCheek",
+      "Bip01 REyeBlinkTop",
+      "Bip01 LEyeBlinkTop",
+      "Bip01 RInnerEyebrow",
+      "Bip01 LInnerEyebrow",
+      "Bip01 MMiddleEyebrow",
+      "Bip01 ROuterEyebrow",
+      "Bip01 LOuterEyebrow",
+      "Bip01 MNose",
+      "clavicle_l",
+      "upperarm_l",
+      "lowerarm_l",
+      "hand_l",
+      "thumb_01_l",
+      "thumb_02_l",
+      "thumb_03_l",
+      "index_01_l",
+      "index_02_l",
+      "index_03_l",
+      "middle_01_l",
+      "middle_02_l",
+      "middle_03_l",
+      "ring_01_l",
+      "ring_02_l",
+      "ring_03_l",
+      "pinky_01_l",
+      "pinky_02_l",
+      "pinky_03_l",
+      "clavicle_r",
+      "upperarm_r",
+      "lowerarm_r",
+      "hand_r",
+      "thumb_01_r",
+      "thumb_02_r",
+      "thumb_03_r",
+      "index_01_r",
+      "index_02_r",
+      "index_03_r",
+      "middle_01_r",
+      "middle_02_r",
+      "middle_03_r",
+      "ring_01_r",
+      "ring_02_r",
+      "ring_03_r",
+      "pinky_01_r",
+      "pinky_02_r",
+      "pinky_03_r",
+      "thigh_l",
+      "calf_l",
+      "foot_l",
+      "ball_l",
+      "thigh_r",
+      "calf_r",
+      "foot_r",
+      "ball_r"
+    ],
+    "inverseBindMatricesSha256": "0487da4025c7027550a6094232a4500d8f0074ede49bafcc50f067ab51ae90d9"
+  },
+  "triangles": [
+    {
+      "triangle": 1444,
+      "vertices": [
+        755,
+        700,
+        706
+      ]
+    },
+    {
+      "triangle": 1445,
+      "vertices": [
+        706,
+        756,
+        755
+      ]
+    },
+    {
+      "triangle": 2291,
+      "vertices": [
+        1334,
+        1331,
+        1281
+      ]
+    },
+    {
+      "triangle": 2292,
+      "vertices": [
+        1281,
+        1275,
+        1334
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "vertex": 700,
+      "JOINTS_0": {
+        "source": "HgUcAA==",
+        "result": "HgUcAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "AAAAPwAAgD4AAIA+AAAAAA==",
+        "result": "AAAAPxtN1z6Sy6I9AAAAAA=="
+      }
+    },
+    {
+      "vertex": 706,
+      "JOINTS_0": {
+        "source": "HB4AAA==",
+        "result": "HB4FAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "zcxMP83MTD4AAAAAAAAAAA==",
+        "result": "pD18Ps3MTD5kvQ0/AAAAAA=="
+      }
+    },
+    {
+      "vertex": 755,
+      "JOINTS_0": {
+        "source": "BRwAAA==",
+        "result": "BRwAAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "16NwP4/CdT0AAAAAAAAAAA==",
+        "result": "H3BoPwV/vD0AAAAAAAAAAA=="
+      }
+    },
+    {
+      "vertex": 756,
+      "JOINTS_0": {
+        "source": "BRwAAA==",
+        "result": "BRwAAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "zcxMP83MTD4AAAAAAAAAAA==",
+        "result": "PaldPw1bCT4AAAAAAAAAAA=="
+      }
+    },
+    {
+      "vertex": 1275,
+      "JOINTS_0": {
+        "source": "HgUdAA==",
+        "result": "HgUdAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "AAAAPwAAgD4AAIA+AAAAAA==",
+        "result": "AAAAPw9R1z7Fu6I9AAAAAA=="
+      }
+    },
+    {
+      "vertex": 1281,
+      "JOINTS_0": {
+        "source": "HR4AAA==",
+        "result": "HR4FAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "zcxMP83MTD4AAAAAAAAAAA==",
+        "result": "uTl8Ps3MTD5fvg0/AAAAAA=="
+      }
+    },
+    {
+      "vertex": 1331,
+      "JOINTS_0": {
+        "source": "BR0AAA==",
+        "result": "BR0AAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "zcxMP83MTD4AAAAAAAAAAA==",
+        "result": "iqldP9tZCT4AAAAAAAAAAA=="
+      }
+    },
+    {
+      "vertex": 1334,
+      "JOINTS_0": {
+        "source": "BR0AAA==",
+        "result": "BR0AAA=="
+      },
+      "WEIGHTS_0": {
+        "source": "16NwP4/CdT0AAAAAAAAAAA==",
+        "result": "kHNoP39jvD0AAAAAAAAAAA=="
+      }
+    }
+  ]
+}

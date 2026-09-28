@@ -1,9 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {Quaternion,Vector3} from 'three';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {FacialPose} from '../src/facial-pose.js';
+
+const weightRecipe=JSON.parse(fs.readFileSync(new URL('../assets/characters/vice-president-brow-weights.json',import.meta.url)));
 
 // Fixed camera from the visual review. This detects the specific inner-lid
 // overhang, which turns less than 90 degrees and passes a 3D flip check.
@@ -20,13 +23,25 @@ const folds=[
  {triangle:2292,vertices:[1281,1275,1334]},
 ];
 
-async function loadFoldMeter(){
+async function loadFoldMeter({legacyWeights=false}={}){
  const model=await loadNativeSkin(fileURLToPath(new URL('../public/models/monk.glb',import.meta.url)));
  const clip=model.animations.find(c=>c.name==='Naginata_Selection_Idle');
  assert.ok(clip,'The reviewed selection pose must exist');
  model.mixer.clipAction(clip).play();model.mixer.update(.1);model.scene.updateMatrixWorld(true);
  const bones={};model.scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
  const mesh=model.scene.getObjectByName('Mesh_1');mesh.skeleton.update();
+ if(legacyWeights){
+  // Keep the known bad surface explicit after the production skin repair.
+  const {skinIndex,skinWeight}=mesh.geometry.attributes;
+  for(const row of weightRecipe.rows){
+   const joints=Buffer.from(row.JOINTS_0.source,'base64'),weights=Buffer.from(row.WEIGHTS_0.source,'base64');
+   for(let k=0;k<4;k++){
+    const joint=joints.readUInt8(k);
+    assert.equal(mesh.skeleton.bones[joint].name,weightRecipe.rig.jointNames[joint].replaceAll(' ','_'));
+    skinIndex.setComponent(row.vertex,k,joint);skinWeight.setComponent(row.vertex,k,weights.readFloatLE(k*4));
+   }
+  }
+ }
  const index=mesh.geometry.index;
  for(const fold of folds)assert.deepEqual([0,1,2].map(k=>index.getX(fold.triangle*3+k)),fold.vertices,
   `Head topology changed: review and rebase inner-lid triangle ${fold.triangle}`);
@@ -65,7 +80,7 @@ test('Executive musou preserves the visible inner-lid folds through the full exp
 });
 
 test('The fold check detects the former excessive brow descent',async()=>{
- const meter=await loadFoldMeter();
+ const meter=await loadFoldMeter({legacyWeights:true});
  meter.pose.expression={...meter.pose.expression,RInnerEyebrow:[.0025,-.006,.0018],LInnerEyebrow:[-.0025,-.006,.0018]};
  const result=meter.scan();
  assert.ok(result.firstReversal,'The known bad expression must fail the visual regression');

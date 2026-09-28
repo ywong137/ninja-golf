@@ -6,19 +6,24 @@ import * as T from 'three';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {FacialPose,FACIAL_LIMITS} from '../src/facial-pose.js';
 import {measureFace} from '../tools/audit-facial-pose.mjs';
+import {readModel,packedStream} from '../tools/preserve-vice-president-head.mjs';
+import {restoreVicePresidentLegacyBrowWeights} from '../tools/author-vice-president-brow-weights.mjs';
 
 const fixture=JSON.parse(fs.readFileSync(new URL('./fixtures/vice-president-fit.json',import.meta.url)));
 const anatomy=JSON.parse(fs.readFileSync(new URL('./fixtures/vice-president-anatomical-fit.json',import.meta.url)));
 const file=process.env.NINJA_ETHAN_CANDIDATE||new URL('../public/models/monk.glb',import.meta.url);
-const raw=fs.readFileSync(file),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size)),bin=raw.subarray(28+size);
-function stream(i){const a=doc.accessors[i],v=doc.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[a.type]*{5121:1,5123:2,5125:4,5126:4}[a.componentType],stride=v.byteStride??n,start=(a.byteOffset??0)+(v.byteOffset??0);return Buffer.concat(Array.from({length:a.count},(_,j)=>bin.subarray(start+j*stride,start+j*stride+n)));}
+const raw=fs.readFileSync(file);
 function meshesOf(g){const meshes=[];g.scene.traverse(m=>{if(m.isSkinnedMesh)meshes.push(m);});return meshes;}
 function update(g){g.scene.updateMatrixWorld(true);for(const m of meshesOf(g))m.skeleton.update();}
 
 test('Ethan refinement preserves the body, topology, UVs, and skin streams',()=>{
+ const model=readModel(raw);
+ // The geometric fit predates the separately tested eight-row skin repair.
+ // Reverse only that exact approved patch; retain the original fingerprints.
+ if(model.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(model);
  for(const [key,hash]of Object.entries(fixture.preservedStreamHashes)){
-  const [index,attr]=key.split(':'),p=doc.meshes[0].primitives[Number(index)];
-  assert.equal(crypto.createHash('sha256').update(stream(attr==='indices'?p.indices:p.attributes[attr])).digest('hex'),hash,key);
+  const [index,attr]=key.split(':'),p=model.doc.meshes[0].primitives[Number(index)];
+  assert.equal(crypto.createHash('sha256').update(packedStream(model,attr==='indices'?p.indices:p.attributes[attr])).digest('hex'),hash,key);
  }
 });
 
