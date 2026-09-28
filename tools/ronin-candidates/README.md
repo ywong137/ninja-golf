@@ -2,7 +2,7 @@
 
 These tools reproduce the accepted V63 Ready/Cleave pilot and the reviewed middle-guard transfer. They do not change shipping files.
 
-The full Ronin family is not ready for release. Other legacy attacks still fail under this sword mount. Running transitions also expose an existing elbow-axis defect in `TravelPose`.
+The full Ronin family is not ready for release. Other legacy attacks still fail under this sword mount. The published carry correction now preserves native elbow hinges during running. Native paired attack blends still need a separate attachment correction.
 
 ## Reproduce the accepted pilot
 
@@ -54,4 +54,37 @@ The corrected pilot playback uses heavy attack step **0**. Step 1 selects `Heavy
 
 The V63 Opus review is in `docs/reviews/ronin-cleave-v63-opus.md`. The guard and transition findings are in `docs/reviews/ronin-guard-transfer-v2.md`.
 
-The rejected diagonal-cut experiments remain outside this directory. They are not part of this checkpoint.
+## Reproduce the reviewed diagonal pilot and guard reactions
+
+The diagonal body transfer inclines the accepted cleave through a 15° torso side bend. The native arm joints, two-hand grip, and leg movement remain intact. The head counters the side bend.
+
+```sh
+node tools/ronin-candidates/author-diagonal-body.mjs \
+  --input /tmp/ronin-guards-v2.glb \
+  --heavy-record /tmp/ronin-v63.json \
+  --output /tmp/ronin-diagonal-body.glb \
+  --record /tmp/ronin-diagonal-body.json
+
+node tools/ronin-candidates/check-diagonal.mjs \
+  --model /tmp/ronin-diagonal-body.glb \
+  --before /tmp/ronin-guards-v2.glb \
+  --output /tmp/ronin-diagonal-body-check.json \
+  --hz 480
+
+node tools/ronin-candidates/author-guard-reactions.mjs \
+  --input /tmp/ronin-diagonal-body.glb \
+  --output /tmp/ronin-family-pilot.glb \
+  --record /tmp/ronin-family-pilot-guards.json
+```
+
+The diagonal model SHA256 is `66bd0b8ea32062e623f0d13c531e3478f0647dde822f60b02d332f169ca70397`. The combined guard/diagonal model SHA256 is `8b6030d3ef4bb2e58deaa6ef676fb0a9094b4f72026e628c83acefa17ed64767`.
+
+The new first cut lasts 0.60 s. Its hit occurs at 0.2842105263 s. The candidate gameplay route must use both values. Using the old 0.40 s definition silently speeds up the clip.
+
+The diagonal record uses the existing `pairedGrip` contract because both palms have authored positions. The earlier V63 metadata omitted this field. Correcting native paired metadata needs a runtime transition review before integration.
+
+The guard reaction author retains the V2 arms and legs. It adds a 5.5° torso recoil for impact and a 12° recoil for guard break. The stronger break also turns the upper trunk 10° and tilts it 3°.
+
+The diagonal native clip and guard reactions passed local visual review. Actual Opus 5.5 High also accepted the single diagonal pilot. The review and transition limitations are in `docs/reviews/ronin-diagonal-body-v3-opus.md`.
+
+The rejected independent arm-path fits remain outside this directory. These candidate tools do not change shipping models or metadata.
