@@ -44,7 +44,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
 });
 
 test('Enemy bodies use native human clips and distinct source identities',()=>{
-  const names=['ninja','enemy-guard','enemy-lancer','enemy-skirmisher'],sources=['Male_Adult_18','Male_Adult_04','Male_Adult_11','Female_Adult_13'],attacks=['Twin_Cut_Diagonal','Heavy_Cleave','Enemy_Thrust','Enemy_Throw'];
+  const names=['ninja','enemy-guard','enemy-lancer','enemy-skirmisher'],sources=['Male_Adult_18','Male_Adult_04','Male_Adult_11','Female_Adult_13'],attacks=['Enemy_Scout_Cut','Heavy_Cleave','Enemy_Thrust','Enemy_Throw'];
   for(const [i,name]of names.entries()){
     const g=glb(name),rig=g.nodes.find(n=>n.extras?.nativeMotion);assert.equal(rig?.extras.sourceAvatar,sources[i]);assert.equal(rig.extras.license,'MIT');
     const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Golf_Address','Sword_Idle','Jump_Loop','Jump_Land','Death01','Hit_Chest',attacks[i]])assert.ok(clips.has(clip),`${name}: ${clip}`);assert.ok(clips.size<=14,`${name}: keep only crowd clips`);

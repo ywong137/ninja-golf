@@ -19,12 +19,13 @@ const reports=[];
 for(const hero of heroes){
  const old=read(path.join(before,hero+'.glb')),current=read(new URL('../public/models/'+hero+'.glb',import.meta.url));let protectedClips=0;
  const warrior=WARRIORS.find(w=>w.model===hero),prefix=warrior?.motionPrefix;
- const selected=name=>warrior?name.startsWith(prefix)&&/^(Cut_|Heavy_|Musou_)/.test(name.slice(prefix.length)):name===({ninja:'Twin_Cut_Diagonal','enemy-guard':'Heavy_Cleave'})[hero];
+ const selected=name=>warrior?name.startsWith(prefix)&&/^(Cut_|Heavy_|Musou_)/.test(name.slice(prefix.length)):name===({ninja:'Enemy_Scout_Cut','enemy-guard':'Heavy_Cleave'})[hero];
  if(!warrior&&!['ninja','enemy-guard'].includes(hero))throw Error(`Unsupported hero: ${hero}`);
  for(const key of ['meshes','nodes','skins','materials','textures','images'])assert.deepEqual(current.doc[key],old.doc[key],`${hero}: changed ${key}`);
  for(const mesh of old.doc.meshes)for(const primitive of mesh.primitives)for(const i of [...Object.values(primitive.attributes),primitive.indices].filter(v=>v!==undefined))assert.ok(bytes(old,i).equals(bytes(current,i)),`${hero}: body bytes changed`);
  for(const image of old.doc.images){const v=old.doc.bufferViews[image.bufferView];assert.ok(old.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength).equals(current.bin.subarray(v.byteOffset,v.byteOffset+v.byteLength)),`${hero}: texture bytes changed`);}
  for(const a of old.doc.animations){
+  if(hero==='ninja'&&a.name==='Twin_Cut_Diagonal'){assert.ok(!current.doc.animations.some(c=>c.name===a.name),'Retire the old paired-sword Scout attack');continue;}
   if(hero==='monk'&&/^(Cut_|Heavy_|Musou_)/.test(a.name)){assert.ok(!current.doc.animations.some(c=>c.name===a.name),'Retire the old shared Monk attack');continue;}
   if(selected(a.name)||args.includes('--include-ready')&&a.name===warrior?.readyClip)continue;const b=current.doc.animations.find(c=>c.name===a.name);assert.deepEqual(a,b,`${hero}: protected ${a.name} descriptor`);for(const sampler of a.samplers)for(const key of ['input','output'])assert.ok(bytes(old,sampler[key]).equals(bytes(current,sampler[key])),`${hero}: protected ${a.name} bytes`);protectedClips++;
  }

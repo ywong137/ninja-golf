@@ -1,4 +1,4 @@
-"""Regenerate the odachi, naginata, twin, ring, and sickle families in memory.
+"""Regenerate five hero weapon families and the single-sword scout in memory.
 
 Kaede and unrelated records remain unchanged. Use --output to preview the result.
 """
@@ -21,6 +21,7 @@ def author(data):
  agility=agile.generate(source);agile.audit(agility,source)
  assert not(set(records)&set(twins) or set(records)&set(agility) or set(twins)&set(agility)),'Overlapping authoring families'
  records.update(twins);records.update(agility)
+ scout=module('author-scout-motion');scouts=scout.author({**source,**records});scout.validate(scouts,{**source,**records});records.update(scouts)
  assert not any(name.startswith('Fan_') for name in records),'Roster author must preserve Kaede'
  data.update(records);return data
 

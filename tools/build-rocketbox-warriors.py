@@ -9,7 +9,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 ROSTER=[('ronin','Male_Adult_10'),('shinobi','Male_Adult_09'),('monk','Male_Adult_05'),('kaede','Female_Adult_03'),('ayame','Female_Adult_08'),('sora','Female_Adult_12')]
 ENEMIES=[('ninja','Male_Adult_18'),('enemy-guard','Male_Adult_04'),('enemy-lancer','Male_Adult_11'),('enemy-skirmisher','Female_Adult_13')]
 ENEMY_CLIPS={'Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Jump_Start','Jump_Loop','Jump_Land','Hit_Chest','Golf_Address'}
-ENEMY_ATTACKS=['Twin_Cut_Diagonal','Heavy_Cleave','Enemy_Thrust','Enemy_Throw']
+ENEMY_ATTACKS=['Enemy_Scout_Cut','Heavy_Cleave','Enemy_Thrust','Enemy_Throw']
 parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--selection-only',action='store_true',help='Append only the relaxed selection clip, preserving all other clips and mesh bytes');parser.add_argument('--attack-name',action='append',default=[],help='Append exactly this existing attack clip; repeat for multiple clips');parser.add_argument('--native-reach-limit',type=float,help='Bake-only maximum arm reach fraction for explicitly selected attacks');parser.add_argument('--attacks-only',action='store_true',help='Append only authored athletic attack clips');parser.add_argument('--locomotion-only',action='store_true',help='Append native speed-matched locomotion only');parser.add_argument('--preview',action='store_true');parser.add_argument('--enemies',action='store_true');parser.add_argument('--guard-walk-only',action='store_true',help='Append only directional guard locomotion');parser.add_argument('--guards-only',action='store_true',help='Append only new native guard clips to existing hero models');parser.add_argument('--hero',choices=[r[0] for r in ROSTER+ENEMIES]);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 if args.selection_only and (args.enemies or args.attack_name or args.attacks_only or args.guards_only or args.guard_walk_only or args.locomotion_only or args.preview):parser.error('--selection-only cannot be combined with another export mode or enemies')
 if args.attack_name and not args.hero:parser.error('--attack-name requires --hero to avoid unintended roster exports')
@@ -88,6 +88,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  if append_only:
   # The Monk now owns a polearm family. Retire the former shared odachi clips.
   retired=[name.removeprefix('Naginata_') for name in clip_names if name.startswith('Naginata_') and any(part in name for part in ['Cut_','Heavy_','Musou_'])] if hero=='monk' and args.attacks_only else []
+  if hero=='ninja' and args.attacks_only:retired.append('Twin_Cut_Diagonal')
   subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in (clip_names if args.selection_only else args.attack_name) for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink();print('GUARDS_EXPORTED',hero,flush=True);continue
  # Full exports need the same exact attack endpoints as animation-only updates.
  time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')

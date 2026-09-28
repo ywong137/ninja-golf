@@ -84,7 +84,7 @@ export function chooseAmbushSites(sites,player,heading,now){
 }
 
 export const ENEMY_TYPES=[
-  {name:'Scout',model:'ninja',weapon:'scout',hp:50,speed:5.9,reach:2.7,duration:.50,hits:[.24,.37],damage:2.5,recovery:2.2,clip:'Twin_Cut_Diagonal',role:2},
+  {name:'Scout',model:'ninja',weapon:'scout',dualWield:false,hp:50,speed:5.9,reach:2.7,duration:.64,hits:[.24],damage:2.5,recovery:2.2,clip:'Enemy_Scout_Cut',role:2},
   {name:'Guard',model:'enemy-guard',weapon:'guard',hp:135,speed:3.7,reach:3.6,duration:1.12,hits:[.53],damage:8.5,recovery:3.2,clip:'Heavy_Cleave',role:0,armor:true},
   {name:'Lancer',model:'enemy-lancer',weapon:'lancer',hp:80,speed:4.4,reach:5.3,duration:1.05,hits:[.714],damage:6.5,recovery:2.8,clip:'Enemy_Thrust',role:1},
   {name:'Skirmisher',model:'enemy-skirmisher',weapon:'skirmisher',hp:45,speed:4.9,reach:16,duration:.85,hits:[.544],damage:4,recovery:3.5,clip:'Enemy_Throw',role:2,ranged:true},

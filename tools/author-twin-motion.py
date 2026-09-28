@@ -12,6 +12,7 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VERSION = 'twin-standing-3'
+ARM_PATH_VERSION = 'twin-front-corridor-1'
 spec = importlib.util.spec_from_file_location('kaede_helpers', ROOT / 'tools/author-kaede-motion.py')
 helpers = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helpers)
@@ -174,6 +175,55 @@ def repair_light_recovery(record):
     record['lightRecoveryVersion']=1
     return record
 
+def repair_arm_paths(record):
+    """Keep independent sword handles in front of their own shoulder halves.
+
+    The blades retain their separate directions and rolls. Their tips can cross
+    during cuts without driving either wrist through the opposite upper arm.
+    Apply this after the body and light-return authoring, including Ready.
+    """
+    if record.get('twinArmPathVersion') == ARM_PATH_VERSION:
+        return record
+    def positive(value):
+        # Smooth the corridor boundary so crossing it cannot change velocity
+        # abruptly. This is a source-space correction, not a runtime IK layer.
+        return .5 * (value + math.sqrt(value * value + .0001))
+    for p in record['poses']:
+        for side, sign, grip, tip in [('R', -1, 'grip', 'tip'),
+                                      ('L', 1, 'offGrip', 'offTip')]:
+            local = turn([p[grip][0] - p['shift'][0],
+                          p[grip][1] - p['shift'][1], 0], -p['chest'])
+            offset = turn([sign * positive(.10 - sign * local[0]),
+                           -positive(.42 + local[1]),
+                           -.06 if side == 'L' else 0], p['chest'])
+            for key in [grip, tip]:
+                p[key] = [p[key][k] + offset[k] for k in range(3)]
+            guide = turn([sign * .75, -.60, 1.02 + p['shift'][2] * .4], p['chest'])
+            p['elbow' + side] = [guide[k] + (p['shift'][k] if k < 2 else 0)
+                                 for k in range(3)]
+    record['twinArmPathVersion'] = ARM_PATH_VERSION
+    return record
+
+def broaden_musou_hands(record):
+    """Start three compressed hand rises earlier without retiming the blades."""
+    if record.get('twinMusouHandTimingVersion') == 1:
+        return record
+    original=copy.deepcopy(record)
+    for pose in record['poses']:
+        seconds=pose['t']*record['duration']
+        for grip,tip,windows in [
+                ('offGrip','offTip',[(.68,.86,.016),(1.60,1.78,.016)]),
+                ('grip','tip',[(2.60,2.82,.023)])]:
+            for start,end,advance in windows:
+                if start < seconds < end:
+                    phase=(seconds-start)/(end-start)
+                    target=sample(original,seconds+advance*math.sin(math.pi*phase)**2)[grip]
+                    offset=[target[k]-pose[grip][k] for k in range(3)]
+                    for key in [grip,tip]:
+                        pose[key]=[pose[key][k]+offset[k] for k in range(3)]
+    record['twinMusouHandTimingVersion']=1
+    return record
+
 def generate(data):
     records={}
     for index,name in enumerate(NAMES+['Musou_Flow']):
@@ -185,6 +235,8 @@ def generate(data):
         for pose in record['poses']:
             pose.setdefault('roll',0);pose.setdefault('offRoll',0);pose.setdefault('freeHand',0)
         if index<4:record=repair_light_recovery(record)
+        record=repair_arm_paths(record)
+        if name=='Musou_Flow':record=broaden_musou_hands(record)
         record['nativeSampleRate']=120
         record['twinAuthorVersion']=VERSION;records[key]=record
     ready=copy.deepcopy(records['Twin_Cut_Diagonal']['poses'][0])
@@ -193,7 +245,7 @@ def generate(data):
         pose=copy.deepcopy(ready);pose['t']=t;rows.append(pose)
     records['Twin_Ready']=dict(duration=2,twoHanded=False,nativeAttackReady=True,
         nativeReachLimit=.95,rootAdvance=0,footPlants={'r':[[0,2]],'l':[[0,2]]},
-        poses=rows,twinAuthorVersion=VERSION)
+        poses=rows,twinAuthorVersion=VERSION,twinArmPathVersion=ARM_PATH_VERSION)
     return records
 
 def validate(records,source):
@@ -234,8 +286,12 @@ def validate(records,source):
                 support=[p[key] for p in clip['poses'] if a+1e-6<p['t']*duration<b-1e-6]
                 if support:assert all(magnitude([v[k]-support[0][k] for k in range(3)])<1e-7 for v in support),(name,'support drifts')
             for hit in clip['impacts']:assert any(a<=hit<=b for a,b in clip['footPlants'][side]),(name,'unplanted strike',side,hit)
+        corrected_boundary=repair_arm_paths(copy.deepcopy(old))
         for key in ['grip','tip','offGrip','offTip']:
-            assert magnitude([clip['poses'][-1][key][k]-old['poses'][-1][key][k] for k in range(3)])<1e-7,(name,'ready recovery')
+            assert magnitude([clip['poses'][-1][key][k]-corrected_boundary['poses'][-1][key][k] for k in range(3)])<1e-7,(name,'ready recovery')
+        for endpoint in [clip['poses'][0],clip['poses'][-1]]:
+            for key in ['grip','tip','offGrip','offTip','elbowR','elbowL']:
+                assert math.dist(endpoint[key],records['Twin_Ready']['poses'][0][key])<1e-7,(name,'corrected Ready mismatch',key)
         assert max_speed<5.9,(name,'excessive source foot speed',max_speed)
         assert all(set(p)==set(clip['poses'][0]) for p in clip['poses']), (name,'inconsistent pose fields')
         summary[name]={'samples':len(clip['poses']),'minimumFootDistance':round(minimum,3),'maximumFootSpeed':round(max_speed,3),'impacts':clip['impacts']}

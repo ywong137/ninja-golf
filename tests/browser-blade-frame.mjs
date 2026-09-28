@@ -5,6 +5,7 @@ import {disableHmr} from '../tools/disable-hmr.mjs';
 
 // Captured from fbea207 before the palm-frame change. Sora's Ready position
 // now uses her reviewed forward guard; its blade plane and scale remain exact.
+// Shinobi's Ready hand sits farther forward to clear his upper-arm skin.
 // Preserve every full golf transform, including the club head's lateral offset.
 const baseline=JSON.parse(readFileSync(new URL('./fixtures/weapon-ready-golf.json',import.meta.url),'utf8'));
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
@@ -59,6 +60,7 @@ try{
     }
     for(const enemy of [false,true])for(let type=0;type<(enemy?4:6);type++){
       const p=new Warrior(type,enemy),reference={},legacyReference={};
+      if(enemy&&type===0&&p.offhand)throw Error('The single-sword scout has an unexpected offhand weapon');
       const names=[...p.actions.keys()].filter(name=>motions[name]&&/Cut_|Heavy_|Musou_|Enemy_/.test(name));
       if(enemy)report.enemies++;
       // Nontrivial root yaw exposes accidental world/local frame mixing.
@@ -109,7 +111,7 @@ try{
   },baseline);
   console.log(JSON.stringify(report,null,2));
   assert.deepEqual(errors,[]);
-  assert.ok(report.samples>15000&&report.clips>=54&&report.enemies===4,'Missing attack/roster coverage');
+  assert.ok(report.samples>14900&&report.clips>=54&&report.enemies===4,'Missing attack/roster coverage');
   assert.ok(report.transitionSamples>300,'Missing transition coverage');
   assert.ok(report.maxLegacyFrameDrift>1,'The fixtures must expose the old shaft-dependent roll defect');
   assert.ok(report.maxPalmFrameError<1e-5,`Weapon twists independently of its hand: ${JSON.stringify(report.worst)}`);
