@@ -6,6 +6,9 @@ Run with Blender --background --python tools/build-vice-president.py -- \
 The sculpt keeps native topology, UVs, joint indices, weights and animation bytes.
 It patches positions and normals, then adds head-parented glasses.
 Only the generated albedo is distributed. The private photos stay outside the repo.
+
+This creates the base sculpt. The measured geometric revision uses
+fit-vice-president-shape.py and its saved fit. See docs/vice-president-likeness.md.
 """
 import argparse, json, math, pathlib, struct, sys
 import bpy

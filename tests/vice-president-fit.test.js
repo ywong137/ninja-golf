@@ -8,6 +8,7 @@ import {FacialPose,FACIAL_LIMITS} from '../src/facial-pose.js';
 import {measureFace} from '../tools/audit-facial-pose.mjs';
 
 const fixture=JSON.parse(fs.readFileSync(new URL('./fixtures/vice-president-fit.json',import.meta.url)));
+const anatomy=JSON.parse(fs.readFileSync(new URL('./fixtures/vice-president-anatomical-fit.json',import.meta.url)));
 const file=process.env.NINJA_ETHAN_CANDIDATE||new URL('../public/models/monk.glb',import.meta.url);
 const raw=fs.readFileSync(file),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size)),bin=raw.subarray(28+size);
 function stream(i){const a=doc.accessors[i],v=doc.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16}[a.type]*{5121:1,5123:2,5125:4,5126:4}[a.componentType],stride=v.byteStride??n,start=(a.byteOffset??0)+(v.byteOffset??0);return Buffer.concat(Array.from({length:a.count},(_,j)=>bin.subarray(start+j*stride,start+j*stride+n)));}
@@ -21,17 +22,28 @@ test('Ethan refinement preserves the body, topology, UVs, and skin streams',()=>
  }
 });
 
-test('Ethan likeness improves both photographs through unchanged reference cameras',async()=>{
+test('Ethan nasal geometry follows the checked photographic wing span',async()=>{
  const g=await loadNativeSkin(file),clip=g.animations.find(c=>c.name===fixture.clip);assert.ok(clip);
  g.mixer.clipAction(clip).play();g.mixer.update(fixture.time);update(g);
- const meshes=meshesOf(g),anchors=new Map(fixture.anchors.map(a=>{
-  const mesh=meshes.find(m=>m.name===a.mesh);assert.ok(mesh,a.mesh);const point=new T.Vector3();
-  a.vertices.forEach((i,k)=>point.addScaledVector(mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(mesh.matrixWorld),a.barycentric[k]));return[a.id,point];
- }));
- for(const photo of fixture.photos){
-  const {rotationVector,translation,matrix}=photo.camera,r=new T.Vector3().fromArray(rotationVector),angle=r.length(),q=new T.Quaternion().setFromAxisAngle(r.normalize(),angle),origin=new T.Vector3().fromArray(fixture.modelOrigin);let error=0,weight=0;
-  for(const a of photo.landmarks){const p=anchors.get(a.id).clone().sub(origin).applyQuaternion(q).add(new T.Vector3().fromArray(translation));assert.ok(p.z>0);const x=matrix[0][0]*p.x/p.z+matrix[0][2],y=matrix[1][1]*p.y/p.z+matrix[1][2];error+=a.weight*((x-a.observed[0])**2+(y-a.observed[1])**2);weight+=a.weight;}
-  const rms=Math.sqrt(error/weight);assert.ok(rms<photo.baselineRms*.9,`${photo.id}: fixed-camera RMS ${rms.toFixed(3)} px must improve baseline ${photo.baselineRms.toFixed(3)} px by at least 10%`);
+ const mesh=meshesOf(g).find(m=>m.name==='Mesh_1');assert.ok(mesh);
+ const {rotationVector,translation,cameraMatrix:matrix}=anatomy.frontCamera;
+ const r=new T.Vector3().fromArray(rotationVector),angle=r.length(),q=new T.Quaternion().setFromAxisAngle(r.normalize(),angle);
+ const origin=new T.Vector3().fromArray(anatomy.modelOrigin),t=new T.Vector3().fromArray(translation);
+ const xs=anatomy.alarWidth.candidateVertices.map(id=>{
+  const p=mesh.getVertexPosition(id,new T.Vector3()).applyMatrix4(mesh.matrixWorld).sub(origin).applyQuaternion(q).add(t);
+  assert.ok(p.z>0);return matrix[0][0]*p.x/p.z+matrix[0][2];
+ });
+ const width=Math.max(...xs)-Math.min(...xs),{observedPixels,uncertaintyPixels}=anatomy.alarWidth;
+ assert.ok(Math.abs(width-observedPixels)<=uncertaintyPixels,`Nasal span ${width.toFixed(2)} px; checked photograph ${observedPixels} ± ${uncertaintyPixels} px`);
+});
+
+test('The measured oral seam uses opposing lip surfaces, with no eyeball correspondences',async()=>{
+ const g=await loadNativeSkin(file),mesh=meshesOf(g).find(m=>m.name==='Mesh_1');assert.ok(mesh);
+ const weights=mesh.geometry.attributes.skinWeight,joints=mesh.geometry.attributes.skinIndex;
+ for(const id of Object.values(anatomy.semanticVertices).flat())assert.ok(!anatomy.excludedEyeVertices.includes(id));
+ for(const [id,bone]of [[1103,'Bip01_MUpperLip'],[947,'Bip01_MBottomLip']]){
+  let total=0;for(let i=0;i<4;i++)if(mesh.skeleton.bones[joints.getComponent(id,i)].name===bone)total+=weights.getComponent(id,i);
+  assert.ok(total>.5,`Vertex ${id} must follow ${bone}`);
  }
 });
 

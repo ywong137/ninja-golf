@@ -1,3 +1,10 @@
+# Current measured geometry revision
+
+The latest fitted mesh is documented in [Ethan measured geometry v15](reviews/ethan-measured-geometry-v15.md).
+Its visible improvement is narrower nasal wings. It does not establish a complete facial reconstruction.
+
+The earlier camera-fit RMS values below used several invalid anatomical anchors. Do not use them as likeness evidence.
+
 # The Vice President
 
 The Vice President replaces the Monk's appearance with an interpretation of Ethan Cary.
