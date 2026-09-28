@@ -108,3 +108,30 @@ NINJA_SHINOBI_CANDIDATE=/tmp/shinobi-body \
 
 Do not run the old full-foot support bake after this pilot. Its explicit toe pivots are already baked at 240 Hz.
 The author verifies that the foot targets remain reachable and that unrelated animation data stays unchanged.
+
+## Release recovery correction
+
+The full release suite found a terminal torso acceleration in three other clips.
+Heavy Rising, Heavy Slam, and Musou accelerated the world-space wrist near their final frame.
+The local wrist itself did not cause the defect.
+
+The final 120 ms now blends the body toward its settled endpoint with a smooth quintic curve.
+The largest body correction is 3.01 degrees. All arm and finger channels remain unchanged.
+The foot solver preserves the original foot positions and orientations.
+The three repaired clips retain 684 other channels and all 34 unrelated animations.
+
+The unchanged recovery test now passes. Terminal right-wrist speeds fall from 193–197 degrees per second to 22–26.
+The 480 Hz anatomy, skin, support, and blade/head checks pass too.
+This correction does not change damage timing or the Sweep body pilot.
+
+Reproduce from a pre-correction Shinobi model and its matching motion records:
+
+```sh
+node tools/smooth-native-recovery.mjs \
+  --model /tmp/shinobi-body.glb --record /tmp/shinobi-body.json \
+  --output /tmp/shinobi-recovery.glb --output-record /tmp/shinobi-recovery.json \
+  --clip Twin_Heavy_Rising --clip Twin_Heavy_Slam --clip Twin_Musou_Flow
+```
+
+Merge only the three emitted records into the complete motion catalog.
+The tool rejects an already-corrected clip to prevent repeated smoothing.

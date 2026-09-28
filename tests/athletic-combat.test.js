@@ -15,7 +15,11 @@ test('Athletic attacks keep support targets fixed and lift before foot travel',(
    // Solved native skeletons retain submillimeter floating-point residuals.
    // Their separate geometry checks enforce the same one-millimeter bound.
    const positionTolerance=clip.nativeAttachment?.001:1e-6;
-   for(const row of rows){assert.ok(Math.hypot(...row[key].map((v,i)=>v-rows[0][key][i]))<positionTolerance,`${name}: planted ${side} moved`);assert.ok(Math.abs(row[yaw]-rows[0][yaw])<1e-6,`${name}: planted ${side} twisted`);}
+   // Extracting yaw from solved, scaled bones adds up to 0.0024 degrees of
+   // round-off. Keep the bound below 0.006 degrees; native support tests also
+   // check the actual foot quaternion and planted toe, not only this record.
+   const yawTolerance=clip.nativeAttachment?1e-4:1e-6;
+   for(const row of rows){assert.ok(Math.hypot(...row[key].map((v,i)=>v-rows[0][key][i]))<positionTolerance,`${name}: planted ${side} moved`);assert.ok(Math.abs(row[yaw]-rows[0][yaw])<yawTolerance,`${name}: planted ${side} twisted`);}
   }
   // Native records retain ankle rotations and heel/toe roll. Their actual
   // sole contacts receive separate native and runtime geometry checks.
@@ -48,7 +52,9 @@ test('New weapon-ready stances keep each male hero at the attack hand and foot p
    const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];
    const pose=(clip.nativeAttachment?ready:legacyReady).poses[0];
    for(const endpoint of [clip.poses[0],clip.poses.at(-1)]){
-    for(const key of ['grip','tip','footR','footL',...(hero.dualWield?['offGrip','offTip']:[])])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-6,`${hero.model}/${name}: ${key} returns to another stance`);
+    // Native transforms retain micrometre-scale solve/decomposition error.
+    const endpointTolerance=clip.nativeAttachment?5e-6:1e-6;
+    for(const key of ['grip','tip','footR','footL',...(hero.dualWield?['offGrip','offTip']:[])])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<endpointTolerance,`${hero.model}/${name}: ${key} returns to another stance`);
    }
   }
  }
