@@ -36,6 +36,11 @@ Moving the club alone would detach its grip from the hands.
 The next integration must reconcile the ball surface, clubface, hosel, shaft endpoint, and authored contact together.
 It must also preserve distant ball visibility and test the putting contact.
 
+The independent [contact audit](golf-equipment-contact.md) measured all six current actors.
+It also found an incorrect head lie angle and different putt contact heights.
+Its isolated geometry prototype preserves the hands, but produces excessive shaft lengths and misses the wedge's finite face.
+That prototype remains diagnostic. Production needs explicit shaft sockets and face markers, with poses fitted to each club's dimensions.
+
 ## Local review files
 
 - `/tmp/ninja-club-heads-v1.png`: isolated face and back views.
