@@ -1,0 +1,77 @@
+{
+  "hands": [
+    {
+      "hero": "ronin",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "ronin",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "kaede",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "kaede",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "shinobi",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "shinobi",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "monk",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "ayame",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "monk",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "ayame",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "sora",
+      "side": "r",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    },
+    {
+      "hero": "sora",
+      "side": "l",
+      "matchedRotations": 15,
+      "maximumComponentError": 0
+    }
+  ],
+  "totalMatchedRotations": 180
+}

@@ -1,0 +1,111 @@
+{
+  "hands": {
+    "ronin_r": {
+      "source": "/Users/yishan/ninja-golf/tools/art-candidates/golf-hands/ronin-r.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/ronin-r.clean.json",
+      "changed": [
+        "ring_01_r",
+        "ring_03_r",
+        "pinky_03_r"
+      ],
+      "sha256": "2f8ea127a3df8a29868eaffe02b1d61b8d92e36796dbe24d1dd4da1a7695657e"
+    },
+    "ronin_l": {
+      "source": "/Users/yishan/ninja-golf/tools/art-candidates/golf-hands/ronin-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/ronin-l.clean.json",
+      "changed": [
+        "ring_01_l",
+        "ring_02_l",
+        "ring_03_l",
+        "pinky_03_l"
+      ],
+      "sha256": "c7b1edf7cd3786af80ff65f8b67559a9b1b770c9c413819957214fedafcc7da3"
+    },
+    "kaede_r": {
+      "source": "/Users/yishan/ninja-golf/tools/art-candidates/golf-hands/kaede-r.fit.json",
+      "fit": "/Users/yishan/ninja-golf/tools/art-candidates/golf-hands/kaede-r.fit.json",
+      "changed": [],
+      "sha256": "85032460d6fabd220e6c9fe113924034380fd9539b79b872e4c5b2a31998c4cc"
+    },
+    "kaede_l": {
+      "source": "/Users/yishan/ninja-golf/tools/art-candidates/golf-hands/kaede-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/kaede-l.clean.json",
+      "changed": [
+        "ring_01_l",
+        "ring_03_l",
+        "pinky_01_l",
+        "pinky_02_l",
+        "pinky_03_l"
+      ],
+      "sha256": "9eb68c40478fb7de66da5bccd83ee450eb17bf20e25b67ef807fdc292870fa3f"
+    },
+    "shinobi_r": {
+      "source": "/tmp/ninja-golf-remaining-hands/shinobi-r.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/shinobi-r.clean.json",
+      "changed": [
+        "index_01_r",
+        "index_02_r",
+        "index_03_r",
+        "middle_01_r",
+        "middle_02_r",
+        "middle_03_r"
+      ],
+      "sha256": "572328f78459913449344191599857acf7115c041a013392bf6cf7374aebafdb"
+    },
+    "shinobi_l": {
+      "source": "/tmp/ninja-golf-remaining-hands/shinobi-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/shinobi-l.fit.json",
+      "changed": [],
+      "sha256": "6709f96b71a6ecc07258124ee2c06ab11374a7a4bb8f0e67bccdbd30d937e966"
+    },
+    "monk_r": {
+      "source": "/tmp/ninja-golf-remaining-hands/monk-r.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/monk-r.clean.json",
+      "changed": [
+        "index_01_r",
+        "index_02_r",
+        "index_03_r",
+        "middle_01_r",
+        "middle_02_r",
+        "middle_03_r"
+      ],
+      "sha256": "acda4ee415dbd0f77a3afcc60b827ce278d81ea88a4fa84f7c2b6ace11fa4038"
+    },
+    "monk_l": {
+      "source": "/tmp/ninja-golf-remaining-hands/monk-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/monk-l.clean.json",
+      "changed": [
+        "ring_01_l",
+        "ring_02_l",
+        "ring_03_l",
+        "pinky_01_l",
+        "pinky_03_l"
+      ],
+      "sha256": "15ab337f2195001463bb92b8aad91e1100c4dc6b607255ef99cefcb42849dcaa"
+    },
+    "ayame_r": {
+      "source": "/tmp/ninja-golf-remaining-hands/ayame-r.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/ayame-r.fit.json",
+      "changed": [],
+      "sha256": "188cfe8d120caa7e019970dddc4f86011d12a9d05474e88f8bf37bb31cbf14b4"
+    },
+    "ayame_l": {
+      "source": "/tmp/ninja-golf-remaining-hands/ayame-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/ayame-l.fit.json",
+      "changed": [],
+      "sha256": "8ec50458bbafaf47d7e1f40c180902672222648cfe3697da7821d52b63016b4f"
+    },
+    "sora_r": {
+      "source": "/tmp/ninja-golf-remaining-hands/sora-r.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/sora-r.fit.json",
+      "changed": [],
+      "sha256": "5461af99c02d7b7b8670d1592ac664f0d2207fdef1a1297b6c0b242134f451b5"
+    },
+    "sora_l": {
+      "source": "/tmp/ninja-golf-remaining-hands/sora-l.fit.json",
+      "fit": "/tmp/ninja-golf-remaining-hands/sora-l.fit.json",
+      "changed": [],
+      "sha256": "0f74cfe092170dbcb7a4392695cab630b0542c540ac87fc85c1ba81e6b4b8484"
+    }
+  }
+}

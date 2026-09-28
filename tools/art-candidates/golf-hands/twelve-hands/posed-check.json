@@ -1,0 +1,391 @@
+{
+  "posed": true,
+  "controls": false,
+  "rate": 120,
+  "hands": {
+    "ronin_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0011518696719721114,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 0.7166666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          1146,
+          1155,
+          1165
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0008474556637281493,
+        "thumb": 0.0006032737439083686,
+        "index": 0.0004884009722134468,
+        "middle": 0.00008661272778111642,
+        "ring": 0,
+        "pinky": 0.0011518696719721114
+      },
+      "minimumThumbFingerClearance": 0.009926853761189075,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "ronin_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0011523133765347013,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 2.0833333333333335,
+        "mesh": "Mesh",
+        "vertices": [
+          1611,
+          1610,
+          1622
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0008471621408060424,
+        "thumb": 0.0005520346999974054,
+        "index": 0.0004886447039452475,
+        "middle": 0.00008728317938506112,
+        "ring": 0,
+        "pinky": 0.0011523133765347013
+      },
+      "minimumThumbFingerClearance": 0.009356870982617668,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "kaede_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0005750855278807785,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 2.091666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          672,
+          671,
+          255
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0003988852830945893,
+        "thumb": 0.00010521669072906074,
+        "index": 0.0005750855278807785,
+        "middle": 0.00017167865038758556,
+        "ring": 0.00044879730448197513,
+        "pinky": 0.00024428563268119943
+      },
+      "minimumThumbFingerClearance": 0.012705116383221584,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "kaede_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.000566186202382319,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 2.4000000953674316,
+        "mesh": "Mesh",
+        "vertices": [
+          1436,
+          1105,
+          1109
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.00039898257214769466,
+        "thumb": 0.00022764220735192915,
+        "index": 0.000534733435237281,
+        "middle": 0.0001721433315236831,
+        "ring": 0.000566186202382319,
+        "pinky": 0.00025375354182800153
+      },
+      "minimumThumbFingerClearance": 0.013169904791335285,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "shinobi_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0013650945334319573,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 1.1666666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          1535,
+          1544,
+          1554
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.00035102888475498605,
+        "thumb": 0.000599654458601117,
+        "index": 0.0005516647470631408,
+        "middle": 0.00019696869651327463,
+        "ring": 0,
+        "pinky": 0.0013650945334319573
+      },
+      "minimumThumbFingerClearance": 0.009580639872580241,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "shinobi_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0012666536107806617,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 1.9166666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          2036,
+          2055,
+          2043
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.00025788921118497996,
+        "thumb": 0.0006413984797891611,
+        "index": 0.00028108413026906205,
+        "middle": 0.0002183409961605265,
+        "ring": 0,
+        "pinky": 0.0012666536107806617
+      },
+      "minimumThumbFingerClearance": 0.003209358038658614,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "monk_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0013649459209901064,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 1.9333333333333333,
+        "mesh": "Mesh",
+        "vertices": [
+          2055,
+          2064,
+          2074
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0003509203956149846,
+        "thumb": 0.0005991833341140937,
+        "index": 0.0005643294202338674,
+        "middle": 0.00018747385156532397,
+        "ring": 0,
+        "pinky": 0.0013649459209901064
+      },
+      "minimumThumbFingerClearance": 0.009572399763493085,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "monk_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0012734520608958366,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 0.7666666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          2516,
+          2535,
+          2523
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0002573428237255069,
+        "thumb": 0.0006407541038806076,
+        "index": 0.00028126283066517294,
+        "middle": 0.0002182052805543462,
+        "ring": 0,
+        "pinky": 0.0012734520608958366
+      },
+      "minimumThumbFingerClearance": 0.0032096493115411186,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "ayame_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0009640979998637254,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 2.2083333333333335,
+        "mesh": "Mesh",
+        "vertices": [
+          2359,
+          1955,
+          1953
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0005298829994318764,
+        "thumb": 0.0002582232044526147,
+        "index": 0.0009640979998637254,
+        "middle": 0.00043365146409812295,
+        "ring": 0.0003533618951493799,
+        "pinky": 0.00011132579660207836
+      },
+      "minimumThumbFingerClearance": 0.013034661364036602,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "ayame_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.000965588765955384,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 2.2916666666666665,
+        "mesh": "Mesh",
+        "vertices": [
+          1683,
+          1281,
+          1276
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0005297380714362997,
+        "thumb": 0.00024410408891225796,
+        "index": 0.000965588765955384,
+        "middle": 0.00043496752713907856,
+        "ring": 0.0003529910825081674,
+        "pinky": 0.00011185164073555451
+      },
+      "minimumThumbFingerClearance": 0.012845772888138965,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "sora_r": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0009389181933027908,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 1.975,
+        "mesh": "Mesh",
+        "vertices": [
+          2061,
+          2275,
+          2064
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.0006780216136330532,
+        "thumb": 0.0002772697181699195,
+        "index": 0.0009389181933027908,
+        "middle": 0.0003611810211718528,
+        "ring": 0.00031701581085822814,
+        "pinky": 0
+      },
+      "minimumThumbFingerClearance": 0.01381021004156015,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    },
+    "sora_l": {
+      "samples": 291,
+      "maxTriangleDepth": 0.0008838549108354608,
+      "worstDepth": {
+        "clip": "Golf_Swing",
+        "time": 1.6666666666666667,
+        "mesh": "Mesh",
+        "vertices": [
+          2562,
+          2564,
+          2566
+        ]
+      },
+      "maxGroupTriangleDepth": {
+        "palm": 0.000631775867164756,
+        "thumb": 0.0002473395206364481,
+        "index": 0.0008838549108354608,
+        "middle": 0.000489277464628405,
+        "ring": 0.00028421417890537454,
+        "pinky": 0
+      },
+      "minimumThumbFingerClearance": 0.013274747834631104,
+      "crossings": {
+        "thumbFinger": 0,
+        "index_middle": 0,
+        "index_ring": 0,
+        "index_pinky": 0,
+        "middle_ring": 0,
+        "middle_pinky": 0,
+        "ring_pinky": 0
+      }
+    }
+  }
+}

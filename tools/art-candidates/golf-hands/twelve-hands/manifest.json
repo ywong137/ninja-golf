@@ -1,0 +1,646 @@
+{
+  "revision": 2,
+  "status": "Isolated hand baseline for full-body and paired-hand fitting. Not a production grip. Mixed proximal web folds remain documented.",
+  "shaftRadius": 0.012,
+  "models": {
+    "ronin": "4a3ad37557fe9ef6e741debe64c2a0b1a503a79346e4132d4f96e48e556315bc",
+    "kaede": "105fd6f4f4c658a03c67b6a214d20b8a9dd4d1f912f81728b8247c5214a2f7aa",
+    "shinobi": "d0e0f48e5673ebd357ce695b29c4e4a947e4523293e26598b3b7c0b215474b94",
+    "monk": "f8473dd0ec3a70873be0d6fba4b46c68d5fd14eb25a2ee08c807c2d255a65fc1",
+    "ayame": "79040431a72949e8cafce1b2135d913b8c3aa3baa44857c3c1193f34cf39be71",
+    "sora": "4b96664a0806037b34e618909ca30221f3bc68856ed2b51ae3b926238fa27aba"
+  },
+  "hands": [
+    {
+      "hero": "ronin",
+      "side": "r",
+      "thumbSource": "../ronin-r.source.json",
+      "initialShaftSeed": null,
+      "beforeAdjacent": "ronin-r.before-adjacent.json",
+      "fit": "ronin-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "ring",
+          "pinky"
+        ],
+        "before": {
+          "index": [
+            0.0030000000000000035,
+            1.0930000000000004,
+            0.763,
+            0.20399999999999996
+          ],
+          "middle": [
+            0.628,
+            1.2680000000000002,
+            0.77,
+            0.09099999999999989
+          ],
+          "ring": [
+            0.9010000000000001,
+            0.971,
+            0.6380000000000001,
+            -0.03099999999999999
+          ],
+          "pinky": [
+            0.962,
+            0.75,
+            0.491,
+            0.35
+          ]
+        },
+        "after": {
+          "index": [
+            0.0030000000000000035,
+            1.0930000000000004,
+            0.763,
+            0.20399999999999996
+          ],
+          "middle": [
+            0.628,
+            1.2680000000000002,
+            0.77,
+            0.09099999999999989
+          ],
+          "ring": [
+            0.9030000000000001,
+            0.971,
+            0.6330000000000001,
+            -0.012999999999999987
+          ],
+          "pinky": [
+            0.962,
+            0.75,
+            0.493,
+            0.35
+          ]
+        }
+      },
+      "sha256": "5d16f02f31b85cd54627ae65e979e58b4305dafe13916b398ebeb8b0a6ae3fae"
+    },
+    {
+      "hero": "ronin",
+      "side": "l",
+      "thumbSource": "../ronin-l.source.json",
+      "initialShaftSeed": null,
+      "beforeAdjacent": "ronin-l.before-adjacent.json",
+      "fit": "ronin-l.fit.json",
+      "settings": {
+        "distalAxis": "cap",
+        "search": "broad",
+        "cmcMaxDegrees": 63.02535746439056,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "ring",
+          "pinky"
+        ],
+        "before": {
+          "index": [
+            0.0030000000000000035,
+            1.0930000000000004,
+            0.763,
+            -0.20399999999999996
+          ],
+          "middle": [
+            0.628,
+            1.2680000000000002,
+            0.77,
+            -0.09099999999999989
+          ],
+          "ring": [
+            0.9010000000000001,
+            0.971,
+            0.6380000000000001,
+            0.02800000000000002
+          ],
+          "pinky": [
+            0.962,
+            0.75,
+            0.491,
+            -0.35
+          ]
+        },
+        "after": {
+          "index": [
+            0.0030000000000000035,
+            1.0930000000000004,
+            0.763,
+            -0.20399999999999996
+          ],
+          "middle": [
+            0.628,
+            1.2680000000000002,
+            0.77,
+            -0.09099999999999989
+          ],
+          "ring": [
+            0.9030000000000001,
+            0.969,
+            0.6360000000000001,
+            0.013000000000000018
+          ],
+          "pinky": [
+            0.962,
+            0.75,
+            0.493,
+            -0.35
+          ]
+        }
+      },
+      "sha256": "0c82d4605053b39be35c7004e12208617e7dea3ac32bbf8ac229417801501f64"
+    },
+    {
+      "hero": "kaede",
+      "side": "r",
+      "thumbSource": "../kaede-r.source.json",
+      "initialShaftSeed": null,
+      "beforeAdjacent": "kaede-r.before-adjacent.json",
+      "fit": "kaede-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "1dde84733c682fb60ac0b133bffdd0e8e5cf5b9521fa5519dd746790ca297f91"
+    },
+    {
+      "hero": "kaede",
+      "side": "l",
+      "thumbSource": "../kaede-l.source.json",
+      "initialShaftSeed": null,
+      "beforeAdjacent": "kaede-l.before-adjacent.json",
+      "fit": "kaede-l.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "ring",
+          "pinky"
+        ],
+        "before": {
+          "index": [
+            0.21599999999999994,
+            1.2120000000000006,
+            0.782,
+            0.08199999999999999
+          ],
+          "middle": [
+            0.8150000000000001,
+            1.335,
+            0.9099999999999999,
+            0.223
+          ],
+          "ring": [
+            1.2499999999999998,
+            0.9600000000000001,
+            0.6429999999999999,
+            0.12699999999999997
+          ],
+          "pinky": [
+            1.16,
+            0.805,
+            0.553,
+            -0.23500000000000001
+          ]
+        },
+        "after": {
+          "index": [
+            0.21599999999999994,
+            1.2120000000000006,
+            0.782,
+            0.08199999999999999
+          ],
+          "middle": [
+            0.8150000000000001,
+            1.335,
+            0.9099999999999999,
+            0.223
+          ],
+          "ring": [
+            1.2499999999999998,
+            0.9600000000000001,
+            0.6509999999999999,
+            0.11599999999999996
+          ],
+          "pinky": [
+            1.166,
+            0.795,
+            0.547,
+            -0.231
+          ]
+        }
+      },
+      "sha256": "241326ced5fab4553d47e296afd11a44009e5565a8a07568f50cc7dbbc8dab41"
+    },
+    {
+      "hero": "shinobi",
+      "side": "r",
+      "thumbSource": "shinobi-r.thumb-source.json",
+      "initialShaftSeed": "shinobi-r.seed.json",
+      "beforeAdjacent": "shinobi-r.before-adjacent.json",
+      "fit": "shinobi-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "index",
+          "middle"
+        ],
+        "before": {
+          "index": [
+            0.0030000000000000035,
+            1.059,
+            0.768,
+            0.277
+          ],
+          "middle": [
+            0.5,
+            1.2800000000000002,
+            0.787,
+            -0.09700000000000002
+          ],
+          "ring": [
+            0.8400000000000001,
+            0.995,
+            0.6599999999999999,
+            -0.03000000000000001
+          ],
+          "pinky": [
+            0.947,
+            0.713,
+            0.548,
+            0.347
+          ]
+        },
+        "after": {
+          "index": [
+            0.0010000000000000035,
+            1.005,
+            0.795,
+            0.18900000000000003
+          ],
+          "middle": [
+            0.52,
+            1.2680000000000005,
+            0.791,
+            -0.07200000000000002
+          ],
+          "ring": [
+            0.8400000000000001,
+            0.995,
+            0.6599999999999999,
+            -0.03000000000000001
+          ],
+          "pinky": [
+            0.947,
+            0.713,
+            0.548,
+            0.347
+          ]
+        }
+      },
+      "sha256": "f8c97896b8cc54dd33465336ca8e1e9656ac2d8113e429fe873d07fc7f476857"
+    },
+    {
+      "hero": "shinobi",
+      "side": "l",
+      "thumbSource": "shinobi-l.thumb-source.json",
+      "initialShaftSeed": "shinobi-l.seed.json",
+      "beforeAdjacent": "shinobi-l.before-adjacent.json",
+      "fit": "shinobi-l.fit.json",
+      "settings": {
+        "distalAxis": "cap",
+        "search": "broad",
+        "cmcMaxDegrees": 63.02535746439056,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "d455e7473fe6b72dea4d8e87b81aec02027c5d7c4a3062b3c7bb83531671fb1e"
+    },
+    {
+      "hero": "monk",
+      "side": "r",
+      "thumbSource": "monk-r.thumb-source.json",
+      "initialShaftSeed": "monk-r.seed.json",
+      "beforeAdjacent": "monk-r.before-adjacent.json",
+      "fit": "monk-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "index",
+          "middle"
+        ],
+        "before": {
+          "index": [
+            0.0030000000000000035,
+            1.059,
+            0.768,
+            0.277
+          ],
+          "middle": [
+            0.5,
+            1.2800000000000002,
+            0.787,
+            -0.09700000000000002
+          ],
+          "ring": [
+            0.8400000000000001,
+            0.995,
+            0.6599999999999999,
+            -0.03000000000000001
+          ],
+          "pinky": [
+            0.947,
+            0.713,
+            0.548,
+            0.347
+          ]
+        },
+        "after": {
+          "index": [
+            0.0010000000000000035,
+            1.003,
+            0.796,
+            0.18600000000000003
+          ],
+          "middle": [
+            0.517,
+            1.2700000000000005,
+            0.79,
+            -0.07500000000000001
+          ],
+          "ring": [
+            0.8400000000000001,
+            0.995,
+            0.6599999999999999,
+            -0.03000000000000001
+          ],
+          "pinky": [
+            0.947,
+            0.713,
+            0.548,
+            0.347
+          ]
+        }
+      },
+      "sha256": "11f8c688909d866841090844118169484b1dae28cb2622610f7f3f1ea5c5e5c6"
+    },
+    {
+      "hero": "monk",
+      "side": "l",
+      "thumbSource": "monk-l.thumb-source.json",
+      "initialShaftSeed": "monk-l.seed.json",
+      "beforeAdjacent": "monk-l.before-adjacent.json",
+      "fit": "monk-l.fit.json",
+      "settings": {
+        "distalAxis": "cap",
+        "search": "broad",
+        "cmcMaxDegrees": 63.02535746439056,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": {
+        "method": "bounded native hinge and MCP splay; fixed shaft, thumb, and unaffected fingers",
+        "active": [
+          "ring",
+          "pinky"
+        ],
+        "before": {
+          "index": [
+            0.008000000000000018,
+            1.072,
+            0.753,
+            -0.23
+          ],
+          "middle": [
+            0.6,
+            1.245,
+            0.783,
+            -0.023
+          ],
+          "ring": [
+            0.8770000000000001,
+            0.9760000000000001,
+            0.6340000000000001,
+            0.04899999999999999
+          ],
+          "pinky": [
+            0.965,
+            0.7000000000000001,
+            0.533,
+            -0.347
+          ]
+        },
+        "after": {
+          "index": [
+            0.008000000000000018,
+            1.072,
+            0.753,
+            -0.23
+          ],
+          "middle": [
+            0.6,
+            1.245,
+            0.783,
+            -0.023
+          ],
+          "ring": [
+            0.8790000000000001,
+            0.9720000000000001,
+            0.6360000000000001,
+            0.03399999999999998
+          ],
+          "pinky": [
+            0.965,
+            0.7000000000000001,
+            0.528,
+            -0.35
+          ]
+        }
+      },
+      "sha256": "ee1bf54a34cdd47710df69f081c7d13ade42143177cc543685dfa881cfe6c778"
+    },
+    {
+      "hero": "ayame",
+      "side": "r",
+      "thumbSource": "ayame-r.thumb-source.json",
+      "initialShaftSeed": "ayame-r.seed.json",
+      "beforeAdjacent": "ayame-r.before-adjacent.json",
+      "fit": "ayame-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "e55d6687897426dd2100ded9d5c17d485d43cd1e79750fd4da1dbf16770c98bb"
+    },
+    {
+      "hero": "ayame",
+      "side": "l",
+      "thumbSource": "ayame-l.thumb-source.json",
+      "initialShaftSeed": "ayame-l.seed.json",
+      "beforeAdjacent": "ayame-l.before-adjacent.json",
+      "fit": "ayame-l.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "35109039414745f3507e3e8074f7296327ae7115a8893c9cb6243a5ac9c41c37"
+    },
+    {
+      "hero": "sora",
+      "side": "r",
+      "thumbSource": "sora-r.thumb-source.json",
+      "initialShaftSeed": "sora-r.seed.json",
+      "beforeAdjacent": "sora-r.before-adjacent.json",
+      "fit": "sora-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "8d52220fd8fe4cfaac46b8e6342f41ec5714fb69d43304a663d834db3903c57f"
+    },
+    {
+      "hero": "sora",
+      "side": "l",
+      "thumbSource": "sora-l.thumb-source.json",
+      "initialShaftSeed": "sora-l.seed.json",
+      "beforeAdjacent": "sora-l.before-adjacent.json",
+      "fit": "sora-l.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      },
+      "adjacentRepair": null,
+      "sha256": "99e27fa709150c9ac76e8619481c2e149d04f1be2a7e5d324253d69a0c0251df"
+    }
+  ],
+  "reports": {
+    "posed": "posed-check.json",
+    "thumb": "thumb-summary.json",
+    "web": "web-fold-depth.json",
+    "preservation": "preservation.json",
+    "rebuild": "rebuild-check.json"
+  }
+}

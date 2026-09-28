@@ -1,0 +1,134 @@
+{
+  "ronin_r": {
+    "padGapMm": 3.83382352626873,
+    "vertexDepthMm": 0.6032737439076798,
+    "capAxisAngleDegrees": 28.052376171806312,
+    "cmcDegrees": 70.96623025097217,
+    "mcpDeltaDegrees": -2.291831180523292,
+    "ipDeltaDegrees": -14.323944878270579,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 9.999930114070976
+  },
+  "ronin_l": {
+    "padGapMm": 3.420133522416279,
+    "vertexDepthMm": 0.4868947591043834,
+    "capAxisAngleDegrees": 29.807568538246127,
+    "cmcDegrees": 63.00329432194231,
+    "mcpDeltaDegrees": -11.30723693737167,
+    "ipDeltaDegrees": -14.231839508907868,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 9.999971741975529
+  },
+  "kaede_r": {
+    "padGapMm": 2.025821802880613,
+    "vertexDepthMm": 0.10521669072816563,
+    "capAxisAngleDegrees": 27.571934872499547,
+    "cmcDegrees": 48.30505957667934,
+    "mcpDeltaDegrees": -2.463718519062539,
+    "ipDeltaDegrees": -14.323944878270579,
+    "capVertices": 14,
+    "padVertices": 11,
+    "shaftAxisVsFrameYDegrees": 9.99999105759475
+  },
+  "kaede_l": {
+    "padGapMm": 1.8972564625634303,
+    "vertexDepthMm": 0.22764220735176088,
+    "capAxisAngleDegrees": 25.89033302941624,
+    "cmcDegrees": 53.13952628060332,
+    "mcpDeltaDegrees": -4.927437038125078,
+    "ipDeltaDegrees": -14.209353319244414,
+    "capVertices": 14,
+    "padVertices": 11,
+    "shaftAxisVsFrameYDegrees": 9.999997571106185
+  },
+  "shinobi_r": {
+    "padGapMm": 3.7606341922318993,
+    "vertexDepthMm": 0.5996544586006971,
+    "capAxisAngleDegrees": 26.463857677813124,
+    "cmcDegrees": 81.87682667975366,
+    "mcpDeltaDegrees": -4.583662361046584,
+    "ipDeltaDegrees": -14.209353319244416,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "shinobi_l": {
+    "padGapMm": 3.4753324730346957,
+    "vertexDepthMm": 0.4917308994681416,
+    "capAxisAngleDegrees": 33.84155520572328,
+    "cmcDegrees": 62.96208741956604,
+    "mcpDeltaDegrees": -7.703324280506933,
+    "ipDeltaDegrees": -14.314502809287308,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "monk_r": {
+    "padGapMm": 3.7610811904846693,
+    "vertexDepthMm": 0.5991833341130113,
+    "capAxisAngleDegrees": 26.4637896920861,
+    "cmcDegrees": 81.87683547270356,
+    "mcpDeltaDegrees": -4.583662361046584,
+    "ipDeltaDegrees": -14.209353319244416,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "monk_l": {
+    "padGapMm": 3.475993946262858,
+    "vertexDepthMm": 0.4911697452226783,
+    "capAxisAngleDegrees": 33.84131719130351,
+    "cmcDegrees": 62.96207492679752,
+    "mcpDeltaDegrees": -7.703324280506933,
+    "ipDeltaDegrees": -14.314502809287308,
+    "capVertices": 10,
+    "padVertices": 8,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "ayame_r": {
+    "padGapMm": 2.0313917090401254,
+    "vertexDepthMm": 0.2582232044520041,
+    "capAxisAngleDegrees": 26.622450326831085,
+    "cmcDegrees": 54.02349302126361,
+    "mcpDeltaDegrees": -2.807493196141033,
+    "ipDeltaDegrees": -14.323944878270579,
+    "capVertices": 12,
+    "padVertices": 10,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "ayame_l": {
+    "padGapMm": 2.0175706083222917,
+    "vertexDepthMm": 0.24410408891139407,
+    "capAxisAngleDegrees": 26.111147450011966,
+    "cmcDegrees": 54.09593074415399,
+    "mcpDeltaDegrees": -5.099324376664326,
+    "ipDeltaDegrees": -14.209353319244414,
+    "capVertices": 12,
+    "padVertices": 10,
+    "shaftAxisVsFrameYDegrees": 0
+  },
+  "sora_r": {
+    "padGapMm": 1.8297890839529036,
+    "vertexDepthMm": 0.27726971816921864,
+    "capAxisAngleDegrees": 23.71505483570424,
+    "cmcDegrees": 64.74891137686551,
+    "mcpDeltaDegrees": -11.459155902616462,
+    "ipDeltaDegrees": -14.209353319244414,
+    "capVertices": 14,
+    "padVertices": 11,
+    "shaftAxisVsFrameYDegrees": 0.0000014787793334710982
+  },
+  "sora_l": {
+    "padGapMm": 1.923005653669813,
+    "vertexDepthMm": 0.24733952063566744,
+    "capAxisAngleDegrees": 25.357060568784927,
+    "cmcDegrees": 61.7061098255281,
+    "mcpDeltaDegrees": -5.614986392282066,
+    "ipDeltaDegrees": -14.209353319244414,
+    "capVertices": 14,
+    "padVertices": 11,
+    "shaftAxisVsFrameYDegrees": 8.537736462515939e-7
+  }
+}
