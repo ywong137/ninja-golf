@@ -45,3 +45,6 @@ The thumb's distal pad also needs a proper anatomical endpoint; a segment's vert
 Before a candidate enters the game, check both hands, finger self-intersections, shared shaft contact, wrist limits, and the full swing.
 Review the rendered hand from the palm, back, side, and thumb side.
 No runtime grip changed with the introduction of this tool.
+
+The separate [thumb fitting method](golf-thumb-fitting.md) now supplies four reviewed candidate hands.
+Those candidates still need paired-hand validation in the new swing.
