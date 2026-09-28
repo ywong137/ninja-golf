@@ -179,14 +179,51 @@ function courseCellDetail(c,cx,cz,ellipse){
 // Samples the triangles actually drawn, including the hazard subdivisions. This
 // avoids a mesh-wide raycast for a foot, path vertex, or other ground attachment.
 export function courseSurfaceHeight(c,x,z,heightAt,ellipse){
- const {nz,dz}=courseGrid(c),ix=Math.floor((x+375)/3),iz=Math.floor((z+165)/dz);
- if(ix<0||ix>=250||iz<0||iz>=nz)return heightAt(c,x,z);
- const x0=-375+ix*3,z0=-165+iz*dz,n=courseCellDetail(c,x0+1.5,z0+dz*.5,ellipse);
- const u=(x-x0)/3*n,v=(z-z0)/dz*n,cellX=Math.min(n-1,Math.floor(u)),cellZ=Math.min(n-1,Math.floor(v)),fx=u-cellX,fz=v-cellZ;
- const xa=x0+cellX/n*3,za=z0+cellZ/n*dz,xb=xa+3/n,zb=za+dz/n;
- const h10=heightAt(c,xb,za),h01=heightAt(c,xa,zb);
- if(fx+fz<=1){const h00=heightAt(c,xa,za);return h00+(h10-h00)*fx+(h01-h00)*fz;}
- const h11=heightAt(c,xb,zb);return h11+(h01-h11)*(1-fx)+(h10-h11)*(1-fz);
+ return sampleCourseSurface(c,x,z,heightAt,ellipse,courseGrid(c));
+}
+function courseVertexHeight(c,cell,col,row,heightAt,cache){
+ // At a cell boundary, cancellation can put a local coordinate just below
+ // zero. Preserve the direct extrapolation without aliasing a cached row.
+ const index=row*(cell.n+1)+col,cacheable=cache&&col>=0&&row>=0;
+ if(cacheable&&cell.valid[index])return cell.heights[index];
+ // Use the same vertex coordinates as courseGeometry. Adjacent triangles in
+ // this cell share one height, including vertices on their common diagonal.
+ const value=heightAt(c,cell.x0+col/cell.n*3,cell.z0+row/cell.n*cell.dz);
+ if(cacheable){cell.heights[index]=value;cell.valid[index]=1;cache.vertices++;}
+ return value;
+}
+function sampleCourseSurface(c,x,z,heightAt,ellipse,grid,cache=null){
+ const {nz,dz}=grid,ix=Math.floor((x+375)/3),iz=Math.floor((z+165)/dz);
+ if(!Number.isFinite(ix)||!Number.isFinite(iz)||ix<0||ix>=250||iz<0||iz>=nz)return heightAt(c,x,z);
+ const key=iz*250+ix;
+ let cell=cache?.cells.get(key);
+ if(!cell){
+  const x0=-375+ix*3,z0=-165+iz*dz,n=courseCellDetail(c,x0+1.5,z0+dz*.5,ellipse);
+  cell={x0,z0,dz,n};
+  if(cache){
+   const count=(n+1)**2;cell.heights=new Float64Array(count);cell.valid=new Uint8Array(count);
+   cache.cells.set(key,cell);cache.slots+=count;
+  }
+ }
+ const {x0,z0,n}=cell,u=(x-x0)/3*n,v=(z-z0)/dz*n,cellX=Math.min(n-1,Math.floor(u)),cellZ=Math.min(n-1,Math.floor(v)),fx=u-cellX,fz=v-cellZ;
+ const h10=courseVertexHeight(c,cell,cellX+1,cellZ,heightAt,cache),h01=courseVertexHeight(c,cell,cellX,cellZ+1,heightAt,cache);
+ if(fx+fz<=1){const h00=courseVertexHeight(c,cell,cellX,cellZ,heightAt,cache);return h00+(h10-h00)*fx+(h01-h00)*fz;}
+ const h11=courseVertexHeight(c,cell,cellX+1,cellZ+1,heightAt,cache);return h11+(h01-h11)*(1-fx)+(h10-h11)*(1-fz);
+}
+/**
+ * Return height(x,z), with exact lazy caching of the rendered terrain triangles.
+ * Keep c and the supplied functions unchanged for this sampler's lifetime.
+ * Create a new sampler after editing a course. Outside queries use heightAt.
+ * stats reports allocated typed-array bytes; it excludes Map/object overhead.
+ * At most 250 * round((c.length + 330) / 3) cells can enter the cache.
+ */
+export function createCourseSurfaceSampler(c,heightAt,ellipse){
+ if(!Number.isFinite(c?.length)||c.length<=0)throw new Error('Course surface sampler requires a positive finite course length.');
+ if(typeof heightAt!=='function'||typeof ellipse!=='function')throw new Error('Course surface sampler requires heightAt and ellipse functions.');
+ const grid=courseGrid(c),cache={cells:new Map(),vertices:0,slots:0};
+ const height=(x,z)=>sampleCourseSurface(c,x,z,heightAt,ellipse,grid,cache);
+ Object.defineProperty(height,'stats',{get:()=>Object.freeze({cells:cache.cells.size,vertices:cache.vertices,vertexSlots:cache.slots,typedArrayBytes:cache.slots*9,maxCells:250*grid.nz})});
+ return height;
 }
 export function courseGeometry(c,heightAt,ellipse){
  const vertices=[],normals=[],uv=[],indices=[],{extent,nz,dz}=courseGrid(c);
