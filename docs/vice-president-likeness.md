@@ -4,6 +4,10 @@ The latest fitted mesh is documented in [Ethan measured geometry v15](reviews/et
 Its visible improvement is narrower nasal wings. It does not establish a complete facial reconstruction.
 
 Full character exports apply `assets/characters/vice-president-head-revision.json` after the Blender base sculpt.
+They then apply the reviewed side-only hair recipe through `tools/author-vice-president-hair.py`.
+This adds modest volume above the ears while preserving the measured head, original skinning, and animation payloads.
+The recipe contains static authoring transforms, so later selection-animation changes cannot alter the hair fit.
+The author rejects a different source head or a duplicate application.
 This preserves the exact reviewed head while retaining newly exported animation payloads.
 The transfer rejects changed topology, UVs, skin weights, base positions, or base normals.
 It also rejects duplicate application. Animation-only exports retain the existing head directly.

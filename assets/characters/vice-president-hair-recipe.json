@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "name": "Ethan side-only swept hair V8",
+  "reviewedSourceSha256": "1cc80a0b1040a409ad90a88837ba49bfbc8b614e084b3969c96958f77234ab72",
+  "head": {
+    "material": "m009_head",
+    "vertexCount": 1713,
+    "indexCount": 9246,
+    "positionSha256": "53ee5c83597230a58d136b843e6ee9731c82317dbb67e8bdb7600c319e2859f5",
+    "texcoordSha256": "9210ff232071ea866f11ec1b20584003560afa352af402e1dc779218455a92a5",
+    "indexSha256": "daeff28134d42621cd0a8ac9c95544cd75717d62d56dd32f66f7486147fb675b"
+  },
+  "projectionConstraint": {
+    "description": "Original approximate front photo camera. This static authoring frame preserves the reviewed image-left hair silhouette. It is not a validated whole-face camera fit.",
+    "headLinear": [
+      [
+        0.9998574885767505,
+        -0.00017521145383126092,
+        0.01687382305368665
+      ],
+      [
+        -7.793422118077595e-05,
+        0.9998872556360294,
+        0.014999732085821425
+      ],
+      [
+        -0.016874551828693452,
+        -0.014999019246384552,
+        0.9997451873912924
+      ]
+    ],
+    "headTranslation": [
+      0.04358433585443533,
+      -0.01868672090552348,
+      0.05690045049817499
+    ],
+    "modelOrigin": [
+      0.044977052250795894,
+      1.6662760188486123,
+      0.14324361654387896
+    ],
+    "rotationVector": [
+      -3.109502500739543,
+      -0.008424192554161623,
+      0.22747098566030852
+    ],
+    "translation": [
+      -0.008758120586365443,
+      -0.023085117663649922,
+      1.0616441693694938
+    ]
+  },
+  "offsetsMm": {
+    "side": 4.0,
+    "back": 0.0,
+    "hairline": 1.5
+  },
+  "review": {
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "sessionId": "af1c9272-bad9-49fe-9373-5cbc496759cb",
+    "verdict": "Keep the small side-volume gain. Remove rear growth. Reject if the correction adds a seam."
+  }
+}

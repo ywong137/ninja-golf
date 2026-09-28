@@ -174,7 +174,10 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # revision too; never silently restore the older nose during a full rebuild.
   measured=output.with_name('monk.measured-building.glb')
   subprocess.run(['node',str(ROOT/'tools/preserve-vice-president-head.mjs'),'--input',str(likeness),'--recipe',str(ROOT/'assets/characters/vice-president-head-revision.json'),'--output',str(measured)],check=True)
-  measured.replace(output);likeness.unlink()
+  hair=output.with_name('monk.hair-building.glb')
+  subprocess.run(['python3',str(ROOT/'tools/author-vice-president-hair.py'),'--input',str(measured),'--output',str(hair)],check=True)
+  hair.replace(output);measured.unlink();likeness.unlink()
+  hair.with_suffix('.json').unlink(missing_ok=True)
   patch_naginata_native_combat(output)
  if hero=='sora':
   # Full exports restore the accepted fringe and local forehead texture.
