@@ -2,6 +2,18 @@ import * as THREE from 'three';
 import {alignedKnee,footForward} from './knee-alignment.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
+// Motion records are immutable. Join continuous sole/toe support once per clip.
+const contactSchedules=new WeakMap();
+function contactIntervals(clip,side){
+ if(!clip?.footPlants?.[side])return null;
+ let schedule=contactSchedules.get(clip);if(!schedule){schedule={};contactSchedules.set(clip,schedule);}
+ if(!schedule[side]){
+  const ranges=[...clip.footPlants[side],...(clip.toePlants?.[side]??[])].map(range=>[...range]).sort((a,b)=>a[0]-b[0]),merged=[];
+  for(const range of ranges){const previous=merged.at(-1);if(previous&&range[0]<=previous[1]+1e-7)previous[1]=Math.max(previous[1],range[1]);else merged.push(range);}
+  schedule[side]=merged;
+ }
+ return schedule[side];
+}
 function worldRotation(bone,rotation){bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)).normalize();bone.updateWorldMatrix(false,true);}
 
 // Solve in world space so native proportions and arbitrary imported bone axes remain intact.
@@ -21,7 +33,7 @@ export function attackFootContacts(clip,time,motion){
  for(const side of ['r','l']){
   // A heel pivot still supports the body through its planted toe. The native
   // sole orientation remains intact while terrain adjusts that support.
-  const intervals=clip?.footPlants?.[side]?[...clip.footPlants[side],...(clip.toePlants?.[side]??[])]:null;
+  const intervals=contactIntervals(clip,side);
   if(intervals){
    let weight=0;
    for(const [start,end]of intervals)if(time>=start&&time<=end){

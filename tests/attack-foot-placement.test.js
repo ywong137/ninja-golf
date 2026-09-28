@@ -27,7 +27,19 @@ test('Authored contact intervals free the swing foot and blend support boundarie
  assert.equal(attackFootContacts({},0,null).contactWeights.r,0);
  const pivot={...clip,toePlants:{r:[[.2,.5]],l:[]}};
  assert.equal(attackFootContacts(pivot,.3,null).contactWeights.r,1,'A fixed toe supports a raised heel.');
- assert.equal(attackFootContacts(pivot,.21,null).contactWeights.r>0,true,'Toe support blends at its boundaries.');
+ assert.equal(attackFootContacts(pivot,.21,null).contactWeights.r,1,'Continuous toe support must not fade during the handover.');
+});
+test('A heel-to-toe pivot keeps support through touching and overlapping contact intervals',()=>{
+ const clip={duration:1,footPlants:{r:[[.7,1],[0,.2]],l:[[0,.3],[.6,1]]},toePlants:{r:[[.2,.7]],l:[[.2,.60000001]]}};
+ const original=JSON.stringify(clip);
+ for(const time of [0,.18,.199999,.2,.200001,.3,.59,.6,.600001,.699999,.7,.700001,1]){
+  const contacts=attackFootContacts(clip,time,null);
+  assert.deepEqual(contacts.contactWeights,{r:1,l:1},'Support dips at '+time);
+  assert.deepEqual(contacts.stance,{r:true,l:true});
+ }
+ assert.equal(JSON.stringify(clip),original,'Contact evaluation changed the motion record.');
+ const gap={duration:1,footPlants:{r:[[0,.2],[.202,1]],l:[[0,1]]}};
+ assert.equal(attackFootContacts(gap,.201,null).contactWeights.r,0,'A real airborne interval remains free.');
 });
 test('Every native Kaede attack preserves flat-ground foot lifts, pivots and joint poses exactly',async()=>{
  const {root,bones,clips,mixer,placement}=await nativeRig('kaede');
