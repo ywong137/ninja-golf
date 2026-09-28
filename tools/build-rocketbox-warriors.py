@@ -169,7 +169,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # Reapply the likeness after a full native source export. Clip-only exports
   # already preserve the existing geometry and must not sculpt it a second time.
   likeness=output.with_name('monk.likeness-building.glb')
-  subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-baked.jpg')],check=True)
+  subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-warm-eyes.png')],check=True)
   likeness.replace(output)
   patch_naginata_native_combat(output)
  if hero=='sora':

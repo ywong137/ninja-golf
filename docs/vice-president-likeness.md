@@ -1,89 +1,160 @@
 # The Vice President
 
-The Vice President replaces the Monk's visual identity with an interpretation of Ethan Cary.
-The user supplied five reference photographs and authorized their use for this character.
-The source photographs remain outside the repository and game assets.
+The Vice President replaces the Monk's appearance with an interpretation of Ethan Cary.
+The user supplied five photographs and authorized this work.
+The original photographs remain outside the repository and game assets.
 
-## Geometry and appearance
+## Source and preservation
 
 `tools/build-vice-president.py` sculpts the licensed native Rocketbox mesh in Blender.
-It changes 2,340 head, hair, and neck vertices while keeping the original vertex count.
-The edits change the jaw, cheeks, nose, forehead, eyelids, and chin proportions.
-The head retains its native facial bones, skin weights, UV coordinates, and animation clips.
+It retains the existing head topology, UVs, skin weights, facial bones, and animation clips.
+The glasses use two meshes attached to the Head bone, with 1,135 vertices and two draw calls.
+Their outline comes from 15 traced points in `assets/characters/vice-president-glasses-trace.json`.
+The trace removes camera roll and estimates perspective distortion. It does not contain a photograph.
 
-The glasses use two small meshes attached to the existing Head bone.
-They have rounded dark frames and brighter silver temples.
-They add 1,135 vertices and two draw calls.
-The eyes remain visible through the frames; no opaque lens covers them.
+Image generation produced the neutral facial reference and base atlas from the supplied photographs.
+Blender projects that reference onto the preserved head UVs.
+The original projection and local nose-texture repair remain in `assets/characters` for reproduction.
+The source photographs never enter the model or game distribution.
 
-Image generation produced a neutral facial reference and a base atlas from the supplied photographs.
-Blender projects the facial reference onto the existing UVs using facial landmarks and a soft boundary mask.
-The game loads a 2,048-pixel JPEG inside the model.
-The generated references stay in `assets/characters`; the original photographs do not.
+This is a likeness adaptation with measured two-dimensional constraints. It is not a facial scan.
+Camera focal length, photographic expressions, and prescription lenses limit the measurements.
 
-This is a topology-preserving likeness adaptation, not a scan or a measured facial reconstruction.
-Its face texture and geometry should be judged together in the game.
+## Camera-adjusted refinement
 
-## Review
+The v12 refinement uses two supplied photographs with independent fitted cameras.
+Local MediaPipe detects 478 image landmarks. The fit uses 49 paired anchors with different weights.
+`tools/export-vice-president-landmarks.mjs` intersects detected model pixels with the actual posed mesh.
+It retains triangle indices and barycentric weights, so later measurements track the same surface points.
+`tools/fit-vice-president-cameras.py` fits rotation and translation across eight focal-length assumptions.
+It never uses MediaPipe's inferred depth as a sculpting measurement.
 
-Claude Opus 5.5 at High reviewed the photographs and the first mesh candidate.
-Its review rejected the narrow chin, hollow cheeks, pointed nose, square glasses, and artificial hair strands.
-Later reviews corrected excess jaw width, a short forehead, round eyes, and iris saturation.
-The final model includes an oval jaw, less jowl fullness, an upright forehead, wider swept-back hair, and thinner glasses rims.
-The sculpt rotates each complete eye surface rigidly, using the painted pupil position to align both gaze axes.
-The previous sculpt deformed the eyeballs and preserved the native divergent pupil directions.
-The new eye calibration preserves all pairwise eye-vertex distances within 0.00012 mm.
-The final Opus 5.5 High review accepted the likeness for user review, with no major mismatch remaining.
-The final targeted review accepted the current-profile forehead, slimmer cheeks, silver temples, and rim thickness.
-Some directional lighting still produces a dark shadow below the nose. An unlit check shows grey stubble there.
-The saved reviews are in the ignored `artifacts` directory.
+Both original cameras remain fixed for the primary before/after comparison.
+A second comparison refits each camera to report sensitivity.
+The seated photograph and supplied profile provide separate visual checks.
+Forehead landmark 10 is not the hairline. Silhouette landmarks also move with viewpoint.
+The smiling front photograph cannot determine the neutral mouth or lower-face height by itself.
 
-The mesh patch preserves all 37 original clips and their animation buffers.
-The final integration checked 16,993 animation, skin-weight, joint-index, and UV streams without differences.
-The candidate adds approximately 650 KB to the native model.
-The normal correction preserves the source artist's smooth normals across UV seams.
-The minimum sampled sculpt Jacobian is 0.624, so the deformation does not fold at the checked vertices.
-The angry-face audit reports no flipped triangles across all four gaze corners.
-The final half-millimetre sampler resolves each eye separately.
-At least 94.6% of each original visible eye aperture remains open.
-The test retains the reviewed 92% threshold and all geometric clearance limits.
-The correction adds no extra meshes or draw calls beyond the existing glasses.
+The restrained refinement moves each complete eyeball outward 1.25 mm and downward 1.25 mm.
+The outer eyelids extend about 2 mm. Lower-face compression reaches 2 mm.
+The mouth widens about 1.25 mm per side and rises slightly.
+The nose base widens about 1.5 mm per side. The tip gains less width.
+This stage does not change facial depth or widen the jaw.
 
-## Rebuild
+Each original eye bone receives a constant offset parent and a matching inverse-bind adjustment.
+The eye surface moves rigidly with its rotation center.
+The original eye-bone transforms and all animation keys remain unchanged.
+This matters because some existing clips animate eye translation.
 
-First export an unmodified native Monk with the standard character builder.
-Its full-export path automatically applies the checked-in likeness texture and sculpt.
-Animation-only exports preserve the existing face and accessories.
+| Candidate | Front, fixed camera | Tilt, fixed camera | Front, refitted | Tilt, refitted |
+| --- | ---: | ---: | ---: | ---: |
+| v10 baseline |10.368 px|8.558 px|10.368 px|8.558 px|
+| v12 restrained fit |7.987 px|6.949 px|7.591 px|6.616 px|
+| v14 hair, iris, and distal tip candidate |7.896 px|7.545 px|7.489 px|6.936 px|
 
-For a separate candidate, run:
+Lower error alone does not establish a better likeness.
+An earlier aggressive fit scored better but overfit the smile and apparent eye positions behind lenses.
+Claude Opus 5.5 at High reviewed the photographs, matched views, and the restrained candidate.
+Its v12 review found the remaining major differences in the eyes, hair, and under-nose appearance.
+
+## Isolated appearance checks
+
+The old iris workflow explicitly desaturated the eye disk and added a blue tint.
+The new repair uses image-generated brown/hazel iris artwork in `vice-president-iris-repair.png`.
+`tools/repair-vice-president-iris.py` registers that artwork to the original painted pupil.
+It blends only an annulus, preserving the pupil, original catchlights, sclera, and all other atlas regions.
+
+The reviewed 2048 px atlas has its pupil at approximately (539.2, 1910.0), measured from the upper-left corner.
+The annular mask fades in between 12–16 px and fades out between 34–39 px.
+The generated source has different iris proportions, so the registration corrects its center and scale.
+A decoded PNG check confirmed exact equality outside the 39 px radius and inside the 12 px pupil radius.
+The preserved PNG is checked before any optional JPEG encoding.
+Run `python3 tools/check-vice-president-iris.py` to repeat the decoded-pixel and warm-color checks.
+
+The v13 hair candidate lifts the front sweep by up to 5.9 mm and extends the rear hair by up to 11.7 mm.
+It changes 216 scalp vertices and leaves the forehead and measured facial features unchanged.
+The v14 candidate adds a distal nose-tip drop of at most 1.995 mm across 52 vertices.
+Its nostril loops and topology remain intact.
+These options remain separate, so either change can be rejected independently.
+
+The nose change follows a material diagnostic, not a texture guess.
+The dark band disappears with unlit albedo but remains on plain gray geometry.
+Removing the normal map has little effect. Removing ambient occlusion has no effect.
+Actual triangles form a 6.4 mm shelf with nearly downward normals beneath the tip.
+Recomputed normals agree with the stored normals in that region.
+The original sculpt also raised the tip despite its earlier comment describing a lowered tip.
+The supplied profile supports testing a modest downward correction.
+
+## Validation
+
+`tests/vice-president-fit.test.js` checks both fixed cameras, rigid eye surfaces, matching eye pivots, and unchanged body/skin streams.
+Its fixture contains derived coordinates and hashes, not photographs.
+The expression test checks every combination of the maximum horizontal and vertical gaze angles.
+It retains the existing 92% per-eye aperture limit and all geometric clearance limits.
+
+The v14 candidate passes all four tests.
+The detailed facial audit reports zero flipped triangles and no added eye penetration.
+Each eye retains at least 95.19% of its original visible aperture.
+Maximum lid movement is 0.465 mm. Maximum edge stretch is 1.284; minimum edge ratio is 0.561.
+The sculpt's minimum sampled Jacobian is 0.666.
+The model contains the same 37 animation payloads, unchanged body vertices, topology, UVs, and skin weights.
+
+Run the candidate checks without replacing the public model:
+
+```sh
+NINJA_ETHAN_CANDIDATE=/tmp/ethan-landmarks-v14.glb \
+  node --test tests/vice-president-fit.test.js
+```
+
+## Reproduction
+
+First export an unmodified native Monk with the normal character builder.
+The face builder rejects models that already contain its likeness metadata.
+The full-export hook applies the checked-in face source. Animation-only exports preserve the existing face.
+
+Build a separate reviewed candidate:
 
 ```sh
 blender --background --python tools/build-vice-president.py -- \
   --input /tmp/monk-native.glb \
   --output /tmp/vice-president.glb \
-  --face-texture assets/characters/vice-president-face-baked.jpg
+  --face-texture assets/characters/vice-president-face-warm-eyes.png \
+  --hair-shape swept --nose-tip-drop-mm 2
 ```
 
-The final JPEG derives from the preserved UV projection in `assets/characters/vice-president-face-projection.jpg`.
-The generated nose correction uses a small UV mask. It does not replace the entire atlas.
-To reproduce that texture correction, run:
+Use `--hair-shape baseline --nose-tip-drop-mm 0` for the v12 geometry comparison.
+
+Register and blend the generated iris artwork:
 
 ```sh
-blender --background --python tools/repair-vice-president-face.py -- \
-  --native-model /tmp/monk-native.glb \
-  --base-texture assets/characters/vice-president-face-projection.jpg \
-  --output assets/characters/vice-president-face-baked.jpg
+blender --background --python tools/repair-vice-president-iris.py -- \
+  --base-texture assets/characters/vice-president-face-baked.jpg \
+  --output /tmp/vice-president-warm-eyes.png \
+  --report /tmp/vice-president-warm-eyes.json
 ```
 
-The repair image is generated project artwork. It contains no original photograph.
-`tools/bake-vice-president-face.py` retains the original projection workflow and its calibrated landmarks.
-A new projection requires checking those landmarks against the revised sculpt.
-The normal model rebuild uses the accepted JPEG directly and does not repeat that projection.
+`tools/apply-vice-president-revision.py` transfers reviewed geometry onto the newest gameplay model.
+It rejects in-place output and checks the previous geometry at every changed vertex.
+It preserves all current animation payloads, including newer golf and combat clips.
+The optional `--head-texture` appends the reviewed atlas without rewriting existing binary streams.
+Keep the previous face model as the merge baseline until integration completes.
 
-The builder rejects an input that already contains the likeness to prevent a second sculpt pass.
-
-Render a level-camera comparison in muted Chrome:
+Render standard front, three-quarter, and profile views in isolated muted Chrome:
 
 ```sh
 node tools/render-vice-president.mjs /tmp/vice-president.glb /tmp/vice-president-portrait
 ```
+
+Render through a fixed fitted camera:
+
+```sh
+node tools/render-vice-president-matched.mjs \
+  --model /tmp/vice-president.glb --fit /tmp/reference-cameras.json \
+  --output /tmp/vice-president-matched --material original
+```
+
+The other material modes are `unlit`, `clay`, `no-normal`, and `no-ao`.
+The root review accepted v14 for integration. It retains a visible under-nose shadow under some lights.
+The private visual comparisons remain outside the public game.
+The final source texture is `assets/characters/vice-president-face-warm-eyes.png`.
+The old `vice-president-face-baked.jpg` remains the reproducible base for the iris repair.

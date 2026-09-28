@@ -12,7 +12,8 @@ import bpy
 import numpy as np
 from mathutils import Matrix, Quaternion, Vector
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--input',type=pathlib.Path,default=ROOT/'public/models/monk.glb');p.add_argument('--output',type=pathlib.Path,default=pathlib.Path('/tmp/vice-president.glb'));p.add_argument('--blend',type=pathlib.Path);p.add_argument('--face-texture',type=pathlib.Path,default=ROOT/'assets/characters/vice-president-albedo.png');a=p.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--input',type=pathlib.Path,default=ROOT/'public/models/monk.glb');p.add_argument('--output',type=pathlib.Path,default=pathlib.Path('/tmp/vice-president.glb'));p.add_argument('--blend',type=pathlib.Path);p.add_argument('--face-texture',type=pathlib.Path,default=ROOT/'assets/characters/vice-president-face-warm-eyes.png');p.add_argument('--hair-shape',choices=['baseline','swept'],default='swept');p.add_argument('--nose-tip-drop-mm',type=float,default=2);a=p.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+if not 0<=a.nose_tip_drop_mm<=2:p.error('--nose-tip-drop-mm must remain between 0 and 2 for this bounded revision.')
 def read_glb(path):
  raw=path.read_bytes();n=struct.unpack_from('<I',raw,12)[0];return json.loads(raw[20:20+n]),bytearray(raw[28+n:])
 def save_glb(path,doc,data):
@@ -58,9 +59,34 @@ for side in ['R','L']:
  for i in component:eye_transforms[i]=(center,rotation)
  eye_reports.append({'side':side,'vertices':len(component),'nativeYawDegrees':math.degrees(math.atan2(axis.x,-axis.y)),'nativePitchDegrees':math.degrees(math.asin(axis.z)),'correctedAxis':list(rotation@axis),'center':list(center),'maximumPairDistanceErrorMetres':distance_error})
 def gaussian(x,y,z,cx,cy,cz,sx,sy,sz):return math.exp(-.5*(((x-cx)/sx)**2+((y-cy)/sy)**2+((z-cz)/sz)**2))
-def sculpt(v,eye=None):
+# Conservative metric corrections from two independently fitted reference cameras.
+# Depth stays unchanged because both photographs have uncertain intrinsics.
+EYE_SHIFT_X=.00125
+EYE_SHIFT_Z=-.00125
+def eye_shift(center):return Vector((EYE_SHIFT_X if center.x>0 else -EYE_SHIFT_X,0,EYE_SHIFT_Z))
+def refine_landmarks(q):
+ x,y,z=q;ax=abs(x);sign=1 if x>=0 else -1;delta=Vector()
+ front=1-smooth(-.075,-.03,y)
+ orbit=smooth(.002,.012,ax)*(1-smooth(.053,.075,ax))*smooth(1.648,1.672,z)*(1-smooth(1.714,1.733,z))*front
+ delta.x+=sign*EYE_SHIFT_X*orbit;delta.z+=EYE_SHIFT_Z*orbit
+ # Extend the outer lid rather than treating lens-distorted corner detections
+ # as a request to move the entire eyeball three millimetres sideways.
+ outer=gaussian(ax,y,z,.042,-.110,1.685,.010,.026,.009)
+ delta.x+=sign*.002*outer*front
+ # Compress the lower face while retaining the user's slimmer jaw width.
+ lower=max(0,min(1,(1.635-z)/.075))*smooth(1.49,1.545,z)*front
+ delta.z+=.002*lower
+ mouth=math.exp(-.5*((z-1.612)/.018)**2)*(1-smooth(.045,.065,ax))*front
+ corner=smooth(.008,.022,ax)*mouth
+ delta.x+=sign*.00125*corner;delta.z+=.0004*mouth+.00065*corner
+ # Nose width is outside the prescription lenses and agrees across both views.
+ # Keep its profile and projection unchanged.
+ sign_soft=x/math.sqrt(x*x+.000004)
+ delta.x+=sign_soft*(.0015*gaussian(ax,y,z,.016,-.135,1.639,.014,.018,.011)+.00075*gaussian(ax,y,z,.008,-.152,1.649,.009,.012,.011))
+ return q+delta
+def sculpt(v,eye=None,landmarks=True):
  if eye is not None:
-  center,rotation=eye;return center+rotation@(v-center)
+  center,rotation=eye;return center+rotation@(v-center)+eye_shift(center)
  x,y,z=v;ax=abs(x);sgn=1 if x>=0 else -1
  if z<1.48:return v.copy()
  q=Vector((x,y,z))
@@ -75,7 +101,8 @@ def sculpt(v,eye=None):
  q.x-=sgn*.0022*gaussian(ax,y,z,.056,-.035,1.598,.022,.04,.028)
  # Fill the submental region and neck without changing the neck/body seam.
  q.y-=.003*gaussian(x,y,z,0,-.066,1.570,.055,.025,.022)
- # Rounded prominent nose, gently lowered tip, softer nostril wings.
+ # Rounded prominent nose and softer nostril wings. The bounded distal-tip
+ # correction below acts after these source-proportion adjustments.
  nose=gaussian(x,y,z,0,-.143,1.650,.020,.021,.015)
  q.y-=.0075*nose;q.z+=.003*nose;q.x+=x*.10*nose
  q.z-=.001*gaussian(x,y,z,0,-.137,1.640,.009,.016,.010)
@@ -95,19 +122,33 @@ def sculpt(v,eye=None):
  # Larger ears with soft lobes; facial bone weights remain intact.
  ear=gaussian(ax,y,z,.088,-.001,1.669,.013,.04,.035);q.x+=sgn*.003*ear
  # Existing scalp supplies a textured base below the swept-back strand layer.
- cap=max(0,min(1,(z-1.736)/.055));q.z+=.013*cap;q.y+=.007*cap
+ cap=max(0,min(1,(z-1.736)/.055));q.z+=.009*cap;q.y+=.007*cap
  q.x+=sgn*.0045*gaussian(ax,y,z,.065,.005,1.748,.020,.080,.034)
- q.z+=.005*gaussian(x,y,z,0,.006,1.784,.044,.10,.025)
+ q.z+=.003*gaussian(x,y,z,0,.006,1.784,.044,.10,.025)
  q.z+=.003*gaussian(x,y,z,0,-.059,1.770,.038,.035,.025)
  q.x+=sgn*.0015*gaussian(ax,y,z,.065,-.030,1.711,.013,.06,.020)
- # The current profile reference has an upright forehead. Bring the upper
- # frontal surface forward without adding a protruding brow ridge.
- q.y-=.016*gaussian(x,y,z,0,-.074,1.743,.056,.060,.032)*smooth(1.704,1.731,z)
- # Reference measurements show a taller forehead and a longer lower face.
- if q.z>=1.700:q.z+=.018*smooth(1.700,1.748,q.z)
+ # The seated three-quarter and capped profile references show a lower, gently
+ # receding forehead. Preserve its convex transition rather than flattening it.
+ q.y-=.0075*gaussian(x,y,z,0,-.074,1.743,.056,.060,.032)*smooth(1.704,1.731,z)
+ # Keep the forehead extension modest; the longer lower face remains unchanged.
+ if q.z>=1.700:q.z+=.008*smooth(1.700,1.748,q.z)
  elif q.z<1.685:q.z+=(q.z-1.685)*.12*smooth(1.48,1.575,q.z)
- return q
-for v in mesh.data.vertices:v.co=sculpt(v.co,eye=eye_transforms.get(v.index))
+ if landmarks and a.hair_shape=='swept':
+  # Lift the front sweep without moving the forehead or adding crown height.
+  crest=gaussian(x,y,z,-.018,-.047,1.778,.047,.046,.027)*smooth(1.746,1.771,z)
+  q.z+=.007*crest;q.y+=.004*crest
+  # The reference has longer hair behind the ears, not a close-cropped cap.
+  back=smooth(-.002,.030,y)*smooth(1.660,1.710,z)*(1-smooth(1.752,1.800,z))
+  q.y+=.010*back
+  sides=smooth(.053,.075,ax)*(1-smooth(.005,.048,y))*smooth(-.040,-.003,y)*smooth(1.685,1.715,z)*(1-smooth(1.749,1.780,z))
+  q.x+=sgn*.003*sides;q.y+=.004*sides
+ if landmarks and a.nose_tip_drop_mm:
+  # The original sculpt raised the distal tip. A clay diagnostic confirmed a
+  # real horizontal subnasal shelf, while the profile shows a lower tip.
+  distal=smooth(.140,.154,-q.y)*smooth(1.624,1.639,q.z)*(1-smooth(1.659,1.687,q.z))*math.exp(-.5*(q.x/.026)**2)
+  q.z-=a.nose_tip_drop_mm*.001*distal
+ return refine_landmarks(q) if landmarks else q
+for v in mesh.data.vertices:v.co=sculpt(v.co,eye=eye_transforms.get(v.index),landmarks=v.index>=2837)
 mesh.data.update()
 # Remove source beard/hair cards. They show the wrong cut and use a dark atlas.
 for poly in mesh.data.polygons:
@@ -126,7 +167,7 @@ for primitive in doc['meshes'][0]['primitives']:
   if expected.z>=1.48:
    source_normal=struct.unpack_from('<3f',data,ns);n=Vector((source_normal[0],-source_normal[2],source_normal[1]));columns=[]
    for axis in range(3):
-    step=Vector((0,0,0));step[axis]=.0001;columns.append((sculpt(expected+step,eye=eye_transforms.get(index))-sculpt(expected-step,eye=eye_transforms.get(index)))/.0002)
+    step=Vector((0,0,0));step[axis]=.0001;columns.append((sculpt(expected+step,eye=eye_transforms.get(index),landmarks=index>=2837)-sculpt(expected-step,eye=eye_transforms.get(index),landmarks=index>=2837))/.0002)
    jacobian=Matrix(columns).transposed();min_jacobian=min(min_jacobian,jacobian.determinant())
    if jacobian.determinant()<=0:raise ValueError(f'Sculpt folds the native surface at vertex {index}')
    n=jacobian.inverted().transposed()@n;n.normalize();struct.pack_into('<3f',data,ns,n.x,n.z,-n.y)
@@ -159,9 +200,30 @@ def matrix(index):
   q=n.get('rotation',[0,0,0,1]);m=Matrix.LocRotScale(Vector(n.get('translation',[0,0,0])),Quaternion((q[3],q[0],q[1],q[2])),Vector(n.get('scale',[1,1,1])))
  return matrix(parents[index])@m if index in parents else m
 inverse_head=matrix(head_index).inverted();normal_head=inverse_head.to_3x3()
+# Constant parents translate the eye rotation centres without changing any clip
+# keys. Their old local transforms and all animation accessors remain intact.
+eye_pivot_updates=[]
+for side in ['R','L']:
+ eye_index=next(i for i,n in enumerate(doc['nodes']) if n.get('name')=='Bip01 '+side+'Eye')
+ parent_index=parents[eye_index];old_world=matrix(eye_index);parent_world=matrix(parent_index)
+ sign=-1 if side=='R' else 1;world_delta=Vector((sign*EYE_SHIFT_X,EYE_SHIFT_Z,0))
+ local_delta=parent_world.to_3x3().inverted()@world_delta
+ offset_index=len(doc['nodes']);doc['nodes'].append({'name':'Vice President '+side+' eye pivot offset','translation':list(local_delta),'children':[eye_index]})
+ doc['nodes'][parent_index]['children']=[offset_index if i==eye_index else i for i in doc['nodes'][parent_index]['children']]
+ skin_updates=[]
+ for skin_index,skin in enumerate(doc.get('skins',[])):
+  if eye_index not in skin['joints']:continue
+  joint=skin['joints'].index(eye_index);accessor=doc['accessors'][skin['inverseBindMatrices']];view=doc['bufferViews'][accessor['bufferView']]
+  start=view.get('byteOffset',0)+accessor.get('byteOffset',0)+joint*view.get('byteStride',64)
+  old=Matrix([struct.unpack_from('<4f',data,start+k*16) for k in range(4)]).transposed()
+  new=old@Matrix.Translation(-world_delta)
+  struct.pack_into('<16f',data,start,*[new[row][column] for column in range(4) for row in range(4)])
+  skin_updates.append({'skin':skin_index,'joint':joint,'node':eye_index})
+ eye_pivot_updates.append({'side':side,'node':eye_index,'parent':parent_index,'offsetNode':offset_index,'worldDelta':list(world_delta),'localDelta':list(local_delta),'skinUpdates':skin_updates})
+
 def material(name,color,roughness=.5,metal=0):
  doc.setdefault('materials',[]).append({'name':name,'pbrMetallicRoughness':{'baseColorFactor':[*color,1],'roughnessFactor':roughness,'metallicFactor':metal},'doubleSided':True});return len(doc['materials'])-1
-frame_mat=material('Vice President graphite glasses',(.018,.024,.032),.3,.1);temple_mat=material('Vice President brushed silver temples',(.8,.82,.84),.24,.65)
+frame_mat=material('Vice President graphite glasses',(.035,.045,.055),.26,.82);temple_mat=material('Vice President brushed silver temples',(.8,.82,.84),.24,.65)
 accessories=[]
 def tube(name,points,radius,mat,sides=5):
  verts=[];faces=[]
@@ -176,15 +238,26 @@ def tube(name,points,radius,mat,sides=5):
  m=bpy.data.meshes.new(name);m.from_pydata(verts,[],faces);m.update();o=bpy.data.objects.new(name,m);bpy.context.collection.objects.link(o)
  for poly in m.polygons:poly.use_smooth=True
  accessories.append((o,mat));return o
-# Rounded acetate frames, with softer bottom corners and a slight cheekward tilt.
+# The lens outline comes from a manually traced photograph, not a superellipse.
+# Remove camera/head roll using the pupil line before creating the 3D frame.
+trace=json.loads((ROOT/'assets/characters/vice-president-glasses-trace.json').read_text())
+(a0,a1)=trace['pupilBaseline'];angle=-math.atan2(a1[1]-a0[1],a1[0]-a0[0]);ct,st=math.cos(angle),math.sin(angle)
+outline=[(x*ct-y*st,-(x*st+y*ct)) for x,y in trace['outline']]
+lo=[min(p[i] for p in outline) for i in range(2)];hi=[max(p[i] for p in outline) for i in range(2)];mid=[(a+b)/2 for a,b in zip(lo,hi)];half=[(b-a)/2 for a,b in zip(lo,hi)]
+outline=[Vector(((x-mid[0])/half[0],(z-mid[1])/half[1])) for x,z in outline]
+half_width=trace['lensWidthMetres']/2;half_height=half_width/(half[0]/half[1]*trace['perspectiveWidthCorrection'])
+def traced_rim(t):
+ u=t*len(outline);i=int(u);v=u-i
+ p0,p1,p2,p3=[outline[(i+k)%len(outline)] for k in [-1,0,1,2]]
+ return .5*((2*p1)+(-p0+p2)*v+(2*p0-5*p1+4*p2-p3)*v*v+(-p0+3*p1-3*p2+p3)*v*v*v)
 for sign in [-1,1]:
  points=[]
  for i in range(65):
-  t=math.tau*i/64;ct,st=math.cos(t),math.sin(t);dx=.028*math.copysign(abs(ct)**.50,ct);dz=.0155*math.copysign(abs(st)**.58,st);dx*=.96 if dx*sign<0 else 1;x=sign*.035+dx
-  points.append((x,-.136+abs(x)*.14-dz*.14,1.684+dz))
- tube('Glasses rim '+str(sign),points,lambda i:(.0017,.0025 if points[i][2]>1.689 else .0017),frame_mat,8)
- tube('Glasses temple '+str(sign),[(sign*.062,-.129,1.692),(sign*.079,-.10,1.690),(sign*.087,-.04,1.685),(sign*.089,.004,1.680),(sign*.088,.021,1.666)],.0017,temple_mat,6)
-tube('Glasses bridge',[(-.008,-.137,1.688),(-.004,-.14,1.692),(0,-.142,1.693),(.004,-.14,1.692),(.008,-.137,1.688)],.0018,frame_mat,7)
+  u,v=traced_rim(i/64);dx=sign*half_width*u;dz=half_height*v;x=sign*.035+dx
+  points.append((x,-.136+abs(x)*.14-dz*.14,trace['lensCenterHeightMetres']+dz))
+ tube('Glasses rim '+str(sign),points,lambda i:(.00055,.00065 if points[i][2]>1.690 else .00050),frame_mat,8)
+ tube('Glasses temple '+str(sign),[(sign*.0625,-.129,1.693),(sign*.079,-.10,1.690),(sign*.087,-.04,1.685),(sign*.089,.004,1.680),(sign*.088,.021,1.666)],lambda i:(.0009,.00145),temple_mat,6)
+tube('Glasses bridge',[(-.008,-.137,1.688),(-.004,-.14,1.692),(0,-.142,1.693),(.004,-.14,1.692),(.008,-.137,1.688)],.00065,frame_mat,7)
 # The sculpted, textured scalp supplies the hair silhouette. Additional line
 # geometry was removed after visual review: it looked like straight white wires.
 # Consolidate accessory geometry by material for two extra draw calls.
@@ -202,7 +275,7 @@ for mat in sorted(set(m for _,m in accessories)):
   doc['accessors'].append(entry);return len(doc['accessors'])-1
  pa=accessor(verts,3,'VEC3','f',34962);na=accessor(normals,3,'VEC3','f',34962);ia=accessor(indices,1,'SCALAR','I',34963)
  name=doc['materials'][mat]['name'];doc['meshes'].append({'name':name,'primitives':[{'attributes':{'POSITION':pa,'NORMAL':na},'indices':ia,'material':mat}]});doc['nodes'].append({'name':name,'mesh':len(doc['meshes'])-1});doc['nodes'][head_index].setdefault('children',[]).append(len(doc['nodes'])-1)
-doc.setdefault('extras',{})['vicePresidentLikeness']={'version':2,'basis':'User-supplied reference photos; geometry brief reviewed with Claude Opus 5.5 High','modifiedVertices':patch_count,'privatePhotosEmbedded':False,'retainedFacialRig':True,'minimumSculptJacobian':min_jacobian,'rigidEyeCalibration':eye_reports}
+doc.setdefault('extras',{})['vicePresidentLikeness']={'version':4,'basis':'Two-photo camera-adjusted landmark refinement with local profile, material, and expression review','hairShape':a.hair_shape,'noseTipDropMm':a.nose_tip_drop_mm,'eyePivotOffsets':eye_pivot_updates,'modifiedVertices':patch_count,'privatePhotosEmbedded':False,'retainedFacialRig':True,'minimumSculptJacobian':min_jacobian,'rigidEyeCalibration':eye_reports}
 save_glb(a.output,doc,data)
 if a.blend:bpy.ops.wm.save_as_mainfile(filepath=str(a.blend))
 print('VICE_PRESIDENT_EXPORTED',a.output,'sculpted vertices',patch_count,'accessory vertices',sum(len(o.data.vertices) for o,m in accessories))

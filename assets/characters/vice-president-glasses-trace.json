@@ -1,0 +1,87 @@
+{
+  "sourcePhoto": "Screenshot 2026-09-27 at 7.51.31 PM.png",
+  "sourceResolution": [
+    2548,
+    1538
+  ],
+  "tracingViewport": [
+    2048,
+    1236
+  ],
+  "method": "Manual near-lens rim trace. Remove head roll using pupil centers, then mirror onto the opposite lens. Dimensions use an estimated perspective correction, not a facial scan.",
+  "pupilBaseline": [
+    [
+      901,
+      379
+    ],
+    [
+      1045,
+      343
+    ]
+  ],
+  "outline": [
+    [
+      977,
+      336
+    ],
+    [
+      990,
+      325
+    ],
+    [
+      1020,
+      312
+    ],
+    [
+      1055,
+      306
+    ],
+    [
+      1093,
+      307
+    ],
+    [
+      1102,
+      317
+    ],
+    [
+      1107,
+      349
+    ],
+    [
+      1105,
+      378
+    ],
+    [
+      1095,
+      394
+    ],
+    [
+      1070,
+      404
+    ],
+    [
+      1038,
+      410
+    ],
+    [
+      1008,
+      410
+    ],
+    [
+      989,
+      397
+    ],
+    [
+      980,
+      374
+    ],
+    [
+      976,
+      350
+    ]
+  ],
+  "perspectiveWidthCorrection": 1.15,
+  "lensWidthMetres": 0.055,
+  "lensCenterHeightMetres": 1.683
+}
