@@ -30,15 +30,18 @@ export function solveLeg(thigh,calf,foot,target,footRotation,{maxReach=.985}={})
 
 export function attackFootContacts(clip,time,motion){
  const weights={},stance={};
+ // The mixer can end a few floating-point units beyond the record's duration.
+ // Hold the final contact instead of treating that clamped pose as airborne.
+ const contactTime=Number.isFinite(clip?.duration)?clamp(time,0,clip.duration):time;
  for(const side of ['r','l']){
   // A heel pivot still supports the body through its planted toe. The native
   // sole orientation remains intact while terrain adjusts that support.
   const intervals=contactIntervals(clip,side);
   if(intervals){
    let weight=0;
-   for(const [start,end]of intervals)if(time>=start&&time<=end){
+   for(const [start,end]of intervals)if(contactTime>=start&&contactTime<=end){
     const blend=Math.min(.04,(end-start)/3);
-    weight=Math.max(weight,(start===0?1:smooth(start,start+blend,time))*(end>=clip.duration?1:1-smooth(end-blend,end,time)));
+    weight=Math.max(weight,blend===0?1:(start===0?1:smooth(start,start+blend,contactTime))*(end>=clip.duration?1:1-smooth(end-blend,end,contactTime)));
    }
    weights[side]=weight;
   }else{
@@ -163,6 +166,10 @@ export class FootPlacement {
     for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
     error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation);
    }
+   // Seed the next procedural frame from the actual authored support. Resetting
+   // these values makes the downhill foot jump when an attack returns to idle.
+   const state=this.feet[s.side];state.offset=s.offset;
+   state.normal.copy(state.soleUp).applyQuaternion(bones['foot_'+s.side].getWorldQuaternion(new THREE.Quaternion())).normalize();
    this.report.feet.push({side:s.side,offset:s.offset,weight:s.weight,stance:stance?.[s.side]??s.weight>.95,reachError:error,terrainDelta:s.terrainDelta,sourceSoleGap:s.sourceSoleGap});
   }
  }

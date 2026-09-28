@@ -41,6 +41,13 @@ test('A heel-to-toe pivot keeps support through touching and overlapping contact
  const gap={duration:1,footPlants:{r:[[0,.2],[.202,1]],l:[[0,1]]}};
  assert.equal(attackFootContacts(gap,.201,null).contactWeights.r,0,'A real airborne interval remains free.');
 });
+test('Clamped animation endpoints retain support without dividing by zero',()=>{
+ const clip={duration:.4,footPlants:{r:[[0,.4]],l:[[0,.4]]}};
+ assert.deepEqual(attackFootContacts(clip,.4000000000000004,null).contactWeights,{r:1,l:1});
+ const endpoint={duration:.6,footPlants:{r:[[0,0],[.6,.6]],l:[[0,.6]]}};
+ for(const time of [0,.6,.6000000000000001])assert.deepEqual(attackFootContacts(endpoint,time,null).contactWeights,{r:1,l:1});
+ for(const time of [.001,.3,.599])assert.deepEqual(attackFootContacts(endpoint,time,null).contactWeights,{r:0,l:1});
+});
 test('Every native Kaede attack preserves flat-ground foot lifts, pivots and joint poses exactly',async()=>{
  const {root,bones,clips,mixer,placement}=await nativeRig('kaede');
  for(const clip of clips.filter(c=>/^(Fan|Ace)_(Cut_|Heavy_|Musou)/.test(c.name))){
@@ -124,6 +131,26 @@ test('Repeated attack contact resets do not introduce a terrain pelvis jump',asy
     }
     previous={worldY,sourceY,offset};
    }
+  }
+ }
+});
+
+test('Authored support seeds procedural idle without a zero-time foot jump',async()=>{
+ for(const warrior of WARRIORS){
+  const rig=await nativeRig(warrior.model),{root,bones,clips,mixer,placement}=rig;
+  const clip=clips.find(c=>c.name===warrior.readyClip);assert.ok(clip,warrior.model+' ready clip');
+  mixer.clipAction(clip).play();
+  for(const [gx,gz]of [[0,0],[.12,.10],[-.12,.10],[.22,-.16]])for(const heading of [0,Math.PI/2]){
+   placement.restore();placement.reset();root.rotation.y=heading;mixer.setTime(0);root.updateMatrixWorld(true);
+   const ground=(x,z)=>gx*x+gz*z;
+   for(let i=0;i<60;i++){
+    placement.restore();root.updateMatrixWorld(true);
+    placement.apply(1/120,ground,{preserveAuthored:true,contactWeights:{r:1,l:1},stance:{r:true,l:true}});
+   }
+   const names=['foot_r','foot_l','ball_r','ball_l'],before=names.map(n=>position(bones[n]));
+   placement.restore();root.updateMatrixWorld(true);placement.apply(0,ground);
+   const jump=Math.max(...names.map((n,i)=>position(bones[n]).distanceTo(before[i])));
+   assert.ok(jump<.001,`${warrior.model}/${gx},${gz}/${heading}: zero-time jump ${jump}`);
   }
  }
 });
