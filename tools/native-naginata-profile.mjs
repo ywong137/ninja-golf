@@ -97,6 +97,9 @@ for(const [pieceIndex,[name,facing]]of pieces.entries()){const p=NAGINATA_PROFIL
  flow.impacts.push(...(p.impacts??[p.hit]).map(hit=>seconds(flow.duration+hit)));flow.duration=seconds(flow.duration+p.duration);flow.sourceDuration=seconds(flow.sourceDuration+sourceDuration);
 }
 flow.hit=flow.impacts[0];NAGINATA_PROFILES.Ethan_Naginata_Musou_Flow=flow;
+// Finish the first cut's carry handover before its fast chamber movement.
+// Set this after the variants are copied; their reviewed timing stays unchanged.
+light.carryExitDuration=.065;
 function sample(rows,t,key,component=null){
  let i=0;while(i<rows.length-2&&t>rows[i+1].t)i++;
  const a=rows[i],b=rows[i+1],h=b.t-a.t,u=Math.max(0,Math.min(1,(t-a.t)/h)),v=j=>component===null?rows[j][key]:rows[j][key][component];

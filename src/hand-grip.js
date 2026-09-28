@@ -188,6 +188,7 @@ export class HandGrip {
   // Release it before running resumes; a fading grab would bend the free wrist.
   const secondaryWeight=actor.running&&!golf?0:clip?.nativeAttachment&&!golf?this.weight*MathUtils.smoothstep(1-(actor.travelPose?.weight??0),.4,1):this.weight;
   this.secondaryWeight=secondaryWeight;
+  const carryActive=!golf&&(actor.travelPose?.weight??0)>0;
   const holdingLeft=actor.offhand&&!golf?1:secondaryWeight;
   for(const side of ['r','l']){
    const weight=side==='r'?1:holdingLeft;if(!weight)continue;
@@ -207,8 +208,10 @@ export class HandGrip {
   const station=golf?0:held.userData.primaryGrip;
   this.attach(held,'r',station);
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration)){this.attachPair(held,station,clip.gripSpacing);}
-  else if(secondaryWeight>0){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
+  // A native paired clip authors the support-hand approach. Do not bend its
+  // elbow with legacy IK while that hand is still released from the weapon.
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration)){this.attachPair(held,station,clip.gripSpacing);}
+  else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&carryActive)){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
    actor.clubShaft.scale.y=Math.max(.1,length-.14);actor.clubShaft.position.y=.14+actor.clubShaft.scale.y*.5;

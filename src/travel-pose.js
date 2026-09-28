@@ -11,12 +11,43 @@ export const TRAVEL_POSES={
 };
 const vector=a=>new THREE.Vector3(...a);
 function setWorld(bone,q){bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));bone.updateWorldMatrix(false,true);}
-function aim(bone,from,to){setWorld(bone,new THREE.Quaternion().setFromUnitVectors(from.normalize(),to.normalize()).multiply(bone.getWorldQuaternion(new THREE.Quaternion())));}
-function solveArm(upper,lower,hand,target,pole,reach=.96){
- const shoulder=upper.getWorldPosition(new THREE.Vector3()),elbow=lower.getWorldPosition(new THREE.Vector3()),wrist=hand.getWorldPosition(new THREE.Vector3()),a=shoulder.distanceTo(elbow),b=elbow.distanceTo(wrist),axis=target.clone().sub(shoulder),d=THREE.MathUtils.clamp(axis.length(),Math.abs(a-b)+.015,(a+b)*reach);axis.normalize();
- const bend=pole.clone().addScaledVector(axis,-pole.dot(axis)).normalize(),along=(a*a-b*b+d*d)/(2*d),height=Math.sqrt(Math.max(0,a*a-along*along)),wantedElbow=shoulder.clone().addScaledVector(axis,along).addScaledVector(bend,height),wantedWrist=shoulder.clone().addScaledVector(axis,d);
- aim(upper,elbow.sub(shoulder),wantedElbow.clone().sub(shoulder));
- const nowElbow=lower.getWorldPosition(new THREE.Vector3());aim(lower,hand.getWorldPosition(new THREE.Vector3()).sub(nowElbow),wantedWrist.sub(nowElbow));
+// Match both native segment axes. Independent shortest-arc aims can reach the
+// same wrist while bending the elbow sideways through the skin.
+function solveArm(upper,lower,hand,target,pole,reach=.96,rest,chest,soften=false){
+ if(!rest?.hinge||rest.hinge.lengthSq()<1e-8)throw Error('Travel arm needs a calibrated native hinge.');
+ const shoulder=upper.getWorldPosition(new THREE.Vector3()),elbow=lower.getWorldPosition(new THREE.Vector3()),wrist=hand.getWorldPosition(new THREE.Vector3()),a=shoulder.distanceTo(elbow),b=elbow.distanceTo(wrist),axis=target.clone().sub(shoulder),d=THREE.MathUtils.clamp(axis.length(),Math.abs(a-b)+.015,(a+b)*reach);
+ if(axis.lengthSq()<1e-12)axis.copy(wrist).sub(shoulder);
+ if(axis.lengthSq()<1e-12)throw Error('Travel arm has no valid reach direction.');
+ axis.normalize();
+ let bend=pole.clone().addScaledVector(axis,-pole.dot(axis));
+ if(bend.lengthSq()<1e-8){bend.copy(elbow).sub(shoulder);bend.addScaledVector(axis,-bend.dot(axis));}
+ if(bend.lengthSq()<1e-8){const nativeH=rest.hinge.clone().applyQuaternion(chest.getWorldQuaternion(new THREE.Quaternion()).multiply(rest.upperInChest));bend.crossVectors(axis,nativeH);}
+ if(bend.lengthSq()<1e-8)throw Error('Travel elbow pole and native hinge are degenerate.');
+ bend.normalize();const along=(a*a-b*b+d*d)/(2*d),height=Math.sqrt(Math.max(0,a*a-along*along));
+ // Map an orthonormal native arm frame onto the requested elbow plane.
+ const nativeU=lower.position.clone().normalize(),nativeH=rest.hinge.clone().normalize(),local=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(nativeU,nativeH,nativeU.clone().cross(nativeH))),reference=chest.getWorldQuaternion(new THREE.Quaternion()).multiply(rest.upperInChest);
+ const choose=bend=>{
+  const e=shoulder.clone().addScaledVector(axis,along).addScaledVector(bend,height),u=e.clone().sub(shoulder).normalize(),f=shoulder.clone().addScaledVector(axis,d).sub(e).normalize(),hinge=u.clone().cross(f).normalize(),world=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(u,hinge,u.clone().cross(hinge))).multiply(local.clone().invert());
+  const minimum=new THREE.Quaternion().setFromUnitVectors(nativeU.clone().applyQuaternion(reference),u).multiply(reference),delta=world.clone().multiply(minimum.invert()),roll=2*Math.atan2(delta.x*u.x+delta.y*u.y+delta.z*u.z,delta.w),magnitude=Math.abs(Math.atan2(Math.sin(roll),Math.cos(roll)));
+  return{world,flexion:u.angleTo(f),magnitude};
+ };
+ let selected=choose(bend);
+ // Apply the soft limit once, when choosing the primary carry pose.
+ // Transition re-solves preserve that result with only the hard anatomical cap.
+ // Reapplying the soft limit would move the elbow again at the fade boundary.
+ const softStart=50*Math.PI/180,softRange=18*Math.PI/180,limit=soften&&selected.magnitude>softStart?softStart+softRange*Math.tanh((selected.magnitude-softStart)/softRange):68*Math.PI/180;
+ if(selected.magnitude>limit+1e-9)outer:for(let i=1;i<=36;i++)for(const sign of [1,-1]){
+  const candidate=choose(bend.clone().applyAxisAngle(axis,sign*i*Math.PI/36));
+  if(candidate.magnitude<selected.magnitude)selected=candidate;
+  if(candidate.magnitude<=limit){
+   // Refine the first feasible plane instead of stepping between 5-degree bins.
+   let lo=(i-1)*Math.PI/36,hi=i*Math.PI/36;
+   for(let k=0;k<9;k++){const mid=(lo+hi)/2,refined=choose(bend.clone().applyAxisAngle(axis,sign*mid));if(refined.magnitude<=limit){hi=mid;selected=refined;}else lo=mid;}
+   break outer;
+  }
+ }
+ setWorld(upper,selected.world);
+ lower.quaternion.copy(new THREE.Quaternion().setFromAxisAngle(nativeH,selected.flexion-rest.flexion)).multiply(rest.lower);lower.updateWorldMatrix(false,true);
 }
 function rollForearm(lower,hand,neutral,axis,shaft,forearm,restLower=null){
  hand.quaternion.copy(neutral);hand.updateWorldMatrix(true,true);
@@ -51,6 +82,18 @@ export class TravelPose {
   if(!this.weight)return;
   const {root,bones,palmGrips,shaftAxes,offhand,runPhase}=this.actor,p=this.profile;root.updateMatrixWorld(true);
   const rootQ=root.getWorldQuaternion(new THREE.Quaternion()),scale=root.getWorldScale(new THREE.Vector3()).x;
+  if(!offhand){
+   // The free arm follows the source wrist and preferred elbow path. Correct
+   // its segment frames so the elbow bends around the imported native hinge.
+   const upper=bones.upperarm_l,lower=bones.lowerarm_l,hand=bones.hand_l;
+   const before=[upper,lower,hand].map(b=>b.quaternion.clone());
+   [upper,lower,hand].forEach((b,i)=>this.saved.push([b,before[i]]));
+   const wrist=hand.getWorldPosition(new THREE.Vector3()),pole=lower.getWorldPosition(new THREE.Vector3()).sub(upper.getWorldPosition(new THREE.Vector3()));
+   const shaft=shaftAxes.l.clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()));
+   solveArm(upper,lower,hand,wrist,pole,.9995,this.actor.selectionArmRest.l,bones.spine_03,true);
+   const forearm=hand.getWorldPosition(new THREE.Vector3()).sub(lower.getWorldPosition(new THREE.Vector3())).normalize();
+   rollForearm(lower,hand,before[2],shaftAxes.l,shaft,forearm,this.actor.selectionArmRest.l.lower);
+  }
   for(const side of offhand?['r','l']:['r']){
    const sign=side==='r'?-1:1,upper=bones['upperarm_'+side],lower=bones['lowerarm_'+side],hand=bones['hand_'+side],chain=[upper,lower,hand];
    const before=chain.map(b=>b.quaternion.clone());chain.forEach((b,i)=>this.saved.push([b,before[i]]));
@@ -64,7 +107,7 @@ export class TravelPose {
      const wrist=hand.getWorldPosition(new THREE.Vector3()).lerp(root.localToWorld(carry.wrist.clone()),this.weight);
      const pole=lower.getWorldPosition(new THREE.Vector3()).lerp(root.localToWorld(carry.elbow.clone()),this.weight).sub(upper.getWorldPosition(new THREE.Vector3()));
      const handPose=before[2].clone().slerp(this.actor.neutralHandRotations[side],this.weight);
-     solveArm(upper,lower,hand,wrist,pole,.9995);
+     solveArm(upper,lower,hand,wrist,pole,.9995,this.actor.selectionArmRest[side],this.actor.bones.spine_03);
      const forearm=hand.getWorldPosition(new THREE.Vector3()).sub(lower.getWorldPosition(new THREE.Vector3())).normalize();
      rollForearm(lower,hand,handPose,shaftAxes[side],shaft,forearm);
      root.updateMatrixWorld(true);
@@ -84,7 +127,7 @@ export class TravelPose {
     carry.exitTwist=twist;
     rotation.multiply(new THREE.Quaternion().setFromAxisAngle(localAxis,twist*(1-this.weight)));
     const pole=lower.getWorldPosition(new THREE.Vector3()).lerp(root.localToWorld(carry.elbow.clone()),this.weight).sub(upper.getWorldPosition(new THREE.Vector3())),wrist=palm.sub(palmGrips[side].clone().multiplyScalar(scale).applyQuaternion(rotation));
-    solveArm(upper,lower,hand,wrist,pole);setWorld(hand,rotation);
+    solveArm(upper,lower,hand,wrist,pole,.96,this.actor.selectionArmRest[side],this.actor.bones.spine_03);setWorld(hand,rotation);
     this.shaftDirections[side]=shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(rootQ.clone().invert()).normalize();
     continue;
    }
@@ -95,7 +138,7 @@ export class TravelPose {
    let rotation=hand.getWorldQuaternion(new THREE.Quaternion());
    // Recompute wrist offset after orienting the palm; the handle stays in the finger cavity.
    for(let i=0;i<3;i++){
-    const wrist=palm.clone().sub(palmGrips[side].clone().multiplyScalar(scale).applyQuaternion(rotation));solveArm(upper,lower,hand,wrist,pole);
+    const wrist=palm.clone().sub(palmGrips[side].clone().multiplyScalar(scale).applyQuaternion(rotation));solveArm(upper,lower,hand,wrist,pole,.96,this.actor.selectionArmRest[side],this.actor.bones.spine_03,true);
     const forearm=hand.getWorldPosition(new THREE.Vector3()).sub(lower.getWorldPosition(new THREE.Vector3())).normalize();
     // Forearm rotation presents the blade. Keep the wrist in its imported
     // neutral pose; the palm's offset is not an anatomical hand direction.
@@ -103,6 +146,12 @@ export class TravelPose {
     rotation=hand.getWorldQuaternion(new THREE.Quaternion());
    }
    const solved=chain.map(b=>b.quaternion.clone());chain.forEach((b,i)=>b.quaternion.copy(before[i]).slerp(solved[i],this.weight));root.updateMatrixWorld(true);
+   if(this.weight<1){
+    const target=hand.getWorldPosition(new THREE.Vector3()),elbowPole=lower.getWorldPosition(new THREE.Vector3()).sub(upper.getWorldPosition(new THREE.Vector3())),mixedShaft=shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion())),handPose=before[2].clone().slerp(this.actor.neutralHandRotations[side],this.weight);
+    solveArm(upper,lower,hand,target,elbowPole,.9995,this.actor.selectionArmRest[side],this.actor.bones.spine_03);
+    const forearm=hand.getWorldPosition(new THREE.Vector3()).sub(lower.getWorldPosition(new THREE.Vector3())).normalize();
+    rollForearm(lower,hand,handPose,shaftAxes[side],mixedShaft,forearm,this.actor.selectionArmRest[side].lower);
+   }
    this.carry[side]={palm:root.worldToLocal(hand.localToWorld(palmGrips[side].clone())),wrist:root.worldToLocal(hand.getWorldPosition(new THREE.Vector3())),elbow:root.worldToLocal(lower.getWorldPosition(new THREE.Vector3())),axis:shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(rootQ.clone().invert()),rotation:rootQ.clone().invert().multiply(hand.getWorldQuaternion(new THREE.Quaternion()))};
   }
  }
