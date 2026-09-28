@@ -41,6 +41,36 @@ It also found an incorrect head lie angle and different putt contact heights.
 Its isolated geometry prototype preserves the hands, but produces excessive shaft lengths and misses the wedge's finite face.
 That prototype remains diagnostic. Production needs explicit shaft sockets and face markers, with poses fitted to each club's dimensions.
 
+## Physical contact study
+
+`tools/art-candidates/golf-contact-study.mjs` now supplies a separate geometric reference.
+It remains outside the game bundle and does not change any character pose.
+Its saved measurements are in `tools/art-candidates/golf-contact-study.json`.
+
+Each club has distinct design targets for length, lie, and loft.
+The length field explicitly measures the grip butt to the shaft socket, excluding the head beyond that socket.
+These targets are art dimensions, not equipment certification or a copy of a commercial club.
+The driver uses a 20 mm tee lift. The other clubs meet a ball on the ground.
+
+The study shapes the sole after applying loft. The former thick wedge back extended below its leading edge and caused missed contact.
+The head keeps one fixed mount. It does not rotate separately during a swing.
+Both palm stations, the shaft socket, the finite face point, and its normal have distinct markers.
+Marker coordinates use metres in the club's local frame.
+
+All eight finite faces touch a 42.67 mm diameter ball within numerical precision.
+Each sole remains 2 mm above the ground in its reference pose.
+The decorative groove strips protrude by up to 0.67 mm into that ideal ball surface.
+Those strips need a later material treatment; the saved report distinguishes them from the physical face.
+
+The reference driver grip sits 969 mm above the ground. The putter grip sits 774 mm above it.
+This confirms that one fixed address pose cannot establish correct contact for every club.
+The body fitting must use the selected club's markers and dimensions.
+The study does not justify extending the shaft to compensate for an incorrect body pose.
+
+The isolated front and side review is `/tmp/ninja-physical-clubs-v2.png`.
+The driver ball's tee lift is visible there; the diagnostic scene does not include the tee mesh.
+The production ball and club remain unchanged.
+
 ## Local review files
 
 - `/tmp/ninja-club-heads-v1.png`: isolated face and back views.
