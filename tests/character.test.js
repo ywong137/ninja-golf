@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {readFileSync} from 'node:fs';
 import {BLADE_PROFILES,bladeGeometry} from '../src/weapons.js';
-import {ENEMY_TYPES,enemyTypeForSlot,enemyIntent,guardDamageMultiplier} from '../src/combat.js';
+import {ENEMY_TYPES,enemyTypeForSlot,enemyIntent,guardDamageMultiplier,attackDefinition} from '../src/combat.js';
+import {WARRIORS} from '../src/warriors.js';
 import {Projectiles} from '../src/projectiles.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 test('Blades have broad flat faces, distinct profiles, and bounded draw groups',()=>{
@@ -42,14 +43,24 @@ test('Combat choreography keeps the torso coupled and both weapon paths explicit
   assert.ok(clip.poses.some(p=>p.footR[2]>.04),'Step clear of the floor during the turn');
  }
 });
-test('Fan, ring, and sickle have complete independent animation families',()=>{
+test('The three single-sword heroes have complete independent animation families',()=>{
  const names=['Ready','Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'];
  for(const prefix of ['Fan_','Ring_','Sickle_'])for(const name of names){
-  const clip=motions[prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,false);
-  for(const p of clip.poses){assert.ok(Number.isFinite(p.roll));assert.ok(p.freeHand>0,'The free hand uses a distinct open guard');}
+  const hero=WARRIORS.find(hero=>hero.motionPrefix===prefix);
+  const clip=motions[hero.motionOverrides?.[prefix+name]??prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,false);
+  for(const p of clip.poses){
+   assert.ok(Number.isFinite(p.roll));
+   // Native clips animate the free arm directly; freeHand drives procedural poses.
+   if(!clip.nativeAttachment)assert.ok(p.freeHand>0,'The free hand uses a distinct open guard');
+  }
   if(name==='Musou_Flow'){assert.equal(clip.headings.length,6);assert.ok(Math.abs(clip.poses.at(-1).hip-clip.headings.at(-1))<1e-6,'Recovery preserves the final authored heading');}
-  if(name==='Ready')assert.deepEqual(clip.poses[0].grip,clip.poses.at(-1).grip,'Stance loop closes without a hand jump');
-  else {assert.equal(clip.duration,motions[name].duration);assert.notDeepEqual(clip.poses.map(p=>p.grip),motions[name].poses.map(p=>p.grip),'A new weapon needs its own trajectory');}
+  if(name==='Ready')assert.ok(Math.hypot(...clip.poses[0].grip.map((x,i)=>x-clip.poses.at(-1).grip[i]))<1e-6,'Stance loop closes without a hand jump');
+  else {
+   const index=names.indexOf(name)-1;
+   const definition=attackDefinition(index<4?'light':index<8?'heavy':'musou',index%4,hero.combatStyle);
+   assert.ok(Math.abs(clip.duration-definition.duration)<1e-8,`${prefix}${name}: duration must match gameplay`);
+   assert.notDeepEqual(clip.poses.map(p=>p.grip),motions[name].poses.map(p=>p.grip),'A new weapon needs its own trajectory');
+  }
  }
  const guards=['Fan_','Ring_','Sickle_'].map(prefix=>motions[prefix+'Ready'].poses[0].grip);
  for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++)assert.ok(Math.hypot(...guards[i].map((x,k)=>x-guards[j][k]))>.07,'Distinct resting silhouettes');
@@ -84,7 +95,8 @@ test('Each native hero has a distinct braced guard and whole-body recoil clips',
   const guards=gltf.animations.filter(clip=>clip.name.includes('_Guard_'));
   assert.deepEqual(guards.map(clip=>clip.name).sort(),['Break','Impact','Loop','Walk_Backward','Walk_Forward','Walk_Left','Walk_Right'].map(kind=>`${style}_Guard_${kind}`));
   const loop=motions[`${style}_Guard_Loop`],impact=motions[`${style}_Guard_Impact`],broken=motions[`${style}_Guard_Break`];
-  assert.deepEqual(loop.poses[0].grip,loop.poses.at(-1).grip,'Held guard loops smoothly');
+  // Native quaternion sampling leaves submicrometre endpoint residuals.
+  assert.ok(Math.hypot(...loop.poses[0].grip.map((x,i)=>x-loop.poses.at(-1).grip[i]))<1e-6,'Held guard loops smoothly');
   assert.ok(Math.min(...impact.poses.map(p=>p.shift[2]))<loop.poses[0].shift[2]-.03,'Impact absorbs force through bent legs');
   assert.ok(Math.max(...broken.poses.map(p=>p.chest))>loop.poses[0].chest+.35,'Guard break moves the chest and pelvis');
   for(const clip of guards)for(const group of [['pelvis'],['spine_01','spine_02','spine_03'],['hand_r'],['foot_r']])assert.ok(clip.channels.some(channel=>group.includes(gltf.nodes[channel.target.node].name)),`${hero}/${clip.name}: missing whole-body channel ${group.join('/')}`);

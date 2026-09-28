@@ -53,7 +53,7 @@ test('New weapon-ready stances keep each male hero at the attack hand and foot p
   }
  }
 });
-test('Heavy sweeps include two opposed cuts at the gameplay impact times',()=>{
+test('Heavy sweeps include two distinct cuts at the gameplay impact times',()=>{
  const at=(clip,time)=>{const t=time/clip.duration;let i=0;while(i<clip.poses.length-2&&t>clip.poses[i+1].t)i++;const a=clip.poses[i],b=clip.poses[i+1],u=(t-a.t)/(b.t-a.t);return a.tip.map((v,k)=>v+(b.tip[k]-v)*u);};
  for(const [name,clip]of pilot.filter(([name])=>name.endsWith('Heavy_Sweep'))){
   assert.equal(clip.impacts.length,2,name);
@@ -62,6 +62,17 @@ test('Heavy sweeps include two opposed cuts at the gameplay impact times',()=>{
    // direction. Its velocity, not its shaft heading, distinguishes the hits.
    const vectors=clip.impacts.map(hit=>{const before=at(clip,hit-.002),after=at(clip,hit+.002),v=after.map((x,i)=>x-before[i]),length=Math.hypot(...v);assert.ok(length/.004>5,`${name}: impact lacks blade speed`);return v.map(x=>x/length);});
    assert.ok(vectors[0].reduce((sum,x,i)=>sum+x*vectors[1][i],0)<-.5,`${name}: return hit must reverse blade velocity`);
+  }else if(clip.nativeAttachment){
+   const velocity=time=>{const a=at(clip,time-.002),b=at(clip,time+.002);return b.map((x,k)=>(x-a[k])/.004);};
+   const first=velocity(clip.impacts[0]),firstSpeed=Math.hypot(...first);
+   for(const hit of clip.impacts)assert.ok(Math.hypot(...velocity(hit))>5,`${name}: impact lacks blade speed`);
+   // The dao uses two downward cuts; the other swords alternate down/up.
+   // All must reverse between hits, rather than count one stroke twice.
+   const recovery=Array.from({length:89},(_,i)=>{
+    const v=velocity(clip.impacts[0]+(clip.impacts[1]-clip.impacts[0])*(i+5)/100);
+    return v.reduce((sum,x,k)=>sum+x*first[k],0)/firstSpeed;
+   });
+   assert.ok(Math.min(...recovery)<-2,`${name}: second hit lacks a separate recovery or return cut`);
   }else{
    assert.deepEqual(clip.impacts,[.28,.53],name);
    const vectors=clip.impacts.map(hit=>{const row=clip.poses.find(p=>Math.abs(p.t*clip.duration-hit)<1e-7);assert.ok(row,name);const v=row.tip.map((x,i)=>x-row.grip[i]),length=Math.hypot(...v);return v.map(x=>x/length);});
