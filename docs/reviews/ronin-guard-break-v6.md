@@ -44,7 +44,24 @@ Front and side views show the same actor at normal animation speed.
 Extracted frames confirm the body reaction and recovery. They do not establish how fluid the video feels to a player.
 
 The source still ends with the pelvis 25 mm above its initial position.
-V6 deliberately preserves this endpoint. Transition checks remain necessary before release.
+V6 deliberately preserves this endpoint.
+
+## Runtime transitions
+
+An independent audit runs the real controller at 240 and 480 Hz, on flat ground and the slope `y = 0.22x - 0.16z`.
+It covers stationary Guard Loop entry and recovery into Ready or Guard Loop.
+The runtime retains a 40.81 mm pelvis drop from its settled guard pose.
+Terrain corrections do not cancel that reaction.
+
+Entry has no instantaneous foot displacement. The exact exit boundary moves the feet by less than 0.000574 mm.
+The first Ready recovery step decreases from 1.899 mm at 240 Hz to 0.950 mm at 480 Hz.
+That difference comes from elapsed animation time, rather than a state-change jump.
+Palm stations remain within 0.000016 mm of the handle, with no added arm rotation beyond numerical noise.
+Both knees participate on the tested slope, and neither leg stretches.
+
+These checks cover stationary origins. They do not certify moving guards, running, interruptions, or every terrain profile.
+The audit separates foot-contact proxies from the existing shoe-mesh inset.
+No runtime change is necessary for the tested transitions.
 
 ## Reproduction
 
