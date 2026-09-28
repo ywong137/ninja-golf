@@ -170,7 +170,11 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # already preserve the existing geometry and must not sculpt it a second time.
   likeness=output.with_name('monk.likeness-building.glb')
   subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-warm-eyes.png')],check=True)
-  likeness.replace(output)
+  # The Blender sculpt is the checked baseline. Preserve the measured head
+  # revision too; never silently restore the older nose during a full rebuild.
+  measured=output.with_name('monk.measured-building.glb')
+  subprocess.run(['node',str(ROOT/'tools/preserve-vice-president-head.mjs'),'--input',str(likeness),'--recipe',str(ROOT/'assets/characters/vice-president-head-revision.json'),'--output',str(measured)],check=True)
+  measured.replace(output);likeness.unlink()
   patch_naginata_native_combat(output)
  if hero=='sora':
   # Full exports restore the accepted fringe and local forehead texture.

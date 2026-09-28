@@ -3,6 +3,22 @@
 The latest fitted mesh is documented in [Ethan measured geometry v15](reviews/ethan-measured-geometry-v15.md).
 Its visible improvement is narrower nasal wings. It does not establish a complete facial reconstruction.
 
+Full character exports apply `assets/characters/vice-president-head-revision.json` after the Blender base sculpt.
+This preserves the exact reviewed head while retaining newly exported animation payloads.
+The transfer rejects changed topology, UVs, skin weights, base positions, or base normals.
+It also rejects duplicate application. Animation-only exports retain the existing head directly.
+
+After reviewing a new fitted head, update the saved revision before publishing:
+
+```sh
+node tools/preserve-vice-president-head.mjs \
+  --before /tmp/ethan-v14.glb --after /tmp/ethan-reviewed.glb \
+  --output assets/characters/vice-president-head-revision.json
+```
+
+The `--before` model must contain the reproducible Blender base sculpt, without the measured correction.
+The rebuild regression checks both the published head and preservation of newer animation bytes.
+
 The earlier camera-fit RMS values below used several invalid anatomical anchors. Do not use them as likeness evidence.
 
 # The Vice President
