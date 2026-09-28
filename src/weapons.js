@@ -91,14 +91,15 @@ export function createWeapon(kind='odachi'){
   const add=(geo,color,x,y,z,sx=1,sy=1,sz=1)=>{const g=geo.index?geo.toNonIndexed():geo.clone();g.scale(sx,sy,sz);g.translate(x,y,z);const c=new THREE.Color(color),colors=[];for(let i=0;i<g.attributes.position.count;i++)colors.push(c.r,c.g,c.b);g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));pieces.push(g);geo.dispose();};
   const pole=kind==='naginata'||kind==='lancer';
   const hero=['odachi','twin','naginata','jian','dao','wakizashi'].includes(kind);
-  if(hero){const core=new THREE.Mesh(new THREE.CylinderGeometry(.017,.019,pole?1.05:p.grip,16),weaponGrip);core.name='Wrapped hand grip';core.position.y=pole?-.36:.17-p.grip/2;core.castShadow=true;group.add(core);}
+  const gripRadius=['jian','dao','wakizashi'].includes(kind)?.014:.016;
+  if(hero){const core=new THREE.Mesh(new THREE.CylinderGeometry(gripRadius-.0012,gripRadius-.001,pole?1.05:p.grip,24),weaponGrip);core.name='Wrapped hand grip';core.position.y=pole?-.36:.17-p.grip/2;core.castShadow=true;group.add(core);}
   else add(new THREE.CylinderGeometry(.017,.019,pole?1.05:p.grip,12),'#252b30',0,pole?-.36:.17-p.grip/2,0);
   if(kind==='jian')add(new THREE.BoxGeometry(.15,.021,.043),'#ae8240',0,.155,0);
   else add(new THREE.CylinderGeometry(.07,.07,.018,kind==='dao'?20:8),'#ae8240',0,.155,0,1.1,1,.7);
   add(new THREE.BoxGeometry(.065,.055,.025),'#b18b49',0,.192,0);
-  for(let i=0;i<(hero?2:9);i++){const y=.13-i*(Math.min(p.grip,.40)-.06)/(hero?1:8);add(new THREE.TorusGeometry(.019,.0025,4,12).rotateX(Math.PI/2),'#b79a67',0,y,0,1,1,1);}
+  for(let i=0;i<(hero?2:9);i++){const y=.13-i*(Math.min(p.grip,.40)-.06)/(hero?1:8);add(new THREE.TorusGeometry(hero?gripRadius-.0015:.019,hero?.0015:.0025,6,24).rotateX(Math.PI/2),'#b79a67',0,y,0,1,1,1);}
   const hardware=new THREE.Mesh(mergeGeometries(pieces),fittings);pieces.forEach(g=>g.dispose());hardware.castShadow=true;group.add(hardware);
-  if(hero){const cord=new THREE.Mesh(cordGeometry(.17-Math.min(p.grip,.40),.12),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
+  if(hero){const cord=new THREE.Mesh(cordGeometry(pole?-.88:.17-p.grip,.145,gripRadius),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
   const blade=new THREE.Mesh(bladeGeometry(p),[steel,edge]);blade.name='Flat steel blade';blade.castShadow=true;group.add(blade);
-  group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;cache.set(kind,group);return group.clone();
+  group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;group.userData.primaryGrip=hero?.095:0;group.userData.gripRadius=hero?gripRadius:.020;cache.set(kind,group);return group.clone();
 }

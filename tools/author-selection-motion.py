@@ -15,6 +15,31 @@ PROFILES={
  'sora':('Sickle',[-.27,.16,-.95],.035,.33,.020),
 }
 
+# Quiet carrying poses. Each entry specifies a supporting leg through its
+# pelvis shift, pelvic tilt, and fixed feet; weapon directions are independent.
+RESTING={
+ 'shinobi':dict(shift=.055,hip=.045,chest=-.02,tilt=-.08,
+    footR=[-.145,-.075,0],footL=[.19,-.025,0],yawR=.02,yawL=-.035,
+    shaft=[-.11,-.06,.99],offShaft=[.48,.27,-.83],
+    wrists={'r':[-.10,-.43,-.70],'l':[.10,-.48,-.62]},
+    elbows={'r':[-.13,.02,-.61],'l':[.13,.02,-.61]}),
+ 'kaede':dict(shift=.05,hip=.035,chest=-.015,tilt=-.085,
+    footR=[-.125,-.07,0],footL=[.165,-.025,0],yawR=.02,yawL=-.035,
+    shaft=[-.07,.04,.997],
+    wrists={'r':[-.12,-.44,-.69],'l':[.10,-.05,-.965]},
+    elbows={'r':[-.14,.02,-.61],'l':[.08,.04,-.60]}),
+ 'ayame':dict(shift=-.05,hip=-.04,chest=.015,tilt=.08,
+    footR=[-.17,-.025,0],footL=[.12,-.07,0],yawR=.035,yawL=-.02,
+    shaft=[-.45,.25,-.86],
+    wrists={'r':[-.12,-.44,-.69],'l':[.10,-.05,-.965]},
+    elbows={'r':[-.14,.02,-.61],'l':[.08,.04,-.60]}),
+ 'sora':dict(shift=.035,hip=.055,chest=.01,tilt=-.065,
+    footR=[-.125,-.065,0],footL=[.155,-.025,0],yawR=.02,yawL=-.035,
+    shaft=[-.20,.15,-.968],
+    wrists={'r':[-.12,-.40,-.73],'l':[.18,-.06,-.955]},
+    elbows={'r':[-.14,.02,-.61],'l':[.17,.04,-.60]}),
+}
+
 def normalized(v):
     length=math.sqrt(sum(x*x for x in v))
     return [x/length for x in v]
@@ -55,6 +80,37 @@ def author():
             selectionStandingKneeDegrees=12,
             selectionPelvisLateralCorrection={'ronin':-.015,'monk':-.005}.get(hero,0),
             footPlants={'r':[[0,duration]],'l':[[0,duration]]},poses=rows)
+        if hero=='ronin':
+            # Carry the blade close and upright. The right leg supports the
+            # body; the lowered left hip and softer left knee form the rest pose.
+            clip=records[prefix+'_Selection_Idle']
+            clip.update(nativeReachLimit=.98,selectionStandingKneeDegrees=10,
+                selectionPelvisLateralCorrection=0,
+                selectionWristOffsets={'r':[-.20,-.48,-.66],'l':[.10,-.05,-.965]},
+                selectionElbowOffsets={'r':[-.22,.02,-.61],'l':[.08,.04,-.60]})
+            shaft=[-.16,.03,.9867]
+            for pose in rows:
+                pose.update(hip=-.08,chest=-.035,bend=.065,pelvisBend=.025,
+                    pelvisSideBend=.09,torsoSideBend=-.09,headBend=.025,
+                    footR=[-.19,-.025,0],footL=[.15,-.075,0],yawR=.035,yawL=-.02)
+                pose['shift'][0]=-.07;pose['shift'][1]=.02
+                pose['tip']=[pose['grip'][i]+shaft[i] for i in range(3)]
+        if hero in RESTING:
+            rest=RESTING[hero];clip=records[prefix+'_Selection_Idle']
+            clip.update(nativeReachLimit=.98,selectionStandingKneeDegrees=10,
+                selectionPelvisLateralCorrection=0,
+                selectionWristOffsets=copy.deepcopy(rest['wrists']),
+                selectionElbowOffsets=copy.deepcopy(rest['elbows']))
+            shaft=normalized(rest['shaft'])
+            for pose in rows:
+                pose.update(hip=rest['hip'],chest=rest['chest'],bend=.055,pelvisBend=.025,
+                    pelvisSideBend=rest['tilt'],torsoSideBend=-rest['tilt'],headBend=.02)
+                for key in ['footR','footL','yawR','yawL']:pose[key]=copy.deepcopy(rest[key])
+                pose['shift'][0]=rest['shift'];pose['shift'][1]=.02
+                pose['tip']=[pose['grip'][i]+shaft[i] for i in range(3)]
+                if 'offShaft' in rest:
+                    secondary=normalized(rest['offShaft'])
+                    pose['offTip']=[pose['offGrip'][i]+secondary[i] for i in range(3)]
     return records
 
 def validate(records):
@@ -66,8 +122,8 @@ def validate(records):
         for p in clip['poses']:
             for key in ['footR','footL','yawR','yawL']:assert p[key]==a[key]
             assert p['grip'][2]<1.05 and p['offGrip'][2]<1.05
-            assert abs(p['bend'])<.05 and abs(p['chest'])<.03
-        for offset in clip['selectionWristOffsets'].values():assert math.sqrt(sum(v*v for v in offset))<.94
+            assert abs(p['bend'])<.1 and abs(p['chest'])<.1
+        for offset in clip['selectionWristOffsets'].values():assert math.sqrt(sum(v*v for v in offset))<clip['nativeReachLimit']
     assert records==author(),'Selection authoring must be deterministic'
 
 if __name__=='__main__':

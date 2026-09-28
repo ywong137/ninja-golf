@@ -19,7 +19,7 @@ try{
      g.time+=1/60;g.updateCombat(1/60);g.effects.update(1/60);g.player.root.updateMatrixWorld(true);const foot=g.player.bones.foot_r.getWorldPosition(new T.Vector3());min=Math.min(min,foot.y);max=Math.max(max,foot.y);
      if(previous)maxFootJump=Math.max(maxFootJump,foot.distanceTo(previous));previous=foot;
      const layer=g.player.attackLocomotion.report;if(layer){activeFrames++;for(const f of layer.feet)maxReachError=Math.max(maxReachError,f.error);}
-     const palm=g.player.bones.hand_r.localToWorld(g.player.palmGrips.r.clone());maxPalmGap=Math.max(maxPalmGap,palm.distanceTo(g.player.weapon.getWorldPosition(new T.Vector3())));
+     const palm=g.player.bones.hand_r.localToWorld(g.player.palmGrips.r.clone());maxPalmGap=Math.max(maxPalmGap,palm.distanceTo(g.player.weapon.localToWorld(new T.Vector3(0,g.player.weapon.userData.primaryGrip,0))));
     }
     reports.push({hero,kind,direction,travel:g.player.root.position.distanceTo(start),lift:max-min,maxReachError,maxPalmGap,maxFootJump,activeFrames});g.input.clear();
    }

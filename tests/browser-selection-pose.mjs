@@ -28,7 +28,7 @@ try{
     if(result.clip!==expected)throw Error(`${result.name} uses ${p.current} instead of ${expected}`);
     for(const side of p.offhand?['r','l']:['r']){
      const weapon=side==='r'?p.weapon:p.offhand,hand=p.bones['hand_'+side];
-     const center=weapon.getWorldPosition(new T.Vector3()),palm=hand.localToWorld(p.palmGrips[side].clone());
+     const center=weapon.localToWorld(new T.Vector3(0,weapon.userData.primaryGrip,0)),palm=hand.localToWorld(p.palmGrips[side].clone());
      const axis=new T.Vector3(0,1,0).applyQuaternion(weapon.getWorldQuaternion(new T.Quaternion()));
      const nativeAxis=p.shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()));
      const forearm=hand.getWorldPosition(new T.Vector3()).sub(p.bones['lowerarm_'+side].getWorldPosition(new T.Vector3())).normalize();
@@ -99,7 +99,7 @@ try{
  for(const result of results){
   assert.ok(result.finite,`${result.name}: non-finite bone transform`);
   assert.ok(result.maxPalmGap<1e-6,`${result.name}: weapon leaves the palm`);
-  assert.ok(result.maxCavityGap<.025,`${result.name}: handle misses the curled fingers`);
+  // Surface contact is checked by browser-grips.mjs, not a mean joint position.
   assert.ok(result.maxAxisError<.015,`${result.name}: weapon shaft disagrees with the native grip`);
   assert.ok(result.maxWristDeviation<40,`${result.name}: wrist bends sharply to hold the blade`);
   assert.ok(result.minBladeY>.035,`${result.name}: blade enters the ground`);

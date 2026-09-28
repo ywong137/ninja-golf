@@ -19,7 +19,7 @@ try{
      // not a minimum bend along the scene's fixed Z axis.
      const axis=ankle.clone().sub(hip),bend=knee.sub(hip);bend.addScaledVector(axis,-bend.dot(axis)/axis.lengthSq());minimumKneeForward=Math.min(minimumKneeForward,bend.dot(forward));
     }
-    const motion=sampleMotion(p.current,p.actions.get(p.current).time),clip=motions[p.current];if(clip.twoHanded){const direction=new T.Vector3(motion.tip[0]-motion.grip[0],motion.tip[2]-motion.grip[2],motion.grip[1]-motion.tip[1]).normalize(),expected=p.weapon.getWorldPosition(new T.Vector3()).addScaledVector(direction,-clip.gripSpacing*p.root.scale.x),actual=p.bones.hand_l.localToWorld(p.palmGrips.l.clone());gripGap=Math.max(gripGap,expected.distanceTo(actual));}
+    const motion=sampleMotion(p.current,p.actions.get(p.current).time),clip=motions[p.current];if(clip.twoHanded){const direction=new T.Vector3(motion.tip[0]-motion.grip[0],motion.tip[2]-motion.grip[2],motion.grip[1]-motion.tip[1]).normalize(),expected=p.weapon.localToWorld(new T.Vector3(0,p.weapon.userData.primaryGrip,0)).addScaledVector(direction,-clip.gripSpacing*p.root.scale.x),actual=p.bones.hand_l.localToWorld(p.palmGrips.l.clone());gripGap=Math.max(gripGap,expected.distanceTo(actual));}
    }
    const movingClip=p.current;p.update(2,.02,{blocking:true,moving:true,moveAngle:angle,moveSpeed:0});const blockedClip=p.current;
    p.update(2.1,.02,{guardBreak:.4,guardHitToken:1});const broken=p.current;

@@ -26,6 +26,7 @@ function sourceFootHeight(spec,seconds,side){
  return a[key][2]+(b[key][2]-a[key][2])*u;
 }
 function supportState(kind,name,spec,seconds,side){
+ if(kind==='idle')return{loaded:true,plant:null};
  if(kind==='selection'||kind==='ready')return{loaded:true,plant:'static'};
  if(kind==='attack'){
   const intervals=spec.footPlants?.[side];
@@ -59,6 +60,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
  const guards=g.animations.filter(c=>/_Guard_(Loop|Impact|Break|Walk_(Forward|Backward|Left|Right))$/.test(c.name));
  assert.equal(guards.length,7,'Cover guard stance, recoil, break and all four walking directions');
  const cases=[
+  {name:'Idle_Loop',kind:'idle',spec:{duration:clips.get('Idle_Loop').duration}},
   {name:hero.selectionClip,kind:'selection',spec:selections[hero.selectionClip]},
   {name:hero.readyClip,kind:'ready',spec:motions[hero.readyClip]},
   ...regular.map(suffix=>({name:hero.motionPrefix+suffix,kind:'attack',spec:motions[hero.motionPrefix+suffix]})),
@@ -66,7 +68,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
   ...Object.entries(gaits).map(([name,spec])=>({name,kind:'gait',spec})),
  ];
  const worst=Object.fromEntries(['loadedMedial','selectionMedial','swingMedial','shinMedialDegrees','lengthError','kneeSpeed','ankleSpeed','plantDrift','plantTurn'].map(k=>[k,peak()]));
- const loadedByKind=Object.fromEntries(['ready','attack','guard','gait'].map(kind=>[kind,peak()]));
+ const loadedByKind=Object.fromEntries(['idle','ready','attack','guard','gait'].map(kind=>[kind,peak()]));
  const impactMedial=peak();
  let samples=0,loadedSamples=0,impactSamples=0;
  for(const {name,kind,spec}of cases){
@@ -133,4 +135,24 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
  assert.ok(worst.ankleSpeed.value<=12,`Ankle trajectory jumps: ${JSON.stringify(worst.ankleSpeed)}`);
  assert.ok(worst.plantDrift.value<=.003,`Knee correction moves a planted ankle: ${JSON.stringify(worst.plantDrift)}`);
  assert.ok(worst.plantTurn.value<=.020,`Knee correction turns a planted foot: ${JSON.stringify(worst.plantTurn)}`);
+});
+
+for(const hero of ['ninja','enemy-guard','enemy-lancer','enemy-skirmisher'])test(`${hero}: both waiting poses keep knees aligned`,async t=>{
+ const file=process.env.NINJA_KNEE_MODEL_DIR?path.join(process.env.NINJA_KNEE_MODEL_DIR,hero+'.glb'):new URL('../public/models/'+hero+'.glb',import.meta.url);
+ const g=await loadNativeSkin(file),worst=peak();
+ const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
+ for(const name of ['Idle_Loop','Sword_Idle']){
+  const clip=g.animations.find(c=>c.name===name);assert.ok(clip,`${hero} lacks ${name}`);
+  g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
+  for(let frame=0;frame<=Math.ceil(clip.duration*120);frame++){
+   const seconds=Math.min(frame/120,clip.duration);action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+   for(const side of ['r','l']){
+    const ankle=point('foot_'+side),forward=point('ball_'+side).sub(ankle).setY(0).normalize();
+    const outward=up.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
+    retain(worst,-point('calf_'+side).sub(ankle).dot(outward),name,seconds,side);
+   }
+  }
+ }
+ t.diagnostic(JSON.stringify({hero,medial:worst}));
+ assert.ok(worst.value<=.02,`Enemy waiting pose has inward knees: ${JSON.stringify(worst)}`);
 });

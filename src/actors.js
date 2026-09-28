@@ -9,12 +9,14 @@ import {TravelPose} from './travel-pose.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
+import {HandGrip} from './hand-grip.js';
+import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='knee-alignment-1';
+const MODEL_REVISION='natural-grip-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -86,7 +88,7 @@ export class Warrior {
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
     if(enemy?ENEMY_TYPES[type].dualWield:WARRIORS[type].dualWield){this.offhand=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
     this.club=new THREE.Group();this.club.position.set(0,.04,0);this.root.add(this.club);
-    part(this.club,'cyl','#252a27',0,.04,0,.018,.20,.018);part(this.club,'cyl','#b7c4c2',0,.60,0,.008,1.0,.008,.85);const head=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);head.rotation.z=-.15;this.club.visible=false;
+    part(this.club,'cyl','#252a27',0,-.01,0,.012,.26,.012);this.clubShaft=part(this.club,'cyl','#b7c4c2',0,.62,0,.008,1.0,.008,.85);this.clubHead=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);this.clubHead.rotation.z=-.15;this.club.visible=false;
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
     const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
     if(enemy||this.nativeHuman)bag.visible=false;
@@ -114,6 +116,10 @@ export class Warrior {
       basis.multiply(new THREE.Quaternion().setFromAxisAngle(axisY,2*Math.atan2(relative.y,relative.w)));
     }
     this.palmWeaponFrames=palmFrames;
+    if(!enemy&&gripData[WARRIORS[type].model]){
+      this.handGrip=new HandGrip(this,gripData[WARRIORS[type].model]);
+      this.handGrip.engage(!!motions[this.current]?.twoHanded);this.syncHeldObjects();
+    }
   }
   play(name,fade=.16,once=false,speed=1){
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
@@ -131,6 +137,7 @@ export class Warrior {
     next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
     if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
+    this.handGrip?.engage(!!motions[name]?.twoHanded,fade);
   }
   stepGuard(prefix,angle,speed,dt){
     if(this.running){for(const action of this.runActions)action.fadeOut(.1);this.running=false;}
@@ -145,6 +152,7 @@ export class Warrior {
     this.guardWalkBlend=Math.min(1,this.guardWalkBlend+dt/.1);
     this.guardWalkActions.forEach((action,i)=>{action.time=this.guardWalkPhase*clip.duration;action.setEffectiveWeight(weights[i]*this.guardWalkBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
+    this.handGrip?.engage(!!motions[this.current]?.twoHanded,.1);
   }
   stepRun(angle,speed,dt,sprint=false){
     const names=sprint?['Sprint_Forward']:['Run_Forward','Run_Right','Run_Backward','Run_Left'];
@@ -162,8 +170,10 @@ export class Warrior {
     this.runBlend=Math.min(1,this.runBlend+dt/.12);
     this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
+    this.handGrip?.engage(false,.12);
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null}={}){
+    this.handGrip?.restore();this.handGrip?.prepare(golf);
     this.footPlacement?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
@@ -226,6 +236,7 @@ export class Warrior {
     this.syncHeldObjects(motion,golf);
   }
   syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
+    if(this.handGrip){this.handGrip.apply(motion,golf,motions[this.current]);return;}
     // Anchor the handle to the evaluated palm after every mixer and torso update.
     // Authored directions control the shaft; the live palm also controls blade roll.
     // Keep the measured closed grip when a source idle clip opens its free hand.

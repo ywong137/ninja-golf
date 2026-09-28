@@ -45,7 +45,7 @@ for(const animation of doc.animations){
  const count=Math.ceil(clip.duration*120),times=Float32Array.from({length:count+1},(_,i)=>Math.min(i/120,clip.duration));
  const tracks=Object.fromEntries(changed.map(name=>[name,new Float32Array(times.length*4)]));
  const pelvisTrack=new Float32Array(times.length*3),spec=motions[clip.name];
- const canBalance=!/Selection|^Golf_|^Idle_Loop$/.test(clip.name);
+ const canBalance=!/Selection|^Golf_/.test(clip.name);
  const targetsAt=seconds=>{
   const authored=spec?.poses?.[0]?.footR?sampleFeet(spec,seconds):null,gait=gaits[clip.name];
   return ['r','l'].map(side=>{

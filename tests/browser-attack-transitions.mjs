@@ -21,7 +21,7 @@ try{
    for(let frame=0;frame<=Math.ceil(definition.duration*120);frame++){
     attack.time=frame/120;p.update(2+attack.time,1/120,{action:attack});p.root.updateMatrixWorld(true);
     const rotation=p.weapon.quaternion.clone(),turn=prior.angleTo(rotation);if(frame===0)firstTurn=turn;maxFrameTurn=Math.max(maxFrameTurn,turn);prior.copy(rotation);
-    const palm=p.bones.hand_r.localToWorld(p.palmGrips.r.clone());maxPalmGap=Math.max(maxPalmGap,palm.distanceTo(p.weapon.getWorldPosition(new T.Vector3())));
+    const palm=p.bones.hand_r.localToWorld(p.palmGrips.r.clone());maxPalmGap=Math.max(maxPalmGap,palm.distanceTo(p.weapon.localToWorld(new T.Vector3(0,p.weapon.userData.primaryGrip,0))));
     if(frame/120>=definition.hits[0]){
      const pose=sampleMotion(p.current,p.actions.get(p.current).time),expected=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
      const actual=new T.Vector3(0,1,0).applyQuaternion(p.weapon.quaternion);impactPathError=Math.max(impactPathError,expected.angleTo(actual));
