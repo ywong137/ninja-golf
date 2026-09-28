@@ -63,15 +63,15 @@ const STYLE_ATTACKS={
   },
   sickle:{
     light:[
-      {name:'Low draw cut',reach:4.8,arc:1.3,damage:38,lunge:4.2},
-      {name:'Reaping return',reach:5,arc:1.7,damage:41,lunge:1.2},
-      {name:'Rising talon',reach:5.3,arc:1.5,damage:48,lunge:3.4,launch:4},
-      {name:'Harvest circle',reach:6,arc:Math.PI,damage:33,lunge:1.5},
+      {name:'Low draw cut',duration:.56,hits:[.21],reach:4.8,arc:1.3,damage:38,lunge:4.2},
+      {name:'Reaping return',duration:.602,hits:[.224],reach:5,arc:1.7,damage:41,lunge:1.2},
+      {name:'Rising talon',duration:.672,hits:[.28],reach:5.3,arc:1.5,damage:48,lunge:3.4,launch:4},
+      {name:'Harvest circle',duration:.812,hits:[.28,.532],reach:6,arc:Math.PI,damage:33,lunge:1.5},
     ],
     heavy:[
       {name:'Driving cut',reach:6.4,arc:1.6,damage:100,lunge:3.8},
       {name:'Skyward cut',reach:6,arc:1.5,damage:110,lunge:2,launch:8},
-      {name:'Reaping spiral',reach:7,arc:Math.PI,damage:69,lunge:.6},
+      {name:'Reaping spiral',duration:.984,hits:[.336,.636],reach:7,arc:Math.PI,damage:69,lunge:.6},
       {name:'Harvest fall',reach:8,arc:2.7,damage:160,lunge:3,launch:9},
     ],
     musou:{name:'Jade harvest',reach:18,launch:12,lunge:1.2},

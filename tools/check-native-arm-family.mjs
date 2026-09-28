@@ -11,14 +11,15 @@ const Y=new T.Vector3(0,1,0),DEGREES=180/Math.PI;
 const unpack=file=>{const bytes=fs.readFileSync(file),size=bytes.readUInt32LE(12);return{doc:JSON.parse(bytes.subarray(20,20+size)),bin:bytes.subarray(28+size)};};
 const inputTimes=(file,index)=>{const a=file.doc.accessors[index],v=file.doc.bufferViews[a.bufferView],offset=(v.byteOffset??0)+(a.byteOffset??0);return Array.from({length:a.count},(_,i)=>file.bin.readFloatLE(offset+i*4));};
 
-export function verifyArmFamilyPreservation(before,after,clips){
+export function verifyArmFamilyPreservation(before,after,clips,{dualWield=false}={}){
  const result=verifyAnimationReplacement(before,after,clips.map(name=>[name,name]));
  const oldFile=unpack(before),newFile=unpack(after),a=oldFile.doc,b=newFile.doc,timingScales={};let retainedChannels=0;
  for(const name of clips){
   const original=a.animations.find(clip=>clip.name===name),candidate=b.animations.find(clip=>clip.name===name);
   for(const channel of original.channels){
    const bone=a.nodes[channel.target.node].name;
-   const edited=/^(clavicle|upperarm|lowerarm|hand)_[rl]$/.test(bone)||/^(index|middle|ring|pinky|thumb)_\d+_r$/.test(bone);
+   const finger=/^(index|middle|ring|pinky|thumb)_\d+_([rl])$/.exec(bone);
+   const edited=/^(clavicle|upperarm|lowerarm|hand)_[rl]$/.test(bone)||!!(finger&&(finger[2]==='r'||dualWield));
    if(edited&&channel.target.path==='rotation')continue;
    const next=candidate.channels.find(c=>c.target.node===channel.target.node&&c.target.path===channel.target.path);
    if(JSON.stringify(next)!==JSON.stringify(channel))
@@ -68,6 +69,8 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
  const fail=(name,time,side,issue,value)=>{result.passed=false;result.violationCount++;if(result.violations.length<50)result.violations.push({name,time,side,issue,value});};
  for(const name of clips){
   const spec=motions[name];if(!spec?.nativeAttachment)throw Error(`${name}: missing nativeAttachment metadata.`);
+  if(spec.impactHands&&(spec.impactHands.length!==(spec.impacts?.length??0)||spec.impactHands.some(side=>!['r','l','both'].includes(side))))
+   throw Error(`${name}: impactHands needs one r, l, or both entry per impact.`);
   const sample=sampleClip(name),times=[...new Set([...Array.from({length:Math.ceil(spec.duration*rate)+1},(_,i)=>Math.min(i/rate,spec.duration)),...(spec.impacts??[])])].sort((a,b)=>a-b);
   const metrics={samples:times.length,maxWristDegrees:0,maxFlexionDegrees:0,maxHumeralRollDegrees:0,maxForearmTwistDegrees:0,maxHingeDeviationDegrees:0,maxArmStep120Hz:0,maxHandSpeed:0,minBladeHeight:Infinity,maxFoldDepth:0,maxForearmTorsoPairs:0,maxUpperarmTorsoPairs:0,contacts:[]};
   let previous=null;const trajectory=[];
@@ -78,7 +81,7 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
    weapon.position.copy(palm).addScaledVector(Y.clone().applyQuaternion(weapon.quaternion),-weapon.userData.primaryGrip);weapon.updateMatrixWorld(true);
    let minY=Infinity;for(let i=0;i<vertices.count;i++)minY=Math.min(minY,new T.Vector3().fromBufferAttribute(vertices,i).applyMatrix4(blade.matrixWorld).y);
    metrics.minBladeHeight=Math.min(metrics.minBladeHeight,minY);if(minY<.03)fail(name,time,'r','blade ground clearance',minY);
-   const current={time,hand:point('hand_r'),arms:{}};
+   const current={time,hands:{r:point('hand_r'),l:point('hand_l')},arms:{}};
    trajectory.push({time,palm:palm.toArray(),tip:weapon.localToWorld(new T.Vector3().fromArray(weapon.userData.tip)).toArray(),edge:new T.Vector3(1,0,0).applyQuaternion(weapon.quaternion).toArray(),face:new T.Vector3(0,0,1).applyQuaternion(weapon.quaternion).toArray()});
    for(const [bone,q]of Object.entries(grip.r.rotations))if(bones[bone].quaternion.clone().normalize().angleTo(new T.Quaternion().fromArray(q).normalize())>.001)fail(name,time,'r','fitted finger wrap changed',bone);
    for(const side of ['r','l']){
@@ -102,7 +105,10 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
      if(upper)fail(name,time,side,'upper arm crosses torso',upper);
     }
    }
-   if(previous){const speed=current.hand.distanceTo(previous.hand)/(time-previous.time);metrics.maxHandSpeed=Math.max(metrics.maxHandSpeed,speed);if(speed>15)fail(name,time,'r','hand speed',speed);}
+   if(previous)for(const side of ['r','l']){
+    const speed=current.hands[side].distanceTo(previous.hands[side])/(time-previous.time);
+    metrics.maxHandSpeed=Math.max(metrics.maxHandSpeed,speed);if(speed>15)fail(name,time,side,'hand speed',speed);
+   }
    previous=current;
   }
   const tipSpeeds=trajectory.map((p,index)=>{
@@ -111,13 +117,14 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
   });
   metrics.peakTipSpeed=Math.max(...tipSpeeds);
   if(metrics.peakTipSpeed>35)fail(name,trajectory[tipSpeeds.indexOf(metrics.peakTipSpeed)].time,'r','blade tip speed',metrics.peakTipSpeed);
-  for(const hit of spec.impacts??[]){
+  for(const [hitIndex,hit]of (spec.impacts??[]).entries()){
    const index=trajectory.findIndex(p=>p.time===hit),p=trajectory[index],a=trajectory[Math.max(0,index-1)],b=trajectory[Math.min(trajectory.length-1,index+1)];
    const velocity=new T.Vector3().fromArray(b.tip).sub(new T.Vector3().fromArray(a.tip)).multiplyScalar(1/(b.time-a.time));
    const edge=velocity.clone().normalize().dot(new T.Vector3().fromArray(p.edge));
-   metrics.contacts.push({time:hit,tip:p.tip,palm:p.palm,velocity:velocity.toArray(),speed:velocity.length(),fractionOfGlobalPeak:velocity.length()/metrics.peakTipSpeed,signedEdgeAlignment:edge,faceAlignment:Math.abs(velocity.clone().normalize().dot(new T.Vector3().fromArray(p.face)))});
+   const activeHand=spec.impactHands?.[hitIndex]??'r';
+   metrics.contacts.push({time:hit,activeHand,tip:p.tip,palm:p.palm,velocity:velocity.toArray(),speed:velocity.length(),fractionOfGlobalPeak:velocity.length()/metrics.peakTipSpeed,signedEdgeAlignment:edge,faceAlignment:Math.abs(velocity.clone().normalize().dot(new T.Vector3().fromArray(p.face)))});
    const cuttingAlignment=doubleEdged?Math.abs(edge):edge;
-   if(cuttingAlignment<.75)fail(name,hit,'r','sharpened edge alignment',cuttingAlignment);
+   if(activeHand!=='l'&&cuttingAlignment<.75)fail(name,hit,'r','sharpened edge alignment',cuttingAlignment);
   }
   result.clips[name]=metrics;
  }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {inspectNativeAceFamily} from '../tools/check-native-ace-family.mjs';
 import {inspectNativeHustler} from '../tools/check-native-hustler.mjs';
+import {inspectNativeCloser} from '../tools/check-native-closer.mjs';
 import {attackDefinition} from '../src/combat.js';
 import {WARRIORS} from '../src/warriors.js';
 
@@ -12,7 +13,7 @@ const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8')
  .replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(motions)+';')
  .replace("import selectionMotions from './selection-data.json';",'const selectionMotions={};');
 const {combatMotionName}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-for(const [model,inspect]of [['kaede',inspectNativeAceFamily],['ayame',inspectNativeHustler]]){
+for(const [model,inspect]of [['kaede',inspectNativeAceFamily],['ayame',inspectNativeHustler],['sora',inspectNativeCloser]]){
  test(`${model}: native arm family keeps human hinges, fitted fingers, and cutting edges`,async()=>{
   const report=await inspect({model:new URL(`../public/models/${model}.glb`,import.meta.url),record,rate:120});
   assert.ok(report.passed,JSON.stringify(report.violations));
