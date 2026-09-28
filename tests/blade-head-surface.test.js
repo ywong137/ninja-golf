@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {headSurfaceMetadata,measureBladeHeadClearance} from '../tools/blade-head-surface.mjs';
+import {headSurfaceMetadata,measureBladeHeadClearance,measureTriangleHeadClearance} from '../tools/blade-head-surface.mjs';
 
 const HEAD=[[-1,-1,0],[1,-1,0],[0,1,0]];
 function fixture(bladePoints,{indexed=false}={}){
@@ -65,4 +65,19 @@ test('refitted search bounds match brute-force results through animated head pos
   if(actual.crossings)crossingPoses++;else if(actual.minimumClearance<.03)nearPoses++;else farPoses++;
  }
  assert.ok(crossingPoses>0&&nearPoses>0&&farPoses>0,'Exercise contact, near misses, and broad-phase rejection.');
+});
+
+
+test('arbitrary posed triangles match blade queries and brute force',()=>{
+ const f=fixture([[0,0,-.2],[0,0,.2],[.2,.1,.2]],{indexed:true});
+ for(const dz of [0,.01,.30]){
+  f.head.position.z=.012;f.eye.rotation.y=.1;f.weapon.position.z=dz;f.scene.updateMatrixWorld(true);
+  const blade=f.weapon.getObjectByName('Flat steel blade'),a=blade.geometry.attributes.position,indices=blade.geometry.index;
+  const triangle=[0,1,2].map(i=>new T.Vector3().fromBufferAttribute(a,indices.getX(i)).applyMatrix4(blade.matrixWorld));
+  const query=measureTriangleHeadClearance(f.surfaces,{forearm:[triangle]}),reference=measureTriangleHeadClearance(f.surfaces,{forearm:[triangle]},{bruteForce:true}),wrapped=f.measure();
+  assert.deepEqual(query,reference);
+  assert.equal(query.minimumClearance,wrapped.minimumClearance);assert.equal(query.crossings,wrapped.crossings);
+  if(query.closest)assert.deepEqual(query.closest,{source:'forearm',headMesh:wrapped.closest.headMesh});
+ }
+ assert.throws(()=>measureTriangleHeadClearance(f.surfaces,{forearm:[[new T.Vector3()]]}),/three finite/);
 });

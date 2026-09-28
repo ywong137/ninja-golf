@@ -9,8 +9,10 @@ import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
 import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {HUSTLER_CLIPS,HUSTLER_TIMING,hustlerArms} from './native-hustler-profile.mjs';
 import {createWeapon} from '../src/weapons.js';
-const {values}=parseArgs({options:{input:{type:'string'},output:{type:'string'},record:{type:'string'},frames:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/author-native-hustler.mjs --output /tmp/hustler.glb --record /tmp/hustler.json [--input MODEL.glb] [--frames FRAMES.json]\nRebuilds Ready, nine Ring attacks, and seven guard clips. Preserves original body and leg samplers, geometry, and unrelated animations. Never writes public assets.');process.exit(0);}
+const {values}=parseArgs({options:{input:{type:'string'},output:{type:'string'},record:{type:'string'},frames:{type:'string'},clip:{type:'string',multiple:true},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/author-native-hustler.mjs --output /tmp/hustler.glb --record /tmp/hustler.json [--input MODEL.glb] [--frames FRAMES.json] [--clip NAME ...]\nRepeat --clip to rebuild only named clips. Rebuilds Ready, nine Ring attacks, and seven guard clips. Preserves original body and leg samplers, geometry, and unrelated animations. Never writes public assets.');process.exit(0);}
+const clips=values.clip??HUSTLER_CLIPS;
+for(const name of clips)if(!HUSTLER_CLIPS.includes(name))throw Error('Unknown Hustler clip: '+name);
 if(!values.output?.endsWith('.glb')||!values.record?.endsWith('.json'))throw Error('Supply --output and --record. See --help.');
 if(path.resolve(values.output).startsWith(new URL('../public/',import.meta.url).pathname))throw Error('Use a candidate path outside public/.');
 const input=values.input??new URL('../public/models/ayame.glb',import.meta.url),raw=fs.readFileSync(input),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size)),chunks=[raw.subarray(28+size)];let byteLength=chunks[0].length;
@@ -46,7 +48,7 @@ function arm(side,p){
 function accessor(array,type){const pad=(4-byteLength%4)%4;if(pad){chunks.push(Buffer.alloc(pad));byteLength+=pad;}const bytes=Buffer.from(array.buffer,array.byteOffset,array.byteLength),view=doc.bufferViews.length;chunks.push(bytes);doc.bufferViews.push({buffer:0,byteOffset:byteLength,byteLength:bytes.length});byteLength+=bytes.length;const a={bufferView:view,componentType:5126,count:array.length/(type==='VEC4'?4:1),type};if(type==='SCALAR'){a.min=[array[0]];a.max=[array.at(-1)]}doc.accessors.push(a);return doc.accessors.length-1;}
 function samplePose(rows,t){let i=0;while(i<rows.length-2&&t>rows[i+1].t)i++;const a=rows[i],b=rows[Math.min(i+1,rows.length-1)],u=T.MathUtils.clamp((t-a.t)/(b.t-a.t||1),0,1);return Object.fromEntries(Object.entries(a).map(([key,v])=>[key,Array.isArray(v)?v.map((x,k)=>T.MathUtils.lerp(x,b[key]?.[k]??x,u)):typeof v==='number'?T.MathUtils.lerp(v,b[key]??v,u):v]));}
 const source=v=>[v.x,-v.z,v.y],weapon=createWeapon('dao'),blade=weapon.getObjectByName('Flat steel blade'),verts=blade.geometry.attributes.position,records={},report={};
-for(const name of HUSTLER_CLIPS){
+for(const name of clips){
  const original=doc.animations.find(a=>a.name===name),clip=g.animations.find(a=>a.name===name),spec=motion[name];if(!original||!clip||!spec)throw Error('Missing '+name);
  g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
  if(original.extras?.nativeHustlerVersion&&!original.extras.nativeHustlerDuration)throw Error(name+': this early candidate lacks its timing base. Use the untouched source model.');

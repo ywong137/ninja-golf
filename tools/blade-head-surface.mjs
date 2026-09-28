@@ -73,20 +73,26 @@ export function headSurfaceMetadata(g){
  return surfaces;
 }
 
-export function measureBladeHeadClearance(surfaces,weapons,{distanceCap=.03,bruteForce=false}={}){
+// Each named query contains world-space triangles: {name: [[Vector3, Vector3, Vector3], ...]}.
+// The caller owns query deformation; this function updates the head skin and BVH.
+export function measureTriangleHeadClearance(surfaces,triangleSets,{distanceCap=.03,bruteForce=false}={}){
+ if(!(distanceCap>0&&Number.isFinite(distanceCap)))throw Error('distanceCap must be a positive finite distance.');
  const head=deformHead(surfaces),headBox=head.tree.box;
  let minimum=distanceCap,closest=null,crossings=0;
- for(const [side,weapon]of Object.entries(weapons)){
-  const blade=weapon.getObjectByName('Flat steel blade');if(!blade)throw Error('Weapon lacks its actual blade mesh.');
-  const pos=blade.geometry.attributes.position,index=blade.geometry.index,vertices=Array.from({length:pos.count},(_,i)=>new T.Vector3().fromBufferAttribute(pos,i).applyMatrix4(blade.matrixWorld));
-  if(boxGap(new T.Box3().setFromPoints(vertices),headBox)>=distanceCap)continue;
-  for(let i=0;i<(index?index.count:pos.count);i+=3){
-   const points=[0,1,2].map(k=>vertices[index?index.getX(i+k):i+k]),box=new T.Box3().setFromPoints(points);
+ for(const [source,triangles]of Object.entries(triangleSets)){
+  const queryBox=new T.Box3();
+  for(const points of triangles){
+   if(points.length!==3||points.some(p=>!p?.isVector3||![p.x,p.y,p.z].every(Number.isFinite)))throw Error(source+': supply three finite world-space Vector3 points per triangle.');
+   for(const point of points)queryBox.expandByPoint(point);
+  }
+  if(boxGap(queryBox,headBox)>=distanceCap)continue;
+  for(const points of triangles){
+   const box=new T.Box3().setFromPoints(points);
    const compare=surface=>{
     if(boxGap(box,surface.box)>Math.max(minimum,1e-8))return;
     const distance=triangleDistance(points,surface.points);
     if(distance<1e-7)crossings++;
-    if(distance<minimum){minimum=distance;closest={side,headMesh:surface.mesh};}
+    if(distance<minimum){minimum=distance;closest={source,headMesh:surface.mesh};}
    };
    if(bruteForce){for(const surface of head.triangles)compare(surface);continue;}
    const stack=[head.tree];
@@ -98,4 +104,17 @@ export function measureBladeHeadClearance(surfaces,weapons,{distanceCap=.03,brut
   }
  }
  return{minimumClearance:minimum,clearanceCappedAt:distanceCap,crossings,closest};
+}
+
+export function measureBladeHeadClearance(surfaces,weapons,options={}){
+ const triangles={};
+ for(const [side,weapon]of Object.entries(weapons)){
+  const blade=weapon.getObjectByName('Flat steel blade');if(!blade)throw Error('Weapon lacks its actual blade mesh.');
+  const pos=blade.geometry.attributes.position,index=blade.geometry.index,vertices=Array.from({length:pos.count},(_,i)=>new T.Vector3().fromBufferAttribute(pos,i).applyMatrix4(blade.matrixWorld));
+  triangles[side]=[];
+  for(let i=0;i<(index?index.count:pos.count);i+=3)triangles[side].push([0,1,2].map(k=>vertices[index?index.getX(i+k):i+k]));
+ }
+ const result=measureTriangleHeadClearance(surfaces,triangles,options);
+ if(result.closest)result.closest={side:result.closest.source,headMesh:result.closest.headMesh};
+ return result;
 }

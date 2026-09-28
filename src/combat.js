@@ -16,6 +16,15 @@ export const ATTACKS={
 };
 // Each style defines its timing, coverage, movement, and crowd control.
 const STYLE_ATTACKS={
+  twin:{
+    light:[
+      {duration:.56,hits:[.21]},
+      {duration:.602,hits:[.224]},
+      {duration:.672,hits:[.28]},
+      {duration:.812,hits:[.28,.532]},
+    ],
+    heavy:[{},{},{duration:.984,hits:[.336,.636]},{}],
+  },
   naginata:{
     light:[
       {duration:.60,hits:[.30]},

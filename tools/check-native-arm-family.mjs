@@ -11,7 +11,7 @@ const Y=new T.Vector3(0,1,0),DEGREES=180/Math.PI;
 const unpack=file=>{const bytes=fs.readFileSync(file),size=bytes.readUInt32LE(12);return{doc:JSON.parse(bytes.subarray(20,20+size)),bin:bytes.subarray(28+size)};};
 const inputTimes=(file,index)=>{const a=file.doc.accessors[index],v=file.doc.bufferViews[a.bufferView],offset=(v.byteOffset??0)+(a.byteOffset??0);return Array.from({length:a.count},(_,i)=>file.bin.readFloatLE(offset+i*4));};
 
-export function verifyArmFamilyPreservation(before,after,clips,{dualWield=false}={}){
+export function verifyArmFamilyPreservation(before,after,clips,{dualWield=false,footSupport=false}={}){
  const result=verifyAnimationReplacement(before,after,clips.map(name=>[name,name]));
  const oldFile=unpack(before),newFile=unpack(after),a=oldFile.doc,b=newFile.doc,timingScales={};let retainedChannels=0;
  for(const name of clips){
@@ -19,6 +19,7 @@ export function verifyArmFamilyPreservation(before,after,clips,{dualWield=false}
   for(const channel of original.channels){
    const bone=a.nodes[channel.target.node].name;
    const finger=/^(index|middle|ring|pinky|thumb)_\d+_([rl])$/.exec(bone);
+   if(footSupport&&/^(thigh|calf|foot)_[rl]$/.test(bone)&&channel.target.path==='rotation')continue;
    const edited=/^(clavicle|upperarm|lowerarm|hand)_[rl]$/.test(bone)||!!(finger&&(finger[2]==='r'||dualWield));
    if(edited&&channel.target.path==='rotation')continue;
    const next=candidate.channels.find(c=>c.target.node===channel.target.node&&c.target.path===channel.target.path);

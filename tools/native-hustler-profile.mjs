@@ -21,7 +21,7 @@ function curve(keys,time){
  return(2*u**3-3*u*u+1)*a[1]+(u**3-2*u*u+u)*span*slope(i)+(-2*u**3+3*u*u)*b[1]+(u**3-u*u)*span*slope(i+1);
 }
 const GUARD={r:arm([-.56,-.25,.79],78,30,20,5),l:arm([.49,-.72,.49],85,-10,0)};
-const RECOIL={r:arm([-.58,-.16,.80],91,35,15,8),l:arm([.50,-.65,.57],90,-10,0)};
+const RECOIL={r:arm([-.58,-.20,.84],80,31,18,6),l:arm([.50,-.65,.57],90,-10,0)};
 const BREAK={r:arm([-.66,-.55,.48],60,10,25,-5),l:arm([.55,-.78,.30],70,0,0)};
 function keysFor(name,duration,impacts){
  if(name.includes('Guard_Impact'))return[[0,GUARD],[duration*.3,RECOIL],[duration,GUARD]];
