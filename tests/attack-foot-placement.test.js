@@ -57,7 +57,7 @@ test('Authored downhill support stays reachable across six native bodies and fou
  const {courseSurfaceHeight}=await import('../src/terrain.js');
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
  for(const [hero,prefix]of [['ronin',''],['shinobi','Twin_'],['monk','Naginata_'],['kaede','Fan_'],['ayame','Ring_'],['sora','Sickle_']]){
-  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===prefix+'Heavy_Cleave');
+  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===(hero==='ronin'?'Ronin_Heavy_Cleave':prefix+'Heavy_Cleave'));
   let maxReach=0,maxExtraGap=0,maxGripChange=0;
   for(let theme=0;theme<4;theme++){
    placement.restore();placement.reset();mixer.stopAllAction();mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();
@@ -89,7 +89,7 @@ test('Repeated attack contact resets do not introduce a terrain pelvis jump',asy
  const {courseSurfaceHeight}=await import('../src/terrain.js');
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
  for(const [hero,prefix]of [['ronin',''],['kaede','Fan_']]){
-  const {root,bones,clips,mixer,placement}=await nativeRig(hero),name=prefix+'Heavy_Cleave',clip=clips.find(c=>c.name===name),data=motions[name];
+  const {root,bones,clips,mixer,placement}=await nativeRig(hero),name=hero==='ronin'?'Ronin_Heavy_Cleave':prefix+'Heavy_Cleave',clip=clips.find(c=>c.name===name),data=motions[name];
   for(let theme=0;theme<4;theme++){
    placement.restore();placement.reset();mixer.stopAllAction();const c=COURSE_SETS[theme].holes[0],[x,z]=spots[theme],ground=(x,z)=>courseSurfaceHeight(c,x,z,heightAt,ellipse);root.position.set(x,heightAt(c,x,z),z);
    let action=null,previous=null;

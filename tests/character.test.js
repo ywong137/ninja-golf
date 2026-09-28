@@ -28,7 +28,8 @@ test('Combat choreography keeps the torso coupled and both weapon paths explicit
   if(name.startsWith('Golf'))continue;
   for(const pose of clip.poses){
    assert.ok(Math.abs(pose.chest-pose.hip)<.9,`${name}: excessive torso twist`);
-   for(const key of ['offGrip','offTip','elbowR','elbowL','footR','footL'])assert.equal(pose[key].length,3,`${name}: ${key}`);
+   const paths=clip.nativeAttachment?(clip.twoHanded?['secondaryGrip']:[]):['offGrip','offTip'];
+   for(const key of [...paths,'elbowR','elbowL','footR','footL'])assert.equal(pose[key].length,3,`${name}: ${key}`);
    assert.ok(Math.hypot(pose.grip[0],pose.grip[1])<.85,`${name}: unreachable hand target`);
   }
  }

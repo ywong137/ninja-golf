@@ -21,6 +21,7 @@ export function combatMotionName(warrior,kind,step=0){
   if(kind==='ready')return warrior?.readyClip||(motions[`${prefix}Ready`]?`${prefix}Ready`:'Idle_Loop');
   const family=ATTACK_CLIPS[kind];
   if(!family)throw new Error(`Unknown combat motion kind: ${kind}`);
-  return prefix+family[kind==='musou'?0:Math.max(0,Math.min(family.length-1,step))];
+  const name=prefix+family[kind==='musou'?0:Math.max(0,Math.min(family.length-1,step))];
+  return warrior?.motionOverrides?.[name]??name;
 }
 export function musouHeadings(warrior){return motions[combatMotionName(warrior,'musou')].headings;}

@@ -20,6 +20,18 @@ if args.attacks_only and (args.guards_only or args.locomotion_only):parser.error
 append_only=args.selection_only or args.guards_only or args.locomotion_only or args.attacks_only or bool(args.attack_name)
 spec=importlib.util.spec_from_file_location('rocketbox_rig',ROOT/'tools/rocketbox-rig.py');bridge=importlib.util.module_from_spec(spec);spec.loader.exec_module(bridge)
 clip_spec=importlib.util.spec_from_file_location('character_clips',ROOT/'tools/filter-character-clips.py');clip_filter=importlib.util.module_from_spec(clip_spec);clip_spec.loader.exec_module(clip_filter)
+def patch_ronin_native_combat(output):
+ # Preserve complete native poses after both full and combat-only Blender exports.
+ # Regenerate only these two runtime records with the native model.
+ with tempfile.TemporaryDirectory(prefix='ninja-native-cleave-') as folder:
+  candidate=pathlib.Path(folder)/'ronin.glb';record=pathlib.Path(folder)/'ronin-motion.json'
+  subprocess.run(['node',str(ROOT/'tools/author-native-cleave.mjs'),'--input',str(output),'--output',str(candidate),'--record',str(record)],check=True)
+  subprocess.run(['node',str(ROOT/'tools/check-native-cleave.mjs'),'--model',str(candidate),'--before',str(output)],check=True)
+  generated=json.loads(record.read_text());generated.update(json.loads(record.with_suffix('.ready.json').read_text()))
+  if set(generated)!={'Ronin_Ready','Ronin_Heavy_Cleave'}:raise ValueError('Native Ronin export returned unexpected motion records')
+  motion_path=ROOT/'src/motion-data.json';motions=json.loads(motion_path.read_text());motions.update(generated)
+  output.write_bytes(candidate.read_bytes())
+  motion_path.write_text(json.dumps(motions,separators=(',',':'),ensure_ascii=False))
 def materials(folder):
  for mat in bpy.data.materials:
   color=folder/'Textures'/f'{mat.name}_color.tga'
@@ -91,6 +103,8 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   if hero=='ninja' and args.attacks_only:retired.append('Twin_Cut_Diagonal')
   subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in (clip_names if args.selection_only else args.attack_name) for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink()
   subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
+  if hero=='ronin' and (args.attacks_only or bool(set(args.attack_name)&{'Heavy_Cleave','Ronin_Heavy_Cleave'})):
+   patch_ronin_native_combat(output)
   print('GUARDS_EXPORTED',hero,flush=True);continue
  # Full exports need the same exact attack endpoints as animation-only updates.
  time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')
@@ -104,6 +118,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
    golf_output=pathlib.Path(golf_dir)/f'{hero}.glb'
    subprocess.run(['node',str(ROOT/'tools/author-native-golf.mjs'),'--hero',hero,'--input',str(output),'--output',str(golf_output)],check=True)
    output.write_bytes(golf_output.read_bytes())
+ if hero=='ronin':patch_ronin_native_combat(output)
  if hero=='monk':
   # Reapply the likeness after a full native source export. Clip-only exports
   # already preserve the existing geometry and must not sculpt it a second time.

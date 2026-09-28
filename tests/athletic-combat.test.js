@@ -13,6 +13,9 @@ test('Athletic attacks keep support targets fixed and lift before foot travel',(
    if(rows.length<2)continue;
    for(const row of rows){assert.ok(Math.hypot(...row[key].map((v,i)=>v-rows[0][key][i]))<1e-6,`${name}: planted ${side} moved`);assert.ok(Math.abs(row[yaw]-rows[0][yaw])<1e-6,`${name}: planted ${side} twisted`);}
   }
+  // Native records retain ankle rotations and heel/toe roll. Their actual
+  // sole contacts receive separate native and runtime geometry checks.
+  if(clip.nativeStanceFeet)continue;
   for(let i=1;i<clip.poses.length;i++){
    const a=clip.poses[i-1],b=clip.poses[i];assert.ok(b.t-a.t>1e-8,`${name}: duplicate phase`);
    for(const key of ['footR','footL'])if(Math.hypot(a[key][0]-b[key][0],a[key][1]-b[key][1])>.00001)assert.ok(Math.min(a[key][2],b[key][2])>.025,`${name}: moving ${key} lacks clearance`);
@@ -23,7 +26,7 @@ test('Every hero uses a complete distinct family of full-body attacks',()=>{
  const names=['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'];
  assert.equal(new Set(WARRIORS.map(w=>w.motionPrefix)).size,WARRIORS.length);
  for(const hero of WARRIORS)for(const name of names){
-  const clip=motions[hero.motionPrefix+name];assert.ok(clip?.athleticAttack,hero.model+'/'+name);
+  const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];assert.ok(clip?.athleticAttack,hero.model+'/'+name);
   assert.equal(clip.duration,motions[name].duration);
   assert.deepEqual(clip.impacts,motions[name].impacts);
   assert.ok(['footR','footL'].some(key=>Math.max(...clip.poses.map(p=>p[key][2]))>.04),`${hero.model}/${name}: no authored step`);
@@ -34,10 +37,12 @@ test('New weapon-ready stances keep each male hero at the attack hand and foot p
  for(const hero of WARRIORS.slice(0,3)){
   const ready=motions[hero.readyClip];assert.ok(ready?.nativeAttackReady,hero.model);
   assert.ok(!ready.athleticAttack,'A ready stance must not activate attack footwork');
-  const pose=ready.poses[0];
+  const legacyReady=motions[hero.motionPrefix+'Ready'];
   for(const name of ['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam']){
-   for(const endpoint of [motions[hero.motionPrefix+name].poses[0],motions[hero.motionPrefix+name].poses.at(-1)]){
-    for(const key of ['grip','tip','offGrip','offTip','footR','footL'])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-7,`${hero.model}/${name}: ${key} returns to another stance`);
+   const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];
+   const pose=(clip.nativeAttachment?ready:legacyReady).poses[0];
+   for(const endpoint of [clip.poses[0],clip.poses.at(-1)]){
+    for(const key of ['grip','tip','footR','footL',...(hero.dualWield?['offGrip','offTip']:[])])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-7,`${hero.model}/${name}: ${key} returns to another stance`);
    }
   }
  }

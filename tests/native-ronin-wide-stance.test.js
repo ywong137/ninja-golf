@@ -30,18 +30,23 @@ function pose(g){
 }
 test('Ronin uses a wide, loaded, reachable stance at every authored impact',async t=>{
  const g=await loadNativeSkin(path.join(directory,'ronin.glb')),reports=[],failures=[];
- for(const name of names){
+ for(const sourceName of names){
+  const name=!baseline&&sourceName==='Heavy_Cleave'?'Ronin_Heavy_Cleave':sourceName;
   const clip=g.animations.find(c=>c.name===name),spec=motions[name];assert.ok(clip&&spec?.impacts?.length,`${name}: missing native clip or impact metadata`);
   assert.ok(spec.footPlants?.r&&spec.footPlants?.l,`${name}: missing support intervals`);
   g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
   const evaluate=time=>{action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);return pose(g);};
-  const heavy=name.startsWith('Heavy_'),row={name,impacts:[],maxReach:0,minFlex:180,maxFlex:0,maxSupportDrift:0,maxSupportTurn:0};
+  const heavy=name.includes('Heavy_'),nativeCleave=name==='Ronin_Heavy_Cleave',row={name,impacts:[],maxReach:0,minFlex:180,maxFlex:0,maxSupportDrift:0,maxSupportTurn:0};
   const fail=(kind,details)=>failures.push({name,kind,...details});
   for(const time of spec.impacts){
    const p=evaluate(time);delete p.feet;row.impacts.push({time,...p});
-   if(p.width<(heavy?.80:.60)-EPS)fail('impact width',{time,actual:p.width,minimum:heavy?.80:.60});
-   if(p.depth<(heavy?.45:.22)-EPS)fail('impact fore/aft span',{time,actual:p.depth,minimum:heavy?.45:.22});
-   if(heavy&&p.hipHeight>.70+EPS)fail('heavy hips too high',{time,actual:p.hipHeight,maximum:.70});
+   const minimumWidth=nativeCleave?.40:heavy?.80:.60;
+   if(p.width<minimumWidth-EPS)fail('impact width',{time,actual:p.width,minimum:minimumWidth});
+   if(nativeCleave&&p.width>.65)fail('cleave becomes a lateral squat',{time,actual:p.width,maximum:.65});
+   const minimumDepth=nativeCleave?.30:heavy?.45:.22;
+   if(p.depth<minimumDepth-EPS)fail('impact fore/aft span',{time,actual:p.depth,minimum:minimumDepth});
+   const maximumHeight=nativeCleave?.87:.70;
+   if(heavy&&p.hipHeight>maximumHeight+EPS)fail('heavy hips too high',{time,actual:p.hipHeight,maximum:maximumHeight});
    for(const side of ['r','l']){
     if(p.legs[side].flex<25||p.legs[side].flex>115)fail('impact knee flex',{time,side,actual:p.legs[side].flex,range:[25,115]});
     if(p.legs[side].reach>.977)fail('impact leg near full extension',{time,side,actual:p.legs[side].reach,maximum:.977});

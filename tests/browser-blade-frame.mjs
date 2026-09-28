@@ -3,9 +3,8 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 
-// Captured from fbea207 before the palm-frame change. Sora's Ready position
-// now uses her reviewed forward guard; its blade plane and scale remain exact.
-// Shinobi's Ready hand sits farther forward to clear his upper-arm skin.
+// Captured from release adf64bf after fitted grips and native golf shipped.
+// Only Ronin's Ready fixture changes for the reviewed native cleave pose.
 // Preserve every full golf transform, including the club head's lateral offset.
 const baseline=JSON.parse(readFileSync(new URL('./fixtures/weapon-ready-golf.json',import.meta.url),'utf8'));
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
@@ -21,9 +20,9 @@ try{
     const {ATTACKS}=await import('/src/combat.js');
     await loadWarriorAssets();
     const Y=new T.Vector3(0,1,0),Q=()=>new T.Quaternion();
-    const report={samples:0,clips:0,enemies:0,transitionSamples:0,maxAxisError:0,maxPalmFrameError:0,maxGripError:0,maxReadyError:0,maxGolfError:0,maxFadeError:0,maxLegacyFrameDrift:0,worst:null};
+    const report={samples:0,clips:0,enemies:0,transitionSamples:0,maxAxisError:0,maxNativeAxisError:0,maxPalmFrameError:0,maxGripError:0,maxReadyError:0,maxGolfError:0,maxFadeError:0,maxLegacyFrameDrift:0,worst:null};
     const setPose=(p,name,time,golf=false)=>{
-      p.mixer.stopAllAction();p.current='';p.play(name,0,true);
+      p.handGrip?.restore();p.mixer.stopAllAction();p.current='';p.play(name,0,true);
       p.actions.get(name).time=time;p.mixer.update(0);
       p.syncHeldObjects(sampleMotion(name,time),golf);p.root.updateMatrixWorld(true);
     };
@@ -37,7 +36,7 @@ try{
       if(!from||!to)return null;
       const authored=new T.Vector3(to[0]-from[0],to[2]-from[2],from[1]-to[1]).normalize().applyQuaternion(p.root.getWorldQuaternion(Q()));
       const native=p.shaftAxes[side].clone().applyQuaternion(h).normalize();
-      const correction=Q().setFromUnitVectors(native,authored);
+      const correction=motions[p.current]?.nativeAttachment?Q():Q().setFromUnitVectors(native,authored);
       const w=held(p,side).getWorldQuaternion(Q()).normalize();
       const relative=h.clone().invert().multiply(correction.clone().invert()).multiply(w).normalize();
       const roll=side==='r'?pose.roll||0:pose.offRoll||0;
@@ -46,15 +45,19 @@ try{
     }
     function checkGrip(p,side){
       const palm=p.bones['hand_'+side].localToWorld(p.palmGrips[side].clone());
-      report.maxGripError=Math.max(report.maxGripError,palm.distanceTo(held(p,side).getWorldPosition(new T.Vector3())));
+      const weapon=held(p,side),station=new T.Vector3(0,weapon.userData.primaryGrip,0);
+      report.maxGripError=Math.max(report.maxGripError,palm.distanceTo(weapon.localToWorld(station)));
     }
     for(const item of baseline){
       const p=new Warrior(item.hero);
       for(const b of item.rows){
         const golf=b.name.startsWith('Golf');setPose(p,b.name,b.t,golf);
         const object=golf?p.club:p.weapon;
-        const error=Math.max(object.quaternion.angleTo(Q().fromArray(b.q)),object.position.distanceTo(new T.Vector3(...b.p)),object.scale.distanceTo(new T.Vector3(...b.s)),b.off?p.offhand.quaternion.angleTo(Q().fromArray(b.off)):0);
+        // GLB rotations have float32 length residue. angleTo assumes unit
+        // quaternions; otherwise even a rotation compared with itself can fail.
+        const error=Math.max(object.quaternion.clone().normalize().angleTo(Q().fromArray(b.q).normalize()),object.position.distanceTo(new T.Vector3(...b.p)),object.scale.distanceTo(new T.Vector3(...b.s)),b.off?p.offhand.quaternion.clone().normalize().angleTo(Q().fromArray(b.off).normalize()):0);
         const key=golf?'maxGolfError':'maxReadyError';report[key]=Math.max(report[key],error);
+        if(error>1e-5)(report.baselineErrors??=[]).push({hero:item.hero,name:b.name,t:b.t,error,actualQ:object.quaternion.toArray(),expectedQ:b.q});
       }
       p.dispose();
     }
@@ -69,14 +72,15 @@ try{
         report.clips++;setPose(p,name,0);
         const duration=motions[name].duration;
         for(let i=0;i<=Math.ceil(duration*240);i++){
-          const t=Math.min(duration,i/240);p.actions.get(name).time=t;p.mixer.update(0);
+          const t=Math.min(duration,i/240);p.handGrip?.restore();p.actions.get(name).time=t;p.mixer.update(0);
           const pose=sampleMotion(name,t);p.syncHeldObjects(pose);p.root.updateMatrixWorld(true);
           for(const side of sides(p)){
             const f=frame(p,side,pose);if(!f)continue;report.samples++;checkGrip(p,side);
             reference[side]??=f.relative.clone();legacyReference[side]??=f.legacyRelative.clone();
             const error=reference[side].angleTo(f.relative);
             if(error>report.maxPalmFrameError){report.maxPalmFrameError=error;report.worst={enemy,type,name,t,side};}
-            report.maxAxisError=Math.max(report.maxAxisError,Y.clone().applyQuaternion(f.w).angleTo(f.authored));
+            const axisKey=motions[name].nativeAttachment?'maxNativeAxisError':'maxAxisError';
+            report[axisKey]=Math.max(report[axisKey],Y.clone().applyQuaternion(f.w).angleTo(f.authored));
             report.maxLegacyFrameDrift=Math.max(report.maxLegacyFrameDrift,legacyReference[side].angleTo(f.legacyRelative));
           }
         }
@@ -96,9 +100,9 @@ try{
               // Carry adjusts the hand itself while it fades. Its temporary
               // shaft takes precedence until that layer releases the weapon.
               if(a.travelPose?.weight>0)continue;
-              const target=f.correction.clone().multiply(f.h).multiply(reference[side]);
-              const blend=a.heldBlend;
-              if(blend?.[side]){const saved=a.root.getWorldQuaternion(Q()).multiply(blend[side]);const weight=T.MathUtils.clamp((a.mixer.time-blend.start)/blend.duration,0,1);target.slerp(saved,1-weight);}
+              // The grip layer blends the HAND before attaching the weapon.
+              // Applying heldBlend again would measure a second, obsolete fade.
+              const target=f.h.clone().multiply(reference[side]);
               report.maxFadeError=Math.max(report.maxFadeError,target.normalize().angleTo(f.w));report.transitionSamples++;
             }
           }
@@ -116,6 +120,9 @@ try{
   assert.ok(report.maxLegacyFrameDrift>1,'The fixtures must expose the old shaft-dependent roll defect');
   assert.ok(report.maxPalmFrameError<1e-5,`Weapon twists independently of its hand: ${JSON.stringify(report.worst)}`);
   assert.ok(report.maxAxisError<1e-5,'Authored shaft changed outside a fade');
+  // Native clips retain their anatomical wrist. Metadata linearly interpolates
+  // the shaft, while the skeleton interpolates rotations between baked keys.
+  assert.ok(report.maxNativeAxisError<Math.PI/180,'Native blade deviates more than one degree from its recorded path');
   assert.ok(report.maxGripError<1e-6,'The handle left the calibrated palm');
   assert.ok(report.maxReadyError<1e-5,'Ready blade width/face changed');
   assert.ok(report.maxGolfError<1e-6,'Golf transform or contact path changed');

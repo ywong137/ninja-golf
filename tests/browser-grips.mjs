@@ -21,7 +21,7 @@ try{
    const sample=(name,time,transition=false)=>{
     const golf=name.startsWith('Golf'),clip=motions[name];
     p.root.updateMatrixWorld(true);
-    for(const side of p.offhand&&!golf||p.handGrip.weight>.999?['r','l']:['r']){
+    for(const side of p.offhand&&!golf||p.handGrip.secondaryWeight>.999?['r','l']:['r']){
      const held=golf?p.club:side==='l'&&p.offhand?p.offhand:p.weapon;
      const radius=p.handGrip.active[side].radius;
      const contact=measureGripSurface(surfaces[side],held,radius);
@@ -31,7 +31,7 @@ try{
      results.push({hero:w.model,name,seconds:time,side,transition,gap,...contact});
     }
    };
-   const names=[w.selectionClip,w.readyClip,`${prefix}Cut_Diagonal`,`${prefix}Heavy_Cleave`,`${prefix}Musou_Flow`,`${({odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'})[w.combatStyle]}_Guard_Loop`,'Golf_Address','Golf_Swing','Golf_Putt'];
+   const names=[w.selectionClip,w.readyClip,`${prefix}Cut_Diagonal`,`${prefix}Heavy_Cleave`,`${prefix}Musou_Flow`,`${({odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'})[w.combatStyle]}_Guard_Loop`,'Golf_Address','Golf_Swing','Golf_Putt'].map(name=>w.motionOverrides?.[name]??name);
    for(const name of names)for(const fraction of [0,.28,.55,.84]){
     p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(name,0,true);
     const action=p.actions.get(name);action.time=fraction*action.getClip().duration;p.mixer.update(0);
@@ -45,7 +45,7 @@ try{
     // Inspect every 120 Hz phase of the reported heavy attack, including both
     // crossfades. Sparse fraction samples previously missed the actual impact.
     p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(w.readyClip,0);p.mixer.update(0);p.syncHeldObjects();
-    const duration=motions.Heavy_Cleave.duration;
+    const duration=motions[w.motionOverrides?.Heavy_Cleave??'Heavy_Cleave'].duration;
     for(let frame=0;frame<=Math.ceil((duration+.25)*120);frame++){
      const time=frame/120,action=time<=duration?{kind:'heavy',step:0,token:456,time,duration}:null;
      p.update(time,1/120,{action});sample(p.current,p.actions.get(p.current).time,true);

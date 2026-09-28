@@ -6,7 +6,7 @@ import {loadNativeSkin,skinGroups,measureArmSkin} from './native-skin-helper.mjs
 
 test('Ronin overhead cleave keeps both forearms clear through preparation and contact',async t=>{
  const file=process.env.NINJA_NATIVE_ARM_DIR?path.join(process.env.NINJA_NATIVE_ARM_DIR,'ronin.glb'):new URL('../public/models/ronin.glb',import.meta.url);
- const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name==='Heavy_Cleave');
+ const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name==='Ronin_Heavy_Cleave');
  const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
  const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  const previous={},worst={inset:0,torsoPairs:0,elbowSpeed:0};
@@ -15,8 +15,8 @@ test('Ronin overhead cleave keeps both forearms clear through preparation and co
   for(const side of ['r','l']){
    const elbow=point('lowerarm_'+side).sub(point('upperarm_'+side)),old=previous[side],dt=old?seconds-old.seconds:0;
    if(dt>1e-7)worst.elbowSpeed=Math.max(worst.elbowSpeed,elbow.distanceTo(old.elbow)/dt);
-   // The unchanged Ready pose still needs a separate repair. This interval
-   // covers the loaded windup, .36 s cut, and follow-through before its return.
+   // Inspect the loaded windup, cut, and follow-through. The matching ready
+   // pose also receives the dense native attack audit.
    if(seconds>=.10&&seconds<=.60){
     const skin=measureArmSkin(g,metadata,side);
     worst.inset=Math.max(worst.inset,skin['fold_'+side].maxRadialPenetration);

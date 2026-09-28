@@ -102,5 +102,5 @@ export function createWeapon(kind='odachi'){
   const hardware=new THREE.Mesh(mergeGeometries(pieces),fittings);hardware.geometry.userData.fittingParts=fittingParts;hardware.name='Weapon fittings';pieces.forEach(g=>g.dispose());hardware.castShadow=true;group.add(hardware);
   if(hero){const cord=new THREE.Mesh(cordGeometry(pole?-.88:.17-p.grip,.145,gripRadius),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
   const blade=new THREE.Mesh(bladeGeometry(p),[steel,edge]);blade.name='Flat steel blade';blade.castShadow=true;group.add(blade);
-  group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;group.userData.primaryGrip=hero?.095:0;group.userData.gripRadius=hero?gripRadius:.020;cache.set(kind,group);return group.clone();
+  group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;group.userData.defaultGrip=hero?.095:0;group.userData.primaryGrip=group.userData.defaultGrip;group.userData.gripRadius=hero?gripRadius:.020;cache.set(kind,group);return group.clone();
 }

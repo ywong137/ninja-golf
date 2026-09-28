@@ -63,7 +63,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
   {name:'Idle_Loop',kind:'idle',spec:{duration:clips.get('Idle_Loop').duration}},
   {name:hero.selectionClip,kind:'selection',spec:selections[hero.selectionClip]},
   {name:hero.readyClip,kind:'ready',spec:motions[hero.readyClip]},
-  ...regular.map(suffix=>({name:hero.motionPrefix+suffix,kind:'attack',spec:motions[hero.motionPrefix+suffix]})),
+  ...regular.map(suffix=>{const name=hero.motionOverrides?.[hero.motionPrefix+suffix]??hero.motionPrefix+suffix;return{name,kind:'attack',spec:motions[name]};}),
   ...guards.map(c=>({name:c.name,kind:'guard',spec:motions[c.name]})),
   ...Object.entries(gaits).map(([name,spec])=>({name,kind:'gait',spec})),
  ];

@@ -34,7 +34,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     const g=glb(name),rig=g.nodes.find(n=>n.extras?.nativeMotion);
     assert.ok(rig,`${name}: native anatomical rig`);assert.equal(rig.extras.sourceAvatar,identities[index]);assert.equal(rig.extras.license,'MIT');
     for(const side of ['R','L']){assert.equal(rig.extras['palmGrip'+side].length,3);assert.equal(rig.extras['shaftAxis'+side].length,3);assert.ok(Object.keys(rig.extras['closedFingers'+side]).length>=15);}
-    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',WARRIORS[index].motionPrefix+'Musou_Flow',WARRIORS[index].readyClip])assert.ok(clips.has(clip),`${name}: ${clip}`);
+    const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',WARRIORS[index].motionPrefix+'Musou_Flow',WARRIORS[index].readyClip,...Object.values(WARRIORS[index].motionOverrides??{})])assert.ok(clips.has(clip),`${name}: ${clip}`);
     assert.deepEqual([...clips].filter(clip=>clip.endsWith('_Selection_Idle')),[WARRIORS[index].selectionClip],`${name}: one separate selection pose`);
     assert.ok(clips.size<=37,`${name}: own weapon family, guard steps, native locomotion, and selection pose only`);
     const eyewear=['Vice President graphite glasses','Vice President brushed silver temples'];

@@ -96,13 +96,16 @@ export class HandGrip {
   this.selectionReport??={};
   this.selectionReport[side]={wristNeutralError:hand.quaternion.clone().normalize().angleTo(actor.neutralHandRotations[side].clone().normalize()),elbowFlexion:upperDirection.angleTo(forearmDirection),forearmFrameCorrection:turn};
  }
- orient(side,from,to,golf){
+ orient(side,from,to,golf,nativeAttachment=false){
   const {actor}=this,hand=actor.bones['hand_'+side],profile=this.active[side];
   this.remember(hand);
   if(actor.current.includes('_Selection_Idle')){
    this.selectionCarry(side);
    return;
   }
+  // A native attack authors the complete wrist frame. Its weapon follows the
+  // blended hand; a second shaft target must not replace that performance.
+  if(nativeAttachment)return;
   const rootQ=rotation(actor.root),local=rotation(hand).premultiply(rootQ.clone().invert()).multiply(profile.frame);
   const travel=actor.travelPose?.shaftDirections[side];
   if(!golf&&travel)alignWeaponShaft(local,travel);
@@ -125,7 +128,7 @@ export class HandGrip {
   held.quaternion.copy(rotation(root).invert().multiply(world));held.scale.setScalar(1);
   held.updateWorldMatrix(true,true);
  }
- solveSecondary(held,spacing){
+ solveSecondary(held,spacing,weight=this.weight){
   const {actor}=this,{bones,root}=actor,scale=root.getWorldScale(new Vector3()).x;
   const primary=position(bones.hand_r).add(this.active.r.center.clone().multiplyScalar(scale).applyQuaternion(rotation(bones.hand_r)));
   const shaft=Y.clone().applyQuaternion(rotation(held)),left=this.active.l;
@@ -151,24 +154,36 @@ export class HandGrip {
    for(const b of [upper,lower,hand])this.remember(b);
    const target=origin.clone().sub(side==='r'?rightOffset:leftOffset);
    errors[side]=solveGripArm(upper,lower,hand,target,side==='r'?rightQ:handQ);
-   if(this.weight<1){[upper,lower,hand].forEach((b,i)=>{const solved=b.quaternion.clone();b.quaternion.copy(before[i]).slerp(solved,this.weight);});upper.updateWorldMatrix(true,true);}
+   if(weight<1){[upper,lower,hand].forEach((b,i)=>{const solved=b.quaternion.clone();b.quaternion.copy(before[i]).slerp(solved,weight);});upper.updateWorldMatrix(true,true);}
   }
-  this.report={secondaryWeight:this.weight,reachErrors:errors,translation:origin.distanceTo(primary)};
+  this.report={secondaryWeight:weight,reachErrors:errors,translation:origin.distanceTo(primary)};
  }
  apply(motion,golf,clip){
   const {actor}=this;this.prepare(golf);actor.root.updateMatrixWorld(true);
   if(this.transition){const t=MathUtils.clamp((actor.mixer.time-this.transition.start)/this.transition.duration,0,1);this.weight=MathUtils.lerp(this.transition.from,this.goal,t*t*(3-2*t));if(t===1)this.transition=null;}
-  const holdingLeft=actor.offhand&&!golf?1:this.weight;
+  // The free hand closes after the carry arm approaches its authored pose.
+  // An early full-strength grab can pull both elbows across the torso.
+  // Release it before running resumes; a fading grab would bend the free wrist.
+  const secondaryWeight=actor.running&&!golf?0:clip?.nativeAttachment&&!golf?this.weight*MathUtils.smoothstep(1-(actor.travelPose?.weight??0),.4,1):this.weight;
+  this.secondaryWeight=secondaryWeight;
+  const holdingLeft=actor.offhand&&!golf?1:secondaryWeight;
   for(const side of ['r','l']){
    const weight=side==='r'?1:holdingLeft;if(!weight)continue;
    for(const [bone]of this.active[side].fingers)this.remember(bone);
    applyFingerGrip(this.active[side],weight);
   }
-  this.orient('r',motion?.grip,motion?.tip,golf);
-  const held=golf?actor.club:actor.weapon,station=golf?0:held.userData.primaryGrip;
+  this.orient('r',motion?.grip,motion?.tip,golf,!!clip?.nativeAttachment);
+  const held=golf?actor.club:actor.weapon;
+  if(!golf){
+   // A long polearm balances at the middle of its wrapped shaft during travel.
+   // Slide back to the attack grip with the carry fade, before contact.
+   const resting=held.userData.defaultGrip;
+   held.userData.primaryGrip=MathUtils.lerp(resting,actor.travelPose?.profile.gripStation??resting,actor.travelPose?.weight??0);
+  }
+  const station=golf?0:held.userData.primaryGrip;
   this.attach(held,'r',station);
-  if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
-  else if(this.weight>0){this.solveSecondary(held,clip?.gripSpacing??.09);this.attach(held,'r',station);}
+  if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
+  else if(secondaryWeight>0){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
    actor.clubShaft.scale.y=Math.max(.1,length-.17);actor.clubShaft.position.y=.17+actor.clubShaft.scale.y*.5;

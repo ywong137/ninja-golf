@@ -3,16 +3,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
+import {routeMotionCandidate} from './route-motion-candidate.mjs';
 const args=process.argv.slice(2);
-if(args.includes('--help')){console.log('node tools/capture-game-attacks.mjs before|after [--baseline DIRECTORY] [--hero 0..5] [--clip CLIP_NAME] [--times T0,T1,T2,T3,T4,T5,T6,T7] [--motion standing|moving|both]\nSample times are eight increasing values in seconds and require --clip.\nRuns attacks through the game controller on flat ground. Saves contact sheets and joint samples in /tmp. Audio stays muted.');process.exit(0);}
+if(args.includes('--help')){console.log('node tools/capture-game-attacks.mjs before|after [--baseline DIRECTORY] [--hero 0..5] [--clip CLIP_NAME] [--times T0,T1,T2,T3,T4,T5,T6,T7] [--motion standing|moving|both]\nCandidate: --model FILE.glb --motion-record FILE.json --replace-clip ORIGINAL_NAME [--ready-record FILE.json]\nSample times are eight increasing values in seconds and require --clip.\nRuns attacks through the game controller on flat ground. Saves contact sheets and joint samples in /tmp. Audio stays muted.');process.exit(0);}
 const label=args.shift();if(!['before','after'].includes(label))throw Error('Use before or after. See --help.');
-let baseline=null,hero=3,clipName=null,sampleTimes=null,movement='both';
-while(args.length){const key=args.shift(),value=args.shift();if(key==='--baseline'&&value)baseline=value;else if(key==='--hero'&&/^[0-5]$/.test(value))hero=Number(value);else if(key==='--clip'&&value)clipName=value;else if(key==='--times'&&value)sampleTimes=value.split(',').map(Number);else if(key==='--motion'&&['standing','moving','both'].includes(value))movement=value;else throw Error('Invalid option. See --help.');}
+let baseline=null,hero=3,clipName=null,sampleTimes=null,movement='both',model=null,motionRecord=null,replaceClip=null,readyRecord=null;
+while(args.length){const key=args.shift(),value=args.shift();if(key==='--baseline'&&value)baseline=value;else if(key==='--hero'&&/^[0-5]$/.test(value))hero=Number(value);else if(key==='--clip'&&value)clipName=value;else if(key==='--times'&&value)sampleTimes=value.split(',').map(Number);else if(key==='--motion'&&['standing','moving','both'].includes(value))movement=value;else if(key==='--model'&&value)model=value;else if(key==='--motion-record'&&value)motionRecord=value;else if(key==='--replace-clip'&&value)replaceClip=value;else if(key==='--ready-record'&&value)readyRecord=value;else throw Error('Invalid option. See --help.');}
+if(baseline&&(model||motionRecord||replaceClip||readyRecord))throw Error('Choose --baseline or a candidate, not both.');
 if(sampleTimes&&(!clipName||sampleTimes.length!==8||sampleTimes.some((t,i)=>!Number.isFinite(t)||t<0||i>0&&t<=sampleTimes[i-1])))throw Error('--times requires --clip and eight increasing, nonnegative seconds.');
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:2400,height:1000}}),errors=[];await disableHmr(page);page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
  page.on('console',m=>{if(m.type()==='error')console.error(m.text());});
+ await routeMotionCandidate(page,{hero,model,motionRecord,replaceClip,readyRecord});
  if(baseline){
   for(const name of ['ronin','shinobi','monk','kaede','ayame','sora'])await page.route(`**/models/${name}.glb?*`,route=>route.fulfill({path:path.join(baseline,name+'.glb')}));
   for(const name of ['actors','foot-placement','main','travel-pose','warriors']){
@@ -33,7 +36,7 @@ try{
  await page.evaluate(async hero=>{
   const g=window.__golfTest,T=await import('/node_modules/three/build/three.module.js'),{clone}=await import('/node_modules/three/examples/jsm/utils/SkeletonUtils.js');g.frame=()=>{};g.begin(hero,0);g.paused=true;g.audio.pause();g.clearEnemies();g.groundHeight=()=>0;g.slideOnLand=p=>{p.y=0;};
   const scene=new T.Scene();scene.background=new T.Color('#667077');scene.add(new T.HemisphereLight(0xffffff,0x393a35,2));const sun=new T.DirectionalLight(0xfff4e4,3);sun.position.set(-3,7,5);scene.add(sun);
-  const camera=new T.OrthographicCamera(-12,12,7.25,-.65,.01,100);camera.position.set(0,0,20);camera.lookAt(0,0,0);
+  const camera=new T.OrthographicCamera(-12,12,9.5,-.5,.01,100);camera.position.set(0,0,20);camera.lookAt(0,0,0);
   const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(2400,1000);document.body.replaceChildren(renderer.domElement);
   const captions=document.createElement('div');captions.style.cssText='position:absolute;inset:0;color:#fff;font:18px sans-serif;pointer-events:none';document.body.append(captions);
   window.study={g,T,clone,scene,camera,renderer,captions,poses:[]};
@@ -54,7 +57,7 @@ try{
     if(col===0)g.player.update(g.time,0,{groundHeight:g.groundHeight,action:g.action,moving});g.player.root.updateMatrixWorld(true);
     const joints={};for(const key of ['pelvis','spine_01','spine_03','upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l','thigh_r','calf_r','foot_r','thigh_l','calf_l','foot_l'])joints[key]=g.player.bones[key].getWorldPosition(new T.Vector3()).toArray();samples.push({t,root:g.player.root.position.toArray(),joints,feet:g.player.footPlacement.report});
     for(let row=0;row<2;row++){
-     const frozen=clone(g.player.root);frozen.position.set((col-3.5)*3,row===0?3.9:0,0);frozen.rotation.set(0,row===0?0:Math.PI/2,0);scene.add(frozen);poses.push(frozen);
+     const frozen=clone(g.player.root);frozen.position.set((col-3.5)*3,row===0?4.8:0,0);frozen.rotation.set(0,row===0?0:Math.PI/2,0);scene.add(frozen);poses.push(frozen);
      const text=document.createElement('div');text.style.cssText=`position:absolute;left:${col*12.5+1}%;top:${row===0?3:53}%`;text.textContent=`${t.toFixed(3)}s`;captions.append(text);
     }
    }
