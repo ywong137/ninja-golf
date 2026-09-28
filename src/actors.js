@@ -17,7 +17,7 @@ import {ENEMY_APPEARANCES,resolveEnemyAppearance,applyEnemyAppearance} from './e
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='native-golf-ace-1';
+const MODEL_REVISION='native-arm-families-3';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();

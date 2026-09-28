@@ -29,29 +29,35 @@ for(const side of ['r','l']){
  if(new T.Vector3().fromArray(frames[side].center).distanceTo(new T.Vector3().fromArray(profiles[side].center))>.00001)throw Error(`The ${side} fitted grip changed. Recapture native-ace-frames.json.`);
 }
 // The cylinder fit supplies the shaft and palm position. Align the blade edge
-// with the neutral forearm, instead of rolling the forearm to suit a flat face.
+// with the neutral palm and the cutting edge. The arm and wrist produce the arc.
 const originalFrame=new T.Quaternion().fromArray(frames.r.frame);
 const forearmInWeapon=armRest.r.lower.clone().applyQuaternion(rest.hand_r.world.clone().multiply(originalFrame).invert());
 const mountingRoll=Math.atan2(-forearmInWeapon.z,forearmInWeapon.x)+Math.PI;
 frames.r.frame=originalFrame.multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),mountingRoll)).toArray();
 
-const X=new T.Vector3(1,0,0),Y=new T.Vector3(0,1,0);
+const X=new T.Vector3(1,0,0),Y=new T.Vector3(0,1,0),Z=new T.Vector3(0,0,1);
+const wristHinge=Object.fromEntries(['r','l'].map(side=>{const handQ=rest['hand_'+side].world;return[side,armRest[side].lower.clone().applyQuaternion(handQ.clone().invert()).cross(new T.Vector3().fromArray(profiles[side].axis)).normalize()];}));
 const rotation=(yaw,bend)=>new T.Quaternion().setFromAxisAngle(X,bend).multiply(new T.Quaternion().setFromAxisAngle(Y,yaw));
 function setWorld(name,q){const b=bones[name];b.quaternion.copy(b.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q)).normalize();b.updateWorldMatrix(false,true);}
 function orient(name,q){setWorld(name,q.clone().multiply(rest[name].world));}
 function reset(){for(const [n,b]of Object.entries(bones)){b.position.copy(rest[n].p);b.quaternion.copy(rest[n].q);b.scale.copy(rest[n].s);}g.scene.updateMatrixWorld(true);}
-function segmentFrame(direction,normal){const x=direction.clone().normalize(),z=normal.clone().normalize(),y=new T.Vector3().crossVectors(z,x).normalize();return new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(x,y,z));}
+// Preserve the native carrying angle and hinge. A blade target must never
+// obtain its pose by adding an unbounded twist to the forearm.
 const armRolls={};
-function poseArm(side,upperDirection,lowerDirection,shaft,rollOverride=null){
- const base=armRest[side],normal=new T.Vector3().crossVectors(upperDirection,lowerDirection).normalize();
- setWorld('upperarm_'+side,segmentFrame(upperDirection,normal).multiply(segmentFrame(base.upper,base.normal).invert()).multiply(rest['upperarm_'+side].world));
- setWorld('lowerarm_'+side,segmentFrame(lowerDirection,normal).multiply(segmentFrame(base.lower,base.normal).invert()).multiply(rest['lowerarm_'+side].world));
- bones['hand_'+side].quaternion.copy(neutral[side]);bones['hand_'+side].updateWorldMatrix(true,true);
- const actual=new T.Vector3().fromArray(profiles[side].axis).applyQuaternion(worldQ('hand_'+side));
- const from=actual.clone().addScaledVector(lowerDirection,-actual.dot(lowerDirection)).normalize(),to=shaft.clone().addScaledVector(lowerDirection,-shaft.dot(lowerDirection)).normalize();
- const roll=rollOverride??Math.atan2(from.clone().cross(to).dot(lowerDirection),from.dot(to));armRolls[side]=roll;
- setWorld('lowerarm_'+side,new T.Quaternion().setFromAxisAngle(lowerDirection,roll).multiply(worldQ('lowerarm_'+side)));
-
+function poseArm(side,upperDirection,flexDegrees,humeralDegrees,twistDegrees,chest,wristDegrees=0){
+ for(const [label,value,low,high]of [['elbow',flexDegrees,10,130],['upper-arm roll',humeralDegrees,-70,70],['forearm twist',twistDegrees,-70,70]])
+  if(!Number.isFinite(value)||value<low||value>high)throw Error(`${side} ${label} outside authoring bounds: ${value}`);
+ const base=armRest[side],upperName='upperarm_'+side,lowerName='lowerarm_'+side;
+ const swing=new T.Quaternion().setFromUnitVectors(base.upper.clone().applyQuaternion(chest),upperDirection);
+ const upperQ=new T.Quaternion().setFromAxisAngle(upperDirection,T.MathUtils.degToRad(humeralDegrees))
+  .multiply(swing).multiply(chest).multiply(rest[upperName].world);
+ setWorld(upperName,upperQ);
+ const hinge=base.normal.clone().applyQuaternion(rest[upperName].world.clone().invert());
+ bones[lowerName].quaternion.copy(new T.Quaternion().setFromAxisAngle(hinge,T.MathUtils.degToRad(flexDegrees)-base.upper.angleTo(base.lower)))
+  .multiply(rest[lowerName].q).multiply(new T.Quaternion().setFromAxisAngle(Y,T.MathUtils.degToRad(twistDegrees)));
+ bones[lowerName].updateWorldMatrix(false,true);
+ bones['hand_'+side].quaternion.copy(neutral[side]).multiply(new T.Quaternion().setFromAxisAngle(wristHinge[side],T.MathUtils.degToRad(wristDegrees)));bones['hand_'+side].updateWorldMatrix(true,true);
+ armRolls[side]=T.MathUtils.degToRad(twistDegrees);
  return bones['hand_'+side].quaternion.angleTo(neutral[side]);
 }
 const palm=side=>point('hand_'+side).add(new T.Vector3().fromArray(profiles[side].center).applyQuaternion(worldQ('hand_'+side)));
@@ -70,7 +76,7 @@ for(let i=0;i<times.length;i++){
  const pelvis=pelvisOrigin.clone().add(new T.Vector3(phase.x,phase.y,phase.z));bones.pelvis.position.copy(bones.pelvis.parent.worldToLocal(pelvis));
  orient('pelvis',hip);orient('spine_01',hip);orient('spine_02',rotation(T.MathUtils.lerp(phase.hip,phase.chest,.55),T.MathUtils.lerp(phase.hinge,phase.bend,.5)));orient('spine_03',chest);orient('neck_01',chest);orient('Head',rotation(phase.chest*.35,.03));
  for(const side of ['r','l']){
-  orient('clavicle_'+side,chest.clone().multiply(new T.Quaternion().setFromAxisAngle(Y,side==='r'?.10:-.05))); 
+  orient('clavicle_'+side,chest.clone().multiply(new T.Quaternion().setFromAxisAngle(Z,side==='r'?-(phase.clavicleLift??0):.02)).multiply(new T.Quaternion().setFromAxisAngle(Y,side==='r'?.10:-.05)));
   const base=footBase[side],ankle=base.p.clone();ankle.x=side==='r'?-.21:.21+(phase.stepOutward??.035)*phase.step;ankle.z=side==='r'?-.08:.03+(phase.stepDistance??.22)*phase.step;
   if(side==='l'){if(phase.footLift!==undefined)ankle.y+=phase.footLift;else{if(time<.13)ankle.y+=.055*Math.sin(Math.PI*phase.step);if(time>.38)ankle.y+=.04*Math.sin(Math.PI*phase.step);}}
   const footQ=rotation(side==='r'?.08+phase.heel*.85:-.25,side==='r'?phase.heel:0).multiply(base.q);
@@ -78,12 +84,11 @@ for(let i=0;i<times.length;i++){
   const error=solveLeg(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side],ankle,footQ,{maxReach:.999});if(error>report.maxFootReachError){report.maxFootReachError=error;report.worstFoot={time,side};}
 
  }
- const primaryFlex=poseArm('r',phase.upper,phase.forearm,phase.shaft,phase.rightRoll),primary=palm('r');
+ const primaryFlex=poseArm('r',phase.upper.clone().applyQuaternion(chest),phase.rightFlex,phase.rightHumeral,phase.rightTwist,chest,phase.wrist),primary=palm('r');
  const shaft=new T.Vector3().fromArray(profiles.r.axis).applyQuaternion(worldQ('hand_r'));
 
- const leftUpper=phase.leftUpper.clone().applyAxisAngle(Y,phase.chest),leftLower=phase.leftLower.clone().applyAxisAngle(Y,phase.chest);
- if(phase.freeArmBend){leftUpper.applyAxisAngle(X,phase.freeArmBend);leftLower.applyAxisAngle(X,phase.freeArmBend);}
- const leftFlex=poseArm('l',leftUpper,leftLower,Y);
+ const leftUpper=phase.leftUpper.clone().applyQuaternion(chest);
+ const leftFlex=poseArm('l',leftUpper,phase.leftFlex??60,phase.leftHumeral??0,phase.leftTwist??0,chest);
  for(const [n,q]of Object.entries(profiles.r.rotations))bones[n].quaternion.fromArray(q);
  for(const [n,q]of Object.entries(profiles.l.rotations))bones[n].quaternion.slerp(new T.Quaternion().fromArray(q),.7);
  const weaponQ=worldQ('hand_r').multiply(new T.Quaternion().fromArray(frames.r.frame)),tip=primary.clone().add(new T.Vector3(0,.855,0).applyQuaternion(weaponQ));
@@ -104,7 +109,7 @@ report.edgeAlignment=report.frames.filter(f=>f.time>=impact-.025&&f.time<=impact
  return{time:frame.time,speed:velocity.length(),edge:direction.dot(new T.Vector3().fromArray(frame.edge)),face:direction.dot(new T.Vector3().fromArray(frame.face))};
 });
 report.forearmRoll=Object.fromEntries(['r','l'].map(side=>[side,{min:Math.min(...report.frames.map(f=>f.forearmRoll[side])),max:Math.max(...report.frames.map(f=>f.forearmRoll[side]))}]));
-const timeAccessor=accessor(times,'SCALAR'),constantTime=accessor(new Float32Array([0,duration]),'SCALAR'),animation={name,channels:[],samplers:[],extras:{nativeAceVersion:1,kneeAlignmentVersion:1,reviewCandidate:true}};
+const timeAccessor=accessor(times,'SCALAR'),constantTime=accessor(new Float32Array([0,duration]),'SCALAR'),animation={name,channels:[],samplers:[],extras:{nativeAceVersion:2,kneeAlignmentVersion:1,reviewCandidate:true}};
 for(const [n,track]of Object.entries(tracks))for(const [property,array]of Object.entries(track)){
  const stride=property==='rotation'?4:3,bind=(property==='rotation'?rest[n].q:property==='translation'?rest[n].p:rest[n].s).toArray(),constant=array.every((v,i)=>Math.abs(v-array[i%stride])<1e-7);
  if(constant&&array.subarray(0,stride).every((v,i)=>Math.abs(v-bind[i])<1e-7))continue;
@@ -114,7 +119,7 @@ for(const [n,track]of Object.entries(tracks))for(const [property,array]of Object
 if(!doc.animations.some(a=>a.name===replaces||a.name===name))throw Error(`Input has no ${replaces} or ${name}.`);doc.animations=doc.animations.filter(a=>a.name!==name).map(a=>a.name===replaces?animation:a);if(!doc.animations.some(a=>a.name===name))doc.animations.push(animation);
 const readyName='Ace_Ready',readyDuration=2;
 if(!isHeavy){
-const readyTime=accessor(new Float32Array([0,readyDuration]),'SCALAR'),readyAnimation={name:readyName,channels:[],samplers:[],extras:{nativeAceVersion:1,kneeAlignmentVersion:1,reviewCandidate:true}};
+const readyTime=accessor(new Float32Array([0,readyDuration]),'SCALAR'),readyAnimation={name:readyName,channels:[],samplers:[],extras:{nativeAceVersion:2,kneeAlignmentVersion:1,reviewCandidate:true}};
 for(const [n,track]of Object.entries(tracks))for(const [property,array]of Object.entries(track)){
  const stride=property==='rotation'?4:3,first=Array.from(array.subarray(0,stride)),bind=(property==='rotation'?rest[n].q:property==='translation'?rest[n].p:rest[n].s).toArray();if(first.every((v,i)=>Math.abs(v-bind[i])<1e-7))continue;
  const node=doc.nodes.findIndex(n0=>T.PropertyBinding.sanitizeNodeName(n0.name??'')===n);readyAnimation.channels.push({sampler:readyAnimation.samplers.length,target:{node,path:property}});readyAnimation.samplers.push({input:readyTime,output:accessor(Float32Array.from([...first,...first]),property==='rotation'?'VEC4':'VEC3'),interpolation:'LINEAR'});

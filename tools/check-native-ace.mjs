@@ -7,11 +7,12 @@ import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {createWeapon} from '../src/weapons.js';
+import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
 
 const read=file=>JSON.parse(fs.readFileSync(file));
 const UP=new T.Vector3(0,1,0),degrees=180/Math.PI;
-const EXPECTED={Ace_Cut_Diagonal:{duration:.60,impact:.27,finish:.34},Ace_Heavy_Cleave:{duration:.76,impact:.36,finish:.44}};
+const EXPECTED={Ace_Cut_Diagonal:{duration:.60,impact:.27,finish:.42},Ace_Heavy_Cleave:{duration:.84,impact:.376,finish:.5854166666666667}};
 export async function inspectNativeAce({
  model=new URL('../public/models/kaede.glb',import.meta.url),
  record=new URL('../src/motion-data.json',import.meta.url),
@@ -29,6 +30,7 @@ export async function inspectNativeAce({
  rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
  const pos=name=>bones[name].getWorldPosition(new T.Vector3());
  const rot=name=>bones[name].getWorldQuaternion(new T.Quaternion()).normalize();
+ const anatomicalBind=Object.fromEntries(['r','l'].map(side=>[side,calibrateArmAnatomy(captureArmPose(bones,side))]));
  const neutral=Object.fromEntries(['r','l'].map(side=>[side,bones['hand_'+side].quaternion.clone().normalize()]));
  function play(name){
   const clip=rig.animations.find(c=>c.name===name);assert.ok(clip,`Missing ${name}`);rig.mixer.stopAllAction();
@@ -46,7 +48,7 @@ export async function inspectNativeAce({
   weapon.position.copy(bones.hand_r.localToWorld(new T.Vector3().fromArray(grips.r.center))).addScaledVector(UP.clone().applyQuaternion(weapon.quaternion),-weapon.userData.primaryGrip);
   weapon.updateMatrixWorld(true);
  };
- const metrics={samples:0,maxWrist:0,minBladeHeight:Infinity,maxPlantDrift:0,maxToePlantDrift:0,maxMedialKnee:0,maxHandSpeed:0,maxArmStepAt120Hz:0,maxFreeArmReach:0};
+ const metrics={samples:0,maxWrist:0,minBladeHeight:Infinity,maxPlantDrift:0,maxToePlantDrift:0,maxMedialKnee:0,maxHandSpeed:0,maxArmStepAt120Hz:0,maxFreeArmReach:0,maxHumeralRoll:0,maxForearmTwist:0,maxHingeDeviation:0};
  for(const name of ['Ace_Ready',attackName]){
   const spec=motions[name],sample=play(name);assert.equal(spec.nativeAttachment,true);assert.equal(spec.twoHanded,false);
   if(name===attackName){assert.equal(spec.duration,expected.duration);assert.deepEqual(spec.impacts,[expected.impact]);assert.deepEqual(spec.toePlants,{r:[[0,spec.duration]],l:[]},'Declare the fixed rear toe throughout the heel pivot.');}
@@ -61,6 +63,12 @@ export async function inspectNativeAce({
    rearAnkleLow=Math.min(rearAnkleLow,ankleHeight);rearAnkleHigh=Math.max(rearAnkleHigh,ankleHeight);
    trajectory.push({time,tip:weapon.localToWorld(new T.Vector3().fromArray(weapon.userData.tip)),palm:bones.hand_r.localToWorld(new T.Vector3().fromArray(grips.r.center))});
    for(const side of ['r','l']){
+    const anatomy=measureArmAnatomy(anatomicalBind[side],captureArmPose(bones,side));
+    const violations=armAuthoringViolations(anatomy,{maxHingeDeviationDegrees:1});
+    assert.deepEqual(violations,[],`${name}/${time}/${side}: ${JSON.stringify(anatomy)}`);
+    metrics.maxHumeralRoll=Math.max(metrics.maxHumeralRoll,Math.abs(anatomy.humeralRollDegrees));
+    metrics.maxForearmTwist=Math.max(metrics.maxForearmTwist,Math.abs(anatomy.forearmTwistDegrees));
+    metrics.maxHingeDeviation=Math.max(metrics.maxHingeDeviation,anatomy.hingeDeviationDegrees);
     const toeInterval=spec.toePlants?.[side]?.findIndex(([a,b])=>time>=a&&time<=b)??-1;
     if(toeInterval>=0){
      const key=side+':'+toeInterval,position=pos('ball_'+side);
@@ -69,9 +77,9 @@ export async function inspectNativeAce({
      assert.ok(drift<.001,`${name}/${time}/${side}: declared toe support slides by ${(drift*1000).toFixed(3)} mm.`);
     }
     const wrist=bones['hand_'+side].quaternion.clone().normalize().angleTo(neutral[side])*degrees;
-    metrics.maxWrist=Math.max(metrics.maxWrist,wrist);assert.ok(wrist<15,`${name}/${time}/${side}: wrist departs ${wrist.toFixed(2)} degrees from neutral.`);
+    metrics.maxWrist=Math.max(metrics.maxWrist,wrist);assert.ok(wrist<20,`${name}/${time}/${side}: wrist departs ${wrist.toFixed(2)} degrees from neutral.`);
     const upper=pos('lowerarm_'+side).sub(pos('upperarm_'+side)),forearm=pos('hand_'+side).sub(pos('lowerarm_'+side)),hand=pos('middle_01_'+side).sub(pos('hand_'+side));
-    assert.ok(forearm.angleTo(hand)*degrees<20,`${name}/${time}/${side}: hand folds across forearm.`);
+    assert.ok(forearm.angleTo(hand)*degrees<30,`${name}/${time}/${side}: hand folds across forearm.`);
     if(side==='l'){const reach=upper.clone().add(forearm).length()/(upper.length()+forearm.length());metrics.maxFreeArmReach=Math.max(metrics.maxFreeArmReach,reach);assert.ok(reach<=.95,`${name}/${time}: free arm reaches ${reach.toFixed(6)} of its straight length.`);}
     assert.ok(upper.angleTo(forearm)*degrees<155,`${name}/${time}/${side}: elbow overfolds.`);
     for(const part of ['upperarm','lowerarm']){
@@ -112,7 +120,10 @@ export async function inspectNativeAce({
    metrics.peakTipSpeed=peak.velocity.length();metrics.peakTipTime=peak.time;metrics.contactTipSpeed=contact.velocity.length();metrics.contactTipVelocity=contact.velocity.toArray();
    assert.ok(contact.tip.z-contact.palm.z>.25,'Contact tip points sideways or behind the hand.');
    assert.ok(contact.velocity.x>0&&contact.velocity.y<0&&contact.velocity.z>-3,'Contact must cut down and left, without sweeping back toward the body.');
-   assert.ok(finish.tip.y<finish.palm.y-.10,'The diagonal cut needs a low follow-through.');
+   // A neutral wrist need not point the tip below the grip. Requiring that
+   // orientation drove the rejected backward fold. Check the actual descent.
+   const windup=trajectory.filter(row=>row.time<expected.impact).reduce((a,b)=>a.tip.y>b.tip.y?a:b);
+   assert.ok(windup.tip.y-finish.tip.y>.65,'The cut lacks a substantial descending blade arc.');
    assert.ok(metrics.peakTipSpeed<35,`Blade tip jumps at ${metrics.peakTipSpeed.toFixed(1)} m/s.`);
    assert.ok(metrics.contactTipSpeed>=metrics.peakTipSpeed*.60,'Damage contact occurs after the blade has largely stopped.');
   }

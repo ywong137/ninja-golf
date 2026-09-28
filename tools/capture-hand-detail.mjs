@@ -14,8 +14,8 @@ try{
  await routeMotionCandidate(page,{hero,model:values.model,motionRecord:values['motion-record'],readyRecord:values['ready-record'],replaceClip:values['replace-clip']});
  await page.goto('http://localhost:5173/tests/rig-stage.html');
  await page.evaluate(async({hero,clip,times})=>{
-  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js'),{ATTACKS}=await import('/src/combat.js'),{combatMotionName,motions}=await import('/src/motion.js');await loadWarriorAssets();
-  const definition=Object.entries(ATTACKS).flatMap(([kind,steps])=>(Array.isArray(steps)?steps:[steps]).map((a,step)=>({...a,kind,step}))).find(a=>combatMotionName(WARRIORS[hero],a.kind,a.step)===clip);
+  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js'),{ATTACKS,attackDefinition}=await import('/src/combat.js'),{combatMotionName,motions}=await import('/src/motion.js');await loadWarriorAssets();
+  const definition=Object.entries(ATTACKS).flatMap(([kind,steps])=>(Array.isArray(steps)?steps:[steps]).map((a,step)=>({...attackDefinition(kind,step,WARRIORS[hero].combatStyle),kind,step}))).find(a=>combatMotionName(WARRIORS[hero],a.kind,a.step)===clip);
   if(!definition)throw Error('The clip is not a playable attack for this hero.');if(times.some(t=>t>=motions[clip].duration))throw Error('Sample times must precede the attack end.');
   const scene=new T.Scene();scene.background=new T.Color('#58646b');scene.add(new T.HemisphereLight(0xffffff,0x393a35,2));const sun=new T.DirectionalLight(0xfff4e4,3);sun.position.set(-3,7,5);scene.add(sun);
   const camera=new T.PerspectiveCamera(31,1.5,.01,100),renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(1200,800);document.body.append(renderer.domElement);

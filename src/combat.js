@@ -34,12 +34,12 @@ const STYLE_ATTACKS={
   fan:{
     light:[
       {name:'Opening petal',duration:.60,hits:[.27],reach:4.5,arc:2.1,damage:28,lunge:2.6},
-      {name:'Silk return',reach:4.7,arc:2.3,damage:32,lunge:1.7},
-      {name:'Rising breeze',reach:5,arc:1.8,damage:35,lunge:3.6,launch:2},
-      {name:'Petal circle',reach:5.4,arc:Math.PI,damage:27,lunge:.8},
+      {name:'Silk return',duration:.688,hits:[.256],reach:4.7,arc:2.3,damage:32,lunge:1.7},
+      {name:'Rising breeze',duration:.768,hits:[.32],reach:5,arc:1.8,damage:35,lunge:3.6,launch:2},
+      {name:'Petal circle',duration:.928,hits:[.32,.608],reach:5.4,arc:Math.PI,damage:27,lunge:.8},
     ],
     heavy:[
-      {name:'Gale cut',reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
+      {name:'Gale cut',duration:.84,hits:[.376],reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
       {name:'Updraft',reach:5.6,arc:2.4,damage:91,lunge:1.7,launch:7},
       {name:'Silk whirlwind',reach:6.5,arc:Math.PI,damage:60,lunge:.5},
       {name:'Falling blossoms',reach:7.5,arc:Math.PI,damage:140,lunge:1,launch:5},
@@ -48,15 +48,15 @@ const STYLE_ATTACKS={
   },
   ring:{
     light:[
-      {name:'Crescent pass',reach:6.2,arc:2,damage:30,lunge:3.5},
-      {name:'Returning orbit',reach:6.4,arc:2.6,damage:34,lunge:2.2},
-      {name:'Moonrise',reach:6,arc:1.6,damage:42,lunge:4,launch:3},
-      {name:'Full orbit',reach:7,arc:Math.PI,damage:29,lunge:1},
+      {name:'Crescent pass',duration:.64,hits:[.24],reach:6.2,arc:2,damage:30,lunge:3.5},
+      {name:'Second draw',duration:.688,hits:[.256],reach:6.4,arc:2.6,damage:34,lunge:2.2},
+      {name:'Stepping cut',duration:.768,hits:[.32],reach:6,arc:1.6,damage:42,lunge:4,launch:3},
+      {name:'Double crescent',duration:.928,hits:[.32,.608],reach:7,arc:Math.PI,damage:29,lunge:1},
     ],
     heavy:[
       {name:'Crescent wheel',reach:7,arc:2.5,damage:90,lunge:4},
-      {name:'Lunar ascent',reach:6.5,arc:1.8,damage:104,lunge:3,launch:6},
-      {name:'Double orbit',reach:8.5,arc:Math.PI,damage:63,lunge:.6},
+      {name:'Driving crescent',reach:6.5,arc:1.8,damage:104,lunge:3,launch:6},
+      {name:'Double orbit',duration:.984,hits:[.336,.636],reach:8.5,arc:Math.PI,damage:63,lunge:.6},
       {name:'Eclipse',reach:9,arc:Math.PI,damage:145,lunge:1.2,launch:7},
     ],
     musou:{name:'Seven-moon eclipse',reach:20,launch:8,lunge:.8},
