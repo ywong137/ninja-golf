@@ -1,3 +1,4 @@
+import {shorelinePoint} from './shoreline.js';
 import * as THREE from 'three';
 import {DAY_SKY_YAW,SUN_DIRECTION} from './lighting.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -158,7 +159,7 @@ export class World {
     for(const prop of props){prop.updateMatrixWorld(true);prop.traverse(o=>{if(!o.isMesh)return;const geometry=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(o.matrixWorld);if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(geometry);originals.add(o.geometry);});this.root.remove(prop);}
     for(const [mat,geometries]of batches){const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());const mesh=new THREE.Mesh(merged,mat);mesh.castShadow=true;mesh.receiveShadow=true;this.root.add(mesh);}originals.forEach(g=>g.dispose());
     for(const b of c.bunkers)for(const side of [-1,1])register('sand',b[0]+side*b[2]*.45,b[1]);
-    for(const pond of waterBasins(c))for(let i=0;i<10;i++){const a=i*Math.PI*2/10;const x=pond[0]+Math.cos(a)*pond[2]*.87,z=pond[1]+Math.sin(a)*pond[3]*.87;if(lieAt(c,x,z)==='Water')register('water',x,z);}
+    for(const pond of waterBasins(c))for(let i=0;i<10;i++){const a=i*Math.PI*2/10;const [sx,sz]=shorelinePoint(pond,a),x=pond[0]+(sx-pond[0])*.92,z=pond[1]+(sz-pond[1])*.92;if(lieAt(c,x,z)==='Water')register('water',x,z);}
   }
   makeFlag(){
     const c=this.course,x=c.greenX,z=c.length,y=heightAt(c,x,z);this.cup=new THREE.Vector3(x,y,z);

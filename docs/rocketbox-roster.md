@@ -7,10 +7,10 @@ The game preserves their original anatomy, clothing, texture maps, and skin weig
 | --- | --- |
 | Ronin | Male_Adult_10 |
 | Shinobi | Male_Adult_09 |
-| Monk | Male_Adult_05 |
-| Kaede | Female_Adult_03 |
-| Ayame | Female_Adult_08 |
-| Sora | Female_Adult_12 |
+| The Vice President (adapted Ethan likeness) | Male_Adult_05 |
+| The Ace | Female_Adult_03 |
+| The Hustler | Female_Adult_08 |
+| The Closer | Female_Adult_12 |
 | Scout | Male_Adult_18 |
 | Guard | Male_Adult_04 |
 | Lancer | Male_Adult_11 |

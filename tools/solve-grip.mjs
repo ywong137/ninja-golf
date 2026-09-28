@@ -12,6 +12,7 @@ const radius=Number(radiusText);
 if(!hero||!['r','l'].includes(side)||!(radius>=.010&&radius<=.022)||!output||!['sword','golf'].includes(profile))throw Error('Use --help. Supply a native model, hand, outer handle radius, output path, and optional profile.');
 const g=await loadNativeSkin(path.join(root,'public/models',hero+'.glb')),bones={};g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});g.scene.updateMatrixWorld(true);
 const hand=bones['hand_'+side],rest={};const restHandInverse=hand.getWorldQuaternion(new T.Quaternion()).invert();
+const neutralForearm=hand.getWorldPosition(new T.Vector3()).sub(bones['lowerarm_'+side].getWorldPosition(new T.Vector3())).normalize().applyQuaternion(restHandInverse);
 const bindTip=hand.worldToLocal(bones['middle_03_'+side].getWorldPosition(new T.Vector3()));
 for(const [name,bone]of Object.entries(bones))if(/^(thumb|index|middle|ring|pinky)_\d+_[rl]$/.test(name)&&name.endsWith('_'+side))rest[name]={local:bone.quaternion.clone(),inHand:restHandInverse.clone().multiply(bone.getWorldQuaternion(new T.Quaternion()))};
 g.mixer.clipAction(g.animations.find(c=>c.name==='Golf_Address')).play();g.mixer.update(0);g.scene.updateMatrixWorld(true);
@@ -38,7 +39,13 @@ const controls={};for(const finger of fingers)controls[finger]=[1,2,3].map(segme
 });
 const thumbAxes=[axis,distal,normal].map(a=>a.clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()).invert()).applyQuaternion(rest['thumb_01_'+side].inHand.clone().invert()));
 // Keep the finger hinges anatomical. Only the held cylinder runs diagonally.
-axis.addScaledVector(distal,profile==='golf'?.18:.36).normalize();distal.addScaledVector(axis,-distal.dot(axis)).normalize();normal.crossVectors(axis,distal).normalize().multiplyScalar(normalSign);
+if(profile==='golf')axis.addScaledVector(distal,.18).normalize();
+else{
+ const forearm=neutralForearm.clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()));
+ const angle=75*Math.PI/180;
+ axis.addScaledVector(forearm,-axis.dot(forearm)).normalize().multiplyScalar(Math.sin(angle)).addScaledVector(forearm,Math.cos(angle));
+}
+distal.addScaledVector(axis,-distal.dot(axis)).normalize();normal.crossVectors(axis,distal).normalize().multiplyScalar(normalSign);
 const indexAxial=bones['index_01_'+side].getWorldPosition(new T.Vector3()).sub(center).dot(axis),middleAxial=bones['middle_01_'+side].getWorldPosition(new T.Vector3()).sub(center).dot(axis);
 const thumbAxial=T.MathUtils.lerp(indexAxial,middleAxial,.40);
 const params=Object.fromEntries(fingers.map(f=>[f,f==='thumb'?[0,0,0,.45,.45]:[.65,1.1,.65]]));
@@ -80,7 +87,7 @@ function fit(f){
   if(!changed)break;
  }
 }
-function palmMeasure(){let penetration=0,min=Infinity,maxDepth=0;for(const row of palmVertices){row.mesh.getVertexPosition(row.index,v).applyMatrix4(row.mesh.matrixWorld).sub(center);v.addScaledVector(axis,-v.dot(axis));const r=v.length(),d=Math.max(0,radius+.0003-r);min=Math.min(min,r);maxDepth=Math.max(maxDepth,radius-r);penetration+=d*d;}return{error:1000*penetration/palmVertices.length+(min-radius-.0005)**2,min,maxDepth};}
+function palmMeasure(){let penetration=0,min=Infinity,maxDepth=0;for(const row of palmVertices){row.mesh.getVertexPosition(row.index,v).applyMatrix4(row.mesh.matrixWorld).sub(center);v.addScaledVector(axis,-v.dot(axis));const r=v.length(),d=Math.max(0,radius+.0003-r);min=Math.min(min,r);maxDepth=Math.max(maxDepth,radius-r);penetration+=d*d;}return{error:1000*penetration/palmVertices.length+(min-radius-.0005)**2+(profile==='sword'?Math.max(0,maxDepth-.0015)**2*50:0),min,maxDepth};}
 function total(){return fingers.reduce((sum,f)=>sum+measure(f).error,0)+palmMeasure().error;}
 function move(){center.copy(initialCenter).addScaledVector(distal,centerOffset[0]).addScaledVector(normal,centerOffset[1]);}
 centerOffset[0]=-.018;centerOffset[1]=radius+.001;move();

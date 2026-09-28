@@ -667,3 +667,40 @@ The environment capture verifies hero framing, dry ground, collision clearance, 
 Its city hero moves 1.2 metres from an obstructed test position while the comparison camera remains fixed.
 Fifteen tree views verify actual instances across near, middle, transition, and distant representations.
 All test browsers remain muted. Course-selection previews now show the revised environments.
+
+### Native golf, likeness, and shoreline update
+
+The six selection poses now derive blade direction from the elbow and neutral wrist.
+Dense hand checks include the guard, collar, and grip end rings.
+A separate body check rejects handles that touch the torso or legs.
+The Shinobi carries shorter twin blades with different arm pitches.
+
+The Vice President uses an adapted likeness of Ethan Cary, reviewed with Claude Opus 5.5 High.
+The women now appear as The Ace, The Hustler, and The Closer.
+The selection alternates men and women without changing saved character IDs.
+Native golf now includes torso rotation, weight transfer, an upward release, and a supported heel pivot.
+Musou uses individual facial adjustments and a closer camera centered on the eyes.
+All 38 water basins and 12 islands use shared organic outlines across rendering, maps, physics, and enemy emergence.
+
+The final local run passes 273 unit and asset checks and the production build.
+Browser checks cover 974 grip samples, 150 golf phases, six selection poses, and all six Musou close-ups.
+Additional checks cover real-input golf/combat, facial restoration, water emergence, and putting previews.
+The water comparison checked 147,368 CPU/GPU samples and six live emergence cases.
+All automated browsers remain muted.
+
+Chrome used Metal on Apple M1 Max at 1440 × 900 for the following measurements.
+The combat samples kept 64 enemies alive and measured ten seconds after warmup.
+No other automated GPU capture ran concurrently. CPU unit checks ran during the shoreline samples.
+
+| Scenario | Rendering ratio | Average FPS | 95th-percentile frame time |
+| --- | ---: | ---: | ---: |
+| Crane Coast, charging a drive | 1.00 | 60.0 | 16.8 ms |
+| Heather & Crown, water combat | 0.85 | 53.3 | 33.3 ms |
+| Copper Saguaro, water combat | 0.85 | 58.5 | 16.8 ms |
+| Neo-Tokyo, water combat | 0.85 | 54.9 | 33.3 ms |
+| The Vice President, moving combat | 1.00 | 59.0 | 16.8 ms |
+
+Balanced mode reduced resolution in three shoreline scenes and disabled contact shading during crowded combat.
+These measurements meet the requested local frame-rate range, but do not establish performance on other hardware.
+Combat choreography and some close character details still fall below the requested AAA standard.
+The Vice President's loose vest retains a small sleeve-edge overlap just after golf impact.

@@ -31,8 +31,9 @@ test('Carry release keeps its chosen wrist turn when the target passes a half-tu
  assert.ok(previous.angleTo(new THREE.Quaternion().setFromAxisAngle(axis,200*Math.PI/180))<1e-6);
 });
 
-test('Thinner steel retains original reach and hero-to-enemy size contrast',()=>{
- for(const [kind,length]of [['odachi',1.4],['twin',.94],['naginata',1.1]]){const profile=BLADE_PROFILES[kind],g=bladeGeometry(profile);assert.equal(profile.length,length);assert.ok(g.boundingBox.max.z-g.boundingBox.min.z<=.00811);assert.ok(profile.width>BLADE_PROFILES.lancer.width*1.6);}
+test('Heavy hero blades retain their reach while Shinobi carries short, narrow blades',()=>{
+ for(const [kind,length]of [['odachi',1.4],['twin',.53],['naginata',1.1]]){const profile=BLADE_PROFILES[kind],g=bladeGeometry(profile);assert.equal(profile.length,length);assert.ok(g.boundingBox.max.z-g.boundingBox.min.z<=.00811);if(kind!=='twin')assert.ok(profile.width>BLADE_PROFILES.lancer.width*1.6);}
+ assert.ok(BLADE_PROFILES.twin.width<.05);assert.ok(BLADE_PROFILES.twin.curve<.02);
 });
 
 test('Ordinary enemy blade dimensions stay unchanged',()=>{assert.deepEqual(['scout','guard','lancer','skirmisher'].map(kind=>BLADE_PROFILES[kind].width),[.035,.045,.05,.038]);});

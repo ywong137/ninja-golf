@@ -29,13 +29,15 @@ Neo-Tokyo keeps normal golf physics. Its unusual routes, islands, and neon skyli
 
 ## Shared geometry and playable ground
 
-`course-layout-data.js` defines separate fairway paths, walking routes, water ellipses, dry islands, and bridges.
+`course-layout-data.js` defines separate fairway paths, walking routes, water envelopes, dry islands, and bridges.
 `course-layout.js` builds smooth centerlines around the authored landing areas. Short, broad elbow connectors spread their centers within those areas to prevent folded inner banks. Every original landing anchor retains at least 60% of its original clear radius. Broad width changes form landing lobes and narrower approaches. Two-point routes bend gently, and isolated pads have asymmetric outlines. The curves bake into 12–40 shared segments per hole, with a width at each end. Separate paths and walking bridges retain their original connectivity.
 `fairwayDistance` and the terrain shader evaluate the same segment data. The old sine centre line no longer defines playable fairways.
 `routePoint` and `routeNearest` support scenery placement along the walking route.
 
-Water hazards use a union of up to four ellipses. Dry islands and bridge corridors remove water from that union.
-`waterAt`, `heightAt`, and the water shader share those masks. Inland courses disable the coastal ocean hazard and slope.
+Water hazards use a union of up to four organic basins. Each shoreline has unequal coves and broad shoulders within its authored envelope.
+`shoreline.js` supplies the same contours to hazard detection, bank grading, water meshes, shaders, maps, and emergence placement.
+Dry islands have asymmetric shores that retain their original dry interiors. Islands and bridge corridors remove water from the basin union.
+`waterAt`, `heightAt`, and the water shader share those masks. The ocean retains its existing curved coast. Inland courses disable the coastal ocean hazard and slope.
 The bridge masks raise dry ground above the water surface. Walking does not require a jump.
 Each hole uses at most four bunkers, which matches the terrain shader limit.
 
@@ -69,3 +71,6 @@ Call `queueSceneryRock(root, {x, z, y, height, radius, angle, source, burial})` 
 `tests/scenery-rocks.test.js` checks both GLB source bounds, rotated footprints, exposed heights, burial, theme cover visibility, and queue limits.
 
 The desert opener now uses a detached diagonal landing shelf instead of a split fairway loop. Its wider short landing leaves a longer approach. The narrow advanced landing requires a carry over sand. See [the layout identity audit](layout-identity-audit.md) for all 36 strategies and the remaining repeated families.
+
+`tests/shoreline.test.js` checks all 38 basin outlines, dry islands, map agreement, rendered rims, and deep basin floors.
+`tests/browser-water.mjs` compares GPU water masks against CPU hazards across all 36 holes, then checks live penalties and water emergence.

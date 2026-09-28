@@ -2,7 +2,7 @@
 
 Use -- --preview to render the unmodified source bodies without writing game models.
 """
-import argparse, importlib.util, json, pathlib, subprocess, sys
+import argparse, importlib.util, json, pathlib, subprocess, sys, tempfile
 import bpy
 from mathutils import Vector, Matrix
 ROOT=pathlib.Path(__file__).resolve().parents[1]
@@ -98,4 +98,23 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  subprocess.run(['python3',str(ROOT/'tools/compress-glb-textures.py'),'--max-size','1024' if args.enemies else '2048','--alpha-size','512' if args.enemies else '1024',str(temporary)],check=True)
  temporary.replace(output)
  subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
+ if not args.enemies:
+  # Golf uses the native shoulder hierarchy and body proportions directly.
+  with tempfile.TemporaryDirectory(prefix='ninja-native-golf-') as golf_dir:
+   golf_output=pathlib.Path(golf_dir)/f'{hero}.glb'
+   subprocess.run(['node',str(ROOT/'tools/author-native-golf.mjs'),'--hero',hero,'--input',str(output),'--output',str(golf_output)],check=True)
+   output.write_bytes(golf_output.read_bytes())
+ if hero=='monk':
+  # Reapply the likeness after a full native source export. Clip-only exports
+  # already preserve the existing geometry and must not sculpt it a second time.
+  likeness=output.with_name('monk.likeness-building.glb')
+  subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-baked.jpg')],check=True)
+  likeness.replace(output)
+ if hero=='sora':
+  # Full exports restore the accepted fringe and local forehead texture.
+  # Clip-only exports preserve these payloads and skip this mesh-only patch.
+  fringe=output.with_name('sora.fringe-building.glb')
+  subprocess.run(['node',str(ROOT/'tools/adjust-sora-fringe.mjs'),'--input',str(output),'--output',str(fringe),'--head-texture',str(ROOT/'assets/characters/sora-forehead.png')],check=True)
+  fringe.replace(output)
+  fringe.with_suffix('.glb.json').unlink(missing_ok=True)
  print('EXPORTED',hero,flush=True)

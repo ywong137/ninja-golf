@@ -8,6 +8,10 @@ Each of the ten characters preserves a separate source body, face, clothing mesh
 and texture set. Native motion and hand markers fit each original skeleton.
 Source identities and build details: docs/rocketbox-roster.md.
 
+The Vice President adapts the native head geometry and texture to Ethan Cary's
+authorized likeness, with original glasses. The Closer uses an edited forehead
+texture and fringe geometry. These adaptations retain the licensed source rigs.
+
 Original locomotion and reference skeleton: Quaternius
 CC0 1.0 Universal Public Domain Dedication
 https://creativecommons.org/publicdomain/zero/1.0/

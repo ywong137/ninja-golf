@@ -1,10 +1,11 @@
+import {shorelineOutline} from './shoreline.js';
 import {bunkerOutline} from './bunkers.js';
 import {mapOutlines,waterBasins} from './course-layout.js';
 const geometryCache=new WeakMap();
 function ellipse([x,z,rx,rz]){return Array.from({length:64},(_,i)=>{const a=i*Math.PI/32;return[x+Math.cos(a)*rx,z+Math.sin(a)*rz];});}
 export function courseMapGeometry(c){
  if(geometryCache.has(c))return geometryCache.get(c);
- const fairways=mapOutlines(c),waters=waterBasins(c).map(ellipse),islands=c.layout.islands.map(ellipse),bridges=mapOutlines({layout:{segments:c.layout.bridgeSegments}}),green=ellipse([c.greenX,c.length,17*1.05,17]),bunkers=c.bunkers.map(b=>bunkerOutline(b));
+ const fairways=mapOutlines(c),waters=waterBasins(c).map(b=>shorelineOutline(b)),islands=c.layout.islands.map(b=>shorelineOutline(b,true)),bridges=mapOutlines({layout:{segments:c.layout.bridgeSegments}}),green=ellipse([c.greenX,c.length,17*1.05,17]),bunkers=c.bunkers.map(b=>bunkerOutline(b));
  const points=[...fairways,...waters,...islands,...bridges,green,...bunkers,c.layout.route].flat();
  const bounds={minX:Math.min(...points.map(p=>p[0])),maxX:Math.max(...points.map(p=>p[0])),minZ:Math.min(...points.map(p=>p[1])),maxZ:Math.max(...points.map(p=>p[1]))};
  const tee=[[-5,-7],[5,-7],[5,7],[-5,7]];

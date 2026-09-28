@@ -87,7 +87,7 @@ class Game {
   }
   updateBall(dt){
     const step=BALL_STEP;let remaining=dt;
-    while(remaining>0&&this.phase==='flight'){
+    while(remaining>1e-10&&this.phase==='flight'){
       const h=Math.min(step,remaining);remaining-=h;this.flightTime+=h;const before=this.ball.position.clone();
       if(!this.rolling){this.velocity.y-=9.81*h;this.velocity.x+=this.course.wind[0]*.22*h;this.velocity.z+=this.course.wind[1]*.22*h;}
       this.ball.position.addScaledVector(this.velocity,h);
@@ -171,7 +171,7 @@ class Game {
   }
   updateCombat(dt){
     const input=this.input,p=this.player.root.position;
-    if(this.cinematic>0){this.cinematic-=dt;this.player.update(this.time,dt*.15,{cinematic:true,gazeTarget:this.camera.position});if(this.cinematic<=0){this.ui.$('musou-cinema').classList.add('hidden');document.body.classList.remove('musou-active');this.startAttack('musou');}return;}
+    if(this.cinematic>0){this.cinematic-=dt;this.player.update(this.time,dt*.15,{cinematic:true,expressionDt:dt,gazeTarget:this.camera.position});if(this.cinematic<=0){this.ui.$('musou-cinema').classList.add('hidden');document.body.classList.remove('musou-active');this.startAttack('musou');}return;}
     this.combatTime+=dt;this.spawnTime-=dt;this.comboTime-=dt;if(this.comboTime<=0)this.combo=0;this.dodgeTimer=Math.max(0,this.dodgeTimer-dt);this.invincible=Math.max(0,this.invincible-dt);
     if(input.tap('Waypoint')){this.cameraYaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);if(!this.action)this.player.root.rotation.y=this.cameraYaw;}
     if(input.tap('Dodge')&&this.dodgeTimer===0&&this.action?.kind!=='musou'){escapeGuardBreak(this.guard,this.time);this.guardBufferedAttack=null;this.dodgeTimer=.45;this.invincible=.55;this.action=null;this.attackTimer=0;this.attackBuffer=null;this.player.oneShot=0;}
@@ -272,7 +272,7 @@ class Game {
     else if(this.phase==='aim'&&this.survey){camLook.copy(this.surveyView.target);camTarget.copy(surveyPosition(this.surveyView));speed=7;}
     else if(this.phase==='flight'){const dir=this.velocity.clone().normalize();const height=this.rolling?4:7;camTarget.copy(b).add(new THREE.Vector3(-Math.sin(this.aim)*13+6,height,-Math.cos(this.aim)*13));camLook.copy(b).addScaledVector(dir,3);speed=this.fastFlight?12:5;}
     else if(this.phase==='combat'&&this.cinematic>0){
-      this.player.root.updateMatrixWorld(true);this.player.bones.Head.getWorldPosition(camLook);const yaw=this.attackYaw,progress=1-this.cinematic/MUSOU_CINEMATIC_DURATION;const zoom=THREE.MathUtils.lerp(2.9,1.05,THREE.MathUtils.smoothstep(progress,.12,.72));
+      this.player.root.updateMatrixWorld(true);this.player.bones.Bip01_REye.getWorldPosition(camLook);this.player.bones.Bip01_LEye.getWorldPosition(v1);camLook.add(v1).multiplyScalar(.5);camLook.y-=.015;const yaw=this.attackYaw,progress=1-this.cinematic/MUSOU_CINEMATIC_DURATION;const zoom=THREE.MathUtils.lerp(2.9,.62,THREE.MathUtils.smoothstep(progress,.12,.72));
       camTarget.copy(camLook).add(new THREE.Vector3(Math.sin(yaw)*zoom+Math.cos(yaw)*.10,-.005,Math.cos(yaw)*zoom-Math.sin(yaw)*.10));speed=28;
     }
     else if(this.phase==='combat'){const distance=7.7;camTarget.set(p.x-Math.sin(this.cameraYaw)*distance,p.y+2.2+this.cameraPitch*4.5,p.z-Math.cos(this.cameraYaw)*distance);camLook.set(p.x+Math.sin(this.cameraYaw)*4,p.y+1.6,p.z+Math.cos(this.cameraYaw)*4);speed=7;}
@@ -280,7 +280,7 @@ class Game {
     else{const d=this.club===7?9.0:9.5;camTarget.set(b.x-Math.sin(this.aim)*d+Math.cos(this.aim)*3,b.y+4.2,b.z-Math.cos(this.aim)*d-Math.sin(this.aim)*3);camLook.set(b.x+Math.sin(this.aim)*16,b.y+.65,b.z+Math.cos(this.aim)*16);speed=4;}
     if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),camTarget);
     camTarget.y=Math.max(camTarget.y,heightAt(this.course,camTarget.x,camTarget.z)+(this.cinematic>0?1.1:1.8));this.camera.position.lerp(camTarget,1-Math.exp(-speed*dt));this.currentLook.lerp(camLook,1-Math.exp(-speed*dt));if(this.shake>0&&!this.input.reducedMotion){this.shake-=dt;this.camera.position.x+=(Math.random()-.5)*this.shake*2;this.camera.position.y+=(Math.random()-.5)*this.shake;}
-    if(this.mode==='game'&&this.phase==='combat')this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),this.camera.position);
+    if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),this.camera.position);
     this.camera.lookAt(this.currentLook);
   }
   frame(){
@@ -306,7 +306,7 @@ class Game {
       }else if(this.mode==='selection')this.player.update(this.time,dt,{selection:true,gazeTarget:this.camera.position});
       this.updateCamera(Math.min(realDt,.05));
     }
-    this.portraitLights.visible=this.mode==='selection';if(this.portraitLights.visible)this.portraitLights.position.copy(this.player.root.position);
+    this.portraitLights.visible=this.mode==='selection'||this.cinematic>0;if(this.portraitLights.visible)this.portraitLights.position.copy(this.player.root.position);
     this.puttingGuide.update(this.time,this.mode==='game'&&this.phase==='aim'&&this.lie==='Green');
     this.ballGlow.position.copy(this.ball.position);this.ballGlow.position.y=heightAt(this.course,this.ball.position.x,this.ball.position.z)+.07;this.ballGlow.visible=this.mode==='game'&&this.phase!=='flight'&&this.phase!=='holed';this.ballGlow.scale.setScalar(1+Math.sin(this.time*2)*.08);
     this.ballBeacon.position.copy(this.ball.position).add(new THREE.Vector3(0,5.5,0));this.ballBeacon.visible=this.mode==='game'&&this.phase==='combat';this.aimLine.visible=this.aimMarker.visible=this.mode==='game'&&this.phase==='aim';

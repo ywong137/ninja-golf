@@ -34,3 +34,24 @@ test('Native slope support preserves all six bodies and the exact golf hand path
   }
  }
 });
+
+test('Golf terrain support retains the native heel pivot on flat ground',async()=>{
+ for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora']){
+  const rig=await nativeRig(hero),{root,bones,mixer,placement,clips}=rig;
+  const action=mixer.clipAction(clips.find(c=>c.name==='Golf_Swing')).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
+  for(let frame=0;frame<=72;frame++){
+   placement.restore();action.time=frame/30;mixer.update(0);root.updateMatrixWorld(true);
+   const hands=['r','l'].map(s=>position(bones['hand_'+s]));
+   const rotations=['r','l'].map(s=>bones['foot_'+s].getWorldQuaternion(new THREE.Quaternion()).normalize());
+   placement.apply(1/60,()=>0,{golf:true});
+   for(const [i,side]of ['r','l'].entries()){
+    const now=bones['foot_'+side].getWorldQuaternion(new THREE.Quaternion()).normalize();
+    // Native nonuniform bind scales produce about 0.001 degrees of roundoff.
+    assert.ok(now.angleTo(rotations[i])<1e-4,`${hero}/${frame}: terrain support flattened the authored heel pivot`);
+    assert.ok(position(bones['hand_'+side]).distanceTo(hands[i])<1e-8,`${hero}/${frame}: golf hand path changed`);
+   }
+   for(const gap of soleGaps(rig,()=>0))assert.ok(Math.abs(gap)<.002,`${hero}/${frame}: golf support gap ${gap}`);
+   assert.ok(placement.report.feet.every(f=>f.reachError<.001),`${hero}/${frame}: native backswing leg was shortened`);
+  }
+ }
+});

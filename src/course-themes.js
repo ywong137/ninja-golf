@@ -1,3 +1,4 @@
+import {shorelinePoint} from './shoreline.js';
 import * as THREE from 'three';
 import {shrubGeometry} from './theme-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -195,7 +196,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
   }
  }
  for(const b of c.bunkers)register('sand',b[0],b[1],0);
- for(const pond of waterBasins(c))for(let i=0;i<8;i++){const a=i*Math.PI/4,x=pond[0]+Math.cos(a)*pond[2]*.87,z=pond[1]+Math.sin(a)*pond[3]*.87;if(lieAt(c,x,z)==='Water')register('water',x,z,0);}
+ for(const pond of waterBasins(c))for(let i=0;i<8;i++){const a=i*Math.PI/4,[sx,sz]=shorelinePoint(pond,a),x=pond[0]+(sx-pond[0])*.92,z=pond[1]+(sz-pond[1])*.92;if(lieAt(c,x,z)==='Water')register('water',x,z,0);}
  for(const {geo,m,matrices} of instances.values()){const mesh=new THREE.InstancedMesh(geo.clone(),m,matrices.length);matrices.forEach((v,i)=>mesh.setMatrixAt(i,v));mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
  for(const [m,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geo,m);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
  if(theme==='highlands')dark.dispose();

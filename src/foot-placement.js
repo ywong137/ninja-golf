@@ -59,7 +59,7 @@ export class FootPlacement {
    const e=.12,normal=new THREE.Vector3(groundHeight(ankle.x-e,ankle.z)-groundHeight(ankle.x+e,ankle.z),2*e,groundHeight(ankle.x,ankle.z-e)-groundHeight(ankle.x,ankle.z+e)).normalize();
    const tilt=Math.acos(clamp(normal.y,-1,1)),limit=.55;if(tilt>limit)normal.lerp(UP,1-limit/tilt).normalize();
    state.normal.lerp(normal,response).normalize();
-   const rotation=foot.getWorldQuaternion(new THREE.Quaternion()),soleUp=state.soleUp.clone().applyQuaternion(rotation),slope=new THREE.Quaternion().setFromUnitVectors(soleUp,state.normal);slope.slerp(new THREE.Quaternion(),1-weight);rotation.premultiply(slope);
+   const rotation=foot.getWorldQuaternion(new THREE.Quaternion()),soleUp=golf?UP:state.soleUp.clone().applyQuaternion(rotation),slope=new THREE.Quaternion().setFromUnitVectors(soleUp,state.normal);slope.slerp(new THREE.Quaternion(),1-weight);rotation.premultiply(slope);
    // Sample both ends of the sole, so a bunker lip cannot cut through the toe or heel.
    const soleHeight=Math.max(...state.contacts.map(point=>{const relative=point.clone().applyQuaternion(rotation);return groundHeight(ankle.x+relative.x,ankle.z+relative.z)-relative.y;}));
    // Recovery stays free. Only lift a swinging foot if the ground would intersect its sole.
@@ -81,7 +81,8 @@ export class FootPlacement {
   if(!golf){const pelvis=bones.pelvis,point=pelvis.getWorldPosition(new THREE.Vector3());point.y+=this.pelvisOffset;pelvis.position.copy(pelvis.parent.worldToLocal(point));root.updateMatrixWorld(true);}
   this.report={pelvisOffset:golf?0:this.pelvisOffset,pelvisWanted,pelvisLimit,feet:[]};
   for(const s of samples){
-   const foot=bones['foot_'+s.side],error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],foot,s.target,s.rotation);let toeRoll=0;
+   // Golf keeps its authored toe pivot and nearly straight backswing leg.
+   const foot=bones['foot_'+s.side],error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],foot,s.target,s.rotation,{maxReach:golf?.999:.985});let toeRoll=0;
    // On a steep downhill stance, use the toe before asking the native leg to stretch.
    if(error>.01&&s.weight>.7&&foot.getWorldPosition(new THREE.Vector3()).y>s.target.y){
     const ankle=foot.getWorldPosition(new THREE.Vector3()),toe=bones['ball_'+s.side].getWorldPosition(new THREE.Vector3()),relative=toe.clone().sub(ankle),forward=relative.clone().setY(0).normalize(),axis=UP.clone().cross(forward).normalize();

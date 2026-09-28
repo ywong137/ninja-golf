@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { COURSES, CLUBS, WARRIORS, heightAt, lieAt, carryFor, launchShot, scoreName } from '../src/course.js';
 
 test('Every hole has a safe tee, a playable green, and distinct hazards',()=>{
-  for(const c of COURSES){assert.equal(lieAt(c,0,0),'Tee');assert.equal(lieAt(c,c.greenX,c.length),'Green');assert.equal(lieAt(c,...c.pond.slice(0,2)),'Water');for(const b of c.bunkers)assert.equal(lieAt(c,...b.slice(0,2)),'Bunker');assert.equal(lieAt(c,300,0),'Out of bounds');assert.ok(Number.isFinite(heightAt(c,0,0)));}
+  for(const c of COURSES){assert.equal(lieAt(c,0,0),'Tee');assert.equal(lieAt(c,c.greenX,c.length),'Green');assert.ok(Array.from({length:24},(_,i)=>{const a=i*Math.PI/12;return lieAt(c,c.pond[0]+Math.cos(a)*c.pond[2]*.5,c.pond[1]+Math.sin(a)*c.pond[3]*.5)==='Water';}).some(Boolean),c.name+' retains playable water');for(const b of c.bunkers)assert.equal(lieAt(c,...b.slice(0,2)),'Bunker');assert.equal(lieAt(c,300,0),'Out of bounds');assert.ok(Number.isFinite(heightAt(c,0,0)));}
 });
 test('Ballistic launch agrees with displayed carry at every power',()=>{
   for(const club of CLUBS.slice(0,-1))for(const w of WARRIORS)for(const power of [.15,.5,1]){

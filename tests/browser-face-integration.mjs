@@ -1,5 +1,6 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {FACIAL_LIMITS} from '../src/facial-pose.js';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
@@ -32,6 +33,6 @@ try{
   }
   const enemyOverlays=[];for(let type=0;type<4;type++){const enemy=new Warrior(type,true);enemyOverlays.push(Boolean(enemy.facialPose));enemy.dispose();}return {reports,enemyOverlays};
  });
- for(const r of reports.reports){assert.ok(r.gazeError<.003,JSON.stringify(r));assert.ok(r.gazeError<r.restError*.1);assert.ok(r.maxAngle<.08,'Overlay accumulated beyond the gaze limits');for(const state of r.disabled){assert.ok(state.angle<1e-6&&state.distance<1e-10,JSON.stringify({hero:r.hero,...state}));assert.equal(state.applied,false);}assert.ok(r.effortJaw>.001&&r.effortJaw<=Math.PI/180+.00001,JSON.stringify(r));assert.ok(r.musouJaw<=Math.PI/180+.00001);assert.ok(r.browDistance>.0001&&r.browDistance<=.000301,JSON.stringify(r));assert.ok(r.attackBrowDistance>.0001&&r.attackBrowDistance<=.000301,JSON.stringify(r));}
+ for(const r of reports.reports){assert.ok(r.gazeError<.003,JSON.stringify(r));assert.ok(r.gazeError<r.restError*.1);assert.ok(r.maxAngle<.08,'Overlay accumulated beyond the gaze limits');for(const state of r.disabled){assert.ok(state.angle<1e-6&&state.distance<1e-10,JSON.stringify({hero:r.hero,...state}));assert.equal(state.applied,false);}assert.ok(r.effortJaw>.001&&r.effortJaw<=Math.PI/180+.00001,JSON.stringify(r));assert.ok(Math.abs(r.musouJaw-FACIAL_LIMITS.musouJaw)<.00001,JSON.stringify(r));assert.ok(r.browDistance>.004&&r.browDistance<=FACIAL_LIMITS.brow*1.15+.00001,JSON.stringify(r));assert.ok(r.attackBrowDistance>.004&&r.attackBrowDistance<=FACIAL_LIMITS.brow*1.15+.00001,JSON.stringify(r));}
  assert.deepEqual(reports.enemyOverlays,[false,false,false,false]);assert.deepEqual(errors,[]);console.log(JSON.stringify(reports,null,2));console.log('Actual actor facial integration passed for all six heroes and four enemy classes.');
 }finally{await browser.close();}

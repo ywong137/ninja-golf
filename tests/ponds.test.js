@@ -1,3 +1,4 @@
+import {shorelinePoint,shorelineDistance} from '../src/shoreline.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {COURSE_SETS,heightAt,naturalHeightAt,pondProfiles,waterAt,waterSurfaceAt,ellipse} from '../src/course.js';
@@ -23,19 +24,19 @@ test('Every water edge is continuous and dense samples keep dry islands above th
  for(const c of courses)for(const p of pondProfiles(c)){
   const b=p.basin;
   for(let i=0;i<128;i++){
-   const a=i/128*Math.PI*2,x=b[0]+Math.cos(a)*b[2],z=b[1]+Math.sin(a)*b[3];if(dryLandDistance(c,x,z)<.1)continue;
-   const nx=Math.cos(a)/b[2],nz=Math.sin(a)/b[3],length=Math.hypot(nx,nz),dx=nx/length*.002,dz=nz/length*.002;
+   const a=i/128*Math.PI*2,[x,z]=shorelinePoint(b,a);if(dryLandDistance(c,x,z)<.1)continue;
+   const nx=shorelineDistance(x+.001,z,b)-shorelineDistance(x-.001,z,b),nz=shorelineDistance(x,z+.001,b)-shorelineDistance(x,z-.001,b),length=Math.hypot(nx,nz),dx=nx/length*.002,dz=nz/length*.002;
    if(!waterAt(c,x-dx,z-dz)||waterAt(c,x+dx,z+dz))continue;
    assert.ok(Math.abs(heightAt(c,x-dx,z-dz)-p.surface)<.005,`${c.name}: water edge has a gap`);
    assert.ok(Math.abs(heightAt(c,x+dx,z+dz)-p.surface)<.005,`${c.name}: dry edge has a gap`);shoreSamples++;
   }
   for(let z=b[1]-b[3];z<=b[1]+b[3];z+=2)for(let x=b[0]-b[2];x<=b[0]+b[2];x+=2){
-   if(ellipse(x,z,b)>=.9999)continue;const y=heightAt(c,x,z),water=waterSurfaceAt(c,x,z);
+   if(shorelineDistance(x,z,b)>=-.0001)continue;const y=heightAt(c,x,z),water=waterSurfaceAt(c,x,z);
    if(water!=null){assert.ok(y<=water+.00001,`${c.name}: bed above water`);wetSamples++;}
    else {assert.ok(y>=p.surface-.00001,`${c.name}: submerged dry island`);drySamples++;}
   }
  }
- assert.ok(shoreSamples>4000&&wetSamples>40000&&drySamples>1000);
+ assert.ok(shoreSamples>3500&&wetSamples>25000&&drySamples>1000);
 });
 test('Putting surfaces and tees retain their uncarved heights',()=>{
  for(const c of courses)for(const [x,z,radius]of [[0,0,4],[c.greenX,c.length,15]])for(let i=0;i<24;i++){
@@ -47,7 +48,7 @@ test('Putting surfaces and tees retain their uncarved heights',()=>{
 test('The old narrow bank band has no cliff on any of the 38 analytic or rendered pond shores',()=>{
  let analyticMax=0,renderedMax=0;
  for(const c of courses)for(const p of pondProfiles(c))for(let i=0;i<96;i++)for(let j=0;j<=16;j++){
-  const a=i/96*Math.PI*2,e=1+j/16*.16,x=p.basin[0]+Math.cos(a)*p.basin[2]*e,z=p.basin[1]+Math.sin(a)*p.basin[3]*e;
+  const a=i/96*Math.PI*2,[sx,sz]=shorelinePoint(p.basin,a),e=1+j/16*.16,x=p.basin[0]+(sx-p.basin[0])*e,z=p.basin[1]+(sz-p.basin[1])*e;
   if(dryLandDistance(c,x,z)<.5)continue;
   for(const rendered of [false,true]){
    const h=(x,z)=>rendered?courseSurfaceHeight(c,x,z,heightAt,ellipse):heightAt(c,x,z);

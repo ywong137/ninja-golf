@@ -69,8 +69,8 @@ Choose a warrior, then select a course from four scenic in-game previews. The ti
 
 All 36 holes use individually authored routes. Doglegs, split fairways, landing islands, switchbacks, and island greens change the shot strategy. Dry bridges connect routes across water. Both maps show the same fairways, islands, and bridges as the terrain. Displayed hole yardage follows the planned route; distance to the pin stays direct. [Course design notes](docs/course-design.md) describe the layouts and official references.
 
-The Ronin favors power, the Shinobi favors speed and accuracy, and the Monk favors health and reach.
-Kaede uses a bladed fan for close, broad cuts and forceful gust finishers. Ayame carries a crescent ring for wider circular cuts and turning entries. Sora uses a hooked sickle to pull enemies into rising attacks. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
+The Ronin favors power, the Shinobi favors speed and accuracy, and The Vice President favors health and reach. The Vice President uses an adapted likeness of Ethan Cary.
+The Ace carries a straight jian, The Hustler carries a curved dao, and The Closer carries a short wakizashi. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. Selection alternates men and women while preserving saved character IDs. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
 Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms.
 
 ## Graphics and scope

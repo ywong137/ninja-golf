@@ -52,10 +52,12 @@ The runtime performs no mesh fitting or surface collision search.
 
 ## Verification and limits
 
-`tests/browser-grips.mjs` checks 728 runtime hand samples. These include selection,
+`tests/browser-grips.mjs` checks 974 runtime hand samples. These include selection,
 ready, light and heavy cuts, musou, guard, golf, running, and attack transitions.
-The current maximum sampled skin penetration is 1.75 mm. The fitted handle stations
-remain coincident with their hand anchors. This is a vertex-sampling check, not
+Ronin’s heavy attack also receives 120 Hz sampling through both transitions.
+The current maximum sampled skin penetration is 1.96 mm. The fitted handle stations
+remain coincident with their hand anchors. Fitting tests also inspect the actual guard and end-ring triangles; the current
+samples have no fitting penetration. This is a vertex-sampling check, not
 an exact triangle-to-cylinder collision proof.
 
 `tools/render-grip-review.mjs` creates full-roster and hand review sheets. Close
@@ -67,3 +69,20 @@ The earlier joint-center checks could pass with fingers inside the handle.
 Keep attachment checks as construction checks. Use skin measurements and visual
 review together to assess the actual grasp. These changes do not resolve all
 remaining combat choreography, wrist skinning, or character mesh limitations.
+
+## Review authorization
+
+On 2026-09-27 the user authorized all files shared with this task or produced in
+this project for Opus work. This includes source, screenshots, measurements and
+Ethan’s supplied likeness photos. Use the signed-in subscription with explicit
+`claude-opus-5-5` and `--effort high` or `xhigh`. Verify the returned canonical
+model name. Keep reviews read-only unless a concrete editing task requires more.
+
+## Selection wrist correction
+
+A correct finger fit does not prove a natural wrist or arm pose. The September27
+follow-up review found that independent shaft targets could hyperextend the
+wrist. Selection now derives the weapon direction from the posed forearm and
+neutral hand. The upper arm and forearm establish the carry pose first. The weapon follows the fitted hand frame. Selection tests preserve the imported wrist rotation within 0.000002 degrees. The middle metacarpal remains within 4 degrees of the forearm on the men and 11 degrees on the women. The sword axis stays 75 degrees from the forearm. Whole-body combat and golf need separate visual review.
+
+The selection forearm correction ranges from about 2 to 19 degrees across the roster. This stays below the reviewer's 45-degree inspection threshold. Shinobi carries his two short blades at different pitches.

@@ -28,26 +28,36 @@ try{
      const palm=p.bones['hand_'+side].localToWorld(p.palmGrips[side].clone());
      const station=(golf?0:held.userData.primaryGrip)-(side==='l'&&!(p.offhand&&!golf)?clip?.gripSpacing??.09:0);
      const gap=palm.distanceTo(held.localToWorld(new T.Vector3(0,station,0)))/p.root.scale.x;
-     results.push({hero:w.model,name,time,side,transition,gap,...contact});
+     results.push({hero:w.model,name,seconds:time,side,transition,gap,...contact});
     }
    };
    const names=[w.selectionClip,w.readyClip,`${prefix}Cut_Diagonal`,`${prefix}Heavy_Cleave`,`${prefix}Musou_Flow`,`${({odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'})[w.combatStyle]}_Guard_Loop`,'Golf_Address','Golf_Swing','Golf_Putt'];
    for(const name of names)for(const fraction of [0,.28,.55,.84]){
     p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(name,0,true);
     const action=p.actions.get(name);action.time=fraction*action.getClip().duration;p.mixer.update(0);
-    p.syncHeldObjects(undefined,name.startsWith('Golf'));sample(name,fraction);
+    p.syncHeldObjects(undefined,name.startsWith('Golf'));sample(name,action.time);
    }
    // Primary contact must survive action crossfades and running carry corrections.
    p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(w.readyClip,0);p.mixer.update(0);p.syncHeldObjects();
    for(let frame=0;frame<24;frame++){p.update(frame/60,1/60,{moving:true,moveSpeed:5.6,moveAngle:.7});sample(p.current,frame/60,true);}
    for(let frame=0;frame<24;frame++){p.update(frame/60,1/60,{action:{kind:'light',step:0,token:123,time:frame/60,duration:.40}});sample(p.current,frame/60,true);}
+   if(i===0){
+    // Inspect every 120 Hz phase of the reported heavy attack, including both
+    // crossfades. Sparse fraction samples previously missed the actual impact.
+    p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(w.readyClip,0);p.mixer.update(0);p.syncHeldObjects();
+    const duration=motions.Heavy_Cleave.duration;
+    for(let frame=0;frame<=Math.ceil((duration+.25)*120);frame++){
+     const time=frame/120,action=time<=duration?{kind:'heavy',step:0,token:456,time,duration}:null;
+     p.update(time,1/120,{action});sample(p.current,p.actions.get(p.current).time,true);
+    }
+   }
    p.dispose();
   }
   return results;
  });
  fs.mkdirSync('artifacts/grip-review',{recursive:true});fs.writeFileSync('artifacts/grip-review/runtime-contact.json',JSON.stringify(report,null,2));
- const failures=report.filter(r=>r.gap>.003||r.maxPenetration>.0021||Object.values(r.groups).some(g=>g.contactGap>.005));
+ const failures=report.filter(r=>r.gap>.003||r.maxPenetration>.0021||r.fittingPenetration>.0021||Object.values(r.groups).some(g=>g.contactGap>.005));
  assert.deepEqual(errors,[]);assert.ok(report.length>500);
  assert.equal(failures.length,0,JSON.stringify(failures.slice(0,8),null,2));
- console.log(`Checked ${report.length} runtime hand samples. Maximum skin penetration: ${(Math.max(...report.map(r=>r.maxPenetration))*1000).toFixed(2)} mm. Maximum attachment gap: ${(Math.max(...report.map(r=>r.gap))*1000).toFixed(3)} mm.`);
+ console.log(`Checked ${report.length} runtime hand samples. Maximum skin penetration: ${(Math.max(...report.map(r=>r.maxPenetration))*1000).toFixed(2)} mm. Maximum fitting penetration: ${(Math.max(...report.map(r=>r.fittingPenetration))*1000).toFixed(2)} mm. Maximum attachment gap: ${(Math.max(...report.map(r=>r.gap))*1000).toFixed(3)} mm.`);
 }finally{await browser.close();}

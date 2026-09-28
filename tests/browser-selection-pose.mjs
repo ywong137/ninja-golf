@@ -11,6 +11,7 @@ try{
  await page.goto(process.env.NINJA_TEST_URL||'http://localhost:5173');
  await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
  await page.click('#play');
+ assert.deepEqual(await page.locator('[data-warrior]').evaluateAll(cards=>cards.map(card=>Number(card.dataset.warrior))),[0,3,1,4,2,5],'Selection presents alternating men and women without changing saved hero IDs');
  await page.evaluate(async()=>{const g=window.__golfTest;g.audio.pause();g.paused=true;g.frame=()=>{};await g.world.waitForAssets();});
  const results=[];
  for(let hero=0;hero<6;hero++){
@@ -18,10 +19,11 @@ try{
   const report=await page.evaluate(async hero=>{
    const T=await import('/node_modules/three/build/three.module.js');
    const {WARRIORS}=await import('/src/warriors.js');
+   const {selectionHandleClearance}=await import('/tools/selection-clearance.mjs');
    const g=window.__golfTest;g.audio.pause();
    g.camera.fov=48;g.camera.updateProjectionMatrix();g.updateCamera(10);
    const p=g.player,expected=WARRIORS[hero].selectionClip;
-   const result={hero,name:WARRIORS[hero].name,clip:'',maxPalmGap:0,maxCavityGap:0,maxAxisError:0,maxWristDeviation:0,minBladeY:Infinity,finite:true};
+   const result={hero,name:WARRIORS[hero].name,clip:'',maxPalmGap:0,maxCavityGap:0,maxAxisError:0,maxShaftObliquity:0,maxWristDeviation:0,maxMetacarpalDeviation:0,minHandleClearance:Infinity,minBladeY:Infinity,finite:true};
    for(let frame=0;frame<=240;frame++){
     p.update(frame/30,1/30,{selection:true,gazeTarget:g.camera.position});p.root.updateMatrixWorld(true);
     result.clip=p.current;
@@ -32,13 +34,17 @@ try{
      const axis=new T.Vector3(0,1,0).applyQuaternion(weapon.getWorldQuaternion(new T.Quaternion()));
      const nativeAxis=p.shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()));
      const forearm=hand.getWorldPosition(new T.Vector3()).sub(p.bones['lowerarm_'+side].getWorldPosition(new T.Vector3())).normalize();
-     result.maxWristDeviation=Math.max(result.maxWristDeviation,Math.asin(Math.min(1,Math.abs(nativeAxis.dot(forearm))))*180/Math.PI);
+     result.maxShaftObliquity=Math.max(result.maxShaftObliquity,Math.asin(Math.min(1,Math.abs(nativeAxis.dot(forearm))))*180/Math.PI);
+     result.maxWristDeviation=Math.max(result.maxWristDeviation,hand.quaternion.clone().normalize().angleTo(p.neutralHandRotations[side].clone().normalize())*180/Math.PI);
+     const metacarpal=p.bones['middle_01_'+side].getWorldPosition(new T.Vector3()).sub(hand.getWorldPosition(new T.Vector3())).normalize();
+     result.maxMetacarpalDeviation=Math.max(result.maxMetacarpalDeviation,metacarpal.angleTo(forearm)*180/Math.PI);
      result.maxPalmGap=Math.max(result.maxPalmGap,center.distanceTo(palm)/p.root.scale.x);
      result.maxAxisError=Math.max(result.maxAxisError,axis.angleTo(nativeAxis));
      const fingers=['01','02','03','04_leaf'].map(n=>p.bones['middle_'+n+'_'+side]).filter(Boolean);
      const cavity=fingers.reduce((sum,b)=>sum.add(b.getWorldPosition(new T.Vector3())),new T.Vector3()).multiplyScalar(1/fingers.length).sub(center);
      result.maxCavityGap=Math.max(result.maxCavityGap,cavity.addScaledVector(axis,-cavity.dot(axis)).length()/p.root.scale.x);
      result.minBladeY=Math.min(result.minBladeY,(weapon.localToWorld(new T.Vector3(...weapon.userData.tip)).y-p.root.position.y)/p.root.scale.x);
+     if(frame%120===0)result.minHandleClearance=Math.min(result.minHandleClearance,selectionHandleClearance(p,weapon).clearance);
     }
     result.finite&&=Object.values(p.bones).every(b=>[...b.position,...b.quaternion,...b.scale].every(Number.isFinite));
    }
@@ -47,13 +53,13 @@ try{
   },hero);
   results.push(report);
   await page.screenshot({path:`/tmp/ninja-selection-screen-${hero}.png`});
-  for(const view of ['front','side']){
+  for(const view of ['front','side','sword-side']){
    await page.evaluate(view=>{
     const g=window.__golfTest,p=g.player.root.position;
     for(const el of document.querySelectorAll('#app > :not(canvas)'))el.style.opacity='0';
     g.player.root.rotation.y=0;g.player.update(0,0,{selection:true});
     g.camera.fov=34;g.camera.updateProjectionMatrix();
-    g.camera.position.set(p.x+(view==='side'?7:0),p.y+2.05,p.z+(view==='side'?0:8));g.camera.lookAt(p.x,p.y+1.65,p.z);
+    g.camera.position.set(p.x+(view==='side'?7:view==='sword-side'?-7:0),p.y+2.05,p.z+(view==='front'?8:0));g.camera.lookAt(p.x,p.y+1.65,p.z);
     g.rendering.render('high');
    },view);
    await page.screenshot({path:`/tmp/ninja-selection-${view}-${hero}.png`});
@@ -81,7 +87,7 @@ try{
  }
  for(const [width,height]of [[1280,720],[1920,1080]]){
   await page.setViewportSize({width,height});
-  for(const hero of [0,1,2]){
+  for(const hero of [0,1,2,3,4,5]){
    await page.click(`[data-warrior="${hero}"]`);await page.mouse.move(0,0);
    const frame=await page.evaluate(async()=>{
     const T=await import('/node_modules/three/build/three.module.js');const g=window.__golfTest,p=g.player;
@@ -101,7 +107,10 @@ try{
   assert.ok(result.maxPalmGap<1e-6,`${result.name}: weapon leaves the palm`);
   // Surface contact is checked by browser-grips.mjs, not a mean joint position.
   assert.ok(result.maxAxisError<.015,`${result.name}: weapon shaft disagrees with the native grip`);
-  assert.ok(result.maxWristDeviation<40,`${result.name}: wrist bends sharply to hold the blade`);
+  assert.ok(result.maxWristDeviation<.001,`${result.name}: wrist differs from the natural hand pose`);
+  assert.ok(result.maxMetacarpalDeviation<12,`${result.name}: hand and forearm are misaligned`);
+  assert.ok(result.maxShaftObliquity<16,`${result.name}: handle lies too far along the forearm`);
+  assert.ok(result.minHandleClearance>.025,`${result.name}: handle approaches the body`);
   assert.ok(result.minBladeY>.035,`${result.name}: blade enters the ground`);
  }
  assert.deepEqual(errors,[]);

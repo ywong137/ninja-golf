@@ -24,7 +24,7 @@ for(const kind of ['lantern','pagoda','rock','tree','sand','water']){
 // Standard gamepad: LT strafe, X light, Y heavy, RB Musou.
 await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.player.root.position.set(0,8,45);g.ball.position.set(0,8,180);g.cameraYaw=0;g.player.root.rotation.y=0;g.updateCamera(10);g.spawnTime=100;g.paused=false;window.testPad={axes:[1,0,0,0],buttons:Array.from({length:16},()=>({pressed:false,value:0}))};window.testPad.buttons[6].pressed=true;Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[window.testPad]});});
 await page.waitForTimeout(300);assert.ok(Math.abs((await page.evaluate(()=>window.ninjaGolf.state())).facing)<.08);await page.evaluate(()=>{window.testPad.axes[0]=0;window.testPad.buttons[3].pressed=true;});await page.waitForFunction(()=>window.__golfTest.action?.kind==='heavy');await page.evaluate(()=>{window.testPad.buttons[3].pressed=false;});await page.waitForFunction(()=>!window.__golfTest.action);await page.evaluate(()=>{window.__golfTest.resolve=100;window.testPad.buttons[5].pressed=true;});await page.waitForFunction(()=>window.__golfTest.cinematic>0);await page.evaluate(()=>{delete navigator.getGamepads;window.__golfTest.paused=true;window.__golfTest.audio.pause();});
-// Exercise the female styles through the actual combat loop, including the hook's pull.
+// Exercise the three sword styles through the actual combat loop.
 const styles=await page.evaluate(async()=>{
  const {heightAt}=await import('/src/course.js');const g=window.__golfTest,Warrior=g.player.constructor,rows=[];g.input.clear();
  for(const index of [3,4,5]){
@@ -36,5 +36,5 @@ const styles=await page.evaluate(async()=>{
  }
  g.clearEnemies();g.crowd.update([]);return rows;
 });
-assert.deepEqual(styles.map(x=>x.style),['fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Fan_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished));assert.ok(styles[0].knockback>0&&styles[1].knockback>0&&styles[2].knockback<0,JSON.stringify(styles));
+assert.deepEqual(styles.map(x=>x.style),['fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Fan_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished));assert.ok(styles.every(x=>x.knockback>0),JSON.stringify(styles));
 assert.deepEqual(errors,[]);console.log('Focused strafe/backpedal, buffered finishers, Musou, six scenery entrances, gamepad controls, and distinct female combat styles passed');await browser.close();

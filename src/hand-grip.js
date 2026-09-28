@@ -66,9 +66,43 @@ export class HandGrip {
   if(this.goal===goal)return;
   this.goal=goal;this.transition={start:this.actor.mixer.time,duration:fade,from:this.weight};
  }
+ selectionCarry(side){
+  const {actor}=this,{bones}=actor,upper=bones['upperarm_'+side],lower=bones['lowerarm_'+side],hand=bones['hand_'+side];
+  for(const bone of [upper,lower,hand])this.remember(bone);
+  const sign=side==='r'?-1:1,chest=rotation(bones.spine_03),rest=actor.selectionArmRest[side];
+  const rootQ=rotation(actor.root),kind=actor.weapon.userData.kind;
+  // Author the upper arm and forearm first. The neutral hand determines the
+  // resulting blade direction; no independent shaft target bends the wrist.
+  const upperDirection=new Vector3(sign*.22,-.974,.145).normalize().applyQuaternion(rootQ);
+  const shortBlade=kind==='wakizashi'||kind==='twin';
+  const inward=shortBlade?-.05:-.12;
+  const pitch=kind==='naginata'?.11:kind==='twin'?(side==='r'?-.22:-.45):shortBlade?-.36:.04;
+  const forearmDirection=new Vector3(-sign*inward,pitch,1).normalize().applyQuaternion(rootQ);
+  const upperReference=chest.multiply(rest.upperInChest);
+  const upperAxis=lower.position.clone().normalize().applyQuaternion(upperReference);
+  setWorldRotation(upper,new Quaternion().setFromUnitVectors(upperAxis,upperDirection).multiply(upperReference));
+  const lowerReference=rotation(lower.parent).multiply(rest.lower);
+  const lowerAxis=hand.position.clone().normalize().applyQuaternion(lowerReference);
+  setWorldRotation(lower,new Quaternion().setFromUnitVectors(lowerAxis,forearmDirection).multiply(lowerReference));
+  hand.quaternion.copy(actor.neutralHandRotations[side]);hand.updateWorldMatrix(true,true);
+  // Calibrate a thumb-up forearm frame geometrically. This removes inherited
+  // animation roll before applying a modest presentation roll.
+  const shaft=this.active[side].axis.clone().applyQuaternion(rotation(hand));
+  const up=Y.clone().applyQuaternion(rootQ);
+  shaft.addScaledVector(forearmDirection,-shaft.dot(forearmDirection)).normalize();
+  up.addScaledVector(forearmDirection,-up.dot(forearmDirection)).normalize();
+  const turn=Math.atan2(shaft.clone().cross(up).dot(forearmDirection),shaft.dot(up));
+  setWorldRotation(lower,new Quaternion().setFromAxisAngle(forearmDirection,turn).multiply(rotation(lower)));
+  this.selectionReport??={};
+  this.selectionReport[side]={wristNeutralError:hand.quaternion.clone().normalize().angleTo(actor.neutralHandRotations[side].clone().normalize()),elbowFlexion:upperDirection.angleTo(forearmDirection),forearmFrameCorrection:turn};
+ }
  orient(side,from,to,golf){
   const {actor}=this,hand=actor.bones['hand_'+side],profile=this.active[side];
   this.remember(hand);
+  if(actor.current.includes('_Selection_Idle')){
+   this.selectionCarry(side);
+   return;
+  }
   const rootQ=rotation(actor.root),local=rotation(hand).premultiply(rootQ.clone().invert()).multiply(profile.frame);
   const travel=actor.travelPose?.shaftDirections[side];
   if(!golf&&travel)alignWeaponShaft(local,travel);
@@ -137,7 +171,7 @@ export class HandGrip {
   else if(this.weight>0){this.solveSecondary(held,clip?.gripSpacing??.09);this.attach(held,'r',station);}
   if(golf){
    const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
-   actor.clubShaft.scale.y=Math.max(.1,length-.12);actor.clubShaft.position.y=.12+actor.clubShaft.scale.y*.5;
+   actor.clubShaft.scale.y=Math.max(.1,length-.17);actor.clubShaft.position.y=.17+actor.clubShaft.scale.y*.5;
    actor.clubHead.position.y=length;
   }
   actor.root.updateMatrixWorld(true);

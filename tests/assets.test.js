@@ -18,7 +18,7 @@ test('Six unique warrior models use explicit weapon metadata',async()=>{
   assert.equal(WARRIORS.length,6);assert.equal(new Set(WARRIORS.map(w=>w.model)).size,6);
   for(const w of WARRIORS){assert.ok(['odachi','twin','naginata','jian','dao','wakizashi'].includes(w.weaponKind));assert.equal(w.dualWield,w.weaponKind==='twin');}
   const {BLADE_PROFILES}=await import('../src/weapons.js');
-  for(const kind of ['scout','guard','lancer','skirmisher'])assert.ok(BLADE_PROFILES[kind].width<BLADE_PROFILES.twin.width*.4);
+  for(const kind of ['scout','guard','lancer','skirmisher'])assert.ok(BLADE_PROFILES[kind].width<BLADE_PROFILES.odachi.width*.5);
 });
 
 test('The three women have separate weapon silhouettes and motion families',async()=>{
@@ -37,7 +37,13 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',WARRIORS[index].motionPrefix+'Musou_Flow',WARRIORS[index].readyClip])assert.ok(clips.has(clip),`${name}: ${clip}`);
     assert.deepEqual([...clips].filter(clip=>clip.endsWith('_Selection_Idle')),[WARRIORS[index].selectionClip],`${name}: one separate selection pose`);
     assert.ok(clips.size<=37,`${name}: own weapon family, guard steps, native locomotion, and selection pose only`);
-    assert.ok(g.materials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
+    const eyewear=['Vice President graphite glasses','Vice President brushed silver temples'];
+    const sourceMaterials=g.materials.filter(m=>!eyewear.includes(m.name));
+    assert.ok(sourceMaterials.length>=3&&sourceMaterials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
+    if(name==='monk')for(const material of eyewear){
+      const m=g.materials.find(m=>m.name===material);
+      assert.equal(m?.pbrMetallicRoughness?.baseColorFactor?.length,4,`${name}: solid eyewear material ${material}`);
+    }
     assert.ok(g.materials.some(m=>m.normalTexture),`${name}: source surface normals`);
     assert.ok(!g.nodes.some(n=>n.name==='SamuraiCostume'),`${name}: preserve original clothing anatomy`);
   }

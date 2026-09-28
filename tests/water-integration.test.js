@@ -1,3 +1,4 @@
+import {shorelinePoint} from '../src/shoreline.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -6,7 +7,7 @@ import {BALL_RADIUS,BALL_STEP,ballSurface,ballHazard} from '../src/golf-roll.js'
 import {previewShot} from '../src/golf-guide.js';
 import {buildThemeScenery} from '../src/course-themes.js';
 import {findWaterEmergence,waterEmergencePosition,WATER_EMERGENCE} from '../src/water-emergence.js';
-const waterSites=c=>pondProfiles(c).flatMap(({basin})=>Array.from({length:10},(_,i)=>{const a=i*Math.PI/5,x=basin[0]+Math.cos(a)*basin[2]*.87,z=basin[1]+Math.sin(a)*basin[3]*.87;return{x,z,y:waterSurfaceAt(c,x,z),kind:'water'};}).filter(s=>s.y!=null));
+const waterSites=c=>pondProfiles(c).flatMap(({basin})=>Array.from({length:10},(_,i)=>{const a=i*Math.PI/5,[sx,sz]=shorelinePoint(basin,a),x=basin[0]+(sx-basin[0])*.92,z=basin[1]+(sz-basin[1])*.92;return{x,z,y:waterSurfaceAt(c,x,z),kind:'water'};}).filter(s=>s.y!=null));
 
 test('All 36 holes use visible water elevation for ball contact and airborne previews',()=>{
  let checked=0;for(const set of COURSE_SETS)for(const c of set.holes){const s=waterSites(c)[0];assert.ok(s,`${c.name}: no water sample`);const surface=ballSurface(c,s);assert.equal(surface.water,s.y);assert.equal(surface.lie,'Water');assert.equal(ballHazard({y:s.y+BALL_RADIUS+.001},surface,1),null);assert.equal(ballHazard({y:s.y+BALL_RADIUS},surface,1),'Water');

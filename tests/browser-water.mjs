@@ -5,6 +5,21 @@ const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'ch
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await disableHmr(page);
  await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ const shaderAudit=await page.evaluate(async()=>{
+  const T=await import('/node_modules/three/build/three.module.js'),C=await import('/src/course.js'),L=await import('/src/course-layout.js'),S=await import('/src/shoreline.js'),U=await import('/src/water-uniforms.js'),g=window.__golfTest;g.frame=()=>{};g.audio.pause();
+  const scene=new T.Scene(),camera=new T.Camera(),geometry=new T.PlaneGeometry(2,2),target=new T.WebGLRenderTarget(64,64),pixels=new Uint8Array(64*64*4);let samples=0;
+  try{for(const c of C.COURSE_SETS.flatMap(s=>s.holes)){
+   const basins=C.waterBasins(c),bounds=[Math.min(...basins.map(b=>b[0]-b[2])),Math.min(...basins.map(b=>b[1]-b[3])),Math.max(...basins.map(b=>b[0]+b[2])),Math.max(...basins.map(b=>b[1]+b[3]))];
+   const material=new T.ShaderMaterial({uniforms:{...U.pondUniforms(c),bounds:{value:new T.Vector4(...bounds)}},vertexShader:'varying vec2 at;void main(){at=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:L.DRY_LAND_GLSL+`uniform vec4 bounds;uniform int pondCount;uniform vec4 shoreBasins[4];uniform vec4 shoreShapes[4];varying vec2 at;void main(){vec2 p=mix(bounds.xy,bounds.zw,at);bool wet=false;for(int i=0;i<4;i++){if(i>=pondCount)break;if(shoreDistance(p,shoreBasins[i],shoreShapes[i])<0.)wet=true;}wet=wet&&dryDistance(p)>0.;gl_FragColor=vec4(wet?1.:0.,0.,0.,1.);}`,toneMapped:false});
+   const mesh=new T.Mesh(geometry,material);scene.add(mesh);g.renderer.setRenderTarget(target);g.renderer.render(scene,camera);g.renderer.readRenderTargetPixels(target,0,0,64,64,pixels);
+   for(let j=0;j<64;j++)for(let i=0;i<64;i++){const x=bounds[0]+(bounds[2]-bounds[0])*(i+.5)/64,z=bounds[1]+(bounds[3]-bounds[1])*(j+.5)/64;
+    if(basins.some(b=>Math.abs(S.shorelineDistance(x,z,b))<.002)||Math.abs(L.dryLandDistance(c,x,z))<.002)continue;
+    if((pixels[(j*64+i)*4]>127)!==C.waterAt(c,x,z))throw Error(`${c.name}: GPU/CPU water mismatch at ${x},${z}`);samples++;
+   }scene.remove(mesh);material.dispose();
+  }}finally{g.renderer.setRenderTarget(null);target.dispose();geometry.dispose();}
+  return{courses:36,samples};
+ });
+ assert.ok(shaderAudit.samples>140000);console.log('Shared water shader parity',JSON.stringify(shaderAudit));
  const results=await page.evaluate(async()=>{
   const C=await import('/src/course.js'),{findWaterEmergence}=await import('/src/water-emergence.js'),g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();const reports=[];
   for(const [theme,hole]of [[0,1],[0,6],[0,8],[1,4],[2,5],[3,7]]){

@@ -12,7 +12,7 @@ export function courseMaterial(c, textures, distant=false) {
     Object.assign(shader.uniforms,{...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
     shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
-    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];
+    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
 varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform sampler2D turfColor;uniform sampler2D turfNormal;uniform sampler2D turfRoughness;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
       float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}
@@ -127,7 +127,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       diffuseColor.rgb=mix(grass*macro*(1.-turfLip*.10),sand,max(sandMask,beach));
       // Exposed mineral soil and a damp margin make the waterline readable at eye level.
       float bankDistance=1000000.,bankLevel=0.;
-      for(int i=0;i<${MAX_WATERS};i++){if(i>=pondCount)break;vec4 b=shoreBasins[i];vec2 q=p-b.xy;float e=length(q/b.zw);float metric=(e-1.)/max(.0001,length(q/(b.zw*b.zw))/max(.0001,e));float d=max(metric,-dryDistance(p));if(d<bankDistance){bankDistance=d;bankLevel=shoreLevels[i];}}
+      for(int i=0;i<${MAX_WATERS};i++){if(i>=pondCount)break;vec4 b=shoreBasins[i];float metric=shoreDistance(p,b,shoreShapes[i]);float d=max(metric,-dryDistance(p));if(d<bankDistance){bankDistance=d;bankLevel=shoreLevels[i];}}
       float waterlineNoise=groundNoise(p*1.7)*.28+groundNoise(p*.35)*.45;
       float shoreSoil=(1.-smoothstep(.7,2.1,bankDistance+waterlineNoise))*(1.-smoothstep(.55,1.25,abs(terrainPosition.y-bankLevel)));
       if(shoreSoil>.001){vec3 shoreColor=texture2D(sandColor,p/2.3).rgb*mix(vec3(.33,.32,.27),vec3(.57,.47,.34),step(1.5,courseTheme)*(1.-step(2.5,courseTheme)));
@@ -161,7 +161,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-turf-response-v14-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-turf-response-v14-organic-shore-${distant}`;
   return mat;
 }
 

@@ -2,16 +2,12 @@ import {waterBasins,dryLandDistance,waterAt} from './course-layout.js';
 import {naturalHeightAt} from './terrain-height.js';
 const profiles=new WeakMap();
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
-const ellipse=(x,z,b)=>Math.hypot((x-b[0])/b[2],(z-b[1])/b[3]);
-// First-order metric distance to the ellipse; exact at the shoreline.
-export function basinDistance(x,z,b){
- const dx=x-b[0],dz=z-b[1],e=Math.hypot(dx/b[2],dz/b[3]);
- return e<1e-8?-Math.min(b[2],b[3]):(e-1)/Math.hypot(dx/(b[2]*b[2]*e),dz/(b[3]*b[3]*e));
-}
+export {shorelineDistance as basinDistance} from './shoreline.js';
+import {shorelineDistance as basinDistance,shorelinePoint} from './shoreline.js';
 export function pondProfiles(c){
  const cached=profiles.get(c);if(cached&&cached.waters===c.waters&&cached.layout===c.layout)return cached.value;
  const basins=waterBasins(c).filter(Boolean),value=basins.map(basin=>{
-  const heights=[];for(let i=0;i<128;i++){const a=i/128*Math.PI*2,x=basin[0]+Math.cos(a)*basin[2],z=basin[1]+Math.sin(a)*basin[3];if(dryLandDistance(c,x,z)>0)heights.push(naturalHeightAt(c,x,z));}
+  const heights=[];for(let i=0;i<128;i++){const a=i/128*Math.PI*2,[x,z]=shorelinePoint(basin,a);if(dryLandDistance(c,x,z)>0)heights.push(naturalHeightAt(c,x,z));}
   if(!heights.length)heights.push(naturalHeightAt(c,basin[0],basin[1]));heights.sort((a,b)=>a-b);
   let surface=heights[Math.floor(heights.length*.5)]-.8;
   // Keep a shallow collar beside a green; preserve the island's playable interior.
@@ -21,18 +17,18 @@ export function pondProfiles(c){
   }
   return {basin,surface,depth:1.8,bankWidth:Math.max(10,Math.max(heights.at(-1)-surface,surface-heights[0])*3.4),rimMin:heights[0],rimMax:heights.at(-1)};
  });
- // Connected ellipses describe a single body of water and need one flat plane.
+ // Connected basins describe a single body of water and need one flat plane.
  const groups=value.map((_,i)=>i),root=i=>groups[i]===i?i:(groups[i]=root(groups[i]));
  for(let i=0;i<value.length;i++)for(let j=0;j<i;j++){
-  const a=value[i].basin,b=value[j].basin;let overlap=ellipse(a[0],a[1],b)<1||ellipse(b[0],b[1],a)<1;
-  for(let k=0;k<128&&!overlap;k++){const t=k/128*Math.PI*2;overlap=ellipse(a[0]+Math.cos(t)*a[2],a[1]+Math.sin(t)*a[3],b)<1;}
+  const a=value[i].basin,b=value[j].basin;let overlap=basinDistance(a[0],a[1],b)<0||basinDistance(b[0],b[1],a)<0;
+  for(let k=0;k<128&&!overlap;k++){const t=k/128*Math.PI*2;overlap=basinDistance(...shorelinePoint(a,t),b)<0;}
   if(overlap)groups[root(i)]=root(j);
  }
  for(let i=0;i<value.length;i++){const members=value.filter((_,j)=>root(i)===root(j)),surface=Math.min(...members.map(p=>p.surface));value[i].surface=surface;value[i].bankWidth=Math.max(10,Math.max(value[i].rimMax-surface,surface-value[i].rimMin)*3.4);}
  profiles.set(c,{waters:c.waters,layout:c.layout,value});return value;
 }
 export function waterSurfaceAt(c,x,z){
- if(waterAt(c,x,z)){for(const p of pondProfiles(c))if(ellipse(x,z,p.basin)<1)return p.surface;}
+ if(waterAt(c,x,z)){for(const p of pondProfiles(c))if(basinDistance(x,z,p.basin)<0)return p.surface;}
  if(c.coastal!==false&&x>138+Math.sin(z*.014)*28)return -1.1;
  return null;
 }
