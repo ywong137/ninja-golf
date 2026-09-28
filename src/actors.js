@@ -9,7 +9,7 @@ import {TravelPose} from './travel-pose.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
-import {HandGrip} from './hand-grip.js';
+import {HandGrip,compatibleNativePair} from './hand-grip.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
@@ -140,6 +140,12 @@ export class Warrior {
     }
   }
   play(name,fade=.16,once=false,speed=1){
+    // A compatible native pair already authors both arms. Preserve it through
+    // the fade instead of adding a second, independent elbow solve.
+    const preservePair=!this.offhand&&!this.running&&!this.guardWalking&&!(this.travelPose?.weight>0)
+      &&!this.current.startsWith('Golf')&&!name.startsWith('Golf')&&this.handGrip?.secondaryWeight>.999
+      &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
+      &&compatibleNativePair(motions[this.current],motions[name],this.weapon.userData.defaultGrip);
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
@@ -151,7 +157,7 @@ export class Warrior {
     }
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
     this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
-      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip}:null;
+      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair}:null;
     next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
     if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;

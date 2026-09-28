@@ -51,6 +51,8 @@ The diagnostic did not change shared runtime files. Its temporary `nativePairedB
 
 The normal cut→Ready, cut→Guard, guard→Impact, and guard→Break tests passed. No tested transition caused blade/head intersections.
 
+A later triangle-surface audit found a support-hand pinky collision during Ready/Guard→cut. The small center gap concealed a 5.126° palm-frame error and 4.617 mm shaft intrusion. This supersedes the center-gap-only contact assessment. The candidate remains offline. See `native-paired-transitions.md` for the bounded runtime correction and release limit.
+
 ## Gameplay timing
 
 The existing combo window lasts 0.75 s after the attack. The attack input buffer lasts 0.55 s. A queued follow-up within this clip’s first 0.05 s can therefore expire before recovery ends. Review that buffer behavior before release.

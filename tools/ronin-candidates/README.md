@@ -2,7 +2,7 @@
 
 These tools reproduce the accepted V63 Ready/Cleave pilot and the reviewed middle-guard transfer. They do not change shipping files.
 
-The full Ronin family is not ready for release. Other legacy attacks still fail under this sword mount. The published carry correction now preserves native elbow hinges during running. Native paired attack blends still need a separate attachment correction.
+The full Ronin family is not ready for release. Other legacy attacks still fail under this sword mount. The published carry correction now preserves native elbow hinges during running. The first cut's entry fade still causes a support-palm contact error.
 
 ## Reproduce the accepted pilot
 
@@ -81,7 +81,9 @@ The diagonal model SHA256 is `66bd0b8ea32062e623f0d13c531e3478f0647dde822f60b02d
 
 The new first cut lasts 0.60 s. Its hit occurs at 0.2842105263 s. The candidate gameplay route must use both values. Using the old 0.40 s definition silently speeds up the clip.
 
-The diagonal record uses the existing `pairedGrip` contract because both palms have authored positions. The earlier V63 metadata omitted this field. Correcting native paired metadata needs a runtime transition review before integration.
+The diagonal record uses the existing `pairedGrip` contract because both palms have authored positions. Ready and Heavy Cleave now declare this contract too. Their earlier V63 metadata omitted the field. The GLB output remains byte-identical.
+
+The native paired runtime path preserves authored elbows, but the standard diagonal entry fade still tilts the support palm into the shaft. The triangle-surface result reaches 4.617 mm. See `docs/reviews/native-paired-transitions.md`. Keep this family offline until its transition contact passes.
 
 The guard reaction author retains the V2 arms and legs. It adds a 5.5° torso recoil for impact and a 12° recoil for guard break. The stronger break also turns the upper trunk 10° and tilts it 3°.
 

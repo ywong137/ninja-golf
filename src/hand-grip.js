@@ -4,6 +4,12 @@ import {alignWeaponShaft,palmWeaponBasis} from './weapon-frame.js';
 const Y=new Vector3(0,1,0);
 const position=bone=>bone.getWorldPosition(new Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new Quaternion());
+export function compatibleNativePair(from,to,defaultStation){
+ const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing>0;
+ if(!paired(from)||!paired(to))return false;
+ const start=from.primaryGrip??defaultStation,end=to.primaryGrip??defaultStation;
+ return Number.isFinite(start)&&Number.isFinite(end)&&Math.abs(start-end)<1e-8&&Math.abs(from.gripSpacing-to.gripSpacing)<1e-8;
+}
 function setWorldRotation(bone,q){
  bone.quaternion.copy(rotation(bone.parent).invert().multiply(q)).normalize();
  bone.updateWorldMatrix(false,true);
@@ -210,7 +216,7 @@ export class HandGrip {
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
   // A native paired clip authors the support-hand approach. Do not bend its
   // elbow with legacy IK while that hand is still released from the weapon.
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration)){this.attachPair(held,station,clip.gripSpacing);}
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,clip.gripSpacing);}
   else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&carryActive)){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
