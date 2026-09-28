@@ -91,9 +91,10 @@ def wide_odachi_footwork(record,name):
     result=record;index=NAMES.index(name);heavy=index>=4
     duration=record['duration'];hit=record['impacts'][0];last=record['impacts'][-1]
     lead=PROFILES['odachi']['steps'][index][0];rear='l' if lead=='r' else 'r';sign=-1 if lead=='r' else 1
-    width=([.64,.66,.68,.70,.88,.84,.88,.90])[index]
-    span=.50 if heavy else .24
-    targets={lead:[sign*width/2,-span*.70,0],rear:[-sign*width/2,span*.30,0]}
+    width=([.64,.66,.68,.70,.80,.80,.80,.80])[index]
+    span=.45 if heavy else .24
+    targets={lead:[sign*width/2,-.10-span/2 if heavy else -span*.70,0],rear:[-sign*width/2,-.10+span/2 if heavy else span*.30,0]}
+    if heavy:result['nativeStanceFeet']=True
     opening=(.008,hit*.38);entry=(opening[1]+.006,hit-.025)
     recovery=last+.055;finish=duration-.012
     distances={side:math.dist(targets[side],BASE[side]) for side in ['r','l']}

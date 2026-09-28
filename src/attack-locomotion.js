@@ -36,7 +36,7 @@ export class AttackLocomotion {
   this.actions.forEach((action,i)=>{action.time=this.phase*duration;action.setEffectiveWeight(weights[i]/sum);});
   this.proxyRoot.position.copy(this.root.position);this.proxyRoot.quaternion.copy(this.root.quaternion);this.proxyRoot.scale.copy(this.root.scale);
   this.mixer.update(0);this.proxyRoot.updateMatrixWorld(true);this.root.updateMatrixWorld(true);
-  const targets=['r','l'].map(side=>({side,ankle:point(this.bones['foot_'+side]),knee:point(this.bones['calf_'+side]),q:rotation(this.bones['foot_'+side])}));
+  const targets=['r','l'].map(side=>({side,ankle:point(this.bones['foot_'+side]),q:rotation(this.bones['foot_'+side])}));
   for(const name of ['pelvis','thigh_r','calf_r','foot_r','ball_r','thigh_l','calf_l','foot_l','ball_l']){
    const bone=this.bones[name];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);
   }
@@ -47,8 +47,8 @@ export class AttackLocomotion {
   const contactWeights={},stance={},feet=[];
   for(const target of targets){
    const {side}=target,foot=this.bones['foot_'+side],proxyFoot=this.proxyBones['foot_'+side];
-   target.ankle.lerp(point(proxyFoot),this.weight);target.knee.lerp(point(this.proxyBones['calf_'+side]),this.weight);target.q.slerp(rotation(proxyFoot),this.weight);
-   const error=solveLeg(this.bones['thigh_'+side],this.bones['calf_'+side],foot,target.ankle,target.q,target.knee);
+   target.ankle.lerp(point(proxyFoot),this.weight);target.q.slerp(rotation(proxyFoot),this.weight);
+   const error=solveLeg(this.bones['thigh_'+side],this.bones['calf_'+side],foot,target.ankle,target.q);
    this.bones['ball_'+side].quaternion.slerp(this.proxyBones['ball_'+side].quaternion,this.weight);
    const phase=(this.phase+(side==='r'?.25:.75))%1;
    stance[side]=phase<.5;contactWeights[side]=phase<.5?1:phase<.6?1-THREE.MathUtils.smoothstep(phase,.5,.6):THREE.MathUtils.smoothstep(phase,.9,1);

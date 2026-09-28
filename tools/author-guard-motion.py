@@ -23,7 +23,10 @@ for style,(grip,tip,two,turn) in specs.items():
  for kind,duration,rows in [('Loop',1.6,[row(0),row(.5,.10),row(1)]),('Impact',.30,[row(0),row(.2,1),row(.55,.45),row(1)]),('Break',.4,[row(0),row(.28,.3,1),row(.72,.1,.8),row(1,0,.45)])]:
   data[f'{style}_Guard_{kind}']=dict(duration=duration,twoHanded=two,gripSpacing=.30 if style=='Naginata' else .09,poses=rows)
  for direction,angle in [('Forward',0),('Right',math.pi/2),('Backward',math.pi),('Left',-math.pi/2)]:
-  duration=.9;amplitude=.21 if direction in ['Right','Left'] else .30;rows=[]
+  lateral=direction in ['Right','Left']
+  # A .44m neutral stance plus .17m lateral travel stays below .78m wide.
+  # Support moves at 4*amplitude/duration; runtime cadence uses walkSpeed.
+  duration=.9;amplitude=.17 if lateral else .30;rows=[]
   for frame in range(91):
    t=frame/90;p=row(t);p['shift'][2]=-.18+.008*math.cos(t*math.tau*2);p['shift'][0]=-.025*math.sin((t+.25)*math.tau)
    p['bend']=.28;p['walkPhase']=t
@@ -34,10 +37,11 @@ for style,(grip,tip,two,turn) in specs.items():
      u=(phase-.5)*2
      travel=(2*u**3-3*u*u+1)*(-amplitude)+(u**3-2*u*u+u)*(-2*amplitude)+(-2*u**3+3*u*u)*amplitude+(u**3-u*u)*(-2*amplitude)
      lift=.095*math.sin(math.pi*u)**2
-    width=.28 if direction in ['Right','Left'] else .23
+    width=.22 if lateral else .23
     p['foot'+side]=[(-width if side=='R' else width)+math.sin(angle)*travel,(-.035 if side=='R' else .13)-math.cos(angle)*travel,lift]
     p['yaw'+side]=base['yaw'+side]
    rows.append(p)
   data[f'{style}_Guard_Walk_{direction}']=dict(duration=duration,twoHanded=two,gripSpacing=.30 if style=='Naginata' else .09,walkSpeed=4*amplitude/duration,poses=rows)
+  if lateral:data[f'{style}_Guard_Walk_{direction}']['nativeStanceFeet']=True
 path.write_text(json.dumps(data,separators=(',',':'))+'\n')
 print('Authored42 weapon-specific guard and step clips')

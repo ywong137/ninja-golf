@@ -1,16 +1,15 @@
 import * as THREE from 'three';
+import {alignedKnee,footForward} from './knee-alignment.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function worldRotation(bone,rotation){bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)).normalize();bone.updateWorldMatrix(false,true);}
 
 // Solve in world space so native proportions and arbitrary imported bone axes remain intact.
-export function solveLeg(thigh,calf,foot,target,footRotation,bendHint=null){
+export function solveLeg(thigh,calf,foot,target,footRotation,{maxReach=.985}={}){
  const hip=thigh.getWorldPosition(new THREE.Vector3()),knee=calf.getWorldPosition(new THREE.Vector3()),ankle=foot.getWorldPosition(new THREE.Vector3());
- const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee),axis=target.clone().sub(hip),distance=clamp(axis.length(),Math.abs(upper-lower)+.015,(upper+lower)*.985);axis.normalize();
- const previous=ankle.clone().sub(hip).normalize(),bend=(bendHint??knee).clone().sub(hip);if(!bendHint)bend.addScaledVector(previous,-bend.dot(previous));bend.addScaledVector(axis,-bend.dot(axis));
- if(bend.lengthSq()<1e-8)bend.set(0,0,1).addScaledVector(axis,-axis.z);bend.normalize();
- const along=(upper*upper-lower*lower+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,upper*upper-along*along));
- const solvedKnee=hip.clone().addScaledVector(axis,along).addScaledVector(bend,height),solvedAnkle=hip.clone().addScaledVector(axis,distance);
+ const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee),axis=target.clone().sub(hip),distance=clamp(axis.length(),Math.abs(upper-lower)+.015,(upper+lower)*maxReach);axis.normalize();
+ const solvedAnkle=hip.clone().addScaledVector(axis,distance);
+ const solvedKnee=alignedKnee(hip,solvedAnkle,upper,lower,footForward(foot,footRotation));
  const rotation=new THREE.Quaternion().setFromUnitVectors(knee.clone().sub(hip).normalize(),solvedKnee.clone().sub(hip).normalize()).multiply(thigh.getWorldQuaternion(new THREE.Quaternion()));worldRotation(thigh,rotation);
  const nowKnee=calf.getWorldPosition(new THREE.Vector3()),nowAnkle=foot.getWorldPosition(new THREE.Vector3());rotation.setFromUnitVectors(nowAnkle.sub(nowKnee).normalize(),solvedAnkle.clone().sub(nowKnee).normalize()).multiply(calf.getWorldQuaternion(new THREE.Quaternion()));worldRotation(calf,rotation);
  worldRotation(foot,footRotation);

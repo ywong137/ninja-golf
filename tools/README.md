@@ -15,6 +15,22 @@ The original locomotion reference still comes from the Quaternius Universal Anim
 `build-motion.py` prepares that reference. `build-authored-motion.py` prepares the authored golf and combat poses.
 The native-human builder fits those motions to each body's actual limb proportions and stores them inside each character GLB.
 
+The builder finishes with `align-native-knees.mjs`. This pass aligns knees with each shoe's toe direction.
+It keeps native leg lengths and foot contacts. Small pelvis shifts make demanding stances reachable.
+It changes leg rotation tracks and, when needed, pelvis translation. Meshes, skin weights, and arm tracks remain unchanged.
+The pass also runs after partial animation exports, so later arm work cannot restore the old inward knees.
+
+To apply it to an existing uncorrected native model:
+
+```sh
+node tools/align-native-knees.mjs input.glb --output corrected.glb
+node --test tests/native-knee-alignment.test.js
+```
+
+Corrected clips carry a version marker and are skipped on repeat runs. Re-author clips before applying a new correction.
+The regression checks all six heroes through selection, ready, attacks, guard steps, and running.
+It measures knee alignment against the actual toe direction, not just foot spacing.
+
 # Environment materials
 
 The download scripts retrieve the licensed assets listed in `public/textures/SOURCES.json`.
