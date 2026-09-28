@@ -48,3 +48,21 @@ test('rigid head attachments remain outside the documented skinned-surface scope
  const surfaces=headSurfaceMetadata({scene:f.scene});assert.equal(surfaces.length,1);assert.equal(surfaces[0].mesh,f.mesh);
  assert.ok(Math.abs(measureBladeHeadClearance(surfaces,{r:f.weapon}).minimumClearance-.02)<1e-8);
 });
+
+test('refitted search bounds match brute-force results through animated head poses',()=>{
+ const f=fixture([[0,-.12,-.05],[0,.12,.05],[.20,0,.03]]),geometry=new T.SphereGeometry(.15,16,12);
+ const positions=geometry.attributes.position,indices=new Uint16Array(positions.count*4),weights=new Float32Array(positions.count*4);
+ for(let i=0;i<positions.count;i++){indices[i*4]=positions.getY(i)>0?1:0;weights[i*4]=1;}
+ geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute(indices,4));geometry.setAttribute('skinWeight',new T.Float32BufferAttribute(weights,4));f.mesh.geometry=geometry;
+ const surfaces=headSurfaceMetadata({scene:f.scene});let crossingPoses=0,nearPoses=0,farPoses=0;
+ for(let i=0;i<90;i++){
+  f.head.rotation.set(.3*Math.sin(i),.4*Math.cos(i*.71),i*.02);f.head.position.set(.08*Math.sin(i*.33),.07*Math.cos(i*.53),.02);
+  f.eye.position.set(.01*Math.sin(i*.6),.015*Math.cos(i*.4),.025*Math.sin(i*.8));
+  f.weapon.position.set(.24*Math.sin(i*.2),.04*Math.cos(i*.43),.19*Math.sin(i*.5));f.weapon.rotation.set(i*.31,i*.17,i*.13);f.scene.updateMatrixWorld(true);
+  const actual=measureBladeHeadClearance(surfaces,{r:f.weapon}),reference=measureBladeHeadClearance(surfaces,{r:f.weapon},{bruteForce:true});
+  assert.ok(Math.abs(actual.minimumClearance-reference.minimumClearance)<1e-10,`pose ${i}: the search tree pruned the nearest triangles`);
+  assert.equal(actual.crossings,reference.crossings,`pose ${i}: the search tree missed intersecting triangles`);
+  if(actual.crossings)crossingPoses++;else if(actual.minimumClearance<.03)nearPoses++;else farPoses++;
+ }
+ assert.ok(crossingPoses>0&&nearPoses>0&&farPoses>0,'Exercise contact, near misses, and broad-phase rejection.');
+});

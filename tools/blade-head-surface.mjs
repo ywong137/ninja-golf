@@ -1,7 +1,42 @@
 // Browser-safe geometry checks for skinned head surfaces.
 import * as T from 'three';
 
-const boxGap=(a,b)=>Math.hypot(...['x','y','z'].map(k=>Math.max(a.min[k]-b.max[k],b.min[k]-a.max[k],0)));
+const boxGap=(a,b)=>Math.hypot(Math.max(a.min.x-b.max.x,b.min.x-a.max.x,0),Math.max(a.min.y-b.max.y,b.min.y-a.max.y,0),Math.max(a.min.z-b.max.z,b.min.z-a.max.z,0));
+const surfaceCaches=new WeakMap();
+
+function buildTree(triangles){
+ const box=new T.Box3();for(const triangle of triangles)box.union(triangle.box);
+ if(triangles.length<=8)return{box,triangles};
+ const extent=box.getSize(new T.Vector3()),axis=extent.x>=extent.y&&extent.x>=extent.z?'x':extent.y>=extent.z?'y':'z';
+ const ordered=triangles.slice().sort((a,b)=>(a.box.min[axis]+a.box.max[axis])-(b.box.min[axis]+b.box.max[axis])),middle=Math.floor(ordered.length/2);
+ return{box,left:buildTree(ordered.slice(0,middle)),right:buildTree(ordered.slice(middle))};
+}
+function refitTree(node){
+ node.box.makeEmpty();
+ if(node.triangles)for(const triangle of node.triangles)node.box.union(triangle.box);
+ else node.box.union(refitTree(node.left)).union(refitTree(node.right));
+ return node.box;
+}
+function deformHead(surfaces){
+ let cache=surfaceCaches.get(surfaces);
+ if(!cache){
+  const meshes=surfaces.map(({mesh,triangles})=>{
+   const vertices=new Map();
+   for(const ids of triangles)for(const id of ids)if(!vertices.has(id))vertices.set(id,new T.Vector3());
+   return{mesh,vertices,triangles:triangles.map(ids=>({points:ids.map(id=>vertices.get(id)),box:new T.Box3(),mesh:mesh.name}))};
+  });
+  cache={meshes,triangles:meshes.flatMap(mesh=>mesh.triangles),tree:null};surfaceCaches.set(surfaces,cache);
+ }
+ for(const {mesh,vertices,triangles}of cache.meshes){
+  mesh.skeleton.update();
+  for(const [id,point]of vertices)mesh.getVertexPosition(id,point).applyMatrix4(mesh.matrixWorld);
+  for(const triangle of triangles)triangle.box.setFromPoints(triangle.points);
+ }
+ // Topology stays fixed. Refit every bound after skin deformation; never reuse
+ // a bind-pose box to reject a possible contact in an animated pose.
+ if(cache.tree)refitTree(cache.tree);else cache.tree=buildTree(cache.triangles);
+ return cache;
+}
 function segmentDistance(a,b,c,d){
  const u=b.clone().sub(a),v=d.clone().sub(c),w=a.clone().sub(c),aa=u.dot(u),bb=u.dot(v),cc=v.dot(v),dd=u.dot(w),ee=v.dot(w),den=aa*cc-bb*bb;
  let distance=Math.min(...[[a,c,d],[b,c,d],[c,a,b],[d,a,b]].map(([p,a,b])=>new T.Line3(a,b).closestPointToPoint(p,true,new T.Vector3()).distanceTo(p)));
@@ -38,12 +73,8 @@ export function headSurfaceMetadata(g){
  return surfaces;
 }
 
-export function measureBladeHeadClearance(surfaces,weapons,{distanceCap=.03}={}){
- const head=[],headBox=new T.Box3();
- for(const {mesh,triangles}of surfaces){
-  mesh.skeleton.update();const cache=new Map();
-  for(const ids of triangles){const points=ids.map(i=>{if(!cache.has(i))cache.set(i,mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(mesh.matrixWorld));return cache.get(i);});for(const p of points)headBox.expandByPoint(p);head.push({points,box:new T.Box3().setFromPoints(points),mesh:mesh.name});}
- }
+export function measureBladeHeadClearance(surfaces,weapons,{distanceCap=.03,bruteForce=false}={}){
+ const head=deformHead(surfaces),headBox=head.tree.box;
  let minimum=distanceCap,closest=null,crossings=0;
  for(const [side,weapon]of Object.entries(weapons)){
   const blade=weapon.getObjectByName('Flat steel blade');if(!blade)throw Error('Weapon lacks its actual blade mesh.');
@@ -51,14 +82,20 @@ export function measureBladeHeadClearance(surfaces,weapons,{distanceCap=.03}={})
   if(boxGap(new T.Box3().setFromPoints(vertices),headBox)>=distanceCap)continue;
   for(let i=0;i<(index?index.count:pos.count);i+=3){
    const points=[0,1,2].map(k=>vertices[index?index.getX(i+k):i+k]),box=new T.Box3().setFromPoints(points);
-   for(const surface of head){
-    if(boxGap(box,surface.box)>Math.max(minimum,1e-8))continue;
+   const compare=surface=>{
+    if(boxGap(box,surface.box)>Math.max(minimum,1e-8))return;
     const distance=triangleDistance(points,surface.points);
     if(distance<1e-7)crossings++;
     if(distance<minimum){minimum=distance;closest={side,headMesh:surface.mesh};}
+   };
+   if(bruteForce){for(const surface of head.triangles)compare(surface);continue;}
+   const stack=[head.tree];
+   while(stack.length){
+    const node=stack.pop();if(boxGap(box,node.box)>Math.max(minimum,1e-8))continue;
+    if(node.triangles)for(const surface of node.triangles)compare(surface);
+    else stack.push(node.left,node.right);
    }
   }
  }
  return{minimumClearance:minimum,clearanceCappedAt:distanceCap,crossings,closest};
 }
-
