@@ -1,0 +1,85 @@
+{
+  "status": "Isolated hand candidates only. Paired-hand full-swing validation remains required.",
+  "models": {
+    "kaede": "105fd6f4f4c658a03c67b6a214d20b8a9dd4d1f912f81728b8247c5214a2f7aa",
+    "ronin": "4a3ad37557fe9ef6e741debe64c2a0b1a503a79346e4132d4f96e48e556315bc"
+  },
+  "hands": [
+    {
+      "hero": "kaede",
+      "side": "r",
+      "source": "kaede-r.source.json",
+      "fit": "kaede-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      }
+    },
+    {
+      "hero": "kaede",
+      "side": "l",
+      "source": "kaede-l.source.json",
+      "fit": "kaede-l.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      }
+    },
+    {
+      "hero": "ronin",
+      "side": "r",
+      "source": "ronin-r.source.json",
+      "fit": "ronin-r.fit.json",
+      "settings": {
+        "distalAxis": "preceding-segment",
+        "search": "compact",
+        "cmcMaxDegrees": 88.808458845,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      }
+    },
+    {
+      "hero": "ronin",
+      "side": "l",
+      "source": "ronin-l.source.json",
+      "fit": "ronin-l.fit.json",
+      "settings": {
+        "distalAxis": "cap",
+        "search": "broad",
+        "cmcMaxDegrees": 63.02535746439056,
+        "mcpRangeRadians": [
+          -0.2,
+          1.15
+        ],
+        "ipRangeRadians": [
+          -0.25,
+          1.35
+        ]
+      }
+    }
+  ]
+}

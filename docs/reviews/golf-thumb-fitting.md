@@ -66,6 +66,10 @@ The 2–4 mm pad-center gaps include a curved contact patch. The nearest surface
 
 ## Deliverables
 
+`tools/art-candidates/golf-hands/` preserves the four source and fitted hand profiles.
+Its manifest records the model hashes and each thumb fit's settings.
+These files remain offline candidates. The runtime grip data does not load them.
+
 - `/tmp/ninja-golf-complete-hand-candidates.json`: full roster with the four thumb candidates.
 - `/tmp/ninja-golf-complete-hand-preservation.json`: source mapping and fixed-field verification.
 - `/tmp/ninja-golf-thumb-posed-check.json`: posed contact and intersection results.
@@ -92,7 +96,7 @@ For Kaede either hand and Ronin right:
 
 ```sh
 node tools/fit-golf-thumb-pad.mjs \
-  --hero kaede --side r --profile /tmp/golf-thumb-source-kaede-r.json \
+  --hero kaede --side r --profile tools/art-candidates/golf-hands/kaede-r.source.json \
   --output /tmp/golf-thumb-rebuilt.json \
   --distal-axis preceding-segment --search compact
 ```
@@ -101,7 +105,7 @@ For Ronin left:
 
 ```sh
 node tools/fit-golf-thumb-pad.mjs \
-  --hero ronin --side l --profile /tmp/golf-thumb-source-ronin-l.json \
+  --hero ronin --side l --profile tools/art-candidates/golf-hands/ronin-l.source.json \
   --output /tmp/golf-thumb-ronin-left-rebuilt.json \
   --distal-axis cap --search broad --cmc-max-degrees 63.02535746439056
 ```
