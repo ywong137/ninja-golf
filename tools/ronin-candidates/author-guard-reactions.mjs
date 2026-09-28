@@ -4,8 +4,10 @@ import path from 'node:path';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {loadNativeSkin} from '../../tests/native-skin-helper.mjs';
-const {values}=parseArgs({options:{input:{type:'string',default:''},output:{type:'string'},record:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/author-guard-reactions.mjs --output /tmp/guards.glb --record /tmp/guards.json --input REVIEWED.glb\nAdd bounded impact and break recoil to the already transferred native Ready upper body. Candidate files only.');process.exit(0);}
+import {solveLeg} from '../../src/foot-placement.js';
+const {values}=parseArgs({options:{input:{type:'string',default:''},output:{type:'string'},record:{type:'string'},'break-body':{type:'boolean'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/author-guard-reactions.mjs --output /tmp/guards.glb --record /tmp/guards.json --input REVIEWED.glb [--break-body]\n--break-body adds a planted, backward/downward pelvis reaction to Break only. Without it, the version-5 bake remains unchanged.\nAdd bounded impact and break recoil to the already transferred native Ready upper body. Candidate files only.');process.exit(0);}
+if(values.input&&values.output&&path.resolve(values.input)===path.resolve(values.output))throw Error('Input and output must differ.');
 if(!values.input)throw Error('Supply --input. See --help.');
 if(!values.output?.endsWith('.glb')||!values.record?.endsWith('.json'))throw Error('Supply --output and --record.');
 for(const file of [values.output,values.record])if(path.resolve(file).startsWith(path.resolve(new URL('../../public/',import.meta.url).pathname)+path.sep))throw Error('Candidate outputs must remain outside public/.');
@@ -28,12 +30,37 @@ for(const name of names){
   const node=doc.nodes.findIndex(n=>T.PropertyBinding.sanitizeNodeName(n.name??'')==='spine_02');
   if(node<0)throw Error('Missing native spine_02.');
   const times=Float32Array.from({length:Math.ceil(duration*240)+1},(_,i)=>Math.min(i/240,duration)),rotations=new Float32Array(times.length*4);
+  const bodyBreak=values['break-body']&&name.endsWith('_Break');
+  const bodyTracks=bodyBreak?[{name:'pelvis',path:'translation',type:'VEC3',values:new Float32Array(times.length*3)},...['r','l'].flatMap(side=>['thigh_','calf_','foot_'].map(prefix=>({name:prefix+side,path:'rotation',type:'VEC4',values:new Float32Array(times.length*4)})))]:[];
   const sourceClip=g.animations.find(c=>c.name===name),sample=g.mixer.clipAction(sourceClip).reset().setLoop(T.LoopOnce,1);sample.clampWhenFinished=true;sample.play();
+  let sourcePelvisStart=null;
+  if(bodyBreak){g.mixer.setTime(0);g.scene.updateMatrixWorld(true);sourcePelvisStart=bones.pelvis.getWorldPosition(new T.Vector3());}
   for(let i=0;i<times.length;i++){
    const t=times[i],isBreak=name.endsWith('_Break'),peak=isBreak?.10:.045,hold=isBreak?.16:.055;
    const weight=t<peak?T.MathUtils.smoothstep(t,0,peak):1-T.MathUtils.smoothstep(t,hold,duration);
    const back=(isBreak?12:5.5)*Math.PI/180*weight,yaw=(isBreak?10:-2)*Math.PI/180*weight,roll=(isBreak?3:0)*Math.PI/180*weight;
    g.mixer.setTime(t);g.scene.updateMatrixWorld(true);
+   if(bodyBreak){
+    // Capture the source feet before the body yields. Re-solving only the legs
+    // keeps both soles and toe stations at their original world-space targets.
+    const saved=bodyTracks.map(track=>({bone:bones[track.name],p:bones[track.name].position.clone(),q:bones[track.name].quaternion.clone()}));
+    const feet=Object.fromEntries(['r','l'].map(side=>[side,{p:bones['foot_'+side].getWorldPosition(new T.Vector3()),q:bones['foot_'+side].getWorldQuaternion(new T.Quaternion())}]));
+    const pelvis=bones.pelvis,position=pelvis.getWorldPosition(new T.Vector3());
+    // Cancel the source clip's upward recoil before adding the actual compression.
+    position.y=T.MathUtils.lerp(position.y,sourcePelvisStart.y-.040,weight);
+    position.z=T.MathUtils.lerp(position.z,sourcePelvisStart.z-.045,weight);
+    pelvis.position.copy(pelvis.parent.worldToLocal(position));g.scene.updateMatrixWorld(true);
+    for(const side of ['r','l']){
+     const error=solveLeg(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side],feet[side].p,feet[side].q);
+     if(error>1e-5)throw Error(name+' has an unreachable planted foot at '+t+' ('+side+').');
+    }
+    for(const track of bodyTracks){
+     const value=track.path==='translation'?bones[track.name].position:bones[track.name].quaternion.clone().normalize();
+     if(track.type==='VEC4'&&i&&value.dot(new T.Quaternion().fromArray(track.values,(i-1)*4))<0)value.set(-value.x,-value.y,-value.z,-value.w);
+     value.toArray(track.values,i*(track.type==='VEC4'?4:3));
+    }
+    for(const item of saved){item.bone.position.copy(item.p);item.bone.quaternion.copy(item.q);}g.scene.updateMatrixWorld(true);
+   }
    const parent=bones.spine_02.parent.getWorldQuaternion(new T.Quaternion()),base=bones.spine_02.getWorldQuaternion(new T.Quaternion());
    const delta=new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),yaw)
     .multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),roll))
@@ -46,7 +73,14 @@ for(const name of names){
   animation.channels=animation.channels.filter(c=>!(c.target.node===node&&c.target.path==='rotation'));
   animation.channels.push({sampler:animation.samplers.length,target:{node,path:'rotation'}});
   animation.samplers.push({input:accessor(times,'SCALAR'),output:accessor(rotations,'VEC4'),interpolation:'LINEAR'});
-  animation.extras={...animation.extras,nativeRoninGuardVersion:5,nativeRoninGuardRecoilVersion:1,reviewCandidate:true};
+  for(const track of bodyTracks){
+   const bodyNode=doc.nodes.findIndex(n=>T.PropertyBinding.sanitizeNodeName(n.name??'')===track.name);
+   if(bodyNode<0)throw Error('Missing native '+track.name+'.');
+   animation.channels=animation.channels.filter(c=>!(c.target.node===bodyNode&&c.target.path===track.path));
+   animation.channels.push({sampler:animation.samplers.length,target:{node:bodyNode,path:track.path}});
+   animation.samplers.push({input:accessor(times,'SCALAR'),output:accessor(track.values,track.type),interpolation:'LINEAR'});
+  }
+  animation.extras={...animation.extras,nativeRoninGuardVersion:5,nativeRoninGuardRecoilVersion:1,...(bodyBreak?{nativeRoninGuardBodyVersion:6}:{}),reviewCandidate:true};
  }
  records[name]={...original[name],twoHanded:true,gripSpacing:.15,nativeAttachment:true,pairedGrip:true};
 }
@@ -56,4 +90,4 @@ const source=p=>[p.x,-p.z,p.y],point=n=>outBones[n].getWorldPosition(new T.Vecto
 for(const name of names){const clip=out.animations.find(a=>a.name===name),a=out.mixer.clipAction(clip).setLoop(T.LoopOnce,1);a.clampWhenFinished=true;a.play();const record=records[name];
  record.poses=record.poses.map(p=>{out.mixer.setTime(Math.min(p.t*clip.duration,clip.duration-1e-7));out.scene.updateMatrixWorld(true);const primary=palm('r'),shaft=new T.Vector3().fromArray(profiles.r.axis).applyQuaternion(q('hand_r')),weaponQ=q('hand_r').multiply(new T.Quaternion().fromArray(profiles.r.frame)),legacy=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),shaft).invert().multiply(weaponQ);return{...p,grip:source(primary),tip:source(primary.clone().addScaledVector(shaft,1.15)),secondaryGrip:source(palm('l')),elbowR:source(point('lowerarm_r')),elbowL:source(point('lowerarm_l')),roll:2*Math.atan2(legacy.y,legacy.w)};});a.stop();
 }
-fs.writeFileSync(values.record,JSON.stringify(records));console.log(JSON.stringify({output:values.output,record:values.record,clips:names,recoilBone:"spine_02",preservedPelvisSpine01AndLegChannels:true}));
+fs.writeFileSync(values.record,JSON.stringify(records));console.log(JSON.stringify({output:values.output,record:values.record,clips:names,recoilBone:"spine_02",preservedSpine01Channels:true,preservedPelvisAndLegChannels:!values['break-body'],breakBody:!!values['break-body']}));

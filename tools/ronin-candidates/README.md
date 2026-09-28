@@ -91,6 +91,12 @@ Actual Opus 5.5 High accepted the earlier single diagonal pilot. Later measureme
 
 The rejected independent arm-path fits remain outside this directory. These candidate tools do not change shipping models or metadata.
 
+The optional `--break-body` flag adds the V6 planted body compression to guard break.
+Apply it to the diagonal model before any guard reaction has been added.
+It preserves the reviewed upper body and all other clips. The default still reproduces V5 exactly.
+Use `check-guard-break.mjs` to compare V6 against V5 at 480 Hz.
+See `docs/reviews/ronin-guard-break-v6.md` for the exact command, measurements, hash, and review limits.
+
 ## Check actual blade clearance
 
 The candidate scanner uses the candidate palm centers and fixed frames. It reproduces the runtime midpoint attachment for a paired grip.
