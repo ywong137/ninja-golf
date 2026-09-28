@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {createWeapon} from '../src/weapons.js';
-import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
+import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
 
 export const NATIVE_NAGINATA_CLIPS = [
   'Ethan_Naginata_Ready',
@@ -28,8 +28,11 @@ export async function validateNativeNaginata({
   model = new URL('../public/models/monk.glb',import.meta.url),
   record = new URL('../src/motion-data.json',import.meta.url),
   includeFrames = false,
+  includeSkin = false,
 } = {}) {
   const rig = await loadNativeSkin(model), records = json(record);
+  // Classify the actual mesh in its bind pose before playing any animation.
+  const skin = includeSkin ? skinGroups(rig) : null;
   const frames = json(new URL('./native-naginata-frames.json',import.meta.url));
   const grips = json(new URL('../src/grip-data.json',import.meta.url)).monk.sword;
   const bones = {};
@@ -71,6 +74,7 @@ export async function validateNativeNaginata({
     action.clampWhenFinished = true;
     const measured = {samples:0,wrist:0,mcp:0,palmGap:0,frameJump:0,minTipY:Infinity,
       maxMedial:0,maxPlantDrift:0,maxPlantTurn:0,minBladeY:Infinity,maxLift:0};
+    if (includeSkin) Object.assign(measured,{skinSamples:0,maxElbowFold:0,maxForearmTorsoPairs:0});
     if (includeFrames) measured.frames = [];
     const plants = new Map();
     let previous = null;
@@ -84,6 +88,18 @@ export async function validateNativeNaginata({
       if (time === 0) endpoints[name+'/start'] = snapshot(bones);
       const palms = {}, arms = {};
       for (const side of ['r','l']) {
+        if (includeSkin) {
+          const deformed = measureArmSkin(rig,skin,side);
+          const fold = deformed['fold_'+side].maxRadialPenetration;
+          const pairs = deformed['forearmTorso_'+side].pairs;
+          measured.skinSamples++;
+          measured.maxElbowFold = Math.max(measured.maxElbowFold,fold);
+          measured.maxForearmTorsoPairs = Math.max(measured.maxForearmTorsoPairs,pairs);
+          assert.ok(fold <= .003,
+            `${name}/${time.toFixed(6)}/${side}: actual forearm skin penetrates the upper sleeve by ${(fold*1000).toFixed(3)} mm.`);
+          assert.equal(pairs,0,
+            `${name}/${time.toFixed(6)}/${side}: actual forearm skin intersects the torso in ${pairs} triangle pairs.`);
+        }
         const hand = 'hand_'+side, lower = 'lowerarm_'+side;
         palms[side] = bones[hand].localToWorld(new T.Vector3().fromArray(grips[side].center));
         measured.wrist = Math.max(measured.wrist,bones[hand].quaternion.clone().normalize().angleTo(neutral[side])*DEGREES);
@@ -166,12 +182,12 @@ export async function validateNativeNaginata({
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const {values} = parseArgs({options:{model:{type:'string'},record:{type:'string'},
-    output:{type:'string'},'include-frames':{type:'boolean'},help:{type:'boolean'}}});
+    output:{type:'string'},'include-frames':{type:'boolean'},skin:{type:'boolean'},help:{type:'boolean'}}});
   if (values.help) {
-    console.log('node tools/check-native-naginata.mjs [--model MODEL.glb] [--record RECORDS.json] [--output REPORT.json] [--include-frames]\nChecks native wrist, paired grip, knees, support, blade clearance, and arm continuity.\nDefaults to the installed Monk model and motion records. Runs without a browser or GPU.');
+    console.log('node tools/check-native-naginata.mjs [--model MODEL.glb] [--record RECORDS.json] [--output REPORT.json] [--include-frames] [--skin]\nChecks native wrist, paired grip, knees, support, blade clearance, and arm continuity.\n--skin also checks actual elbow-fold penetration and forearm/torso intersections at 480 Hz.\nDefaults to the installed Monk model and motion records. Runs without a browser or GPU.');
   } else {
     if (Boolean(values.model) !== Boolean(values.record)) throw new Error('Supply --model and --record together, or omit both for installed assets.');
-    const report = await validateNativeNaginata({model:values.model,record:values.record,includeFrames:values['include-frames']});
+    const report = await validateNativeNaginata({model:values.model,record:values.record,includeFrames:values['include-frames'],includeSkin:values.skin});
     if (values.output) fs.writeFileSync(values.output,JSON.stringify(report,null,2)+'\n');
     console.log(JSON.stringify(Object.fromEntries(Object.entries(report).map(([name,metrics]) => [name,{...metrics,frames:undefined}])),null,2));
   }

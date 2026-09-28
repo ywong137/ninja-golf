@@ -31,7 +31,9 @@ export function solveGripArm(upper,lower,hand,target,handRotation){
 export function gripFrame(bones,entry,side,reference=null){
  const hand=bones['hand_'+side],axis=new Vector3().fromArray(entry.axis);
  const forward=hand.worldToLocal(position(bones['middle_01_'+side]));
- const frame=reference?alignWeaponShaft(reference.clone(),axis):palmWeaponBasis(axis,forward);
+ // A fitted frame can keep a golf club independent of the combat weapon.
+ const fitted=entry.frame?new Quaternion().fromArray(entry.frame):reference;
+ const frame=fitted?alignWeaponShaft(fitted.clone(),axis):palmWeaponBasis(axis,forward);
  return {center:new Vector3().fromArray(entry.center),axis,frame,radius:entry.radius,
   fingers:Object.entries(entry.rotations).map(([name,q])=>[bones[name],new Quaternion().fromArray(q)])};
 }

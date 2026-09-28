@@ -10,7 +10,8 @@ if(values.help){console.log('node tools/build-grip-profiles.mjs [OUTPUT_DIR] [--
 if(positionals.length>1||values.profile&&!['sword','golf'].includes(values.profile))throw Error('See --help for valid grip profile arguments.');
 const output=path.resolve(positionals[0]||path.join(root,'artifacts/grip-fit'));
 const models=['ronin','shinobi','monk','kaede','ayame','sora'];
-const result=values.profile?JSON.parse(fs.readFileSync(path.join(root,'src/grip-data.json'))):{};
+const previous=JSON.parse(fs.readFileSync(path.join(root,'src/grip-data.json')));
+const result=values.profile?structuredClone(previous):{};
 for(const [index,model]of models.entries()){
  result[model]??={};
  for(const profile of values.profile?[values.profile]:['sword','golf']){
@@ -23,6 +24,9 @@ for(const [index,model]of models.entries()){
    const data=JSON.parse(fs.readFileSync(file,'utf8'));
    const {center,axis,rotations}=data;
    result[model][profile][side]={radius,center,axis,rotations};
+   // Refit the cylinder without discarding a reviewed blade or club orientation.
+   const frame=previous[model]?.[profile]?.[side]?.frame;
+   if(frame)result[model][profile][side].frame=frame;
   }
  }
 }

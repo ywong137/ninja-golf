@@ -1,12 +1,19 @@
 # Ethan’s native naginata animation
 
-The final v20 candidate replaces thirteen animations. The model retains thirty-seven animation slots.
+The final v28 candidate replaces thirteen animations. The model retains thirty-seven animation slots.
 
 The author uses a shared shaft and two fitted palm stations. The rear hand stays forward of the body during the reviewed cuts.
 
 The pelvis and chest turn before the blade reaches contact. The heavy cleave includes a planted forward step.
 
 The [Opus movement study](opus-naginata-study.md) supplied the initial motion brief. Later source measurements and rendered poses guided the final curves.
+
+The study used the actual `claude-opus-5-5` model with High effort. Opus did not review the final v28 candidate.
+Local front and side reviews accepted the final light cut, heavy step, and hand spacing for integration.
+
+The v28 correction moves the shared hand path a few centimeters around the sleeves and torso.
+The heavy anticipation allows more time before the cut. The lead foot plants before contact.
+Musou stops the interpolation tangent at each Ready endpoint. Attack durations and damage times remain unchanged.
 
 ## Timing and coverage
 
@@ -32,7 +39,7 @@ Heavy Sweep has two opposed cuts through the forward target. The tip velocities 
 
 Musou contains seven contacts across a full turn. Short hops change the body’s direction between attacks. Each contact has a planted support foot.
 
-Guard Impact compresses the pelvis by 3.6 cm and moves the grip by 8.7 cm.
+Guard Impact compresses the pelvis by 3.6 cm and moves the grip by 9.5 cm.
 Guard Break turns the body by 0.36 radians and moves the grip by 24 cm.
 Both reactions retain the shared grip and return to Ready.
 
@@ -43,16 +50,22 @@ The permanent validator samples the actual skeleton at 480 Hz. It checks the int
 The validator checks complete wrist rotations, palm contact, loaded knee alignment, planted feet, actual blade vertices, and local/world arm continuity.
 It also checks the full bone transforms at both endpoints against Ready.
 
+The permanent source test checks both deformed arms throughout every clip at 480 Hz.
+It rejects elbow-fold penetration above 3 mm and any forearm–torso triangle intersection.
+These checks include anticipation, recovery, guard reactions, exact damage times, and both endpoints.
+
 | Measurement | Worst final value | Rejection bound |
 |---|---:|---:|
 | Wrist rotation from imported neutral | 24.00° | 24.01° |
-| Forearm-to-middle-knuckle bend | 27.34° | 30° |
-| Paired palm gap | 1.760 mm | 2.5 mm |
-| Arm rotation per 120 Hz interval | 22.59° | 23° |
+| Forearm-to-middle-knuckle bend | 27.33° | 30° |
+| Paired palm gap | 0.674 mm | 2.5 mm |
+| Arm rotation per 120 Hz interval | 21.24° | 23° |
 | Actual blade height above ground | 0.583 m minimum | 0.10 m minimum |
-| Planted ankle movement | 0.264 mm | 1 mm |
-| Planted shoe rotation | 0.016° | 0.286° |
+| Planted ankle movement | 0.257 mm | 1 mm |
+| Planted shoe rotation | 0.015° | 0.286° |
 | Loaded knee distance inside its shoe plane | Under 0.1 mm | 20 mm |
+| Sampled elbow-fold penetration | 0 mm | 3 mm maximum |
+| Sampled forearm–torso triangle intersections | 0 pairs | No intersections |
 
 Every attack lifts a foot more than 40 mm. All attacks and guard reactions match Ready at both endpoints.
 
@@ -63,9 +76,14 @@ The audit also checked geometry, materials, nodes, skin data, face data, and the
 
 These measurements do not establish artistic quality. Rendered movement still requires visual review.
 
-Some recovery poses compress the left elbow skin. The sampled heavy sweep has about 30 mm of overlap within the folded sleeve.
-Guard reactions show 13–21 mm of the same elbow-fold overlap.
-Earlier transition samples also showed brief vest contact. The final contact and quarter-phase samples had no forearm–torso intersections.
+The v28 scan found zero overlap in the tested elbow and forearm–torso regions across all thirteen clips.
+The scan uses the actual deformed mesh. It checks central limb surfaces and excludes shared vertices and the elbow crease.
+This result does not prove clearance across every mesh surface or every runtime transition.
+
+The same regression rejects the preserved v20 model at 0.04375 seconds in the light diagonal cut.
+Its left forearm penetrates the upper sleeve by 8.747 mm at that frame.
+
+The guard remains static and somewhat stiff. The reviewed strips show pose spacing, but they do not establish natural movement timing.
 
 The motion uses wrist rotation up to 24 degrees. It does not maintain perfectly neutral wrists throughout every cut.
 The animation uses authored curves and a geometric arm solver. It does not use captured human movement.
@@ -88,7 +106,7 @@ Run the author after the face and golf stages:
 
 ```sh
 node tools/author-native-naginata.mjs --input public/models/monk.glb --output /tmp/naginata.glb --record /tmp/naginata.json
-node tools/check-native-naginata.mjs --model /tmp/naginata.glb --record /tmp/naginata.json --output /tmp/naginata-check.json
+node tools/check-native-naginata.mjs --model /tmp/naginata.glb --record /tmp/naginata.json --skin --output /tmp/naginata-check.json
 ```
 
 Merge all thirteen records into `src/motion-data.json`. Install the matching model only after preservation and runtime checks pass.
@@ -103,6 +121,8 @@ Run the installed source regression:
 node --test tests/native-naginata.test.js
 ```
 
-The validator also supports `--help` and `--include-frames`. It runs without a browser or GPU.
+The validator also supports `--help` and `--include-frames`. The source test enables `--skin` checks through the exported validator.
+All checks run without a browser or GPU.
 
-The final authoring artifacts used the `/tmp/ninja-naginata-v20` prefix. They include the model, matching records, preservation audit, and sampled skin report.
+The final authoring artifacts use the `/tmp/ninja-naginata-v28` prefix. They include the model, matching records, preservation audit, and sampled skin report.
+The three reviewed image files end with `-light.png`, `-heavy.png`, and `-guard.png`.

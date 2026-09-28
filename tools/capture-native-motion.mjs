@@ -2,21 +2,24 @@
 import {chromium} from 'playwright';
 import fs from 'node:fs';
 import {disableHmr} from './disable-hmr.mjs';
+import {routeMotionCandidate} from './route-motion-candidate.mjs';
 
 const [heroText,clipName,output,...options]=process.argv.slice(2);
 if(heroText==='--help'){
- console.log('node tools/capture-native-motion.mjs HERO_INDEX CLIP_NAME OUTPUT.png [--model CANDIDATE.glb --motion-record RECORDS.json] [--native-weapon]\nCaptures eight native animation phases from front and side. Audio stays muted.\n--native-weapon retains the complete animated wrist rotation instead of authored shaft targets.');
+ console.log('node tools/capture-native-motion.mjs HERO_INDEX CLIP_NAME OUTPUT.png [--model CANDIDATE.glb --motion-record RECORDS.json] [--replace-clip ORIGINAL --ready-record READY.json] [--native-weapon]\nCaptures eight native animation phases from front and side. Audio stays muted.\n--native-weapon retains the complete animated wrist rotation instead of authored shaft targets.');
  process.exit(0);
 }
 if(!/^[0-5]$/.test(heroText??'')||!clipName||!output?.endsWith('.png'))throw Error('Pass HERO_INDEX (0–5), CLIP_NAME and OUTPUT.png. See --help.');
-let model=null,motionRecord=null,nativeWeapon=false;
-while(options.length){const option=options.shift();if(option==='--model'&&options[0])model=options.shift();else if(option==='--motion-record'&&options[0])motionRecord=options.shift();else if(option==='--native-weapon')nativeWeapon=true;else throw Error('Unknown option: '+option);}
+let model=null,motionRecord=null,replaceClip=null,readyRecord=null,nativeWeapon=false;
+while(options.length){const option=options.shift();if(option==='--model'&&options[0])model=options.shift();else if(option==='--motion-record'&&options[0])motionRecord=options.shift();else if(option==='--replace-clip'&&options[0])replaceClip=options.shift();else if(option==='--ready-record'&&options[0])readyRecord=options.shift();else if(option==='--native-weapon')nativeWeapon=true;else throw Error('Unknown option: '+option);}
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:2400,height:1200}}),errors=[];
  page.on('pageerror',error=>errors.push(error.message));await disableHmr(page);
- if(model){const name=['ronin','shinobi','monk','kaede','ayame','sora'][Number(heroText)];await page.route(`**/models/${name}.glb?*`,route=>route.fulfill({path:model}));}
- if(motionRecord){const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url),'utf8'));Object.assign(motions,JSON.parse(fs.readFileSync(motionRecord,'utf8')));const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(motions)+';');await page.route('**/src/motion.js*',route=>route.fulfill({contentType:'application/javascript',body:source}));}
+ if(readyRecord&&!replaceClip)throw Error('--ready-record needs --replace-clip.');
+ if(replaceClip)await routeMotionCandidate(page,{hero:Number(heroText),model,motionRecord,replaceClip,readyRecord});
+ if(model&&!replaceClip){const name=['ronin','shinobi','monk','kaede','ayame','sora'][Number(heroText)];await page.route(`**/models/${name}.glb?*`,route=>route.fulfill({path:model}));}
+ if(motionRecord&&!replaceClip){const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url),'utf8'));Object.assign(motions,JSON.parse(fs.readFileSync(motionRecord,'utf8')));const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(motions)+';');await page.route('**/src/motion.js*',route=>route.fulfill({contentType:'application/javascript',body:source}));}
  await page.goto('http://localhost:5173/tests/rig-stage.html');
  const report=await page.evaluate(async({hero,clipName,nativeWeapon})=>{
   const T=await import('/node_modules/three/build/three.module.js');
