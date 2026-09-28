@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import * as THREE from 'three';
 import {loadNativeSkin,skinGroups,measureArmSkin} from './native-skin-helper.mjs';
+import {WARRIORS} from '../src/warriors.js';
+
+const ace=WARRIORS.find(hero=>hero.model==='kaede');
+const aceClip=name=>ace.motionOverrides?.[name]||name;
 
 test('Ronin overhead cleave keeps both forearms clear through preparation and contact',async t=>{
  const file=process.env.NINJA_NATIVE_ARM_DIR?path.join(process.env.NINJA_NATIVE_ARM_DIR,'ronin.glb'):new URL('../public/models/ronin.glb',import.meta.url);
@@ -66,7 +70,7 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
   :new URL('../public/models/kaede.glb',import.meta.url);
  const g=await loadNativeSkin(file),metadata=skinGroups(g);
  for(const group of ['upperarm_l','lowerarm_l','torso'])assert.ok(metadata.triangles.filter(t=>t.group===group).length>10,`Missing ${group} skin coverage`);
- const clip=g.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
+ const clip=g.animations.find(c=>c.name===aceClip(name));assert.ok(clip,`Missing native ${aceClip(name)}`);
  const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
  const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  let previous=null;
@@ -89,7 +93,7 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
 
 for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam'])test(`${name}: the fan forearm clears the torso during the cut`,async t=>{
  const file=process.env.NINJA_NATIVE_ARM_DIR?path.join(process.env.NINJA_NATIVE_ARM_DIR,'kaede.glb'):new URL('../public/models/kaede.glb',import.meta.url);
- const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
+ const g=await loadNativeSkin(file),metadata=skinGroups(g),clip=g.animations.find(c=>c.name===aceClip(name));assert.ok(clip,`Missing native ${aceClip(name)}`);
  const action=g.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
  const point=name=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  let previous=null;const rows=[];

@@ -37,5 +37,5 @@ const styles=await page.evaluate(async()=>{
  }
  g.clearEnemies();g.crowd.update([]);return rows;
 });
-assert.deepEqual(styles.map(x=>x.style),['naginata','fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Ethan_Naginata_Heavy_Cleave','Fan_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished&&x.protected));assert.ok(styles.every(x=>x.knockback>0),JSON.stringify(styles));
+assert.deepEqual(styles.map(x=>x.style),['naginata','fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Ethan_Naginata_Heavy_Cleave','Ace_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished&&x.protected));assert.ok(styles.every(x=>x.knockback>0),JSON.stringify(styles));
 assert.deepEqual(errors,[]);console.log('Focused strafe/backpedal, buffered finishers, Musou, six scenery entrances, gamepad controls, and distinct female combat styles passed');await browser.close();

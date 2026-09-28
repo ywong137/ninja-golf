@@ -44,7 +44,7 @@ test('Releasing backward or sideways attack movement keeps the last heading and 
   const angle=d*Math.PI/4,phase=p/40;pose();steps.phase=phase;steps.weight=1;steps.angle=angle;steps.apply(0,{active:true,speed:2.5,angle});const before=feet();
   pose();steps.phase=phase;steps.weight=1;steps.angle=angle;steps.apply(1/60,{active:false,speed:0,angle:0});const released=feet();
   pose();steps.phase=phase;steps.weight=1;steps.angle=angle;steps.apply(1/60,{active:false,speed:0,angle});const held=feet();
-  for(let side=0;side<2;side++){assert.ok(released[side].distanceTo(held[side])<1e-8,'Discarded input direction changes the foot pose');assert.ok(released[side].distanceTo(before[side])<.05,'Foot jumps when movement stops');}
+  for(let side=0;side<2;side++){assert.ok(released[side].distanceTo(held[side])<1e-8,'Discarded input direction changes the foot pose');assert.ok(released[side].distanceTo(before[side])<.05,`Foot jumps when movement stops: direction ${d}, phase ${phase}, side ${side}, distance ${released[side].distanceTo(before[side])}`);}
  }
  steps.dispose();
 });

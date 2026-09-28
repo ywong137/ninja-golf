@@ -25,6 +25,7 @@ export class AttackLocomotion {
  reset(){this.weight=0;this.report=null;}
  apply(dt,{active=false,speed=0,angle=0,runPhase=null}={}){
   const wanted=active&&speed>.10?1:0;
+  const previousWeight=this.weight;
   if(wanted&&!this.weight){this.phase=runPhase===null?0:(runPhase+.75)%1;this.angle=angle;}
   if(speed>.10)this.angle+=Math.atan2(Math.sin(angle-this.angle),Math.cos(angle-this.angle))*(1-Math.exp(-16*dt));
   angle=this.angle;
@@ -37,6 +38,12 @@ export class AttackLocomotion {
   this.proxyRoot.position.copy(this.root.position);this.proxyRoot.quaternion.copy(this.root.quaternion);this.proxyRoot.scale.copy(this.root.scale);
   this.mixer.update(0);this.proxyRoot.updateMatrixWorld(true);this.root.updateMatrixWorld(true);
   const targets=['r','l'].map(side=>({side,ankle:point(this.bones['foot_'+side]),q:rotation(this.bones['foot_'+side])}));
+  if(!wanted){
+   // A wide attack stance can be far from the last walking pose. Limit the
+   // release displacement instead of moving that distance in a fixed fade.
+   const span=Math.max(...targets.map(({side,ankle})=>ankle.distanceTo(point(this.proxyBones['foot_'+side]))));
+   if(span>1e-6)this.weight=Math.max(this.weight,previousWeight-2.4*dt/span);
+  }
   for(const name of ['pelvis','thigh_r','calf_r','foot_r','ball_r','thigh_l','calf_l','foot_l','ball_l']){
    const bone=this.bones[name];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);
   }

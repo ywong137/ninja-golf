@@ -7,10 +7,11 @@ import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
 import {solveLeg} from '../src/foot-placement.js';
-import {acePhase,ACE_DURATION,ACE_IMPACT,ACE_PLANTS} from './native-ace-profile.mjs';
+import {acePhase,ACE_DURATION,ACE_IMPACT,ACE_PLANTS,aceHeavyPhase,ACE_HEAVY_DURATION,ACE_HEAVY_IMPACT,ACE_HEAVY_PLANTS} from './native-ace-profile.mjs';
 import {createWeapon} from '../src/weapons.js';
-const {values}=parseArgs({options:{output:{type:'string'},input:{type:'string'},frames:{type:'string'},record:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/author-native-ace.mjs --output /tmp/ace-cut.glb --record /tmp/ace-cut.json [--input MODEL.glb] [--frames FRAME.json]\nCreates a review candidate with one native Ace attack. Adds Ace_Cut_Diagonal and Ace_Ready. Other animation and model bytes remain intact.');process.exit(0);}
+const {values}=parseArgs({options:{clip:{type:'string',default:'light'},output:{type:'string'},input:{type:'string'},frames:{type:'string'},record:{type:'string'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/author-native-ace.mjs --output /tmp/ace-cut.glb --record /tmp/ace-cut.json [--input MODEL.glb] [--frames FRAME.json] [--clip light|heavy]\nLight replaces the opening cut and Ready. Heavy replaces only the heavy cleave; its input must contain Ace_Ready. Other model data remain intact.');process.exit(0);}
+if(!['light','heavy'].includes(values.clip))throw Error('Choose --clip light or --clip heavy.');
 if(!values.output?.endsWith('.glb')||!values.record?.endsWith('.json'))throw Error('Supply --output and --record. See --help.');
 if(path.resolve(values.output).startsWith(new URL('../public/',import.meta.url).pathname))throw Error('Candidate output must remain outside public/.');
 const input=values.input??new URL('../public/models/kaede.glb',import.meta.url),raw=fs.readFileSync(input),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size)),chunks=[raw.subarray(28+size)];let byteLength=chunks[0].length;
@@ -56,20 +57,22 @@ function poseArm(side,upperDirection,lowerDirection,shaft,rollOverride=null){
 const palm=side=>point('hand_'+side).add(new T.Vector3().fromArray(profiles[side].center).applyQuaternion(worldQ('hand_'+side)));
 
 function accessor(array,type){const pad=(4-byteLength%4)%4;if(pad){chunks.push(Buffer.alloc(pad));byteLength+=pad;}const data=Buffer.from(array.buffer,array.byteOffset,array.byteLength),view=doc.bufferViews.length;chunks.push(data);doc.bufferViews.push({buffer:0,byteOffset:byteLength,byteLength:data.length});byteLength+=data.length;const a={bufferView:view,componentType:5126,count:array.length/(type==='VEC4'?4:type==='VEC3'?3:1),type};if(type==='SCALAR'){a.min=[array[0]];a.max=[array.at(-1)];}doc.accessors.push(a);return doc.accessors.length-1;}
-const name='Ace_Cut_Diagonal',duration=ACE_DURATION,count=Math.ceil(duration*240),times=Float32Array.from({length:count+1},(_,i)=>Math.min(i/240,duration));
+const isHeavy=values.clip==='heavy',name=isHeavy?'Ace_Heavy_Cleave':'Ace_Cut_Diagonal',replaces=isHeavy?'Fan_Heavy_Cleave':'Fan_Cut_Diagonal',duration=isHeavy?ACE_HEAVY_DURATION:ACE_DURATION,impact=isHeavy?ACE_HEAVY_IMPACT:ACE_IMPACT,plants=isHeavy?ACE_HEAVY_PLANTS:ACE_PLANTS,phaseAt=isHeavy?aceHeavyPhase:acePhase;
+if(isHeavy&&!doc.animations.some(a=>a.name==='Ace_Ready'))throw Error('Heavy authoring requires an input with the accepted Ace_Ready clip.');
+const count=Math.ceil(duration*240),times=Float32Array.from({length:count+1},(_,i)=>Math.min(i/240,duration));
 const tracks=Object.fromEntries(Object.keys(bones).map(n=>[n,{translation:new Float32Array(times.length*3),rotation:new Float32Array(times.length*4),scale:new Float32Array(times.length*3)}]));
 const poses=[],report={mountingRoll,mountedFrame:frames.r.frame,maxPrimaryWrist:0,maxCounterbalanceWrist:0,maxFootReachError:0,minBladeHeight:Infinity,frames:[]};
 const source=p=>[p.x,-p.z,p.y];
 const weapon=createWeapon('jian'),blade=weapon.getObjectByName('Flat steel blade'),bladePoints=blade.geometry.attributes.position;weapon.updateMatrixWorld(true);
 const bladeLocal=Array.from({length:bladePoints.count},(_,i)=>blade.localToWorld(new T.Vector3().fromBufferAttribute(bladePoints,i)));
 for(let i=0;i<times.length;i++){
- reset();const time=times[i],phase=acePhase(time),hip=rotation(phase.hip,phase.hinge),chest=rotation(phase.chest,phase.bend);
+ reset();const time=times[i],phase=phaseAt(time),hip=rotation(phase.hip,phase.hinge),chest=rotation(phase.chest,phase.bend);
  const pelvis=pelvisOrigin.clone().add(new T.Vector3(phase.x,phase.y,phase.z));bones.pelvis.position.copy(bones.pelvis.parent.worldToLocal(pelvis));
  orient('pelvis',hip);orient('spine_01',hip);orient('spine_02',rotation(T.MathUtils.lerp(phase.hip,phase.chest,.55),T.MathUtils.lerp(phase.hinge,phase.bend,.5)));orient('spine_03',chest);orient('neck_01',chest);orient('Head',rotation(phase.chest*.35,.03));
  for(const side of ['r','l']){
   orient('clavicle_'+side,chest.clone().multiply(new T.Quaternion().setFromAxisAngle(Y,side==='r'?.10:-.05))); 
-  const base=footBase[side],ankle=base.p.clone();ankle.x=side==='r'?-.21:.21+.035*phase.step;ankle.z=side==='r'?-.08:.03+.22*phase.step;
-  if(side==='l'&&time<.13)ankle.y+=.055*Math.sin(Math.PI*phase.step);if(side==='l'&&time>.38)ankle.y+=.04*Math.sin(Math.PI*phase.step);
+  const base=footBase[side],ankle=base.p.clone();ankle.x=side==='r'?-.21:.21+(phase.stepOutward??.035)*phase.step;ankle.z=side==='r'?-.08:.03+(phase.stepDistance??.22)*phase.step;
+  if(side==='l'){if(phase.footLift!==undefined)ankle.y+=phase.footLift;else{if(time<.13)ankle.y+=.055*Math.sin(Math.PI*phase.step);if(time>.38)ankle.y+=.04*Math.sin(Math.PI*phase.step);}}
   const footQ=rotation(side==='r'?.08+phase.heel*.85:-.25,side==='r'?phase.heel:0).multiply(base.q);
   if(side==='r'){const planted=rotation(.08,0).multiply(base.q),toe=ankle.clone().add(rearToeLocal.clone().applyQuaternion(planted));ankle.copy(toe).sub(rearToeLocal.clone().applyQuaternion(footQ));}
   const error=solveLeg(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side],ankle,footQ,{maxReach:.999});if(error>report.maxFootReachError){report.maxFootReachError=error;report.worstFoot={time,side};}
@@ -79,6 +82,7 @@ for(let i=0;i<times.length;i++){
  const shaft=new T.Vector3().fromArray(profiles.r.axis).applyQuaternion(worldQ('hand_r'));
 
  const leftUpper=phase.leftUpper.clone().applyAxisAngle(Y,phase.chest),leftLower=phase.leftLower.clone().applyAxisAngle(Y,phase.chest);
+ if(phase.freeArmBend){leftUpper.applyAxisAngle(X,phase.freeArmBend);leftLower.applyAxisAngle(X,phase.freeArmBend);}
  const leftFlex=poseArm('l',leftUpper,leftLower,Y);
  for(const [n,q]of Object.entries(profiles.r.rotations))bones[n].quaternion.fromArray(q);
  for(const [n,q]of Object.entries(profiles.l.rotations))bones[n].quaternion.slerp(new T.Quaternion().fromArray(q),.7);
@@ -94,27 +98,30 @@ for(let i=0;i<times.length;i++){
  for(const [n,b]of Object.entries(bones)){const out=tracks[n],q=b.quaternion.clone();if(i&&q.dot(new T.Quaternion().fromArray(out.rotation,(i-1)*4))<0)q.set(-q.x,-q.y,-q.z,-q.w);b.position.toArray(out.translation,i*3);q.toArray(out.rotation,i*4);b.scale.toArray(out.scale,i*3);}
 }
 // Compare physical blade travel with its edge and face around the damage event.
-report.edgeAlignment=report.frames.filter(f=>f.time>=ACE_IMPACT-.025&&f.time<=ACE_IMPACT+.025).map(frame=>{
+report.edgeAlignment=report.frames.filter(f=>f.time>=impact-.025&&f.time<=impact+.025).map(frame=>{
  const i=report.frames.indexOf(frame),before=report.frames[Math.max(0,i-1)],after=report.frames[Math.min(report.frames.length-1,i+1)];
  const velocity=new T.Vector3().fromArray(after.bladeCenter).sub(new T.Vector3().fromArray(before.bladeCenter)).multiplyScalar(1/(after.time-before.time)),direction=velocity.clone().normalize();
  return{time:frame.time,speed:velocity.length(),edge:direction.dot(new T.Vector3().fromArray(frame.edge)),face:direction.dot(new T.Vector3().fromArray(frame.face))};
 });
 report.forearmRoll=Object.fromEntries(['r','l'].map(side=>[side,{min:Math.min(...report.frames.map(f=>f.forearmRoll[side])),max:Math.max(...report.frames.map(f=>f.forearmRoll[side]))}]));
-const timeAccessor=accessor(times,'SCALAR'),constantTime=accessor(new Float32Array([0,duration]),'SCALAR'),animation={name,channels:[],samplers:[],extras:{nativeAceVersion:1,reviewCandidate:true}};
+const timeAccessor=accessor(times,'SCALAR'),constantTime=accessor(new Float32Array([0,duration]),'SCALAR'),animation={name,channels:[],samplers:[],extras:{nativeAceVersion:1,kneeAlignmentVersion:1,reviewCandidate:true}};
 for(const [n,track]of Object.entries(tracks))for(const [property,array]of Object.entries(track)){
  const stride=property==='rotation'?4:3,bind=(property==='rotation'?rest[n].q:property==='translation'?rest[n].p:rest[n].s).toArray(),constant=array.every((v,i)=>Math.abs(v-array[i%stride])<1e-7);
  if(constant&&array.subarray(0,stride).every((v,i)=>Math.abs(v-bind[i])<1e-7))continue;
  const node=doc.nodes.findIndex(n0=>T.PropertyBinding.sanitizeNodeName(n0.name??'')===n);if(node<0)throw Error('Missing '+n);
  animation.channels.push({sampler:animation.samplers.length,target:{node,path:property}});animation.samplers.push({input:constant?constantTime:timeAccessor,output:accessor(constant?Float32Array.from([...array.subarray(0,stride),...array.subarray(0,stride)]):array,property==='rotation'?'VEC4':'VEC3'),interpolation:'LINEAR'});
 }
-if(!doc.animations.some(a=>a.name==='Fan_Cut_Diagonal'||a.name===name))throw Error('Input has no Ace diagonal cut.');doc.animations=doc.animations.filter(a=>a.name!==name).map(a=>a.name==='Fan_Cut_Diagonal'?animation:a);if(!doc.animations.some(a=>a.name===name))doc.animations.push(animation);
-const readyName='Ace_Ready',readyDuration=2,readyTime=accessor(new Float32Array([0,readyDuration]),'SCALAR'),readyAnimation={name:readyName,channels:[],samplers:[],extras:{nativeAceVersion:1,reviewCandidate:true}};
+if(!doc.animations.some(a=>a.name===replaces||a.name===name))throw Error(`Input has no ${replaces} or ${name}.`);doc.animations=doc.animations.filter(a=>a.name!==name).map(a=>a.name===replaces?animation:a);if(!doc.animations.some(a=>a.name===name))doc.animations.push(animation);
+const readyName='Ace_Ready',readyDuration=2;
+if(!isHeavy){
+const readyTime=accessor(new Float32Array([0,readyDuration]),'SCALAR'),readyAnimation={name:readyName,channels:[],samplers:[],extras:{nativeAceVersion:1,kneeAlignmentVersion:1,reviewCandidate:true}};
 for(const [n,track]of Object.entries(tracks))for(const [property,array]of Object.entries(track)){
  const stride=property==='rotation'?4:3,first=Array.from(array.subarray(0,stride)),bind=(property==='rotation'?rest[n].q:property==='translation'?rest[n].p:rest[n].s).toArray();if(first.every((v,i)=>Math.abs(v-bind[i])<1e-7))continue;
  const node=doc.nodes.findIndex(n0=>T.PropertyBinding.sanitizeNodeName(n0.name??'')===n);readyAnimation.channels.push({sampler:readyAnimation.samplers.length,target:{node,path:property}});readyAnimation.samplers.push({input:readyTime,output:accessor(Float32Array.from([...first,...first]),property==='rotation'?'VEC4':'VEC3'),interpolation:'LINEAR'});
 }
 doc.animations=doc.animations.filter(a=>a.name!==readyName).map(a=>a.name==='Fan_Ready'?readyAnimation:a);if(!doc.animations.some(a=>a.name===readyName))doc.animations.push(readyAnimation);
+}
 doc.buffers[0].byteLength=byteLength;let json=Buffer.from(JSON.stringify(doc));json=Buffer.concat([json,Buffer.alloc((4-json.length%4)%4,32)]);let binary=Buffer.concat(chunks);binary=Buffer.concat([binary,Buffer.alloc((4-binary.length%4)%4)]);const header=Buffer.alloc(20);header.writeUInt32LE(0x46546c67,0);header.writeUInt32LE(2,4);header.writeUInt32LE(28+json.length+binary.length,8);header.writeUInt32LE(json.length,12);header.writeUInt32LE(0x4e4f534a,16);const binHeader=Buffer.alloc(8);binHeader.writeUInt32LE(binary.length,0);binHeader.writeUInt32LE(0x004e4942,4);
 fs.writeFileSync(values.output,Buffer.concat([header,json,binHeader,binary]));
-const record={duration,twoHanded:false,nativeSampleRate:240,carryExitDuration:.065,nativeAttachment:true,nativeStanceFeet:true,athleticAttack:true,rootAdvance:0,impacts:[ACE_IMPACT],footPlants:ACE_PLANTS,poses};
+const record={duration,twoHanded:false,nativeSampleRate:240,carryExitDuration:.065,nativeAttachment:true,nativeStanceFeet:true,athleticAttack:true,rootAdvance:0,impacts:[impact],footPlants:plants,toePlants:{r:[[0,duration]],l:[]},poses};
 fs.writeFileSync(values.record,JSON.stringify({[name]:record}));const readyRecord={duration:readyDuration,twoHanded:false,nativeAttachment:true,nativeStanceFeet:true,nativeAttackReady:true,rootAdvance:0,impacts:[],footPlants:{r:[[0,readyDuration]],l:[[0,readyDuration]]},poses:[{...poses[0],t:0},{...poses[0],t:1}]};fs.writeFileSync(values.record.replace(/\.json$/,'.ready.json'),JSON.stringify({[readyName]:readyRecord}));fs.writeFileSync(values.record.replace(/\.json$/,'.report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({...report,frames:undefined,output:values.output,record:values.record},null,2));

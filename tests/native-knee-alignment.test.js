@@ -32,7 +32,8 @@ function supportState(kind,name,spec,seconds,side){
   const intervals=spec.footPlants?.[side];
   assert.ok(intervals?.length,`${name}: missing authored ${side} footPlants`);
   const index=intervals.findIndex(([a,b])=>seconds>=a-1e-7&&seconds<=b+1e-7);
-  return{loaded:index>=0,plant:index>=0?index:null};
+  const toe=(spec.toePlants?.[side]??[]).findIndex(([a,b])=>seconds>=a-1e-7&&seconds<=b+1e-7);
+  return{loaded:index>=0||toe>=0,plant:index>=0?index:null,toePlant:toe>=0?toe:null};
  }
  if(kind==='gait'){
   const phase=((seconds/spec.duration+(side==='l'?.5:0))%1+1)%1;
@@ -117,6 +118,10 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
      plants[key]??={ankle:ankle.clone(),foot:foot.clone()};
      retain(worst.plantDrift,ankle.distanceTo(plants[key].ankle),name,seconds,side);
      retain(worst.plantTurn,foot.angleTo(plants[key].foot),name,seconds,side);
+    }
+    if(state.toePlant!=null){
+     const key=side+':toe:'+state.toePlant;plants[key]??={toe:toe.clone()};
+     retain(worst.plantDrift,toe.distanceTo(plants[key].toe),name,seconds,side);
     }
    }
   }

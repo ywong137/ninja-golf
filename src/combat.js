@@ -33,7 +33,7 @@ const STYLE_ATTACKS={
   },
   fan:{
     light:[
-      {name:'Opening petal',reach:4.5,arc:2.1,damage:28,lunge:2.6},
+      {name:'Opening petal',duration:.60,hits:[.27],reach:4.5,arc:2.1,damage:28,lunge:2.6},
       {name:'Silk return',reach:4.7,arc:2.3,damage:32,lunge:1.7},
       {name:'Rising breeze',reach:5,arc:1.8,damage:35,lunge:3.6,launch:2},
       {name:'Petal circle',reach:5.4,arc:Math.PI,damage:27,lunge:.8},

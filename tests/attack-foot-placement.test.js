@@ -25,10 +25,13 @@ test('Authored contact intervals free the swing foot and blend support boundarie
  assert.ok(attackFootContacts(clip,.51,null).contactWeights.r<1);
  assert.equal(attackFootContacts({},0,{footR:[0,0,.04],footL:[0,0,0]}).contactWeights.r,0);
  assert.equal(attackFootContacts({},0,null).contactWeights.r,0);
+ const pivot={...clip,toePlants:{r:[[.2,.5]],l:[]}};
+ assert.equal(attackFootContacts(pivot,.3,null).contactWeights.r,1,'A fixed toe supports a raised heel.');
+ assert.equal(attackFootContacts(pivot,.21,null).contactWeights.r>0,true,'Toe support blends at its boundaries.');
 });
 test('Every native Kaede attack preserves flat-ground foot lifts, pivots and joint poses exactly',async()=>{
  const {root,bones,clips,mixer,placement}=await nativeRig('kaede');
- for(const clip of clips.filter(c=>/^Fan_(Cut_|Heavy_|Musou)/.test(c.name))){
+ for(const clip of clips.filter(c=>/^(Fan|Ace)_(Cut_|Heavy_|Musou)/.test(c.name))){
   placement.restore();mixer.stopAllAction();mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();
   for(let frame=0;frame<50;frame++){
    placement.restore();const time=frame/50*clip.duration;mixer.setTime(time);root.updateMatrixWorld(true);
@@ -91,7 +94,8 @@ test('Repeated attack contact resets do not introduce a terrain pelvis jump',asy
  const {courseSurfaceHeight}=await import('../src/terrain.js');
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
  for(const [hero,prefix]of [['ronin',''],['kaede','Fan_']]){
-  const {root,bones,clips,mixer,placement}=await nativeRig(hero),name=hero==='ronin'?'Ronin_Heavy_Cleave':prefix+'Heavy_Cleave',clip=clips.find(c=>c.name===name),data=motions[name];
+  const warrior=WARRIORS.find(w=>w.model===hero),name=warrior.motionOverrides?.[prefix+'Heavy_Cleave']??prefix+'Heavy_Cleave';
+  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===name),data=motions[name];
   for(let theme=0;theme<4;theme++){
    placement.restore();placement.reset();mixer.stopAllAction();const c=COURSE_SETS[theme].holes[0],[x,z]=spots[theme],ground=(x,z)=>courseSurfaceHeight(c,x,z,heightAt,ellipse);root.position.set(x,heightAt(c,x,z),z);
    let action=null,previous=null;

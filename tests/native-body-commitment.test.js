@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {WARRIORS} from '../src/warriors.js';
 
 globalThis.ProgressEvent??=class{};
 const asset=process.env.NINJA_NATIVE_BODY_DIR
@@ -18,7 +19,8 @@ test('Kaede cleave loads the rear support and commits her torso through the plan
  for(const key of ['meshes','skins','materials','textures','images'])delete doc[key];
  for(const node of doc.nodes){delete node.mesh;delete node.skin;}
  const gltf=await new GLTFLoader().parseAsync(JSON.stringify(doc),'');
- const clip=gltf.animations.find(c=>c.name==='Fan_Heavy_Cleave');assert.ok(clip,'Missing native Fan_Heavy_Cleave');
+ const name=WARRIORS.find(w=>w.model==='kaede').motionOverrides?.Fan_Heavy_Cleave??'Fan_Heavy_Cleave';
+ const clip=gltf.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
  const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();
  const point=name=>gltf.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  const orientation=name=>gltf.scene.getObjectByName(name).getWorldQuaternion(new THREE.Quaternion()).normalize();
@@ -29,20 +31,21 @@ test('Kaede cleave loads the rear support and commits her torso through the plan
   const shoulders=point('upperarm_l').add(point('upperarm_r')).multiplyScalar(.5);
   const lateral=leftHip.clone().sub(rightHip);lateral.y=0;lateral.normalize();
   const forward=lateral.clone().cross(new THREE.Vector3(0,1,0)).normalize(),torso=shoulders.sub(pelvis);
-  const leftFoot=point('foot_l'),rightFoot=point('foot_r'),supportLine=rightFoot.clone().sub(leftFoot);supportLine.y=0;
-  // Horizontal hip projection: 0 is rear/left ankle, 1 is lead/right ankle.
+  const leftFoot=point('foot_l'),rightFoot=point('foot_r'),supportLine=leftFoot.clone().sub(rightFoot);supportLine.y=0;
+  // Horizontal hip projection: 0 is rear/right ankle, 1 is lead/left ankle.
   // This checks visible transfer across the support base, not physical COM.
   // Discard vertical ankle lift so the entering foot cannot fake a weight shift.
-  const leadFraction=pelvis.clone().sub(leftFoot).dot(supportLine)/supportLine.lengthSq();
+  const leadFraction=pelvis.clone().sub(rightFoot).dot(supportLine)/supportLine.lengthSq();
   samples.push({seconds,lean:Math.atan2(torso.dot(forward),torso.y)*180/Math.PI,leadFraction});
   for(const side of ['r','l']){
    const foot=side==='r'?rightFoot:leftFoot;
-   // Rear foot supports the entry. Both feet plant by .325 s, before the
-   // unchanged .36 s strike, and stay planted through the .425 s follow-through.
-   if(side==='l'||seconds>=.3375){
-    const q=orientation('foot_'+side);contacts[side]??={position:foot.clone(),rotation:q.clone()};
-    maxSupportDrift=Math.max(maxSupportDrift,foot.distanceTo(contacts[side].position));
-    maxSupportTurn=Math.max(maxSupportTurn,q.angleTo(contacts[side].rotation));
+   // The rear toe stays fixed during its heel pivot. The lead foot plants
+   // before contact and stays fixed through the low finish.
+   if(side==='r'||seconds>=.3375){
+    const support=side==='r'?point('ball_r'):foot;
+    const q=orientation('foot_'+side);contacts[side]??={position:support.clone(),rotation:q.clone()};
+    maxSupportDrift=Math.max(maxSupportDrift,support.distanceTo(contacts[side].position));
+    if(side==='l')maxSupportTurn=Math.max(maxSupportTurn,q.angleTo(contacts[side].rotation));
    }
    if(seconds>=.3375){
     const knee=point('calf_'+side),upper=point('thigh_'+side).sub(knee),lower=foot.clone().sub(knee);

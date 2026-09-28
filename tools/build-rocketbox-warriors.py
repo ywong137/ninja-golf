@@ -37,6 +37,20 @@ def patch_enemy_locomotion(output):
   candidate=pathlib.Path(folder)/output.name
   subprocess.run(['node',str(ROOT/'tools/author-enemy-locomotion.mjs'),'--input',str(output),'--output',str(candidate)],check=True)
   output.write_bytes(candidate.read_bytes())
+def patch_ace_native_combat(output):
+ with tempfile.TemporaryDirectory(prefix='ninja-native-ace-') as folder:
+  light=pathlib.Path(folder)/'ace-light.glb';heavy=pathlib.Path(folder)/'ace-heavy.glb'
+  light_record=light.with_suffix('.json');heavy_record=heavy.with_suffix('.json')
+  generated={}
+  for kind,source,candidate,record,clip in [('light',output,light,light_record,'Ace_Cut_Diagonal'),('heavy',light,heavy,heavy_record,'Ace_Heavy_Cleave')]:
+   subprocess.run(['node',str(ROOT/'tools/author-native-ace.mjs'),'--clip',kind,'--input',str(source),'--output',str(candidate),'--record',str(record)],check=True)
+   ready=record.with_suffix('.ready.json')
+   subprocess.run(['node',str(ROOT/'tools/check-native-ace.mjs'),'--model',str(candidate),'--record',str(record),'--ready-record',str(ready),'--clip',clip],check=True)
+   generated.update(json.loads(record.read_text()));generated.update(json.loads(ready.read_text()))
+  if set(generated)!={'Ace_Ready','Ace_Cut_Diagonal','Ace_Heavy_Cleave'}:raise ValueError('Native Ace export returned unexpected motion records')
+  motion_path=ROOT/'src/motion-data.json';motions=json.loads(motion_path.read_text());motions.update(generated)
+  output.write_bytes(heavy.read_bytes())
+  motion_path.write_text(json.dumps(motions,separators=(',',':'),ensure_ascii=False))
 def patch_naginata_native_combat(output):
  with tempfile.TemporaryDirectory(prefix='ninja-native-naginata-') as folder:
   candidate=pathlib.Path(folder)/'monk.glb';record=pathlib.Path(folder)/'monk-motion.json'
@@ -93,6 +107,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  clip_names=ENEMY_CLIPS|{ENEMY_ATTACKS[[e[0] for e in ENEMIES].index(hero)]} if args.enemies else clip_filter.clip_names(hero,set(json.loads((ROOT/'src/motion-data.json').read_text()))|set(json.loads((ROOT/'src/locomotion-data.json').read_text()))|selection_names|clip_filter.COMMON)
  # Bake canonical aliases first. The native pass replaces them after export.
  if hero=='monk':clip_names={name for name in clip_names if not name.startswith('Ethan_Naginata_')}
+ if hero=='kaede':clip_names={name for name in clip_names if not name.startswith('Ace_')}
  if args.selection_only:
   clip_names={clip_filter.SELECTION[hero]}
   if not clip_names<=selection_names:raise ValueError(f'Missing selection record for {hero}')
@@ -126,12 +141,14 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # The Monk now owns a polearm family. Retire the former shared odachi clips.
   retired=[name.removeprefix('Naginata_') for name in clip_names if name.startswith('Naginata_') and any(part in name for part in ['Cut_','Heavy_','Musou_'])] if hero=='monk' and args.attacks_only else []
   if hero=='monk':retired += ['Ethan_'+name for name in clip_names if name.startswith('Naginata_') and name.removeprefix('Naginata_').startswith(('Cut_','Heavy_','Musou_','Ready'))]
+  if hero=='kaede':retired += ['Ace_'+name.removeprefix('Fan_') for name in clip_names if name in {'Fan_Ready','Fan_Cut_Diagonal','Fan_Heavy_Cleave'}]
   if hero=='ninja' and args.attacks_only:retired.append('Twin_Cut_Diagonal')
   subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in (clip_names if args.selection_only else args.attack_name) for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink()
   subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
   if hero=='ronin' and (args.attacks_only or bool(set(args.attack_name)&{'Heavy_Cleave','Ronin_Heavy_Cleave'})):
    patch_ronin_native_combat(output)
   if hero=='monk' and (args.attacks_only or args.guards_only or args.attack_name):patch_naginata_native_combat(output)
+  if hero=='kaede' and (args.attacks_only or bool(set(args.attack_name)&{'Fan_Cut_Diagonal','Fan_Heavy_Cleave'})):patch_ace_native_combat(output)
   print('GUARDS_EXPORTED',hero,flush=True);continue
  # Full exports need the same exact attack endpoints as animation-only updates.
  time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')
@@ -147,6 +164,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
    subprocess.run(['node',str(ROOT/'tools/author-native-golf.mjs'),'--hero',hero,'--input',str(output),'--output',str(golf_output)],check=True)
    output.write_bytes(golf_output.read_bytes())
  if hero=='ronin':patch_ronin_native_combat(output)
+ if hero=='kaede':patch_ace_native_combat(output)
  if hero=='monk':
   # Reapply the likeness after a full native source export. Clip-only exports
   # already preserve the existing geometry and must not sculpt it a second time.

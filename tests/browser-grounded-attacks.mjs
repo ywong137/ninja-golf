@@ -15,7 +15,7 @@ try{
    g.player.root.position.set(0,heightAt(g.course,0,45),45);g.ball.position.set(0,heightAt(g.course,0,190),190);g.updateCamera(10);
    for(let i=0;i<30;i++)g.player.update(g.time,1/60,{groundHeight:g.groundHeight});
    g.lightChain=kind==='heavy'?step+1:step;g.chainExpires=g.time+10;g.startAttack(kind);
-   const action=g.action,name=combatMotionName(g.warrior,kind,step),spec=motions[name],start=g.player.root.position.clone(),plants=new Map();let maxSupportDrift=0,maxRootTravel=0;
+   const action=g.action,name=combatMotionName(g.warrior,kind,step),spec=motions[name],start=g.player.root.position.clone(),plants=new Map();let maxSupportDrift=0,maxToeSupportDrift=0,toeSupportSamples=0,maxRootTravel=0;
    for(let frame=0;frame<Math.ceil(action.duration*120);frame++){
     g.time+=1/120;g.updateCombat(1/120);g.player.root.updateMatrixWorld(true);
     maxRootTravel=Math.max(maxRootTravel,Math.hypot(g.player.root.position.x-start.x,g.player.root.position.z-start.z));
@@ -23,8 +23,11 @@ try{
     for(const side of ['r','l'])for(const [index,[a,b]]of spec.footPlants[side].entries())if(time>Math.max(.10,a+.025)&&time<b-.025){
      const key=side+index,foot=g.player.bones['foot_'+side].getWorldPosition(new T.Vector3());if(!plants.has(key))plants.set(key,foot.clone());maxSupportDrift=Math.max(maxSupportDrift,foot.distanceTo(plants.get(key)));
     }
+    for(const side of ['r','l'])for(const [index,[a,b]]of (spec.toePlants?.[side]??[]).entries())if(time>Math.max(.10,a+.025)&&time<b-.025){
+     const key=side+'toe'+index,toe=g.player.bones['ball_'+side].getWorldPosition(new T.Vector3());if(!plants.has(key))plants.set(key,toe.clone());maxToeSupportDrift=Math.max(maxToeSupportDrift,toe.distanceTo(plants.get(key)));toeSupportSamples++;
+    }
    }
-   reports.push({hero,name,rootAdvance:action.rootAdvance,maxRootTravel,maxSupportDrift,hits:action.hitIndex,expectedHits:action.hits.length});
+   reports.push({hero,name,rootAdvance:action.rootAdvance,maxRootTravel,maxSupportDrift,maxToeSupportDrift,toeSupportSamples,hasToeSupport:Object.values(spec.toePlants??{}).some(intervals=>intervals.length>0),hits:action.hitIndex,expectedHits:action.hits.length});
   }
   g.clearEnemies();g.phase='combat';g.spawnTime=999;g.input.clear();g.input.keys.add('KeyW');g.lightChain=0;g.startAttack('light');
   const start=g.player.root.position.clone();for(let i=0;i<20;i++){g.time+=1/60;g.updateCombat(1/60);}g.input.clear();reports.push({manualTravel:g.player.root.position.distanceTo(start)});
@@ -35,5 +38,6 @@ try{
   if(r.manualTravel!==undefined){assert.ok(r.manualTravel>.25,'WASD movement remains available during an attack');continue;}
   assert.equal(r.rootAdvance,0);assert.ok(r.maxRootTravel<1e-5,`Automatic lunge slides the planted stance: ${JSON.stringify(r)}`);
   assert.ok(r.maxSupportDrift<.035,`Support foot slides during the actual game loop: ${JSON.stringify(r)}`);assert.equal(r.hits,r.expectedHits);
+  if(r.hasToeSupport){assert.ok(r.toeSupportSamples>20,'Missing runtime toe support coverage');assert.ok(r.maxToeSupportDrift<.035,`Planted toe slides during the actual game loop: ${JSON.stringify(r)}`);}
  }
 }finally{await browser.close();}

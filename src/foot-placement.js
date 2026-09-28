@@ -19,7 +19,9 @@ export function solveLeg(thigh,calf,foot,target,footRotation,{maxReach=.985}={})
 export function attackFootContacts(clip,time,motion){
  const weights={},stance={};
  for(const side of ['r','l']){
-  const intervals=clip?.footPlants?.[side];
+  // A heel pivot still supports the body through its planted toe. The native
+  // sole orientation remains intact while terrain adjusts that support.
+  const intervals=clip?.footPlants?.[side]?[...clip.footPlants[side],...(clip.toePlants?.[side]??[])]:null;
   if(intervals){
    let weight=0;
    for(const [start,end]of intervals)if(time>=start&&time<=end){

@@ -1,36 +1,30 @@
-The Ace has a new review candidate for her opening cut. It is not installed in the game.
+The Ace now uses native Ready, opening-cut, and heavy-cleave animations in the local game. The opening cut lasts 0.60 seconds and contacts at 0.27 seconds. The heavy cut lasts 0.76 seconds and contacts at 0.36 seconds. The controller and selection preview use those times.
 
-The candidate fixes the backward blade path. The jian now cuts forward and downward, using a sharpened edge. Its wrist stays neutral. The pelvis turns before the chest, the lead foot lands before contact, and the rear heel rises around a fixed toe. The free hand stays separate from the sword.
+The jian cuts with its edge. Both wrists stay neutral, and the sword hand retains its fitted finger wrap. The hips turn before the chest. The lead foot steps forward and plants before contact. The rear heel rises around a fixed toe. Explicit toe-support intervals keep terrain support active during that pivot.
 
-Generate the candidate from the current model:
+The heavy cut transfers the hips from the rear support toward the lead foot. The independent body test measures 16.86 degrees of sustained torso lean through contact and follow-through. Its horizontal hip projection moves from 0.318 to 0.741 across the support span. Those values describe visible body placement, not a physical center-of-mass simulation.
+
+The final light is revision 18; the heavy is revision 8. Dense source checks sample the actual skeleton and deformed arms at 480 Hz. Both strokes have neutral wrists and no detected arm–torso intersections or elbow-fold penetration. Their free-arm reach stays below 0.95 of straight-arm length. The heavy blade stays at least 11.46 cm above flat ground. Its contact speed is 14.92 m/s, with 0.986 edge alignment and 0.054 face alignment.
+
+The first runtime integration found an overstraight free elbow in Ready. Revision 17 corrected only the free upper-arm and forearm rotations. A later body test rejected the first heavy candidate for insufficient lean and hip transfer. The accepted heavy retains the existing body-commitment bounds. A separate movement test caught a foot jump when releasing sideways or backward movement. The release now limits displacement instead of completing every stance change within one fixed fade.
+
+The weapon mounting frame includes an 82.02-degree correction around the handle. This leaves its fitted axis and palm center intact. Explicit golf frames prevent that correction from rotating the club. A browser comparison against commit 00c1e3a found no changes in any of the 90 golf fixture transforms. Only the Ace's Ready transform changed. The refreshed fixture also includes the previously accepted native golf and Ethan Ready changes from that commit.
+
+The native patches preserve 6,043,844 original binary bytes and 34 unrelated animation descriptors. They retain the character geometry, textures, skin weights, golf swings, and remaining attacks. Each accepted clip carries the knee-alignment marker so later partial exports do not overwrite its authored support.
+
+Generate and inspect both attacks:
 
 ```sh
-node tools/author-native-ace.mjs --output /tmp/ace-review.glb --record /tmp/ace-review.json
-NINJA_ACE_CANDIDATE=/tmp/ace-review node --test tools/check-native-ace.mjs
-node tools/verify-animation-replacement.mjs --before public/models/kaede.glb --after /tmp/ace-review.glb --replace Fan_Cut_Diagonal:Ace_Cut_Diagonal --replace Fan_Ready:Ace_Ready
-node tools/capture-native-motion.mjs 3 Ace_Cut_Diagonal /tmp/ace-review.png --model /tmp/ace-review.glb --motion-record /tmp/ace-review.json --ready-record /tmp/ace-review.ready.json --replace-clip Fan_Cut_Diagonal
+node tools/author-native-ace.mjs --clip light --output /tmp/ace-light.glb --record /tmp/ace-light.json
+node tools/author-native-ace.mjs --clip heavy --input /tmp/ace-light.glb --output /tmp/ace-heavy.glb --record /tmp/ace-heavy.json
+node tools/check-native-ace.mjs --model /tmp/ace-light.glb --record /tmp/ace-light.json --ready-record /tmp/ace-light.ready.json --clip Ace_Cut_Diagonal
+node tools/check-native-ace.mjs --model /tmp/ace-heavy.glb --record /tmp/ace-heavy.json --ready-record /tmp/ace-heavy.ready.json --clip Ace_Heavy_Cleave
 ```
 
-The author refuses output paths inside `public/`. It replaces two animation descriptors and appends their samples. It preserves 6,043,844 original binary bytes and 35 unrelated clips, including golf.
+The author refuses output paths inside `public/`. Full and relevant partial Blender exports run the same native patches after the canonical export. The native build hook reproduced the installed model bytes and all parsed motion records from the prior model. Python and JavaScript encode some numbers differently; the parsed values match. A complete Blender rebuild was not run during this pass.
 
-The handle fit previously placed the forearm mainly along the blade's flat face. The author derives an 82.02-degree mounting correction from the measured neutral forearm. This correction rotates the blade about the handle. It preserves the fitted shaft direction and palm position.
+All 297 unit and asset tests pass. Browser checks cover 96 moving-attack scenarios, attack entry from idle/run/guard/repetition, fitted grips, blade frames, golf contact, and selection speed/pause controls. The blade-frame test retains exact single-hand bounds and separately checks the polearm midpoint between its two palms.
 
-The 0.60-second candidate places contact at 0.27 seconds. Tests sample joint motion at 480 Hz and the actual skinned arms at 240 Hz. They report:
+The final ten-second gameplay capture averaged 55.14 FPS at 1440×900 and pixel ratio 1. It contained 24–43 enemies and reported no console errors. CPU skin tests did not run during this capture. This result applies to the tested scene and machine; it does not establish performance across every course.
 
-- Neutral wrists throughout the stroke.
-- Zero detected arm–torso intersections and elbow-fold penetration.
-- 0.142 mm maximum planted-ankle drift.
-- A fixed rear toe during the heel rise.
-- 7.45 m/s maximum hand speed.
-- 17.42 m/s maximum blade-tip speed.
-- 13.25 m/s blade-tip speed near contact.
-- 0.989 edge alignment and 0.008 face alignment near contact.
-- 0.593 m minimum blade clearance.
-
-An independent local agent inspected the front and side renders. It accepted the poses for runtime review. It noted a possible hesitation before the later speed peak near 0.30 seconds. Earlier concern about the reported forearm-roll value used an incorrect anatomical interpretation. That value measures correction from the imported bend plane; it does not measure anatomical pronation.
-
-Integration remains unfinished. The runtime previously derived the golf grip orientation from the weapon's Ready frame. A browser comparison found an unwanted 82.02-degree club rotation with this candidate. The Ace now has explicit fitted golf frames in `src/grip-data.json`. `HandGrip` honors them independently, and the fitting tool preserves them. Unit tests exercise changed combat frames and refitted shaft axes. A second browser comparison measured zero change in both golf frames. The comparison reports are in `artifacts/ace-native-candidate/`.
-
-The combat controller still schedules the original 0.40-second opening cut. Update its duration and contact time together with the new clip. Then check transitions to every other attack, guards, running, selection, and golf. Inspect the crossguard and all fingers after the mounting correction. The candidate's two passing source tests do not establish those runtime properties.
-
-The current renders and report are in `artifacts/ace-native-candidate/`. The current candidate has not received an Opus review.
+Review evidence is in `artifacts/ace-native-integrated/`. Local reviewers inspected the front/side strips and gameplay frames. No Opus review has occurred for these final Ace clips. The other seven Ace attacks still use their previous animations; this pass does not establish full-roster animation quality.
