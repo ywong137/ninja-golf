@@ -23,10 +23,24 @@ export function measureFace(rig){
  const expressionPattern=new RegExp(`_(?:MJaw|${Object.keys(EXPRESSION).join('|')})$`);
  for(let i=0;i<p.count;i++)if(weight(i,expressionPattern)>0.05)expression.push(i);
  for(let i=0;i<index.count;i+=3){const tri=[index.getX(i),index.getX(i+1),index.getX(i+2)];(tri.every(v=>weight(v,/_[RL]Eye$/)>.9)?eye:skin).push(tri);}
- const eyeIds=[...new Set(eye.flat())],box=new T.Box3().setFromPoints(eyeIds.map(i=>rest[i]));
- const samples=[];for(let x=box.min.x;x<=box.max.x;x+=.00075)for(let y=box.min.y;y<=box.max.y;y+=.00075){const e=depthAt(rest,eye,x,y),s=depthAt(rest,skin,x,y);if(Number.isFinite(e))samples.push([x,y]);}
- const restOpen=samples.filter(([x,y])=>depthAt(rest,eye,x,y)>depthAt(rest,skin,x,y)+.00001).length;const expressionSet=new Set(expression),affected=skin.filter(tri=>tri.some(i=>expressionSet.has(i)));
- function measure(){rig.update();const posed=points();let open=0,maxDisplacement=0,penetrationIncrease=0;for(const [x,y]of samples)if(depthAt(posed,eye,x,y)>depthAt(posed,skin,x,y)+.00001)open++;
+ // Sample each eyeball independently. A total visible area cannot prove that
+ // both eyes are open, and a shared grid shifts when their spacing changes.
+ // Half-millimetre spacing also resolves the narrower reviewed Ethan eyelids.
+ const eyeBySide={},samples=[],restBySide={};
+ for(const side of ['R','L']){
+  const pattern=new RegExp(`_${side}Eye$`),triangles=eye.filter(tri=>tri.every(i=>weight(i,pattern)>.9));
+  if(!triangles.length)throw Error(`Native ${side} eye surface is missing`);
+  eyeBySide[side]=triangles;restBySide[side]=0;
+  const ids=[...new Set(triangles.flat())],box=new T.Box3().setFromPoints(ids.map(i=>rest[i]));
+  for(let x=box.min.x;x<=box.max.x;x+=.0005)for(let y=box.min.y;y<=box.max.y;y+=.0005){
+   const e=depthAt(rest,triangles,x,y);if(!Number.isFinite(e))continue;
+   samples.push([x,y,side]);if(e>depthAt(rest,skin,x,y)+.00001)restBySide[side]++;
+  }
+ }
+ const restOpen=restBySide.R+restBySide.L,expressionSet=new Set(expression),affected=skin.filter(tri=>tri.some(i=>expressionSet.has(i)));
+ function measure(){rig.update();const posed=points();let open=0,maxDisplacement=0,penetrationIncrease=0;const openBySide={R:0,L:0};
+ for(const [x,y,side]of samples)if(depthAt(posed,eyeBySide[side],x,y)>depthAt(posed,skin,x,y)+.00001){open++;openBySide[side]++;}
+ const eyes=Object.fromEntries(['R','L'].map(side=>[side,{restSamples:restBySide[side],openSamples:openBySide[side],openFraction:openBySide[side]/Math.max(1,restBySide[side])}]));
  for(const i of lid)maxDisplacement=Math.max(maxDisplacement,posed[i].distanceTo(rest[i]));
  const regionDisplacement={};
  for(const i of expression){
@@ -48,7 +62,7 @@ export function measureFace(rig){
    if(ratio>maxEdgeStretch){maxEdgeStretch=ratio;worstEdge={vertices:[u,v],restLength:length,posedLength};}
   }
  }
- return {openSamples:open,restSamples:restOpen,openFraction:open/Math.max(1,restOpen),maxLidDisplacement:maxDisplacement,penetrationIncrease,flippedTriangles,flippedRegions,maxEdgeStretch,minEdgeRatio,maxEdgeGrowth,maxLongEdgeStretch,worstEdge,regionDisplacement};}
+ return {openSamples:open,restSamples:restOpen,openFraction:open/Math.max(1,restOpen),eyes,maxLidDisplacement:maxDisplacement,penetrationIncrease,flippedTriangles,flippedRegions,maxEdgeStretch,minEdgeRatio,maxEdgeGrowth,maxLongEdgeStretch,worstEdge,regionDisplacement};}
  return {measure,eyeTriangles:eye.length,lidVertices:lid.length};
 }
 export async function auditHero(hero){const rig=await loadFace(hero),meter=measureFace(rig),pose=new FacialPose(rig.bones,{identity:hero}),result={hero,eyeTriangles:meter.eyeTriangles,lidVertices:meter.lidVertices,rest:meter.measure(),closures:[]};

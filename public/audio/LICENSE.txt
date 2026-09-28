@@ -25,3 +25,6 @@ ISRC: USUAN1100140
 
 The original recording is bundled unchanged. Combat playback loops it, adjusts
 volume, and crossfades to and from Ishikari Lore. The game displays both credits.
+
+The complete sixteen-track soundtrack, credits, license links, and conversion
+notes appear in music/CREDITS.md and music/SOURCES.json.

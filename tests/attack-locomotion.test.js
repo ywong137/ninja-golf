@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {AttackLocomotion} from '../src/attack-locomotion.js';
+import {WARRIORS} from '../src/warriors.js';
+const attackName=hero=>{const w=WARRIORS.find(w=>w.model===hero),name=w.motionPrefix+'Cut_Diagonal';return w.motionOverrides?.[name]??name;};
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 globalThis.ProgressEvent??=class{};
 async function rig(hero,prefix){
@@ -15,8 +17,8 @@ async function rig(hero,prefix){
 }
 const heroes=[['ronin','Odachi',''],['shinobi','Twin','Twin_'],['monk','Naginata','Naginata_'],['kaede','Fan','Fan_'],['ayame','Ring','Ring_'],['sora','Sickle','Sickle_']];
 test('Moving attacks step in eight directions with native legs across all six heroes',async()=>{
- for(const [hero,prefix,attackPrefix]of heroes){
-  const {root,bones,mixer,clips,steps}=await rig(hero,prefix),clip=clips.find(c=>c.name===attackPrefix+'Cut_Diagonal'),action=mixer.clipAction(clip).play();
+ for(const [hero,prefix]of heroes){
+  const {root,bones,mixer,clips,steps}=await rig(hero,prefix),clip=clips.find(c=>c.name===attackName(hero)),action=mixer.clipAction(clip).play();
   for(let direction=0;direction<8;direction++){
    const angle=direction*Math.PI/4,speed=2.5;steps.restore();steps.reset();root.position.set(0,0,0);let maxError=0,maxLift=0,footMin=Infinity,footMax=-Infinity;
    for(let frame=0;frame<120;frame++){
@@ -35,7 +37,7 @@ test('Moving attacks step in eight directions with native legs across all six he
 });
 
 test('Releasing backward or sideways attack movement keeps the last heading and limits foot displacement',async()=>{
- const {root,bones,mixer,clips,steps}=await rig('kaede','Fan'),clip=clips.find(c=>c.name==='Fan_Cut_Diagonal'),action=mixer.clipAction(clip).play();
+ const {root,bones,mixer,clips,steps}=await rig('kaede','Fan'),clip=clips.find(c=>c.name===attackName('kaede')),action=mixer.clipAction(clip).play();
  const pose=()=>{steps.restore();action.time=clip.duration*.4;mixer.update(0);root.updateMatrixWorld(true);};
  const feet=()=>['r','l'].map(s=>bones['foot_'+s].getWorldPosition(new T.Vector3()));
  for(let d=1;d<8;d++)for(let p=0;p<40;p++){

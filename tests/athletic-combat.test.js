@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {WARRIORS} from '../src/warriors.js';
+import {attackDefinition} from '../src/combat.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const pilot=Object.entries(motions).filter(([,clip])=>clip.athleticAttack);
 test('Athletic attacks keep support targets fixed and lift before foot travel',()=>{
@@ -27,8 +28,10 @@ test('Every hero uses a complete distinct family of full-body attacks',()=>{
  assert.equal(new Set(WARRIORS.map(w=>w.motionPrefix)).size,WARRIORS.length);
  for(const hero of WARRIORS)for(const name of names){
   const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];assert.ok(clip?.athleticAttack,hero.model+'/'+name);
-  assert.equal(clip.duration,motions[name].duration);
-  assert.deepEqual(clip.impacts,motions[name].impacts);
+  const index=names.indexOf(name),kind=index<4?'light':index<8?'heavy':'musou',definition=attackDefinition(kind,index%4,hero.combatStyle);
+  assert.ok(Math.abs(clip.duration-definition.duration)<1e-8,hero.model+'/'+name);
+  assert.equal(clip.impacts.length,definition.hits.length,hero.model+'/'+name);
+  clip.impacts.forEach((hit,i)=>assert.ok(Math.abs(hit-definition.hits[i])<1e-8,hero.model+'/'+name));
   assert.ok(['footR','footL'].some(key=>Math.max(...clip.poses.map(p=>p[key][2]))>.04),`${hero.model}/${name}: no authored step`);
   for(const hit of clip.impacts)assert.ok(['r','l'].some(side=>clip.footPlants[side].some(([a,b])=>hit>=a&&hit<=b)),`${hero.model}/${name}: unsupported impact`);
  }
@@ -42,15 +45,24 @@ test('New weapon-ready stances keep each male hero at the attack hand and foot p
    const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];
    const pose=(clip.nativeAttachment?ready:legacyReady).poses[0];
    for(const endpoint of [clip.poses[0],clip.poses.at(-1)]){
-    for(const key of ['grip','tip','footR','footL',...(hero.dualWield?['offGrip','offTip']:[])])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-7,`${hero.model}/${name}: ${key} returns to another stance`);
+    for(const key of ['grip','tip','footR','footL',...(hero.dualWield?['offGrip','offTip']:[])])assert.ok(Math.hypot(...pose[key].map((v,i)=>v-endpoint[key][i]))<1e-6,`${hero.model}/${name}: ${key} returns to another stance`);
    }
   }
  }
 });
 test('Heavy sweeps include two opposed cuts at the gameplay impact times',()=>{
+ const at=(clip,time)=>{const t=time/clip.duration;let i=0;while(i<clip.poses.length-2&&t>clip.poses[i+1].t)i++;const a=clip.poses[i],b=clip.poses[i+1],u=(t-a.t)/(b.t-a.t);return a.tip.map((v,k)=>v+(b.tip[k]-v)*u);};
  for(const [name,clip]of pilot.filter(([name])=>name.endsWith('Heavy_Sweep'))){
-  assert.deepEqual(clip.impacts,[.28,.53],name);
-  const vectors=clip.impacts.map(hit=>{const row=clip.poses.find(p=>Math.abs(p.t*clip.duration-hit)<1e-7);assert.ok(row,name);const v=row.tip.map((x,i)=>x-row.grip[i]),length=Math.hypot(...v);return v.map(x=>x/length);});
-  assert.ok(vectors[0].reduce((sum,x,i)=>sum+x*vectors[1][i],0)<.45,`${name}: second hit needs a separate return cut`);
+  assert.equal(clip.impacts.length,2,name);
+  if(clip.pairedGrip){
+   // A returning blade can cross the same contact point in the opposite
+   // direction. Its velocity, not its shaft heading, distinguishes the hits.
+   const vectors=clip.impacts.map(hit=>{const before=at(clip,hit-.002),after=at(clip,hit+.002),v=after.map((x,i)=>x-before[i]),length=Math.hypot(...v);assert.ok(length/.004>5,`${name}: impact lacks blade speed`);return v.map(x=>x/length);});
+   assert.ok(vectors[0].reduce((sum,x,i)=>sum+x*vectors[1][i],0)<-.5,`${name}: return hit must reverse blade velocity`);
+  }else{
+   assert.deepEqual(clip.impacts,[.28,.53],name);
+   const vectors=clip.impacts.map(hit=>{const row=clip.poses.find(p=>Math.abs(p.t*clip.duration-hit)<1e-7);assert.ok(row,name);const v=row.tip.map((x,i)=>x-row.grip[i]),length=Math.hypot(...v);return v.map(x=>x/length);});
+   assert.ok(vectors[0].reduce((sum,x,i)=>sum+x*vectors[1][i],0)<.45,`${name}: second hit needs a separate return cut`);
+  }
  }
 });

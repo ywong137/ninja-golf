@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
+import {verifyAnimationReplacement} from './verify-animation-replacement.mjs';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
 const {values}=parseArgs({options:{model:{type:'string'},before:{type:'string'},output:{type:'string'},help:{type:'boolean'}}});
 if(values.help){console.log('node tools/check-native-cleave.mjs --model CANDIDATE.glb [--before ORIGINAL.glb] [--output REPORT.json]\nChecks anatomical hinges, grip continuity, skin clearance, and preservation of unrelated assets.');process.exit(0);}
@@ -23,15 +24,7 @@ for(let i=0;i<=92;i++){
  }
  if(lastHand)report.maxHandSpeed=Math.max(report.maxHandSpeed,point('hand_r').distanceTo(lastHand)/(time-lastTime));lastHand=point('hand_r');lastTime=time;report.frames.push(frame);
 }
-const unpack=file=>{const raw=fs.readFileSync(file),size=raw.readUInt32LE(12);return{doc:JSON.parse(raw.subarray(20,20+size)),bin:raw.subarray(28+size)};};
-const original=unpack(values.before??new URL('../public/models/ronin.glb',import.meta.url)),candidate=unpack(values.model);
-assert(candidate.bin.subarray(0,original.bin.length).equals(original.bin),'Original binary payload changed.');
-for(const field of ['meshes','nodes','skins','materials','textures','images'])assert.deepEqual(candidate.doc[field],original.doc[field],`${field} changed.`);
-const replaced=new Set(['Ready','Ronin_Ready','Heavy_Cleave','Ronin_Heavy_Cleave']);
-assert.equal(candidate.doc.animations.length,original.doc.animations.filter(a=>!replaced.has(a.name)).length+2,'Animation count changed outside the two native replacements.');
-assert.deepEqual(candidate.doc.animations.filter(a=>replaced.has(a.name)).map(a=>a.name).sort(),['Ronin_Heavy_Cleave','Ronin_Ready']);
-for(const animation of original.doc.animations)if(!replaced.has(animation.name))assert.deepEqual(candidate.doc.animations.find(a=>a.name===animation.name),animation,`${animation.name} changed.`);
-report.preservedOriginalBytes=original.bin.length;
+Object.assign(report,verifyAnimationReplacement(values.before??new URL('../public/models/ronin.glb',import.meta.url),values.model,[['Ready','Ronin_Ready'],['Heavy_Cleave','Ronin_Heavy_Cleave']]));
 if(values.output)fs.writeFileSync(values.output,JSON.stringify(report,null,2));console.log(JSON.stringify({...report,frames:undefined},null,2));
 for(const [name,step]of Object.entries(report.maxJointStep))assert(step.degrees<25,`${name} jumps ${step.degrees.toFixed(1)}° at ${step.time}s.`);
 assert(report.maxForearmTorso.r===0&&report.maxForearmTorso.l===0,'Forearm intersects torso.');assert(report.maxElbowFold.r<.01&&report.maxElbowFold.l<.01,'Elbow skin folds into itself.');

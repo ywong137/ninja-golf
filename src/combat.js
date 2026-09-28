@@ -14,8 +14,23 @@ export const ATTACKS={
   ],
   musou:{name:'Musou',duration:3.3,hits:[.42,.86,1.30,1.78,2.25,2.82],reach:19,arc:Math.PI,damage:220,lunge:1,flourish:3,launch:8},
 };
-// Each style shares input timing but has its own coverage, movement, and crowd control.
+// Each style defines its timing, coverage, movement, and crowd control.
 const STYLE_ATTACKS={
+  naginata:{
+    light:[
+      {duration:.60,hits:[.30]},
+      {duration:.60,hits:[.30]},
+      {duration:.82,hits:[.41]},
+      {duration:.72,hits:[.36],damage:56},
+    ],
+    heavy:[
+      {duration:.92,hits:[.46]},
+      {duration:.96,hits:[.48]},
+      {duration:1.28,hits:[.40,.86]},
+      {duration:1.02,hits:[.51]},
+    ],
+    musou:{name:'Hostile takeover',duration:5.04,hits:[.30,.90,1.56,2.33,3.14,3.60,4.53]},
+  },
   fan:{
     light:[
       {name:'Opening petal',reach:4.5,arc:2.1,damage:28,lunge:2.6},

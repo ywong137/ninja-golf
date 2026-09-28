@@ -1,8 +1,9 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
+import {disableHmr} from '../tools/disable-hmr.mjs';
+const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
-const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
 await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');await page.click('#start-round');
 await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.phase='combat';g.spawnTime=100;g.enemyBudget=100;g.enemiesSpawned=0;g.combatTime=0;g.player.root.position.set(0,8,40);g.ball.position.set(15,8,190);g.cameraYaw=0;g.player.root.rotation.y=0;g.updateCamera(10);});
 await page.keyboard.down('KeyC');await page.keyboard.down('KeyD');await page.waitForTimeout(400);await page.keyboard.up('KeyD');
@@ -24,17 +25,17 @@ for(const kind of ['lantern','pagoda','rock','tree','sand','water']){
 // Standard gamepad: LT strafe, X light, Y heavy, RB Musou.
 await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.player.root.position.set(0,8,45);g.ball.position.set(0,8,180);g.cameraYaw=0;g.player.root.rotation.y=0;g.updateCamera(10);g.spawnTime=100;g.paused=false;window.testPad={axes:[1,0,0,0],buttons:Array.from({length:16},()=>({pressed:false,value:0}))};window.testPad.buttons[6].pressed=true;Object.defineProperty(navigator,'getGamepads',{configurable:true,value:()=>[window.testPad]});});
 await page.waitForTimeout(300);assert.ok(Math.abs((await page.evaluate(()=>window.ninjaGolf.state())).facing)<.08);await page.evaluate(()=>{window.testPad.axes[0]=0;window.testPad.buttons[3].pressed=true;});await page.waitForFunction(()=>window.__golfTest.action?.kind==='heavy');await page.evaluate(()=>{window.testPad.buttons[3].pressed=false;});await page.waitForFunction(()=>!window.__golfTest.action);await page.evaluate(()=>{window.__golfTest.resolve=100;window.testPad.buttons[5].pressed=true;});await page.waitForFunction(()=>window.__golfTest.cinematic>0);await page.evaluate(()=>{delete navigator.getGamepads;window.__golfTest.paused=true;window.__golfTest.audio.pause();});
-// Exercise the three sword styles through the actual combat loop.
+// Exercise the polearm and three sword styles through the actual combat loop.
 const styles=await page.evaluate(async()=>{
  const {heightAt}=await import('/src/course.js');const g=window.__golfTest,Warrior=g.player.constructor,rows=[];g.input.clear();
- for(const index of [3,4,5]){
+ for(const index of [2,3,4,5]){
   g.clearEnemies();g.selectWarrior(index);g.phase='combat';g.spawnTime=999;g.player.root.position.set(0,heightAt(g.course,0,45),45);g.player.root.rotation.y=0;g.cameraYaw=0;g.invincible=999;g.time+=1;
   const enemy=new Warrior(0,true);enemy.root.position.copy(g.player.root.position);enemy.root.position.z+=5;Object.assign(enemy,{hp:10000,slot:0,cooldown:999,readyAt:99999,knockback:g.player.root.position.clone().set(0,0,0),verticalSpeed:0,lift:0});g.enemies.push(enemy);g.crowd.update(g.enemies);
-  g.startAttack('heavy');for(let i=0;i<23;i++)g.updateCombat(1/60);
+  g.startAttack('heavy');const contactFrames=Math.ceil((g.action.hits[0]+.025)*60);for(let i=0;i<contactFrames;i++)g.updateCombat(1/60);
   rows.push({hero:index,style:g.action.style,clip:g.player.current,name:g.action.name,hurt:enemy.hp<10000,knockback:enemy.knockback.z});
-  g.clearEnemies();g.resolve=100;g.startAttack('musou');for(let i=0;i<205;i++)g.updateCombat(1/60);rows.at(-1).finished=!g.action;
+  g.clearEnemies();g.resolve=100;g.invincible=0;g.startAttack('musou');const musouFrames=Math.ceil((g.action.duration+.1)*60);rows.at(-1).protected=g.invincible>=g.action.duration;for(let i=0;i<musouFrames;i++)g.updateCombat(1/60);rows.at(-1).finished=!g.action;
  }
  g.clearEnemies();g.crowd.update([]);return rows;
 });
-assert.deepEqual(styles.map(x=>x.style),['fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Fan_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished));assert.ok(styles.every(x=>x.knockback>0),JSON.stringify(styles));
+assert.deepEqual(styles.map(x=>x.style),['naginata','fan','ring','sickle']);assert.deepEqual(styles.map(x=>x.clip),['Ethan_Naginata_Heavy_Cleave','Fan_Heavy_Cleave','Ring_Heavy_Cleave','Sickle_Heavy_Cleave']);assert.ok(styles.every(x=>x.hurt&&x.finished&&x.protected));assert.ok(styles.every(x=>x.knockback>0),JSON.stringify(styles));
 assert.deepEqual(errors,[]);console.log('Focused strafe/backpedal, buffered finishers, Musou, six scenery entrances, gamepad controls, and distinct female combat styles passed');await browser.close();

@@ -4,9 +4,13 @@ The complete notice is in ROCKETBOX-LICENSE.txt in this directory.
 https://github.com/microsoft/Microsoft-Rocketbox
 Source commit: 0943055db6ec570bcef9f2c8b41c9e5467c808f9
 
-Each of the ten characters preserves a separate source body, face, clothing mesh,
-and texture set. Native motion and hand markers fit each original skeleton.
+The six heroes and four source enemy roles preserve their licensed bodies,
+faces, clothing meshes, and textures. Three enemy wardrobes reuse these bodies.
+The cloth ninja adds original weighted wraps and generated cloth artwork.
+The runtime assigns four fixed palettes to each wardrobe, independently of role.
+Native motion and hand markers fit each original skeleton.
 Source identities and build details: docs/rocketbox-roster.md.
+Enemy wardrobe sources and artwork: assets/enemies/SOURCES.md.
 
 The Vice President adapts the native head geometry and texture to Ethan Cary's
 authorized likeness, with original glasses. The Closer uses an edited forehead

@@ -1,9 +1,10 @@
+import {disableHmr} from '../tools/disable-hmr.mjs';
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio']});
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await (await browser.newContext({viewport:{width:1440,height:900}})).newPage();
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');await page.click('#start-round');
+await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#play');await page.click('#begin');await page.click('#start-round');
 await page.waitForFunction(()=>window.__golfTest.audio.music.currentTime>.2);
 await page.evaluate(()=>{const g=window.__golfTest;g.phase='combat';g.combatTime=0;g.spawnTime=100;g.enemyBudget=0;g.ball.position.z=120;});
 await page.waitForFunction(()=>window.__golfTest.audio.combatMusic.currentTime>.2);
@@ -23,6 +24,6 @@ await page.evaluate(()=>{window.__golfTest.audio.setMusic(false);});
 assert.ok(await page.evaluate(()=>{const a=window.__golfTest.audio;return a.music.paused&&a.combatMusic.paused;}));
 await page.evaluate(()=>window.__golfTest.audio.field.ready);assert.equal(await page.evaluate(()=>window.__golfTest.audio.field.buffers.size),9);assert.equal(await page.evaluate(()=>window.__golfTest.audio.field.loops.length),2);
 // The newest active game owns audio. Another tab must not create a delayed second soundtrack.
-const second=await page.context().newPage();await second.goto('http://localhost:5173');await second.waitForFunction(()=>window.__golfTest);await second.click('#play');await page.waitForFunction(()=>window.__golfTest.audio.paused&&window.__golfTest.audio.ctx.state==='suspended');await second.close();
+const second=await page.context().newPage();await disableHmr(second);await second.goto('http://localhost:5173');await second.waitForFunction(()=>window.__golfTest);await second.click('#play');await page.waitForFunction(()=>window.__golfTest.audio.paused&&window.__golfTest.audio.ctx.state==='suspended');await second.close();
 assert.equal(await page.evaluate(()=>window.ninjaGolf.state().musicFailed),false);assert.deepEqual(errors,[]);
 console.log('Both local recordings decode and play; combat crossfade, return, rapid changes, pause, mute, and volume passed');await browser.close();

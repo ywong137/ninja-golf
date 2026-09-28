@@ -1,12 +1,15 @@
 import {FieldAudio} from './field-audio.js';
+import {MusicPlaylist} from './music-playlist.js';
+import {SOUNDTRACKS} from './soundtracks.js';
 export class AudioEngine {
   constructor(){
     this.channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('ninja-golf-audio'):null;this.channel?.addEventListener('message',()=>{if(!this.paused)this.pause();});
     this.ctx=null;this.enabled=true;this.musicEnabled=true;this.volume=.4;this.mode='course';this.paused=false;this.musicFailed=false;this.fadeTimer=null;
-    this.music=new Audio(`${import.meta.env.BASE_URL}audio/ishikari-lore.mp3`);
-    this.combatMusic=new Audio(`${import.meta.env.BASE_URL}audio/neolith.mp3`);
+    this.playlist=new MusicPlaylist(SOUNDTRACKS,'crane-coast');
+    this.music=new Audio(`${import.meta.env.BASE_URL}${this.playlist.current('course').src}`);
+    this.combatMusic=new Audio(`${import.meta.env.BASE_URL}${this.playlist.current('combat').src}`);
     this.tracks={course:{element:this.music,level:.55},combat:{element:this.combatMusic,level:.43}};
-    for(const track of Object.values(this.tracks)){track.element.loop=true;track.element.preload='none';track.element.addEventListener('error',()=>{this.musicFailed=true;});}
+    for(const [mode,track] of Object.entries(this.tracks)){track.element.loop=false;track.element.preload='none';track.element.addEventListener('error',()=>{this.musicFailed=true;});track.element.addEventListener('ended',()=>{if(mode==='combat'&&this.mode!=='combat')return;this.playlist.next(mode);this.loadTrack(mode);this.syncMusic();});}
   }
   async start(){
     try{
@@ -17,7 +20,9 @@ export class AudioEngine {
       this.paused=false;if(this.enabled)this.channel?.postMessage('playing');await this.ctx.resume();this.syncMusic();
     }catch{/* A later user gesture can unlock audio after autoplay restrictions. */}
   }
-  setMode(mode){if(mode!==this.mode){this.mode=mode;this.syncMusic();}}
+  loadTrack(mode){const track=this.tracks[mode],song=this.playlist.current(mode),url=new URL(import.meta.env.BASE_URL+song.src,location.href).href;if(track.element.src===url)return;track.element.pause();track.element.src=url;track.element.load();}
+  setCourse(id){if(id===this.playlist.courseId)return;clearTimeout(this.fadeTimer);this.playlist.setCourse(id);for(const mode of ['course','combat'])this.loadTrack(mode);this.syncMusic();}
+  setMode(mode){if(mode!==this.mode){if(!this.tracks[mode])throw Error('Unknown audio mode: '+mode);this.mode=mode;if(mode==='combat'){this.playlist.enterCombat();this.loadTrack('combat');}this.syncMusic();}}
   syncMusic(){
     clearTimeout(this.fadeTimer);if(!this.ctx)return;
     const active=this.enabled&&this.musicEnabled&&!this.paused,now=this.ctx.currentTime;

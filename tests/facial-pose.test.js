@@ -16,10 +16,22 @@ test('All six native faces retain eye clearance and triangle orientation at faci
  // Reviewed narrower eyelids preserve Ethan's likeness and The Closer's glare.
  const minimumAperture={monk:.92,sora:.80};
  for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora']){
-  const rig=await loadFace(hero),pose=new FacialPose(rig.bones,{identity:hero}),meter=measureFace(rig),rest=meter.measure();assert.ok(rest.restSamples>400,`${hero}: aperture sampler must see both eyes`);assert.ok(meter.eyeTriangles>200);
-  for(const [yawSign,pitchSign]of [[-1,-1],[-1,1],[1,-1],[1,1]]){for(let frame=0;frame<90;frame++){pose.restore();pose.apply(1/60,{gazeYaw:yawSign*FACIAL_LIMITS.gazeYaw,gazePitch:pitchSign*FACIAL_LIMITS.gazePitch,exertion:1,musou:1});}const result=meter.measure();assert.equal(result.flippedTriangles,0,hero);assert.ok(result.penetrationIncrease<.0005,`${hero}: eye clearance regression ${result.penetrationIncrease}`);assert.ok(result.maxLidDisplacement<.0015,hero);assert.ok(result.maxLongEdgeStretch<1.5,`${hero}: facial edge stretch ${result.maxLongEdgeStretch}`);assert.ok(result.minEdgeRatio>.5,`${hero}: facial edge compression ${result.minEdgeRatio}`);assert.ok(result.openFraction>(minimumAperture[hero]??.95),`${hero}: eye aperture ${result.openFraction}`);}
+  const rig=await loadFace(hero),pose=new FacialPose(rig.bones,{identity:hero}),meter=measureFace(rig),rest=meter.measure();assert.ok(rest.restSamples>400,`${hero}: aperture sampler must see both eyes`);assert.ok(meter.eyeTriangles>200);for(const side of ['R','L'])assert.ok(rest.eyes[side].restSamples>200,`${hero}: aperture sampler must resolve the ${side} eye`);
+  for(const [yawSign,pitchSign]of [[-1,-1],[-1,1],[1,-1],[1,1]]){for(let frame=0;frame<90;frame++){pose.restore();pose.apply(1/60,{gazeYaw:yawSign*FACIAL_LIMITS.gazeYaw,gazePitch:pitchSign*FACIAL_LIMITS.gazePitch,exertion:1,musou:1});}const result=meter.measure();assert.equal(result.flippedTriangles,0,hero);assert.ok(result.penetrationIncrease<.0005,`${hero}: eye clearance regression ${result.penetrationIncrease}`);assert.ok(result.maxLidDisplacement<.0015,hero);assert.ok(result.maxLongEdgeStretch<1.5,`${hero}: facial edge stretch ${result.maxLongEdgeStretch}`);assert.ok(result.minEdgeRatio>.5,`${hero}: facial edge compression ${result.minEdgeRatio}`);assert.ok(result.openFraction>(minimumAperture[hero]??.95),`${hero}: eye aperture ${result.openFraction}`);for(const side of ['R','L'])assert.ok(result.eyes[side].openFraction>(minimumAperture[hero]??.95),`${hero}: ${side} eye aperture ${result.eyes[side].openFraction}`);}
   pose.restore();rig.update();assert.deepEqual(meter.measure(),rest,`${hero}: the facial overlay must restore the original surface`);
  }
+});
+
+test('Aperture sampler detects one closed eye without credit from the other eye',async()=>{
+ const rig=await loadFace('monk'),meter=measureFace(rig),rest=meter.measure();
+ const lid=rig.bones.Bip01_LEyeBlinkTop,original=lid.position.clone();
+ // A deliberately excessive closure verifies the meter against a real defect.
+ lid.position.add(new Vector3(0,.01,0).applyQuaternion(lid.quaternion));
+ const closed=meter.measure();
+ assert.ok(closed.eyes.L.openFraction<.1,'The closed left eye must fail clearance');
+ assert.equal(closed.eyes.R.openFraction,1,'The untouched right eye remains open');
+ lid.position.copy(original);rig.update();
+ assert.deepEqual(meter.measure(),rest);
 });
 
 test('Expression moves real jaw vertices while preserving unowned facial bones',async()=>{

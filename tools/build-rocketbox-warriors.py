@@ -32,6 +32,29 @@ def patch_ronin_native_combat(output):
   motion_path=ROOT/'src/motion-data.json';motions=json.loads(motion_path.read_text());motions.update(generated)
   output.write_bytes(candidate.read_bytes())
   motion_path.write_text(json.dumps(motions,separators=(',',':'),ensure_ascii=False))
+def patch_enemy_locomotion(output):
+ with tempfile.TemporaryDirectory(prefix='ninja-enemy-knees-') as folder:
+  candidate=pathlib.Path(folder)/output.name
+  subprocess.run(['node',str(ROOT/'tools/author-enemy-locomotion.mjs'),'--input',str(output),'--output',str(candidate)],check=True)
+  output.write_bytes(candidate.read_bytes())
+def patch_naginata_native_combat(output):
+ with tempfile.TemporaryDirectory(prefix='ninja-native-naginata-') as folder:
+  candidate=pathlib.Path(folder)/'monk.glb';record=pathlib.Path(folder)/'monk-motion.json'
+  subprocess.run(['node',str(ROOT/'tools/author-native-naginata.mjs'),'--input',str(output),'--output',str(candidate),'--record',str(record)],check=True)
+  subprocess.run(['node',str(ROOT/'tools/check-native-naginata.mjs'),'--model',str(candidate),'--record',str(record)],check=True)
+  generated=json.loads(record.read_text())
+  if len(generated)!=13:raise ValueError('Native naginata export must contain ten combat clips and three guard clips')
+  motion_path=ROOT/'src/motion-data.json';motions=json.loads(motion_path.read_text());motions.update(generated)
+  output.write_bytes(candidate.read_bytes())
+  motion_path.write_text(json.dumps(motions,separators=(',',':'),ensure_ascii=False))
+def rebuild_enemy_appearances():
+ with tempfile.TemporaryDirectory(prefix='ninja-enemy-wardrobe-') as folder:
+  raw=pathlib.Path(folder)/'raw'
+  subprocess.run(['node',str(ROOT/'tools/build-enemy-appearances.mjs'),'--output-dir',str(raw),'--ninja-texture',str(ROOT/'assets/enemies/cloth-ninja-atlas.png')],check=True)
+  for family in ['hoodie','tshirt','cloth-ninja']:
+   candidate=raw/f'enemy-{family}.glb'
+   patch_enemy_locomotion(candidate)
+   (ROOT/'public/models'/candidate.name).write_bytes(candidate.read_bytes())
 def materials(folder):
  for mat in bpy.data.materials:
   color=folder/'Textures'/f'{mat.name}_color.tga'
@@ -68,6 +91,8 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   raise FileNotFoundError('Run python3 tools/author-selection-motion.py and bake --selection-only source motion before exporting heroes')
  selection_names=set(json.loads(selection_path.read_text())) if selection_path.exists() else set()
  clip_names=ENEMY_CLIPS|{ENEMY_ATTACKS[[e[0] for e in ENEMIES].index(hero)]} if args.enemies else clip_filter.clip_names(hero,set(json.loads((ROOT/'src/motion-data.json').read_text()))|set(json.loads((ROOT/'src/locomotion-data.json').read_text()))|selection_names|clip_filter.COMMON)
+ # Bake canonical aliases first. The native pass replaces them after export.
+ if hero=='monk':clip_names={name for name in clip_names if not name.startswith('Ethan_Naginata_')}
  if args.selection_only:
   clip_names={clip_filter.SELECTION[hero]}
   if not clip_names<=selection_names:raise ValueError(f'Missing selection record for {hero}')
@@ -100,11 +125,13 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  if append_only:
   # The Monk now owns a polearm family. Retire the former shared odachi clips.
   retired=[name.removeprefix('Naginata_') for name in clip_names if name.startswith('Naginata_') and any(part in name for part in ['Cut_','Heavy_','Musou_'])] if hero=='monk' and args.attacks_only else []
+  if hero=='monk':retired += ['Ethan_'+name for name in clip_names if name.startswith('Naginata_') and name.removeprefix('Naginata_').startswith(('Cut_','Heavy_','Musou_','Ready'))]
   if hero=='ninja' and args.attacks_only:retired.append('Twin_Cut_Diagonal')
   subprocess.run(['python3',str(ROOT/'tools/append-native-guard-clips.py'),str(output),str(temporary)]+[argument for name in (clip_names if args.selection_only else args.attack_name) for argument in ['--allow-clip',name]]+[argument for name in retired for argument in ['--remove-clip',name]],check=True);temporary.unlink()
   subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
   if hero=='ronin' and (args.attacks_only or bool(set(args.attack_name)&{'Heavy_Cleave','Ronin_Heavy_Cleave'})):
    patch_ronin_native_combat(output)
+  if hero=='monk' and (args.attacks_only or args.guards_only or args.attack_name):patch_naginata_native_combat(output)
   print('GUARDS_EXPORTED',hero,flush=True);continue
  # Full exports need the same exact attack endpoints as animation-only updates.
  time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')
@@ -112,6 +139,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  subprocess.run(['python3',str(ROOT/'tools/compress-glb-textures.py'),'--max-size','1024' if args.enemies else '2048','--alpha-size','512' if args.enemies else '1024',str(temporary)],check=True)
  temporary.replace(output)
  subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
+ if args.enemies:patch_enemy_locomotion(output)
  if not args.enemies:
   # Golf uses the native shoulder hierarchy and body proportions directly.
   with tempfile.TemporaryDirectory(prefix='ninja-native-golf-') as golf_dir:
@@ -125,6 +153,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   likeness=output.with_name('monk.likeness-building.glb')
   subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-baked.jpg')],check=True)
   likeness.replace(output)
+  patch_naginata_native_combat(output)
  if hero=='sora':
   # Full exports restore the accepted fringe and local forehead texture.
   # Clip-only exports preserve these payloads and skip this mesh-only patch.
@@ -133,3 +162,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   fringe.replace(output)
   fringe.with_suffix('.glb.json').unlink(missing_ok=True)
  print('EXPORTED',hero,flush=True)
+
+# Refresh the three wardrobes after their source body or role clips change.
+if not args.preview and (args.enemies or (not append_only and args.hero in [None,'shinobi'])):
+ rebuild_enemy_appearances()

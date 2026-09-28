@@ -71,11 +71,15 @@ All 36 holes use individually authored routes. Doglegs, split fairways, landing 
 
 The Ronin favors power, the Shinobi favors speed and accuracy, and The Vice President favors health and reach. The Vice President uses an adapted likeness of Ethan Cary.
 The Ace carries a straight jian, The Hustler carries a curved dao, and The Closer carries a short wakizashi. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. Selection alternates men and women while preserving saved character IDs. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
-Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms.
+Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms. Hooded runners, T-shirt regulars, and cloth ninjas each have four fixed palettes. Their appearance is separate from the four combat roles.
+
+The character selection screen cycles through address, a full golf swing, combat ready, a light attack, and a heavy attack. Press **C** to open animation controls. Speed ranges from **0.1× to 1.0×**. **Pause / Go** freezes or resumes the character. Changing characters retains these settings.
 
 ## Graphics and scope
 
 This release uses licensed Microsoft Rocketbox humans with their original anatomy, skinning, faces, hair, clothing, and textures. Each character has adapted golf, movement, combat, guard, and death animations. Golf swings use a baked two-hand animation. The ball launches at the swing contact time.
+
+The golf swing keeps the lead arm extended, shifts the hips, turns the chest, and raises the trail heel through the finish. Ethan uses a complete two-handed naginata family, including stepping cuts, a returning sweep, and a seven-hit Musou. Both hands share the same shaft. His guard reactions use the same grip. See [native motion checks and remaining elbow-fold limits](docs/reviews/native-naginata.md).
 
 The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Trees, shrubs, rocks, and cliffs use reduced photographic scans. Buildings and small props use generated geometry. Nearby trees retain branches and leaf cards, with wind deformation. Distant trees use 24 viewing angles, including elevated views. Their surface normals respond to scene lighting. Ground shadows follow their actual branches. Short dithered transitions connect the detail levels. Grass uses instancing and fades smoothly at distance. Ponds reflect the scene, with ripples and shoreline foam. The architecture uses curved tiled roofs, galleries, lattice panels, and stone foundations. Weapons use beveled steel, cloth grips, and brass fittings. Each hero weapon uses five to seven material draws. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
@@ -95,21 +99,22 @@ Vite uses relative asset paths, so the build works beneath a repository path suc
 
 ## Music and credits
 
-**“Ishikari Lore” — Kevin MacLeod (incompetech.com)**
+Each course has four existing recordings: two calm golf tracks and two action tracks. All sixteen use Creative Commons Attribution 4.0. No music is generated.
 
-Licensed under [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
+| Course | Golf | Combat |
+| --- | --- | --- |
+| Crane Coast | Ishikari Lore; Senbazuru | Neolith; Metalmania |
+| Heather & Crown | Skye Cuillin; Errigal | Twisted; Noise Attack |
+| Copper Saguaro | Laid Back Guitars; Del Rio Bravo | El Magicia; Lonely |
+| Neo-Tokyo | Awayuki; Cyber_Noir | Kengeki; CyberPunk_City |
 
-[Original track and license](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100192).
+Crane uses Japanese instruments and guitar rock. Heather uses Celtic music and classic-rock styling. Copper uses Latin music, Latin rock, and dramatic flamenco. Neo-Tokyo mixes Japanese chillout, cyberpunk, synthwave, and Japanese hard rock.
 
-**“Neolith” — Kevin MacLeod (incompetech.com)**
-
-Combat switches to this guitar, bass, and drum recording at 145 BPM. It uses [Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/). [Original track and license](https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1100140).
-
-Both recordings ship unchanged and loop during play. The game crossfades between them over 1.15 seconds and controls their volume. See `public/audio/LICENSE.txt` and the in-game credits.
+The game alternates recordings within each mode. Combat encounters alternate their starting tracks. Crossfades last 1.15 seconds. Each course retains its track order when you change courses. Only the active mode plays after each fade. Copper and Neo-Tokyo recordings use 160 kbps MP3 encoding. Crane and Heather retain the original MP3 files. The original compositions remain unchanged. See [full soundtrack credits](public/audio/music/CREDITS.md), [source metadata](public/audio/music/SOURCES.json), and the in-game credits.
 
 CC0 recordings supply wind, surf, birds, footsteps, splashes, and weapon swishes. Web Audio synthesis adds impact accents. The game does not generate music. Pause suspends all audio. A second active tab silences the first tab within the same browser profile. See the [recording credits](public/audio/field/CREDITS.md).
 
-Three.js and Vite use the MIT license. All six heroes and four enemies use distinct textured humans from [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox), under MIT. The [Quaternius](https://quaternius.com/) Universal Animation Library supplies CC0 motion references. The native motion conversion, weapons, and golf trajectories are original adaptations. See [model credits](public/models/LICENSE.txt) and [the human roster](docs/rocketbox-roster.md).
+Three.js and Vite use the MIT license. All six heroes and three enemy appearance families use textured humans from [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox), under MIT. The [Quaternius](https://quaternius.com/) Universal Animation Library supplies CC0 motion references. The native motion conversion, weapons, and golf trajectories are original adaptations. See [model credits](public/models/LICENSE.txt) and [the human roster](docs/rocketbox-roster.md).
 
 Earlier tree assets use Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The retained generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
 
@@ -124,7 +129,7 @@ Current trees, shrubs, ferns, boulders, cliffs, ground materials, and daylight/n
 - `src/effects.js`: slash trails and particles.
 - `src/navigation.js`: camera-relative movement, aiming, and radar projection.
 - `src/input.js`: shared keyboard, mouse, and gamepad actions.
-- `src/audio.js`: two-track music crossfades, playback controls, and sound effects.
+- `src/audio.js`: course playlists, music crossfades, playback controls, and sound effects.
 - `src/rendering.js`: antialiasing, contact shading, and display output.
 - `src/ui.js` and `src/style.css`: menus, controls, HUD, and scorecard.
 

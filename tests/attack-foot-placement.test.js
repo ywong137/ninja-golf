@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {FootPlacement,attackFootContacts} from '../src/foot-placement.js';
+import {WARRIORS} from '../src/warriors.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 async function nativeRig(hero){
  const raw=readFileSync(new URL(`../public/models/${hero}.glb`,import.meta.url)),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size));
@@ -57,7 +58,8 @@ test('Authored downhill support stays reachable across six native bodies and fou
  const {courseSurfaceHeight}=await import('../src/terrain.js');
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
  for(const [hero,prefix]of [['ronin',''],['shinobi','Twin_'],['monk','Naginata_'],['kaede','Fan_'],['ayame','Ring_'],['sora','Sickle_']]){
-  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===(hero==='ronin'?'Ronin_Heavy_Cleave':prefix+'Heavy_Cleave'));
+  const warrior=WARRIORS.find(w=>w.model===hero),name=warrior.motionOverrides?.[prefix+'Heavy_Cleave']??prefix+'Heavy_Cleave';
+  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===name);
   let maxReach=0,maxExtraGap=0,maxGripChange=0;
   for(let theme=0;theme<4;theme++){
    placement.restore();placement.reset();mixer.stopAllAction();mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();

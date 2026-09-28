@@ -1,7 +1,10 @@
 # Licensed human roster
 
-The playable heroes and enemies use ten separate Microsoft Rocketbox adult identities.
-The game preserves their original anatomy, clothing, texture maps, and skin weights.
+The six playable heroes use separate Microsoft Rocketbox adult identities.
+Four additional source bodies supply the enemy animation roles.
+Three enemy wardrobes supply the visible crowd, independently of those roles.
+The models retain licensed body meshes, texture maps, and skin weights.
+Ethan's head and the cloth ninja include the documented adaptations.
 
 | Hero | Source identity |
 | --- | --- |
@@ -33,6 +36,10 @@ Add `-- --preview` to inspect unmodified source bodies without changing game ass
 Native animation clips preserve each model's original limb proportions.
 
 Use `-- --enemies` to export the four enemy bodies with 1K textures and only their required clips.
+This also rebuilds the hoodie, T-shirt, and cloth-ninja wardrobes.
+The hoodie and cloth ninja use `Male_Adult_18`; the T-shirt uses `Male_Adult_09`.
+Each wardrobe has four fixed palettes and can perform all four combat roles.
+See [enemy sources](../assets/enemies/SOURCES.md) for the added cloth geometry and artwork.
 The build requires a system Python with Pillow for embedded texture compression.
 
 ## Surface materials

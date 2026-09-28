@@ -54,3 +54,16 @@ body[data-screen=game] .swing-panel{left:50%;right:auto;transform:translateX(-50
 .combat-count{top:max(45%,398px)}
 @media(max-height:760px){.vitality{top:205px}.combat-count{top:370px}.combat-count strong{font-size:54px}.combat-count b{margin-top:10px}}
 @media(max-width:700px){.vitality{width:250px}.vitality>div:first-child,.resolve-label{font-size:9px;letter-spacing:.3px}}
+
+/* Keep playback controls outside the character's full weapon arc. */
+.showcase-controls{position:absolute;right:5%;top:100px;width:min(330px,36vw);padding:13px 16px;background:#122b25dd;border:1px solid #e0dfbd30;border-radius:3px;backdrop-filter:blur(10px)}
+.showcase-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;color:#ede5c9}
+.showcase-heading .text-button{font-size:9px;padding:3px 0;white-space:nowrap}
+#showcase-console{padding-top:15px;border-top:1px solid #e0dfbd30;margin-top:12px}
+#showcase-console label{display:flex;justify-content:space-between;font-size:11px}
+#showcase-speed{width:100%;margin:13px 0;accent-color:#dfc17c}
+.showcase-transport{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-variant-numeric:tabular-nums}
+.showcase-transport .secondary{padding:8px 22px;font-size:11px;min-width:80px}
+@media(min-width:1000px){.showcase-controls{left:31%;right:auto;top:13%;width:24%}.selection-intro p{max-width:24vw}}
+@media(min-width:1000px) and (max-height:760px){.showcase-controls{top:95px;padding:9px 12px}#showcase-console{padding-top:9px;margin-top:8px}#showcase-speed{margin:6px 0}.showcase-transport .secondary{padding:5px 16px}}
+@media(max-width:999px){.showcase-controls{right:5%;top:11%;bottom:auto;width:40%;padding:10px}.showcase-heading{display:block}.showcase-heading>span{display:block;margin-bottom:8px}}

@@ -19,6 +19,8 @@ import {musouHeadings,combatMotionName,motions} from './motion.js';
 import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { UI } from './ui.js';
+import {CharacterShowcase} from './character-showcase.js';
+import {enemyAppearanceForSlot} from './enemy-appearances.js';
 import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, ellipse, lieAt, clamp, carryFor, launchShot, scoreName } from './course.js';
 
 const v1=new THREE.Vector3(),v2=new THREE.Vector3(),camTarget=new THREE.Vector3(),camLook=new THREE.Vector3();
@@ -27,7 +29,7 @@ class Game {
   constructor(){
     this.courseIndex=0;this.roundCourse=COURSE_SETS[0];this.holes=this.roundCourse.holes;this.penalties=0;this.scorePenalties=[];this.audio=new AudioEngine();this.mode='home';this.phase='aim';this.paused=false;this.hole=0;this.scores=[];this.kills=0;this.combo=0;this.bestCombo=0;this.comboTime=0;this.resolve=35;this.guard=createPlayerGuard();this.health=110;this.quality='balanced';this.time=0;this.playerIndex=0;this.enemies=[];this.power=1;this.charging=false;this.club=0;this.strokes=0;this.enemiesSpawned=0;this.attackTimer=0;this.dodgeTimer=0;this.invincible=0;this.shotOrigin=new THREE.Vector3();this.cameraYaw=0;this.cameraPitch=.35;this.swingTimer=0;this.uiTime=0;this.frameCount=0;this.fpsTime=0;
     this.groundHeight=(x,z)=>courseSurfaceHeight(this.course,x,z,heightAt,ellipse);
-    this.ui=new UI({selection:()=>this.selectScreen(),home:()=>this.home(),begin:(i,c)=>this.begin(i,c),courseSelection:()=>this.selectCourseScreen(),course:i=>this.previewCourse(i),warrior:i=>this.selectWarrior(i),audio:()=>this.ui.audio(this.audio.toggle()),pause:()=>this.togglePause(),help:()=>{this.ui.help();},resume:()=>this.resume(),swing:()=>{this.audio.start();this.swing();},club:d=>this.changeClub(d),selectClub:i=>this.selectClub(i),skip:()=>{this.fastFlight=true;},restart:()=>{this.paused=false;this.loadHole(this.hole);this.audio.resume();},next:()=>this.nextHole(),survey:()=>this.toggleSurvey()});
+    this.ui=new UI({selection:()=>this.selectScreen(),home:()=>this.home(),begin:(i,c)=>this.begin(i,c),courseSelection:()=>this.selectCourseScreen(),course:i=>this.previewCourse(i),warrior:i=>this.selectWarrior(i),audio:()=>this.ui.audio(this.audio.toggle()),pause:()=>this.togglePause(),help:()=>{this.ui.help();},resume:()=>this.resume(),swing:()=>{this.audio.start();this.swing();},club:d=>this.changeClub(d),selectClub:i=>this.selectClub(i),skip:()=>{this.fastFlight=true;},restart:()=>{this.paused=false;this.loadHole(this.hole);this.audio.resume();},next:()=>this.nextHole(),survey:()=>this.toggleSurvey(),showcaseSpeed:speed=>{this.showcase?.clock.setSpeed(speed);this.updateShowcaseUI();},showcasePause:()=>{if(this.showcase)this.showcase.clock.paused=!this.showcase.clock.paused;this.updateShowcaseUI();}});
     try{this.renderer=new THREE.WebGLRenderer({canvas:this.ui.canvas,antialias:true,powerPreference:'high-performance'});}catch(e){this.ui.modal('<h2>A little more graphics power.</h2><p>This game needs WebGL 2. Enable hardware acceleration in your browser, then reload the page.</p>');return;}
     this.renderer.setSize(innerWidth,innerHeight);this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.92;this.renderer.outputColorSpace=THREE.SRGBColorSpace;
     this.scene=new THREE.Scene();this.camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.4,6500);
@@ -47,19 +49,22 @@ class Game {
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.mode==='game'&&!this.paused&&this.phase!=='holed')this.togglePause();});
     this.ui.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.paused=true;this.audio.pause();this.ui.modal('<h2>The graphics session stopped.</h2><p>Reload this page to restore the course. Completed holes remain saved.</p><button class="primary" onclick="location.reload()">Reload game</button>');});
     // Read-only diagnostics help verify the real game without bypassing its rules.
-    window.ninjaGolf={state:()=>({mode:this.mode,phase:this.phase,aim:this.aim,cameraYaw:this.cameraYaw,facing:this.player.root.rotation.y,hole:this.hole,courseId:this.roundCourse.id,holes:this.holes.length,playerIndex:this.playerIndex,survey:!!this.survey,penalties:this.penalties,strokes:this.strokes,lie:this.lie,ball:this.ball.position.toArray(),player:this.player.root.position.toArray(),health:this.health,enemies:this.enemies.filter(e=>!e.dead).length,kills:this.kills,resolve:this.resolve,club:CLUBS[this.club].short,power:this.power,charging:this.charging,scores:[...this.scores],paused:this.paused,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,musicReady:this.audio.music.readyState,musicFailed:this.audio.musicFailed,musicMode:this.audio.mode,combatMusicReady:this.audio.combatMusic.readyState})};
+    window.ninjaGolf={state:()=>({mode:this.mode,phase:this.phase,aim:this.aim,cameraYaw:this.cameraYaw,facing:this.player.root.rotation.y,hole:this.hole,courseId:this.roundCourse.id,holes:this.holes.length,playerIndex:this.playerIndex,survey:!!this.survey,penalties:this.penalties,strokes:this.strokes,lie:this.lie,ball:this.ball.position.toArray(),player:this.player.root.position.toArray(),health:this.health,enemies:this.enemies.filter(e=>!e.dead).length,kills:this.kills,resolve:this.resolve,club:CLUBS[this.club].short,power:this.power,charging:this.charging,scores:[...this.scores],paused:this.paused,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,showcase:this.showcase?.state??null,musicReady:this.audio.music.readyState,musicFailed:this.audio.musicFailed,musicMode:this.audio.mode,combatMusicReady:this.audio.combatMusic.readyState})};
     this.camera.position.set(96,77,-88);this.currentLook.set(-15,10,155);if(import.meta.env.DEV)window.__golfTest=this;this.restoreOffer();this.previousTime=performance.now();this.renderer.setAnimationLoop(()=>this.frame());
   }
   get warrior(){return WARRIORS[this.playerIndex];}
-  selectWarrior(i){if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=new Warrior(i);this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;}this.audio.play('click');}
-  selectScreen(){this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;}
-  setCourse(index){this.courseIndex=index;this.roundCourse=COURSE_SETS[index];this.holes=this.roundCourse.holes;}
-  home(){this.mode='home';this.paused=false;this.setCourse(Math.floor(Math.random()*COURSE_SETS.length));this.loadHole(this.roundCourse.preview?.hole||0);this.player.root.visible=false;this.aimLine.visible=false;this.aimMarker.visible=false;this.trail.visible=false;this.ballBeacon.visible=false;this.ui.closeModal();this.input.clear();this.ui.homeCourse(this.roundCourse);this.restoreOffer();}
-  selectCourseScreen(){this.mode='courses';this.paused=false;this.clearEnemies();this.previewCourse(this.ui.selectedCourse||0);}
+  stopShowcase(){if(!this.showcase)return;this.showcaseSettings={speed:this.showcase.clock.speed,paused:this.showcase.clock.paused};this.showcase.dispose();this.showcase=null;}
+  startShowcase(){this.stopShowcase();this.showcase=new CharacterShowcase(this.player,this.showcaseSettings);this.updateShowcaseUI();}
+  updateShowcaseUI(){if(this.showcase)this.ui.showcaseState(this.showcase.state);}
+  selectWarrior(i){this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=new Warrior(i);this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();}this.audio.play('click');}
+  selectScreen(){this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;this.startShowcase();}
+  setCourse(index){this.courseIndex=index;this.roundCourse=COURSE_SETS[index];this.holes=this.roundCourse.holes;this.audio.setCourse(this.roundCourse.id);}
+  home(){this.stopShowcase();this.mode='home';this.paused=false;this.setCourse(Math.floor(Math.random()*COURSE_SETS.length));this.loadHole(this.roundCourse.preview?.hole||0);this.player.root.visible=false;this.aimLine.visible=false;this.aimMarker.visible=false;this.trail.visible=false;this.ballBeacon.visible=false;this.ui.closeModal();this.input.clear();this.ui.homeCourse(this.roundCourse);this.restoreOffer();}
+  selectCourseScreen(){this.stopShowcase();this.mode='courses';this.paused=false;this.clearEnemies();this.previewCourse(this.ui.selectedCourse||0);}
   previewCourse(index){this.setCourse(index);this.loadHole(this.roundCourse.preview?.hole||0);this.player.root.visible=false;this.ball.visible=false;this.aimLine.visible=false;this.aimMarker.visible=false;this.ui.courseDetails(this.roundCourse);}
   toggleSurvey(){if(this.mode!=='game'||this.phase!=='aim')return;this.survey=!this.survey;if(this.survey)this.surveyView=createSurvey(this.ball.position,this.aimMarker.position,this.camera.fov,this.camera.aspect);this.input.clear();}
 
-  begin(i=this.playerIndex,courseIndex=0){this.setCourse(courseIndex);this.selectWarrior(i);this.scores=[];this.scorePenalties=[];this.kills=0;this.bestCombo=0;this.resolve=35;this.mode='game';this.paused=false;this.loadHole(0);this.audio.start();this.ui.toast('Q / E selects a club. A / D aims. Press SPACE twice to swing.',6000);this.save();}
+  begin(i=this.playerIndex,courseIndex=0){this.stopShowcase();this.mode='game';this.setCourse(courseIndex);this.selectWarrior(i);this.scores=[];this.scorePenalties=[];this.kills=0;this.bestCombo=0;this.resolve=35;this.mode='game';this.paused=false;this.loadHole(0);this.audio.start();this.ui.toast('Q / E selects a club. A / D aims. Press SPACE twice to swing.',6000);this.save();}
   loadHole(index){
     this.hole=index;this.course=this.holes[index];this.scene.userData.courseTheme=this.course.theme;this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.club=this.course.par===3?2:0;this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
     this.ball.position.set(0,heightAt(this.course,0,0)+BALL_RADIUS,0);this.shotOrigin.copy(this.ball.position);this.ball.visible=true;this.trail.visible=false;this.lie='Tee';this.player.root.visible=this.mode==='game';this.aimAtPin();this.placePlayer();this.cameraYaw=this.aim;this.camera.position.set(-9,heightAt(this.course,0,0)+8,-14);this.currentLook=this.ball.position.clone().add(new THREE.Vector3(0,2,20));this.refreshAim();
@@ -124,7 +129,7 @@ class Game {
     const p=this.player.root.position,yaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);
     const sites=chooseAmbushSites(this.world.ambushSites,p,yaw,this.time);if(!sites.length)return;const waterEntries=new Map();
     for(let i=0;i<count&&this.enemies.filter(e=>!e.dead).length<64&&this.enemiesSpawned<this.enemyBudget;i++){
-      const site=sites[i%Math.min(5,sites.length)],slot=this.enemiesSpawned,enemy=new Warrior(enemyTypeForSlot(slot),true);
+      const site=sites[i%Math.min(5,sites.length)],slot=this.enemiesSpawned,enemy=new Warrior(enemyTypeForSlot(slot),true,enemyAppearanceForSlot(slot));
       // Entrances always begin at visible scenery, then land on a verified dry point.
       const dx=p.x-site.x,dz=p.z-site.z,length=Math.hypot(dx,dz)||1;let x=site.x+dx/length*2.5,z=site.z+dz/length*2.5;
       let landing=null,waterEntry=null;
@@ -157,6 +162,7 @@ class Game {
     const step=kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1),definition=attackDefinition(kind,step,this.warrior.combatStyle);
     const motion=motions[combatMotionName(this.warrior,kind,step)];
     this.action={...definition,rootAdvance:motion.rootAdvance??0,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    if(kind==='musou')this.invincible=Math.max(this.invincible,definition.duration);
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
   }
@@ -284,7 +290,8 @@ class Game {
     this.camera.lookAt(this.currentLook);
   }
   frame(){
-    const now=performance.now();const realDt=(now-this.previousTime)/1000;let dt=Math.min(realDt,.05);this.previousTime=now;if(this.hitStop>0){this.hitStop-=realDt;dt*=.12;}this.input.setContext(this.mode==='game'&&!this.paused?(this.survey?'survey':this.phase):'menu');this.input.poll(dt,this.phase==='combat');
+    const now=performance.now();const realDt=(now-this.previousTime)/1000;let dt=Math.min(realDt,.05);this.previousTime=now;if(this.hitStop>0){this.hitStop-=realDt;dt*=.12;}this.input.setContext(this.mode==='game'&&!this.paused?(this.survey?'survey':this.phase):'menu');this.input.poll(dt,this.mode==='game'&&this.phase==='combat');
+    if(this.mode==='selection'&&this.input.tap('KeyC'))this.ui.toggleShowcaseConsole();
     if(this.input.tap('Escape')&&!(this.mode==='game'&&this.phase==='holed')){if(!this.ui.$('modal').classList.contains('hidden')){this.ui.closeModal();if(this.paused)this.resume();}else this.togglePause();}
     this.audio.setMode(this.mode==='game'&&this.phase==='combat'?'combat':'course');this.audio.update(dt,this.mode==='game'&&this.phase==='combat',this.player.root.position,this.course.coastal!==false);
     if(!this.paused){this.time+=dt;this.world.update(this.time,dt,this.mode==='game'?this.player.root.position:null,this.camera.position);this.effects.update(dt,this.phase!=='combat');
@@ -303,7 +310,7 @@ class Game {
           if(this.input.tap('Space'))this.fastFlight=true;this.updateBall(dt*(this.fastFlight?3:1));this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:this.swingTimer>0?1:0,putting:this.club===7});
         }else if(this.phase==='combat')this.updateCombat(dt);
         this.uiTime+=dt;if(this.uiTime>.05){this.ui.update(this,this.uiTime);this.uiTime=0;}
-      }else if(this.mode==='selection')this.player.update(this.time,dt,{selection:true,gazeTarget:this.camera.position});
+      }else if(this.mode==='selection'){this.showcase.update(dt);this.updateShowcaseUI();}
       this.updateCamera(Math.min(realDt,.05));
     }
     this.portraitLights.visible=this.mode==='selection'||this.cinematic>0;if(this.portraitLights.visible)this.portraitLights.position.copy(this.player.root.position);

@@ -13,6 +13,7 @@ try{
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');
   const {WARRIORS}=await import('/src/warriors.js');
   const {motions}=await import('/src/motion.js');
+  const {attackDefinition}=await import('/src/combat.js');
   const {handSurface,measureGripSurface}=await import('/tools/grip-contact.mjs');
   await loadWarriorAssets();const results=[];
   for(let i=0;i<WARRIORS.length;i++){
@@ -40,7 +41,8 @@ try{
    // Primary contact must survive action crossfades and running carry corrections.
    p.handGrip.restore();p.mixer.stopAllAction();p.current='';p.play(w.readyClip,0);p.mixer.update(0);p.syncHeldObjects();
    for(let frame=0;frame<24;frame++){p.update(frame/60,1/60,{moving:true,moveSpeed:5.6,moveAngle:.7});sample(p.current,frame/60,true);}
-   for(let frame=0;frame<24;frame++){p.update(frame/60,1/60,{action:{kind:'light',step:0,token:123,time:frame/60,duration:.40}});sample(p.current,frame/60,true);}
+   const light=attackDefinition('light',0,w.combatStyle);
+   for(let frame=0;frame<Math.ceil(light.duration*60);frame++){p.update(frame/60,1/60,{action:{kind:'light',step:0,token:123,time:frame/60,duration:light.duration}});sample(p.current,frame/60,true);}
    if(i===0){
     // Inspect every 120 Hz phase of the reported heavy attack, including both
     // crossfades. Sparse fraction samples previously missed the actual impact.
