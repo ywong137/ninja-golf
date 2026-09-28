@@ -55,7 +55,7 @@ A later triangle-surface audit found a support-hand pinky collision during Ready
 
 ## Gameplay timing
 
-The existing combo window lasts 0.75 s after the attack. The attack input buffer lasts 0.55 s. A queued follow-up within this clip’s first 0.05 s can therefore expire before recovery ends. Review that buffer behavior before release.
+The combo window lasts 0.75 s after the attack. The earlier fixed 0.55 s input buffer could drop an early follow-up. The combat loop now retains one normal follow-up through recovery. It passes all six heroes' light/heavy combinations. See `combat-input-buffer.md`.
 
 ## Release boundary
 

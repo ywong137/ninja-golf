@@ -150,7 +150,13 @@ class Game {
   attack(kind='light'){
     if(this.phase!=='combat'||this.paused||this.cinematic>0)return;
     if(guardAttackRecovering(this.guard,this.time)){this.guardBufferedAttack={kind,expires:this.time+.55};return;}
-    if(this.action){if(kind!=='musou')this.attackBuffer={kind,expires:this.time+.55};return;}
+    if(this.action){
+      // Longer authored attacks still accept an early follow-up button press.
+      // Keep one choice through recovery; Musou retains its short input window.
+      const remaining=this.action.kind==='musou'?0:this.attackTimer;
+      if(kind!=='musou')this.attackBuffer={kind,expires:this.time+Math.max(.55,remaining+.05)};
+      return;
+    }
     if(kind==='musou'){
       if(this.resolve<100){this.ui.toast('Build Resolve by defeating enemies.');return;}
       exitPlayerGuard(this.guard);this.resolve=0;this.cinematic=MUSOU_CINEMATIC_DURATION;this.invincible=3.7;this.attackYaw=this.player.root.rotation.y;this.ui.musou(this.warrior);this.audio.play('special');return;
