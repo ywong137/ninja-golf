@@ -20,16 +20,22 @@ try{
    const T=await import('/node_modules/three/build/three.module.js');
    const {WARRIORS}=await import('/src/warriors.js');
    const {selectionHandleClearance}=await import('/tools/selection-clearance.mjs');
+   const {GLTFLoader}=await import('/node_modules/three/examples/jsm/loaders/GLTFLoader.js');
+   const {captureArmPose,calibrateArmAnatomy,measureArmAnatomy}=await import('/tools/native-arm-anatomy.mjs');
+   const bind=await new GLTFLoader().loadAsync(`/models/${WARRIORS[hero].model}.glb`),bindBones={};
+   bind.scene.traverse(b=>{if(b.isBone)bindBones[b.name]=b;});bind.scene.updateMatrixWorld(true);
+   const anatomy=Object.fromEntries(['r','l'].map(side=>[side,calibrateArmAnatomy(captureArmPose(bindBones,side))]));
    const g=window.__golfTest;g.audio.pause();
    g.camera.fov=48;g.camera.updateProjectionMatrix();g.updateCamera(10);
    const p=g.player,expected=WARRIORS[hero].selectionClip;
-   const result={hero,name:WARRIORS[hero].name,clip:'',maxPalmGap:0,maxCavityGap:0,maxAxisError:0,maxShaftObliquity:0,maxWristDeviation:0,maxMetacarpalDeviation:0,minHandleClearance:Infinity,minBladeY:Infinity,finite:true};
+   const result={hero,name:WARRIORS[hero].name,clip:'',maxPalmGap:0,maxCavityGap:0,maxAxisError:0,maxShaftObliquity:0,maxWristDeviation:0,maxMetacarpalDeviation:0,maxHingeDeviation:0,minHandleClearance:Infinity,minBladeY:Infinity,finite:true};
    for(let frame=0;frame<=240;frame++){
     p.update(frame/30,1/30,{selection:true,gazeTarget:g.camera.position});p.root.updateMatrixWorld(true);
     result.clip=p.current;
     if(result.clip!==expected)throw Error(`${result.name} uses ${p.current} instead of ${expected}`);
     for(const side of p.offhand?['r','l']:['r']){
      const weapon=side==='r'?p.weapon:p.offhand,hand=p.bones['hand_'+side];
+     result.maxHingeDeviation=Math.max(result.maxHingeDeviation,measureArmAnatomy(anatomy[side],captureArmPose(p.bones,side)).hingeDeviationDegrees);
      const center=weapon.localToWorld(new T.Vector3(0,weapon.userData.primaryGrip,0)),palm=hand.localToWorld(p.palmGrips[side].clone());
      const axis=new T.Vector3(0,1,0).applyQuaternion(weapon.getWorldQuaternion(new T.Quaternion()));
      const nativeAxis=p.shaftAxes[side].clone().applyQuaternion(hand.getWorldQuaternion(new T.Quaternion()));
@@ -108,6 +114,7 @@ try{
   // Surface contact is checked by browser-grips.mjs, not a mean joint position.
   assert.ok(result.maxAxisError<.015,`${result.name}: weapon shaft disagrees with the native grip`);
   assert.ok(result.maxWristDeviation<.001,`${result.name}: wrist differs from the natural hand pose`);
+  assert.ok(result.maxHingeDeviation<.01,`${result.name}: elbow bends sideways outside its native hinge`);
   assert.ok(result.maxMetacarpalDeviation<12,`${result.name}: hand and forearm are misaligned`);
   assert.ok(result.maxShaftObliquity<16,`${result.name}: handle lies too far along the forearm`);
   assert.ok(result.minHandleClearance>.025,`${result.name}: handle approaches the body`);

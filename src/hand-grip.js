@@ -82,10 +82,15 @@ export class HandGrip {
   const forearmDirection=new Vector3(-sign*inward,pitch,1).normalize().applyQuaternion(rootQ);
   const upperReference=chest.multiply(rest.upperInChest);
   const upperAxis=lower.position.clone().normalize().applyQuaternion(upperReference);
-  setWorldRotation(upper,new Quaternion().setFromUnitVectors(upperAxis,upperDirection).multiply(upperReference));
-  const lowerReference=rotation(lower.parent).multiply(rest.lower);
-  const lowerAxis=hand.position.clone().normalize().applyQuaternion(lowerReference);
-  setWorldRotation(lower,new Quaternion().setFromUnitVectors(lowerAxis,forearmDirection).multiply(lowerReference));
+  upperReference.premultiply(new Quaternion().setFromUnitVectors(upperAxis,upperDirection));
+  // Rotate the upper arm so its native hinge matches the requested bend plane.
+  // Independently aiming the two segments would bend the elbow sideways.
+  const hinge=rest.hinge.clone().applyQuaternion(upperReference);
+  const wantedHinge=upperDirection.clone().cross(forearmDirection).normalize();
+  const humeralTurn=Math.atan2(upperDirection.dot(hinge.clone().cross(wantedHinge)),hinge.dot(wantedHinge));
+  setWorldRotation(upper,new Quaternion().setFromAxisAngle(upperDirection,humeralTurn).multiply(upperReference));
+  lower.quaternion.setFromAxisAngle(rest.hinge,upperDirection.angleTo(forearmDirection)-rest.flexion).multiply(rest.lower);
+  lower.updateWorldMatrix(false,true);
   hand.quaternion.copy(actor.neutralHandRotations[side]);hand.updateWorldMatrix(true,true);
   // Calibrate a thumb-up forearm frame geometrically. This removes inherited
   // animation roll before applying a modest presentation roll.
@@ -96,7 +101,7 @@ export class HandGrip {
   const turn=Math.atan2(shaft.clone().cross(up).dot(forearmDirection),shaft.dot(up));
   setWorldRotation(lower,new Quaternion().setFromAxisAngle(forearmDirection,turn).multiply(rotation(lower)));
   this.selectionReport??={};
-  this.selectionReport[side]={wristNeutralError:hand.quaternion.clone().normalize().angleTo(actor.neutralHandRotations[side].clone().normalize()),elbowFlexion:upperDirection.angleTo(forearmDirection),forearmFrameCorrection:turn};
+  this.selectionReport[side]={wristNeutralError:hand.quaternion.clone().normalize().angleTo(actor.neutralHandRotations[side].clone().normalize()),elbowFlexion:upperDirection.angleTo(forearmDirection),humeralTurn,forearmFrameCorrection:turn};
  }
  orient(side,from,to,golf,nativeAttachment=false){
   const {actor}=this,hand=actor.bones['hand_'+side],profile=this.active[side];

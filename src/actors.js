@@ -17,7 +17,7 @@ import {ENEMY_APPEARANCES,resolveEnemyAppearance,applyEnemyAppearance} from './e
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
-const MODEL_REVISION='native-arm-families-3';
+const MODEL_REVISION='measured-ethan-native-arms-4';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -84,10 +84,15 @@ export class Warrior {
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
-    this.selectionArmRest=Object.fromEntries(['r','l'].map(side=>[side,{
-      upperInChest:chestInverse.clone().multiply(this.bones['upperarm_'+side].getWorldQuaternion(new THREE.Quaternion())),
-      lower:this.bones['lowerarm_'+side].quaternion.clone(),
-    }]));
+    this.selectionArmRest=Object.fromEntries(['r','l'].map(side=>{
+      const upperAxis=this.bones['lowerarm_'+side].position.clone().normalize();
+      const lower=this.bones['lowerarm_'+side].quaternion.clone();
+      const forearmAxis=this.bones['hand_'+side].position.clone().normalize().applyQuaternion(lower);
+      return[side,{
+        upperInChest:chestInverse.clone().multiply(this.bones['upperarm_'+side].getWorldQuaternion(new THREE.Quaternion())),
+        lower,hinge:upperAxis.clone().cross(forearmAxis).normalize(),flexion:upperAxis.angleTo(forearmAxis),
+      }];
+    }));
     this.footPlacement=!enemy&&this.nativeHuman?new FootPlacement(this.root,this.bones):null;
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
