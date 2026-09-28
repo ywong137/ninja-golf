@@ -17,7 +17,8 @@ const CLENCHED_GLARE={
  RMouthCorner:[-.0016,-.0004,-.0008],LMouthCorner:[.0016,-.0004,-.0008],
 };
 const EXECUTIVE_FROWN={
- RInnerEyebrow:[.0025,-.006,.0018],LInnerEyebrow:[-.0025,-.006,.0018],
+ // Larger descent folds the tightly weighted inner-lid crease over itself.
+ RInnerEyebrow:[.0025,-.003,.0018],LInnerEyebrow:[-.0025,-.003,.0018],
  MUpperLip:[0,.0004,.0005],MBottomLip:[0,0,.0003],
  RMouthCorner:[-.001,-.001,0],LMouthCorner:[.001,-.001,0],
 };
