@@ -7,14 +7,51 @@ import * as T from 'three';
 import {calibrateArmAnatomy,captureArmPose,measureArmAnatomy,armAuthoringViolations} from '../native-arm-anatomy.mjs';
 import {verifyAnimationReplacement} from '../verify-animation-replacement.mjs';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../../tests/native-skin-helper.mjs';
-const {values}=parseArgs({options:{model:{type:'string'},before:{type:'string'},output:{type:'string'},hz:{type:'string',default:'240'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/check-diagonal.mjs --model CANDIDATE.glb --before ORIGINAL.glb [--output REPORT.json] [--hz 240]\nChecks anatomical hinges, grip continuity, skin clearance, and preservation of unrelated assets.');process.exit(0);}
+const {values}=parseArgs({options:{model:{type:'string'},before:{type:'string'},output:{type:'string'},hz:{type:'string',default:'480'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/check-diagonal.mjs --model CANDIDATE.glb --before ORIGINAL.glb [--output REPORT.json] [--hz 480]\nChecks anatomical hinges, grip continuity, skin clearance, source foot/toe paths, and preservation of unrelated assets.');process.exit(0);}
 if(!values.model||!values.before)throw Error('Supply --model and --before. See --help.');
 const profiles=JSON.parse(fs.readFileSync(new URL('./ronin-grip-patch.json',import.meta.url))).sword,frames=JSON.parse(fs.readFileSync(new URL('./heavy-cleave-frames.json',import.meta.url)));
 const sampleRate=Number(values.hz);if(!Number.isInteger(sampleRate)||sampleRate<120||sampleRate>1920)throw Error('--hz must be an integer from 120 through 1920.');
 const g=await loadNativeSkin(values.model),groups=skinGroups(g),clip=g.animations.find(c=>c.name==='Ronin_Cut_Diagonal');assert(clip,'Candidate must contain Ronin_Cut_Diagonal.');const action=g.mixer.clipAction(clip).setLoop(T.LoopOnce,1);action.clampWhenFinished=true;action.play();
 const bones={};g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});const point=n=>bones[n].getWorldPosition(new T.Vector3());const calibration=Object.fromEntries(['r','l'].map(side=>[side,calibrateArmAnatomy(captureArmPose(bones,side))]));let previous={},lastHand=null,lastTime=0;
 const report={sampleRate,jointStepUnit:'degrees per 120 Hz interval',maxJointStep:{},maxForearmTorso:{r:0,l:0},maxUpperArmTorso:{r:0,l:0},maxElbowFold:{r:0,l:0},maxHandSpeed:0,maxWrist:0,maxGripGap:0,frames:[]};
+// This diagonal is a torso-only variation of the preserved cleave. Compare its
+// real ankle/toe paths with that source; a heel pivot must not pin the ankle.
+// In this imported rig, spine_01 also parents both thighs, so a torso edit there
+// can move the complete lower body while its support metadata still looks valid.
+const supportSource=await loadNativeSkin(values.model);
+const sourceClip=supportSource.animations.find(c=>c.name==='Ronin_Heavy_Cleave');
+assert(sourceClip,'Candidate must preserve Ronin_Heavy_Cleave for the foot-path comparison.');
+const sourceAction=supportSource.mixer.clipAction(sourceClip).setLoop(T.LoopOnce,1);
+sourceAction.clampWhenFinished=true;sourceAction.play();
+const support={source:sourceClip.name,sampleRate,maxPositionError:0,maxFootRotationDegrees:0,worstPosition:null,worstRotation:null};
+for(let i=0;i<=Math.ceil(clip.duration*sampleRate);i++){
+ const time=Math.min(i/sampleRate,clip.duration),sourceTime=time/clip.duration*sourceClip.duration;
+ g.mixer.setTime(time);supportSource.mixer.setTime(sourceTime);
+ g.scene.updateMatrixWorld(true);supportSource.scene.updateMatrixWorld(true);
+ for(const side of ['r','l']){
+  for(const prefix of ['foot_','ball_']){
+   const name=prefix+side,reference=supportSource.scene.getObjectByName(name);
+   const error=point(name).distanceTo(reference.getWorldPosition(new T.Vector3()));
+   if(error>support.maxPositionError){support.maxPositionError=error;support.worstPosition={name,time,sourceTime};}
+  }
+  const name='foot_'+side,reference=supportSource.scene.getObjectByName(name);
+  const degrees=bones[name].getWorldQuaternion(new T.Quaternion()).normalize()
+   .angleTo(reference.getWorldQuaternion(new T.Quaternion()).normalize())*180/Math.PI;
+  if(degrees>support.maxFootRotationDegrees){support.maxFootRotationDegrees=degrees;support.worstRotation={name,time,sourceTime};}
+ }
+}
+report.sourceFootPath=support;
+if(values.output)fs.writeFileSync(values.output,JSON.stringify(report,null,2));
+assert(support.maxPositionError<=.003,
+ `Native ankle/toe path changed ${(support.maxPositionError*1000).toFixed(3)} mm at ${support.worstPosition?.time}s/${support.worstPosition?.name}; restore the cleave support targets after the torso edit.`);
+assert(support.maxFootRotationDegrees<=1,
+ `Native foot rotation changed ${support.maxFootRotationDegrees.toFixed(3)} degrees at ${support.worstRotation?.time}s/${support.worstRotation?.name}; preserve the source heel/toe pivot.`);
+
+// The support pass reached the clamped endpoint. Re-enable the action before
+// the independent anatomy pass so it evaluates every frame again.
+action.reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;g.mixer.setTime(0);
+
 for(let i=0;i<=Math.ceil(clip.duration*sampleRate);i++){
  const time=Math.min(i/sampleRate,clip.duration);g.mixer.setTime(time);g.scene.updateMatrixWorld(true);const frame={time};
  for(const side of ['r','l']){

@@ -4,6 +4,13 @@ Date: 2026-09-28.
 
 The reviewed pilot replaces `Cut_Diagonal` with `Ronin_Cut_Diagonal`. It does not approve the remaining Ronin family under the new sword mount.
 
+## Superseded support assessment
+
+A later independent check found large foot drift in V3. The torso edit rotated `spine_01`, which also parents both thighs.
+Initial ankle drift reached 236 mm. The trailing toe moved 161 mm during its intended plant.
+These defects existed in the source clip, independent of runtime transitions.
+The visual review below missed them. The V5 repair and regression checks are in `ronin-support-v5.md`.
+
 ## Independent review
 
 The reviewer used actual `claude-opus-5-5` with High effort. The response reports that canonical model and no permission denials.
