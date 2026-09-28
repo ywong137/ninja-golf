@@ -10,7 +10,7 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
  await page.evaluate(async()=>{
-  const g=window.__golfTest,{heightAt}=await import('/src/course.js');g.audio.enabled=false;g.begin(0,0);g.audio.pause();g.phase='combat';
+  const g=window.__golfTest,{heightAt}=await import('/src/course.js');g.audio.enabled=false;g.ui.showScreen('game');g.begin(0,0);g.audio.pause();g.phase='combat';
   g.player.root.position.set(0,heightAt(g.course,0,70),70);g.ball.position.set(0,heightAt(g.course,0,220),220);
   g.spawnTime=2;g.health=10000;g.resolve=100;g.enemyBudget=120;g.enemiesSpawned=0;g.spawnWave(24);g.input.clear();
   if(g.enemies.length<12)throw Error(`Crowd setup failed: ${g.enemies.length} enemies`);
