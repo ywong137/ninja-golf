@@ -4,7 +4,20 @@ import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.evaluate(()=>window.__golfTest.audio.pause());await page.click('#play');
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.evaluate(async()=>{
+  const g=window.__golfTest,{Vector3}=await import('/node_modules/three/build/three.module.js');g.audio.pause();
+  const original=g.selectScreen;
+  g.selectScreen=function(){
+   original.call(this);this.player.root.updateMatrixWorld(true);this.camera.updateMatrixWorld(true);
+   window.firstSelectionFrame=['Head','foot_r','foot_l'].map(name=>this.player.bones[name].getWorldPosition(new Vector3()).project(this.camera).toArray());
+   this.selectScreen=original;
+  };
+ });
+ await page.click('#play');
+ for(const [x,y,z]of await page.evaluate(()=>window.firstSelectionFrame)){
+  assert.ok(x>.1&&x<.98&&Math.abs(y)<.96&&Math.abs(z)<1,'The head and feet must occupy the portrait area before the first selection frame.');
+ }
  await page.keyboard.press('c');await page.waitForFunction(()=>document.getElementById('showcase-console-toggle').getAttribute('aria-expanded')==='true');assert.equal(await page.locator('#showcase-console-toggle').getAttribute('aria-expanded'),'true');
  await page.locator('#showcase-speed').fill('0.1');assert.equal(await page.locator('#showcase-speed-value').textContent(),'0.1×');
  await page.click('#showcase-pause');const paused=await page.evaluate(()=>window.__golfTest.showcase.state);await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>window.__golfTest.showcase.state),paused);

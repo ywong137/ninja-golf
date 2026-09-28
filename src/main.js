@@ -20,6 +20,7 @@ import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { UI } from './ui.js';
 import {CharacterShowcase} from './character-showcase.js';
+import {activeBladeTrailHands} from './effects.js';
 import {enemyAppearanceForSlot} from './enemy-appearances.js';
 import { COURSE_SETS, COURSE_BOUNDS, WARRIORS, CLUBS, heightAt, ellipse, lieAt, clamp, carryFor, launchShot, scoreName } from './course.js';
 
@@ -57,7 +58,7 @@ class Game {
   startShowcase(){this.stopShowcase();this.showcase=new CharacterShowcase(this.player,this.showcaseSettings);this.updateShowcaseUI();}
   updateShowcaseUI(){if(this.showcase)this.ui.showcaseState(this.showcase.state);}
   selectWarrior(i){this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=new Warrior(i);this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();}this.audio.play('click');}
-  selectScreen(){this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;this.startShowcase();}
+  selectScreen(){this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;this.startShowcase();this.updateCamera(0,{immediate:true});}
   setCourse(index){this.courseIndex=index;this.roundCourse=COURSE_SETS[index];this.holes=this.roundCourse.holes;this.audio.setCourse(this.roundCourse.id);}
   home(){this.stopShowcase();this.mode='home';this.paused=false;this.setCourse(Math.floor(Math.random()*COURSE_SETS.length));this.loadHole(this.roundCourse.preview?.hole||0);this.player.root.visible=false;this.aimLine.visible=false;this.aimMarker.visible=false;this.trail.visible=false;this.ballBeacon.visible=false;this.ui.closeModal();this.input.clear();this.ui.homeCourse(this.roundCourse);this.restoreOffer();}
   selectCourseScreen(){this.stopShowcase();this.mode='courses';this.paused=false;this.clearEnemies();this.previewCourse(this.ui.selectedCourse||0);}
@@ -161,7 +162,7 @@ class Game {
     if(this.time>(this.chainExpires||0))this.lightChain=0;
     const step=kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1),definition=attackDefinition(kind,step,this.warrior.combatStyle);
     const motion=motions[combatMotionName(this.warrior,kind,step)];
-    this.action={...definition,rootAdvance:motion.rootAdvance??0,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    this.action={...definition,impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     if(kind==='musou')this.invincible=Math.max(this.invincible,definition.duration);
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
@@ -203,7 +204,13 @@ class Game {
     if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
     if(this.guardBufferedAttack&&!guardAttackRecovering(this.guard,this.time)){const queued=this.guardBufferedAttack;this.guardBufferedAttack=null;if(queued.expires>=this.time)this.attack(queued.kind);}
     this.player.update(this.time,dt,{groundHeight:this.groundHeight,moving,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveSpeed:Math.hypot(p.x-movementStartX,p.z-movementStartZ)/Math.max(dt,.0001),blocking:this.guard.active,parry:Math.max(0,this.guard.parryPoseUntil-this.time),guardBreak:Math.max(0,this.guard.breakPoseUntil-this.time),guardHitToken:this.guard.hitToken,moveAngle:Math.atan2(p.x-movementStartX,p.z-movementStartZ)-this.player.root.rotation.y});
-    if(this.action){const [hilt,tip]=this.player.weaponPoints();if(this.action.hits.some(hit=>Math.abs(this.action.time-hit)<.105)){this.effects.trail(hilt,tip,this.action.kind==='musou'?2:0,this.action.token);if(this.player.offhand){const [a,b]=this.player.weaponPoints(true);this.effects.trail(a,b,this.action.kind==='musou'?2:0,this.action.token,1);}}if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}}
+    if(this.action){
+      for(const side of activeBladeTrailHands(this.action,Boolean(this.player.offhand))){
+        const offhand=side==='l',[hilt,tip]=this.player.weaponPoints(offhand);
+        this.effects.trail(hilt,tip,this.action.kind==='musou'?2:0,this.action.token,offhand?1:0);
+      }
+      if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}
+    }
     if(this.spawnTime<=0&&pd>11){this.spawnWave(10+this.hole*2);this.spawnTime=3.5;}
     const ready=this.enemies.filter(e=>!e.dead&&!e.emerging&&!(e.stun>0)).sort((a,b)=>a.root.position.distanceToSquared(p)-b.root.position.distanceToSquared(p));
     const melee=ready.filter(e=>!ENEMY_TYPES[e.type].ranged),ranged=ready.filter(e=>ENEMY_TYPES[e.type].ranged);
@@ -271,7 +278,7 @@ class Game {
   save(){try{localStorage.setItem('ninja-golf-save',JSON.stringify({version:2,courseId:this.roundCourse.id,scores:this.scores,penalties:this.scorePenalties,playerIndex:this.playerIndex,kills:this.kills,bestCombo:this.bestCombo,nextHole:Math.min(this.holes.length,this.scores.length)}));}catch{/* Storage can be unavailable in private browser contexts. */}}
   restoreOffer(){this.ui.$('continue-round')?.remove();let raw;try{raw=localStorage.getItem('ninja-golf-save');}catch{return;}const save=readRoundSave(raw,COURSE_SETS,WARRIORS);if(!save)return;
     const btn=document.createElement('button');btn.className='text-button';btn.id='continue-round';btn.textContent=`Continue ${COURSE_SETS[save.courseIndex].name} · Hole ${save.nextHole+1} →`;btn.style.display='block';btn.style.marginTop='12px';this.ui.$('play').after(btn);btn.onclick=()=>{this.setCourse(save.courseIndex);this.selectWarrior(save.playerIndex);this.scores=save.scores;this.scorePenalties=save.penalties;this.kills=save.kills||0;this.bestCombo=save.bestCombo||0;this.mode='game';this.paused=false;this.loadHole(save.nextHole);this.ui.showScreen('game');this.audio.start();};}
-  updateCamera(dt){
+  updateCamera(dt,{immediate=false}={}){
     const p=this.player.root.position,b=this.ball.position;let speed=3.5;
     if(this.mode==='home'||this.mode==='courses'){const a=this.time*.014,c=this.course;camTarget.set(85+Math.sin(a)*18,Math.max(72,c.length*.19),c.length*.19-100+Math.cos(a)*12);camLook.set(c.greenX*.3,8,c.length*.57);speed=this.mode==='courses'?2:.7;}
     else if(this.mode==='selection'){camTarget.set(p.x+1,p.y+2.4,p.z+9);camLook.set(p.x-2.35*this.camera.aspect,p.y+1.9,p.z);speed=3;}
@@ -285,7 +292,7 @@ class Game {
     else if(this.phase==='holed'){camTarget.copy(this.world.cup).add(new THREE.Vector3(Math.sin(this.time*.2)*14,8,-13));camLook.copy(this.world.cup).add(new THREE.Vector3(0,1,0));speed=2;}
     else{const d=this.club===7?9.0:9.5;camTarget.set(b.x-Math.sin(this.aim)*d+Math.cos(this.aim)*3,b.y+4.2,b.z-Math.cos(this.aim)*d-Math.sin(this.aim)*3);camLook.set(b.x+Math.sin(this.aim)*16,b.y+.65,b.z+Math.cos(this.aim)*16);speed=4;}
     if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),camTarget);
-    camTarget.y=Math.max(camTarget.y,heightAt(this.course,camTarget.x,camTarget.z)+(this.cinematic>0?1.1:1.8));this.camera.position.lerp(camTarget,1-Math.exp(-speed*dt));this.currentLook.lerp(camLook,1-Math.exp(-speed*dt));if(this.shake>0&&!this.input.reducedMotion){this.shake-=dt;this.camera.position.x+=(Math.random()-.5)*this.shake*2;this.camera.position.y+=(Math.random()-.5)*this.shake;}
+    camTarget.y=Math.max(camTarget.y,heightAt(this.course,camTarget.x,camTarget.z)+(this.cinematic>0?1.1:1.8));const cameraBlend=immediate?1:1-Math.exp(-speed*dt);this.camera.position.lerp(camTarget,cameraBlend);this.currentLook.lerp(camLook,cameraBlend);if(this.shake>0&&!this.input.reducedMotion){this.shake-=dt;this.camera.position.x+=(Math.random()-.5)*this.shake*2;this.camera.position.y+=(Math.random()-.5)*this.shake;}
     if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),this.camera.position);
     this.camera.lookAt(this.currentLook);
   }

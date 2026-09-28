@@ -1,5 +1,17 @@
 import * as THREE from 'three';
 const PALETTE=['#ffe1a0','#c9d9af','#ee557d','#9ee4ff','#dcc294'];
+const TRAIL_HANDS=[[],['r'],['l'],['r','l']].map(Object.freeze);
+export function activeBladeTrailHands(action,hasOffhand){
+  let mask=0;
+  for(let i=0;i<action.hits.length;i++){
+    if(Math.abs(action.time-action.hits[i])>=.105)continue;
+    const hand=action.impactHands?.[i]??(hasOffhand?'both':'r');
+    if(!['r','l','both'].includes(hand))throw Error(`Unknown attack hand: ${hand}`);
+    if(hand==='r'||hand==='both')mask|=1;
+    if(hasOffhand&&(hand==='l'||hand==='both'))mask|=2;
+  }
+  return TRAIL_HANDS[mask];
+}
 // Particles share one draw call. Blade ribbons use a separate dynamic mesh.
 export function telegraphGeometry(position,yaw,reach,type,groundHeight){
   const arc=type==='thrust'?.48:1.15,outer=type==='ranged'?.78:reach+.3;

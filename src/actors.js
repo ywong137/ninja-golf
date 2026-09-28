@@ -102,7 +102,10 @@ export class Warrior {
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
     if(enemy?ENEMY_TYPES[type].dualWield:WARRIORS[type].dualWield){this.offhand=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
     this.club=new THREE.Group();this.club.position.set(0,.04,0);this.root.add(this.club);
-    part(this.club,'cyl','#252a27',0,.045,0,.012,.21,.012);this.clubShaft=part(this.club,'cyl','#b7c4c2',0,.645,0,.008,.95,.008,.85);this.clubHead=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);this.clubHead.rotation.z=-.15;this.club.visible=false;
+    part(this.club,'cyl','#252a27',0,.045,0,.012,.21,.012).name='Golf club grip';
+    // The shaft enters the grip by 1 cm; its head endpoint stays at 1.12 m.
+    this.clubShaft=part(this.club,'cyl','#b7c4c2',0,.63,0,.008,.98,.008,.85);this.clubShaft.name='Golf club shaft';
+    this.clubHead=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);this.clubHead.name='Golf club head';this.clubHead.rotation.z=-.15;this.club.visible=false;
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
     const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
     if(enemy||this.nativeHuman)bag.visible=false;

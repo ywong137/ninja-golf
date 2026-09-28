@@ -33,7 +33,9 @@ try{
       return[s,{gap,wristCorrection:before[s].angleTo(actor.bones['hand_'+s].getWorldQuaternion(new T.Quaternion())),...measureGripSurface(surfaces[s],actor.club,actor.handGrip.active[s].radius)}];
      }));
      const tip=actor.root.worldToLocal(actor.club.localToWorld(new T.Vector3(0,actor.clubHead.position.y,0)));
-     rows.push({hero:WARRIORS[i].model,name,time,duration,length:actor.clubHead.position.y,tip:tip.toArray(),grips});
+     const grip=actor.club.getObjectByName('Golf club grip'),shaft=actor.clubShaft;
+     const shaftStart=shaft.position.y-shaft.scale.y*.5,shaftEnd=shaft.position.y+shaft.scale.y*.5,gripEnd=grip.position.y+grip.scale.y*.5;
+     rows.push({hero:WARRIORS[i].model,name,time,duration,length:actor.clubHead.position.y,tip:tip.toArray(),grips,clubJoins:{overlap:gripEnd-shaftStart,headGap:Math.abs(shaftEnd-actor.clubHead.position.y)}});
     }
    }
    actor.dispose();
@@ -44,6 +46,7 @@ try{
  assert.deepEqual(errors,[]);
  for(const r of report){
   assert.ok(Math.abs(r.length-Math.hypot(.625,.722))<1e-7,`${r.hero}/${r.name}: club length`);
+  assert.ok(r.clubJoins.overlap>=.009&&r.clubJoins.headGap<1e-7,`${r.hero}/${r.name}: disconnected club geometry`);
   for(const [side,g]of Object.entries(r.grips)){
    const label=`${r.hero}/${r.name}/${r.time}/${side}`;
    assert.ok(g.gap<.003,label+': detached grip');assert.ok(g.wristCorrection<.02,label+': runtime changed native wrist');

@@ -211,7 +211,7 @@ export class HandGrip {
   else if(secondaryWeight>0){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
-   actor.clubShaft.scale.y=Math.max(.1,length-.17);actor.clubShaft.position.y=.17+actor.clubShaft.scale.y*.5;
+   actor.clubShaft.scale.y=Math.max(.1,length-.14);actor.clubShaft.position.y=.14+actor.clubShaft.scale.y*.5;
    actor.clubHead.position.y=length;
   }
   actor.root.updateMatrixWorld(true);
