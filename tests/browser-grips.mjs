@@ -27,7 +27,10 @@ try{
      const radius=p.handGrip.active[side].radius;
      const contact=measureGripSurface(surfaces[side],held,radius);
      const palm=p.bones['hand_'+side].localToWorld(p.palmGrips[side].clone());
-     const station=(golf?0:held.userData.primaryGrip)-(side==='l'&&!(p.offhand&&!golf)?clip?.gripSpacing??.09:0);
+     // Closed golf profiles fit each character's two palms. The older clip
+     // spacing predates that fit and is not the club's support-hand station.
+     const spacing=golf?p.handGrip.profiles.golf.gripSpacing:(clip?.gripSpacing??.09);
+     const station=(golf?0:held.userData.primaryGrip)-(side==='l'&&!(p.offhand&&!golf)?spacing:0);
      const gap=palm.distanceTo(held.localToWorld(new T.Vector3(0,station,0)))/p.root.scale.x;
      results.push({hero:w.model,name,seconds:time,side,transition,gap,...contact});
     }

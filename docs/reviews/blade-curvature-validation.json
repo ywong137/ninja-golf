@@ -1,0 +1,1241 @@
+{
+  "baseline": "fe0a7416e519c1e39c073a03249e732e0e676793",
+  "shinobiHead": {
+    "model": "/tmp/ninja-blade-curve/shinobi-v1.glb",
+    "rate": 480,
+    "distanceCap": 0.03,
+    "headTriangles": 3424,
+    "passed": true,
+    "clips": {
+      "Twin_Heavy_Rising": {
+        "samples": 347,
+        "minimumClearance": 0.012340405760033332,
+        "crossingSamples": 0,
+        "crossings": 0,
+        "closest": {
+          "time": 0.075,
+          "side": "l",
+          "headMesh": "Mesh_1"
+        }
+      }
+    }
+  },
+  "shinobiAnatomy": {
+    "rate": 480,
+    "skin": true,
+    "mountedFrame": [
+      -0.6179800815175271,
+      -0.763953188460261,
+      0.13095893386833993,
+      0.13162789343091116
+    ],
+    "passed": true,
+    "violationCount": 0,
+    "violations": [],
+    "clips": {
+      "Twin_Heavy_Rising": {
+        "samples": 347,
+        "maxWristDegrees": 15.999830213432313,
+        "maxFlexionDegrees": 117.99584631251281,
+        "maxHumeralRollDegrees": 59.999550874132055,
+        "maxForearmTwistDegrees": 60.00000845707542,
+        "maxHingeDeviationDegrees": 0.005660522913363702,
+        "maxArmStep120Hz": 6.050883339600779,
+        "maxHandSpeed": 6.668171660440042,
+        "minBladeHeight": 1.0457232602256865,
+        "maxFoldDepth": 0,
+        "maxForearmTorsoPairs": 0,
+        "maxUpperarmTorsoPairs": 0,
+        "contacts": [
+          {
+            "time": 0.3,
+            "activeHand": "l",
+            "tip": [
+              -0.48044155378443487,
+              1.6366532542404242,
+              0.78966091614621
+            ],
+            "palm": [
+              -0.5323643719098304,
+              1.0648116968802932,
+              0.5984770929972381
+            ],
+            "velocity": [
+              -5.872063796378766,
+              0.6253143739371425,
+              -4.167329463258917
+            ],
+            "speed": 7.227640427576656,
+            "fractionOfGlobalPeak": 0.9629037592828927,
+            "signedEdgeAlignment": -0.2833476003471086,
+            "faceAlignment": 0.9425080554620557
+          }
+        ],
+        "peakTipSpeed": 7.506088077752782,
+        "offhand": {
+          "minBladeHeight": 1.0177140377020664,
+          "minBladeSeparation": 0.14988249933296902,
+          "peakTipSpeed": 9.280570249140279,
+          "contacts": [
+            {
+              "time": 0.3,
+              "activeHand": "l",
+              "speed": 7.281091815481138,
+              "velocity": [
+                -2.3838442527146237,
+                6.83783625140127,
+                -0.7586698908540539
+              ],
+              "signedEdgeAlignment": 0.7715383592337726,
+              "fractionOfGlobalPeak": 0.7845522009981697
+            }
+          ]
+        },
+        "support": {
+          "maxDrift": 0.00005305215494146178,
+          "maxToeDrift": 0,
+          "maxTurn": 0.00007746415907305149,
+          "maxLoadedMedial": 0.000022742440382014784,
+          "maxKneeSpeed": 4.707916462816942,
+          "maxAnkleSpeed": 5.273320772065613
+        }
+      }
+    }
+  },
+  "runtimeBefore": [
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 0,
+      "crossings": 226,
+      "crossingSamples": 1,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.10833333333333334,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 49
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 53
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 59
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 71
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 1148,
+      "crossingSamples": 14,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.325,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 100
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 899,
+      "crossingSamples": 8,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.06666666666666667,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 114
+    },
+    {
+      "hero": 0,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 1588,
+      "crossingSamples": 19,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.2,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 397
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 69
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 74
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 82
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 99
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.007164829803465352,
+      "closest": {
+        "time": 0.06666666666666667,
+        "side": "l",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 120
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 114
+    },
+    {
+      "hero": 1,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 397
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 73
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 73
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 100
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 88
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 112
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 117
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 155
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 124
+    },
+    {
+      "hero": 2,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 606
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.019452861344005347,
+      "closest": {
+        "time": 0.125,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 78
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.01868777365385282,
+      "closest": {
+        "time": 0.14166666666666666,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 84
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.019917517393218225,
+      "closest": {
+        "time": 0.18333333333333332,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 94
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.01794416113698365,
+      "closest": {
+        "time": 0.19166666666666665,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 113
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.01707879671405375,
+      "closest": {
+        "time": 0.20833333333333334,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 129
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.020333099224838766,
+      "closest": {
+        "time": 0.16666666666666666,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.019264669873972334,
+      "closest": {
+        "time": 0.19166666666666665,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 120
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.0203666724003527,
+      "closest": {
+        "time": 0.26666666666666666,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 114
+    },
+    {
+      "hero": 4,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.018535864088620353,
+      "closest": {
+        "time": 0.25,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 397
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 69
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 74
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 82
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 99
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 88
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 120
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 114
+    },
+    {
+      "hero": 5,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 397
+    }
+  ],
+  "runtimeAfter": [
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 0,
+      "crossings": 214,
+      "crossingSamples": 1,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.10833333333333334,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 49
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 53
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 59
+    },
+    {
+      "hero": 0,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 71
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 1196,
+      "crossingSamples": 14,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.325,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 100
+    },
+    {
+      "hero": 0,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 873,
+      "crossingSamples": 8,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.06666666666666667,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 114
+    },
+    {
+      "hero": 0,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 1604,
+      "crossingSamples": 19,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.2,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 397
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 69
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 74
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 82
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 99
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 64,
+      "crossingSamples": 2,
+      "minimumClearance": 0,
+      "closest": {
+        "time": 0.058333333333333334,
+        "side": "l",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 120
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 114
+    },
+    {
+      "hero": 1,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 397
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 73
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 73
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 100
+    },
+    {
+      "hero": 2,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 88
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 112
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 117
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 155
+    },
+    {
+      "hero": 2,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 124
+    },
+    {
+      "hero": 2,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 606
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.018757905139851327,
+      "closest": {
+        "time": 0.125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 78
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.01868777365385283,
+      "closest": {
+        "time": 0.14166666666666666,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 84
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.019917517393218242,
+      "closest": {
+        "time": 0.18333333333333332,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 94
+    },
+    {
+      "hero": 4,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.017709970795713615,
+      "closest": {
+        "time": 0.18333333333333332,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 113
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.01707879671405373,
+      "closest": {
+        "time": 0.20833333333333334,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      },
+      "samples": 129
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.020333099224838874,
+      "closest": {
+        "time": 0.16666666666666666,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.019067900438356496,
+      "closest": {
+        "time": 0.19166666666666665,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 120
+    },
+    {
+      "hero": 4,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.02036667240035257,
+      "closest": {
+        "time": 0.26666666666666666,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 114
+    },
+    {
+      "hero": 4,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.018291975936767922,
+      "closest": {
+        "time": 0.24166666666666667,
+        "side": "r",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 397
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 69
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 74
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 82
+    },
+    {
+      "hero": 5,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 99
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 88
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 120
+    },
+    {
+      "hero": 5,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 114
+    },
+    {
+      "hero": 5,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 397
+    }
+  ],
+  "runtimeShinobiFinal": [
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 69
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 74
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 82
+    },
+    {
+      "hero": 1,
+      "kind": "light",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 99
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 93
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 1,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.013574447989095906,
+      "closest": {
+        "time": 0.06666666666666667,
+        "side": "l",
+        "headMesh": "Mesh_1"
+      },
+      "samples": 88
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 2,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 120
+    },
+    {
+      "hero": 1,
+      "kind": "heavy",
+      "step": 3,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 114
+    },
+    {
+      "hero": 1,
+      "kind": "musou",
+      "step": 0,
+      "crossings": 0,
+      "crossingSamples": 0,
+      "minimumClearance": 0.03,
+      "closest": null,
+      "samples": 397
+    }
+  ],
+  "release": {
+    "unitTests": {
+      "passed": 421,
+      "failed": 0
+    },
+    "productionBuild": true,
+    "js": "index-cRMdyXIC.js",
+    "css": "index-Bq9lO9uy.css",
+    "grips": {
+      "samples": 1055,
+      "maxSkinPenetrationMm": 1.98,
+      "maxFittingPenetrationMm": 0,
+      "maxAttachmentGapMm": 0.089
+    },
+    "legacyBladeFrame": {
+      "unchangedFromBaseline": true,
+      "passed": false,
+      "samples": 19382,
+      "maxGripError": 0.00047670738621735024,
+      "maxReadyError": 2.1010930629880114,
+      "maxGolfError": 0.7416679449984213,
+      "maxFadeError": 0.0010743492835838177
+    }
+  }
+}

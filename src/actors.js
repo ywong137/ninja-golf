@@ -23,6 +23,7 @@ export { Effects } from './effects.js';
 const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'closed-golf-grip-1']));
 MODEL_REVISIONS.ayame='hustler-heavy-body-1';
+MODEL_REVISIONS.shinobi='backswept-blade-clearance-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();

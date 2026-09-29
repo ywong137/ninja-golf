@@ -6,7 +6,9 @@ const fittings=new THREE.MeshStandardMaterial({vertexColors:true,map:weaponBrass
 export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.53,width:.046,curve:.015,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},jian:{length:.78,width:.046,curve:0,grip:.32,doubleEdge:true},dao:{length:.80,width:.066,curve:.12,grip:.32},wakizashi:{length:.57,width:.045,curve:.045,grip:.32},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
 export function bladeGeometry(profile){
   const positions=[],uvs=[],groups=[];const segments=48;
-  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.0045,profile.width*.045)*(.9-t*.35)*tip;const cross=(profile.doubleEdge?[[-w,0],[-w*.58,z],[w*.58,z],[w,0],[w*.58,-z],[-w*.58,-z]]:[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]])[side];return [profile.curve*t*t+cross[0],.17+t*profile.length,cross[1]];};
+  // The honed edge faces +X. Sweep the blade back toward -X so its convex
+  // cutting edge leads the stroke; the tip must not hook toward that edge.
+  const section=(i,side)=>{const t=i/segments,tip=Math.max(.015,Math.min(1,(1-t)/.10)),w=profile.width*.5*(1-t*.20)*tip,z=Math.min(.0045,profile.width*.045)*(.9-t*.35)*tip;const cross=(profile.doubleEdge?[[-w,0],[-w*.58,z],[w*.58,z],[w,0],[w*.58,-z],[-w*.58,-z]]:[[-w,-z],[-w,z],[w*.65,z],[w,0],[w*.65,-z]])[side];return [cross[0]-profile.curve*t*t,.17+t*profile.length,cross[1]];};
   const triangle=(a,b,c,ta,tb,tc)=>{positions.push(...a,...b,...c);uvs.push(...ta,...tb,...tc);};
   // Separate strip vertices keep flat faces and sharpened bevels physically distinct.
   const sectionSize=profile.doubleEdge?6:5;
@@ -102,5 +104,5 @@ export function createWeapon(kind='odachi'){
   const hardware=new THREE.Mesh(mergeGeometries(pieces),fittings);hardware.geometry.userData.fittingParts=fittingParts;hardware.name='Weapon fittings';pieces.forEach(g=>g.dispose());hardware.castShadow=true;group.add(hardware);
   if(hero){const cord=new THREE.Mesh(cordGeometry(pole?-.88:.17-p.grip,.145,gripRadius),weaponCord);cord.name='Woven handle binding';cord.castShadow=true;group.add(cord);}
   const blade=new THREE.Mesh(bladeGeometry(p),[steel,edge]);blade.name='Flat steel blade';blade.castShadow=true;group.add(blade);
-  group.userData.tip=[p.curve,.17+p.length,0];group.userData.kind=kind;group.userData.defaultGrip=hero?.095:0;group.userData.primaryGrip=group.userData.defaultGrip;group.userData.gripRadius=hero?gripRadius:.020;cache.set(kind,group);return group.clone();
+  group.userData.tip=[0-p.curve,.17+p.length,0];group.userData.kind=kind;group.userData.defaultGrip=hero?.095:0;group.userData.primaryGrip=group.userData.defaultGrip;group.userData.gripRadius=hero?gripRadius:.020;cache.set(kind,group);return group.clone();
 }
