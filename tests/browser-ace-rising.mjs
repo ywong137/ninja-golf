@@ -34,6 +34,6 @@ try{
   g.audio.pause();return rows;
  });
  assert.deepEqual(errors,[]);
- for(const row of report){assert.equal(row.name,'Fan_Heavy_Rising');assert.ok(row.hingeDeviation<.1*Math.PI/180,JSON.stringify(row));assert.ok(row.ankleDrift<.004,JSON.stringify(row));assert.ok(row.toeDrift<.025,JSON.stringify(row));assert.ok(row.rootEnd[2]-row.rootStart[2]>1.2);}
+ for(const row of report){assert.equal(row.name,'Fan_Heavy_Rising');assert.ok(row.hingeDeviation<.1*Math.PI/180,JSON.stringify(row));assert.ok(row.ankleDrift<.004,JSON.stringify(row));assert.ok(row.toeDrift<.004,JSON.stringify(row));assert.ok(row.rootEnd[2]-row.rootStart[2]>1.2);}
  console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

@@ -6,13 +6,14 @@ import path from 'node:path';
 import * as T from 'three';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {bakeNativeFootSupport} from '../tools/bake-native-foot-support.mjs';
+import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
 const record=new URL('../src/motion-data.json',import.meta.url);
 const motions=JSON.parse(fs.readFileSync(record));
 const modelPath=hero=>process.env.NINJA_KNEE_MODEL_DIR?path.join(process.env.NINJA_KNEE_MODEL_DIR,hero+'.glb'):new URL('../public/models/'+hero+'.glb',import.meta.url);
 function player(g,clip){
  g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
- return time=>{action.time=Math.min(time,clip.duration);g.mixer.update(0);g.scene.updateMatrixWorld(true);};
+ return time=>{action.time=Math.min(time,clip.duration);g.mixer.update(0);const root=motions[clip.name]?.planarRoot?samplePlanarRoot(motions[clip.name].planarRoot,time):{x:0,z:0};g.scene.position.set(root.x,0,root.z);g.scene.updateMatrixWorld(true);};
 }
 
 for(const [hero,prefix]of [['sora','Sickle_'],['kaede','Fan_']])test(`${hero}: retimed attacks retain support through exact lift and landing boundaries`,async t=>{

@@ -5,6 +5,7 @@ import path from 'node:path';
 import * as THREE from 'three';
 import {WARRIORS} from '../src/warriors.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
+import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
 const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
 const motions=readJSON('../src/motion-data.json');
@@ -83,7 +84,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
   times.add(duration);for(const seconds of spec.impacts||[])times.add(seconds);
   const previous={},plants={};
   for(const seconds of [...times].sort((a,b)=>a-b)){
-   action.time=Math.min(seconds,clip.duration);g.mixer.update(0);g.scene.updateMatrixWorld(true);samples++;
+   action.time=Math.min(seconds,clip.duration);g.mixer.update(0);const root=spec.planarRoot?samplePlanarRoot(spec.planarRoot,seconds):{x:0,z:0};g.scene.position.set(root.x,0,root.z);g.scene.updateMatrixWorld(true);samples++;
    const impact=(spec.impacts||[]).some(hit=>Math.abs(hit-seconds)<1e-8);
    if(impact)impactSamples++;
    for(const side of ['r','l']){

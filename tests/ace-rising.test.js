@@ -15,11 +15,15 @@ test('Ace rising cut tracks native knees, drives upward, and holds world-space c
  const g=await loadNativeSkin(file),b={};g.scene.traverse(o=>{if(o.isBone)b[o.name]=o});
  const p=n=>b[n].getWorldPosition(new T.Vector3()),q=n=>b[n].getWorldQuaternion(new T.Quaternion()).normalize();
  const cal=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegHinge(b['thigh_'+s],b['calf_'+s],b['foot_'+s])]));
+ const forward=Object.fromEntries(['pelvis','spine_03'].map(n=>[n,new T.Vector3(0,0,1).applyQuaternion(q(n).invert())]));
  const clip=g.animations.find(c=>c.name==='Fan_Heavy_Rising'),a=g.mixer.clipAction(clip).setLoop(T.LoopOnce);a.clampWhenFinished=true;a.play();
  const rows=[],anchors={};
  for(let i=0;i<=Math.ceil(spec.duration*120);i++){
   const time=Math.min(i/120,spec.duration);a.time=time;g.mixer.update(0);const root=samplePlanarRoot(spec.planarRoot,time);g.scene.position.set(root.x,0,root.z);g.scene.updateMatrixWorld(true);
   const row={time,y:p('pelvis').y,legs:{}};
+  const hip=forward.pelvis.clone().applyQuaternion(q('pelvis')),chest=forward.spine_03.clone().applyQuaternion(q('spine_03'));
+  const turn=Math.atan2(chest.x,chest.z)-Math.atan2(hip.x,hip.z);
+  assert.ok(Math.abs(Math.atan2(Math.sin(turn),Math.cos(turn)))<.9,`${time}: chest separates too far from hips`);
   for(const s of ['r','l']){
    const upper=p('calf_'+s).sub(p('thigh_'+s)).normalize(),lower=p('foot_'+s).sub(p('calf_'+s)).normalize(),hinge=cal[s].hingeInThigh.clone().applyQuaternion(q('thigh_'+s));
    const deviation=Math.asin(Math.min(1,Math.abs(hinge.dot(lower)))),flex=Math.atan2(hinge.dot(upper.clone().cross(lower)),upper.dot(lower));row.legs[s]={flex};
@@ -27,7 +31,7 @@ test('Ace rising cut tracks native knees, drives upward, and holds world-space c
    for(const[bone,intervals]of [['foot_',spec.footPlants[s]],['ball_',spec.toePlants[s]]])for(const[j,[start,end]]of intervals.entries()){
     if(time<=start+.02||time>=end-.02)continue;
     const point=p(bone+s),key=bone+s+j;anchors[key]??=point;
-    assert.ok(Math.hypot(point.x-anchors[key].x,point.z-anchors[key].z)<.003,`${key}: support slides at ${time}`);
+    assert.ok(point.distanceTo(anchors[key])<.003,`${key}: support slides or lifts at ${time}`);
    }
   }
   rows.push(row);
