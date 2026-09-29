@@ -35,8 +35,13 @@ test('Ace rising cut tracks native knees, drives upward, and holds world-space c
   const row={time,y:p('pelvis').y,pelvis:p('pelvis'),rearFoot:p('foot_l'),legs:{}};
   if(time>=.82)for(const mesh of soleMeshes)mesh.skeleton.update();
   const hip=forward.pelvis.clone().applyQuaternion(q('pelvis')),chest=forward.spine_03.clone().applyQuaternion(q('spine_03'));
+  row.hipYaw=Math.atan2(hip.x,hip.z);row.chestYaw=Math.atan2(chest.x,chest.z);
   const turn=Math.atan2(chest.x,chest.z)-Math.atan2(hip.x,hip.z);
   assert.ok(Math.abs(Math.atan2(Math.sin(turn),Math.cos(turn)))<.9,`${time}: chest separates too far from hips`);
+  if(time>=1.05&&time<=1.2){
+   const upper=p('lowerarm_l').sub(p('upperarm_l')),lower=p('hand_l').sub(p('lowerarm_l'));
+   assert.ok(upper.angleTo(lower)<70*Math.PI/180,`${time}: free arm stays folded during recovery`);
+  }
   for(const s of ['r','l']){
    // Check the actual shoe during recovery support, not only its joint proxy.
    if((s==='r'&&time>=.82&&time<=1.02)||(s==='l'&&time>=1.02)){
@@ -61,6 +66,13 @@ test('Ace rising cut tracks native knees, drives upward, and holds world-space c
  assert.ok(y(.8)-y(.5)>.08,'Legs must extend during the rising stroke');
  const recovery=rows.filter(row=>row.time>=.7&&row.time<=1.2);
  for(let i=1;i<recovery.length;i++)assert.ok(recovery[i].pelvis.z>=recovery[i-1].pelvis.z-.001,'Recovery must carry the body forward without falling back');
+ // Recovery has no hit. Reject the old abrupt turn back to the ready stance.
+ for(let i=1;i<rows.length;i++)if(rows[i-1].time>=.78&&rows[i].time<=1.4){
+  for(const key of ['hipYaw','chestYaw']){
+   const delta=rows[i][key]-rows[i-1][key],rate=Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))/(rows[i].time-rows[i-1].time);
+   assert.ok(rate<600*Math.PI/180,`${key}: recovery turns too abruptly at ${rows[i].time}`);
+  }
+ }
  const rearToeOff=spec.toePlants.l.find(([start])=>start<spec.impacts[0])?.[1];
  const rearLanding=spec.footPlants.l.find(([start])=>start>spec.impacts[0])?.[0];
  assert.ok(rearLanding-rearToeOff>0&&rearLanding-rearToeOff<=.25,'The rear foot must catch the body within a quarter second');

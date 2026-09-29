@@ -64,7 +64,7 @@ The original geometry and 36 unrelated animations remain intact. Only `Fan_Heavy
 
 Actual Claude Opus 5.5 High compared both recovery versions. It found no visible anatomical or balance blocker in the supplied views.
 
-Its review also identified an abrupt upper-body unwind near landing. That motion still needs refinement; the revised feet do not establish complete dynamic balance.
+Its review also identified an abrupt upper-body turn near landing. The next revision addresses that turn without changing the foot contacts.
 
 The mass estimate uses approximate joint centers and proportions from the official [OpenSim Rajagopal model](https://github.com/opensim-org/opensim-models/blob/master/Models/Rajagopal/README.txt).
 It helps compare candidates. It is not a calibrated body model, and its noisy acceleration estimate cannot prove physical correctness.
@@ -75,6 +75,30 @@ An isolated copy of the committed files verifies this release without removing t
 All 453 release tests pass, and the production build succeeds. Dense arm and blade checks still find no intersections.
 Final browser checks pass at 40, 60, and 120 FPS. Crowded gameplay averages 55.3 FPS at 1440 × 900, with 24–47 enemies.
 The tested slope produces less than 0.2 mm ankle drift and 3.4 mm toe drift. Knee side-bend stays below 0.001 degrees.
+
+## Coordinated recovery turn
+
+The hips and chest now return gradually after the rising cut. The free arm opens and drops during recovery instead of resting on the hip.
+
+Simply delaying the torso twisted the landing leg. The final motion coordinates the hips, chest, and arms while preserving the reviewed foot paths.
+
+Peak chest rotation during recovery decreases from 1,244 to 466 degrees per second. The pelvis continues forward through the landing.
+
+The preparation and strike remain within 0.038 mm and 0.023 degrees of the preceding release. The new timing starts after impact.
+
+Tests reject the old abrupt turn and the folded free arm. Existing knee, shoe-contact, wrist, skin-clearance, and blade-clearance limits remain unchanged.
+
+Actual Claude Opus 5.5 High reviewed the revised recovery images. It accepted the arm correction and found no new visible blocker.
+The free wrist and fingers still need finer polish. Still images alone cannot establish motion quality or physical balance.
+
+The compact asset removes repeated constant samples. Comparison at 480 Hz confirms equivalent joint poses across 745 samples.
+The GLB is 13,136,372 bytes, slightly smaller than the preceding release. Original geometry and all 36 unrelated animations remain intact.
+
+Browser checks pass at 40, 60, and 120 FPS. Crowded combat averages 58.8 FPS with 24–47 enemies and no browser errors.
+The tested slope produces less than 0.2 mm ankle drift and 3.4 mm toe drift. Knee side-bend stays below 0.001 degrees.
+All 453 release tests pass in the isolated checkout. The production build succeeds.
+
+Review records for this revision live in `artifacts/source-motion-review/opus-ace/torso-recovery/`.
 
 ## Rebuild
 
