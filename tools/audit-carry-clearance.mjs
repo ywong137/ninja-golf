@@ -37,7 +37,7 @@ try{
        if(handleGap<r.minHandleLeg){r.minHandleLeg=handleGap;r.worst={side,frame:f,part:'handle'};}
        // A capsule around each blade section is conservative: it includes the
        // full width on both axes, so positive values prove separation.
-       for(let s=0;s<16;s++){const a=s/16,b=(s+1)/16;blade.start.set(profile.curve*a*a,.17+profile.length*a,0);blade.end.set(profile.curve*b*b,.17+profile.length*b,0);blade.closestPointToPoint(point,true,nearest);r.minBladeLeg=Math.min(r.minBladeLeg,(point.distanceTo(nearest)-profile.width*.5)*scale);}
+       for(let s=0;s<16;s++){const a=s/16,b=(s+1)/16;blade.start.set(-profile.curve*a*a,.17+profile.length*a,0);blade.end.set(-profile.curve*b*b,.17+profile.length*b,0);blade.closestPointToPoint(point,true,nearest);r.minBladeLeg=Math.min(r.minBladeLeg,(point.distanceTo(nearest)-profile.width*.5)*scale);}
       }
      }
     }

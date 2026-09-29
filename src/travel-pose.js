@@ -2,11 +2,11 @@ import * as THREE from 'three';
 
 // Targets are shoulder-relative. Their size follows each native arm, not a shared skeleton.
 export const TRAVEL_POSES={
- odachi:{out:.18,drop:.45,forward:.60,shaft:[-.12,1,.15],swing:.035},
+ odachi:{out:.22,drop:.45,forward:.60,shaft:[-.12,1,.15],swing:.035},
  twin:{out:.22,drop:.45,forward:.60,shaft:[-.15,1,.12],swing:.045},
- naginata:{out:.32,drop:.45,forward:.60,shaft:[-.12,1,.15],swing:.025,gripStation:-.40},
+ naginata:{out:.37,drop:.45,forward:.60,shaft:[-.12,1,.15],swing:.025,gripStation:-.40},
  fan:{out:.25,drop:.40,forward:.58,shaft:[-.12,1,.12],swing:.055},
- ring:{out:.28,drop:.40,forward:.55,shaft:[-.10,1,.15],swing:.045},
+ ring:{out:.32,drop:.40,forward:.55,shaft:[-.10,1,.15],swing:.045},
  sickle:{out:.30,drop:.42,forward:.52,shaft:[-.10,1,.12],swing:.04},
 };
 const vector=a=>new THREE.Vector3(...a);

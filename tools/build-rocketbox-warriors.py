@@ -32,6 +32,11 @@ def patch_ronin_native_combat(output):
   motion_path=ROOT/'src/motion-data.json';motions=json.loads(motion_path.read_text());motions.update(generated)
   output.write_bytes(candidate.read_bytes())
   motion_path.write_text(json.dumps(motions,separators=(',',':'),ensure_ascii=False))
+def patch_hero_strafe(output):
+ with tempfile.TemporaryDirectory(prefix='ninja-native-strafe-') as folder:
+  candidate=pathlib.Path(folder)/output.name
+  subprocess.run(['node',str(ROOT/'tools/author-native-strafe.mjs'),str(output),'--output',str(candidate)],check=True)
+  output.write_bytes(candidate.read_bytes())
 def patch_enemy_locomotion(output):
  with tempfile.TemporaryDirectory(prefix='ninja-enemy-knees-') as folder:
   candidate=pathlib.Path(folder)/output.name
@@ -149,6 +154,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
    patch_ronin_native_combat(output)
   if hero=='monk' and (args.attacks_only or args.guards_only or args.attack_name):patch_naginata_native_combat(output)
   if hero=='kaede' and (args.attacks_only or bool(set(args.attack_name)&{'Fan_Cut_Diagonal','Fan_Heavy_Cleave'})):patch_ace_native_combat(output)
+  if args.locomotion_only and not args.enemies:patch_hero_strafe(output)
   print('GUARDS_EXPORTED',hero,flush=True);continue
  # Full exports need the same exact attack endpoints as animation-only updates.
  time_spec=importlib.util.spec_from_file_location('native_clip_times',ROOT/'tools/append-native-guard-clips.py')
@@ -158,6 +164,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
  subprocess.run(['node',str(ROOT/'tools/align-native-knees.mjs'),str(output)],check=True)
  if args.enemies:patch_enemy_locomotion(output)
  if not args.enemies:
+  patch_hero_strafe(output)
   # Golf uses the native shoulder hierarchy and body proportions directly.
   with tempfile.TemporaryDirectory(prefix='ninja-native-golf-') as golf_dir:
    golf_output=pathlib.Path(golf_dir)/f'{hero}.glb'

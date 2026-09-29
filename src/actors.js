@@ -4,6 +4,8 @@ import {finishCharacterMaterial,awaitCharacterMaterials} from './character-mater
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotion, combatMotionName } from './motion.js';
+import {headingKnee} from './knee-alignment.js';
+import {RunFootwork} from './run-footwork.js';
 import {FootPlacement,attackFootContacts} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
 import {AttackLocomotion} from './attack-locomotion.js';
@@ -21,9 +23,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,name==='kaede'?'ace-recovery-3':'closed-golf-grip-1']));
-MODEL_REVISIONS.ayame='hustler-heavy-body-1';
-MODEL_REVISIONS.shinobi='backswept-blade-clearance-1';
+const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'anatomic-strafe-1']));
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -105,6 +105,7 @@ export class Warrior {
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
+    this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index)):null;
     this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].combatStyle],motions):null;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
@@ -219,7 +220,7 @@ export class Warrior {
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
     this.handGrip?.restore();this.handGrip?.prepare(golf);
-    this.footPlacement?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
+    this.footPlacement?.restore();this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.forearmTwist?.update({refreshMatrices:false});return;}
@@ -266,6 +267,7 @@ export class Warrior {
       if(action){for(const name of ['spine_01','spine_02']){const bone=this.bones[name];this.coreScales.push([bone,bone.scale.clone()]);const squash=1-Math.sin(action.time/action.duration*Math.PI)*.012;bone.scale.multiply(new THREE.Vector3(1/Math.sqrt(squash),squash,1/Math.sqrt(squash)));}}
 
     }
+    if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend);
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
     let contactWeights=null,stance=null;
     if(this.running||this.guardWalking){
@@ -277,7 +279,7 @@ export class Warrior {
     if(golf||dodge||emerging||selection||cinematic||action?.kind==='musou')this.attackLocomotion?.reset();
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
-    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,preserveHinge:!!motions[this.current]?.nativeKneeHinges,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredAttack||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf||selection)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){

@@ -96,7 +96,14 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     // A positive value means the knee lies medial to the actual shoe's sagittal
     // plane. This catches toe-out and turned stances that actor-X checks miss.
     const outward=up.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
-    const shin=knee.clone().sub(ankle),medial=-shin.dot(outward);
+    const shin=knee.clone().sub(ankle),rawMedial=-shin.dot(outward);
+    const headingGait=kind==='gait'&&/Run_(Right|Left)/.test(name);
+    // A running hip need not share the shoe's vertical plane. Measure the knee
+    // relative to the straight hip–ankle line, not a vertical line from the shoe.
+    // Native frame, hip and ankle rotation have separate strafe regression tests.
+    const legAxis=ankle.clone().sub(hip),fraction=knee.clone().sub(hip).dot(legAxis)/legAxis.lengthSq();
+    const alignedShin=hip.clone().addScaledVector(legAxis,fraction).sub(ankle);
+    const medial=headingGait?-(shin.clone().sub(alignedShin)).dot(outward):rawMedial;
     const state=supportState(kind,name,spec,seconds,side);
     if(impact)assert.ok(state.loaded,`${name} ${side}: impact has no authored support`);
     if(state.loaded){

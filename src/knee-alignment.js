@@ -31,3 +31,15 @@ export function footForward(foot,rotation){
  if(forward.lengthSq()<1e-10)forward.copy(new Vector3(1,0,0).applyQuaternion(rotation).cross(UP)).setY(0);
  return forward.normalize();
 }
+
+// During running, the hip can lie outside the shoe's vertical plane. Keep the
+// knee bend directed along the shoe instead of twisting the hip to reach that
+// plane. Both rigid segment lengths still define the same knee-circle radius.
+export function headingKnee(hip,ankle,upper,lower,forward){
+ const axis=ankle.clone().sub(hip),distance=Math.max(1e-8,axis.length());axis.multiplyScalar(1/distance);
+ const along=(upper*upper-lower*lower+distance*distance)/(2*distance);
+ const center=hip.clone().addScaledVector(axis,along),radius=Math.sqrt(Math.max(0,upper*upper-along*along));
+ const bend=forward.clone().addScaledVector(axis,-forward.dot(axis));
+ if(radius<1e-8||bend.lengthSq()<1e-8)return alignedKnee(hip,ankle,upper,lower,forward);
+ return center.addScaledVector(bend.normalize(),radius);
+}
