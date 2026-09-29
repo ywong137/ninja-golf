@@ -1,0 +1,32 @@
+{
+  "publisher": "Carnegie Mellon University Graphics Lab Motion Capture Database",
+  "subject": "02",
+  "description": "swordplay",
+  "rateHz": 120,
+  "retrieved": "2026-09-29",
+  "licenseUrl": "https://mocap.cs.cmu.edu/faqs.php",
+  "licenseNote": "The FAQ permits copying, modification, and redistribution without permission. Credit the CMU motion capture database. These files are source references, not shipped game animations.",
+  "localDirectory": "assets/source/cmu-sword",
+  "files": {
+    "02.asf": {
+      "url": "https://mocap.cs.cmu.edu/subjects/02/02.asf",
+      "sha256": "c9f5ff45b4437b279f58b95dacf017afd3135373096274df69436a9354d796cf",
+      "bytes": 7268
+    },
+    "02_07.amc": {
+      "url": "https://mocap.cs.cmu.edu/subjects/02/02_07.amc",
+      "sha256": "6171216b0bd691843096798431a5f201b9d1340503cf89ce20180b6143597cd8",
+      "bytes": 1791825
+    },
+    "02_08.amc": {
+      "url": "https://mocap.cs.cmu.edu/subjects/02/02_08.amc",
+      "sha256": "cbf08bb1aeba0487330b0096adb634170f6ddc617c19349b8954a99904a19634",
+      "bytes": 1195070
+    },
+    "02_09.amc": {
+      "url": "https://mocap.cs.cmu.edu/subjects/02/02_09.amc",
+      "sha256": "a217c49c4d3e834b9a7da1ccaffb12f0b8aeed9b7c90c114b365e5f3d265a6df",
+      "bytes": 825503
+    }
+  }
+}
