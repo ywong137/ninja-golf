@@ -4,6 +4,10 @@ These tools reproduce the accepted V63 Ready/Cleave pilot and the corrected V5 m
 
 The full Ronin family is not ready for release. Other legacy attacks still fail under this sword mount. The published carry correction preserves native elbow hinges during running. The first cut's entry fade still needs a hand-surface review.
 
+A later [support-hand rotation audit](../../docs/reviews/ronin-grip-clock.md) also reopens the pilot's grip review.
+Its solver keeps the hand on the shaft but permits substantial rotation around it.
+Refit and review the complete palm frames before releasing these candidates.
+
 ## Reproduce the accepted pilot
 
 ```sh
