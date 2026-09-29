@@ -35,11 +35,22 @@ export function footForward(foot,rotation){
 // During running, the hip can lie outside the shoe's vertical plane. Keep the
 // knee bend directed along the shoe instead of twisting the hip to reach that
 // plane. Both rigid segment lengths still define the same knee-circle radius.
-export function headingKnee(hip,ankle,upper,lower,forward){
+export function headingKnee(hip,ankle,upper,lower,forward,bendOffset=0){
  const axis=ankle.clone().sub(hip),distance=Math.max(1e-8,axis.length());axis.multiplyScalar(1/distance);
  const along=(upper*upper-lower*lower+distance*distance)/(2*distance);
  const center=hip.clone().addScaledVector(axis,along),radius=Math.sqrt(Math.max(0,upper*upper-along*along));
  const bend=forward.clone().addScaledVector(axis,-forward.dot(axis));
  if(radius<1e-8||bend.lengthSq()<1e-8)return alignedKnee(hip,ankle,upper,lower,forward);
- return center.addScaledVector(bend.normalize(),radius);
+ return center.addScaledVector(bend.normalize().applyAxisAngle(axis,bendOffset),radius);
+}
+
+// Retain an authored knee plane when terrain changes the ankle target.
+export function kneeBendOffset(hip,knee,ankle,forward){
+ const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee);
+ const axis=ankle.clone().sub(hip).normalize();
+ const center=hip.clone().addScaledVector(axis,knee.clone().sub(hip).dot(axis));
+ const source=knee.clone().sub(center),reference=headingKnee(hip,ankle,upper,lower,forward).sub(center);
+ if(source.lengthSq()<1e-10||reference.lengthSq()<1e-10)return 0;
+ source.normalize();reference.normalize();
+ return Math.atan2(axis.dot(reference.clone().cross(source)),reference.dot(source));
 }

@@ -23,7 +23,7 @@ export class AttackLocomotion {
  }
  restore(){for(const [bone,position,q]of this.saved){bone.position.copy(position);bone.quaternion.copy(q);}this.saved=[];}
  reset(){this.weight=0;this.report=null;}
- apply(dt,{active=false,speed=0,angle=0,runPhase=null}={}){
+ apply(dt,{active=false,speed=0,angle=0,runPhase=null,kneeSolver}={}){
   const wanted=active&&speed>.10?1:0;
   const previousWeight=this.weight;
   if(wanted&&!this.weight){this.phase=runPhase===null?0:(runPhase+.75)%1;this.angle=angle;}
@@ -55,7 +55,7 @@ export class AttackLocomotion {
   for(const target of targets){
    const {side}=target,foot=this.bones['foot_'+side],proxyFoot=this.proxyBones['foot_'+side];
    target.ankle.lerp(point(proxyFoot),this.weight);target.q.slerp(rotation(proxyFoot),this.weight);
-   const error=solveLeg(this.bones['thigh_'+side],this.bones['calf_'+side],foot,target.ankle,target.q);
+   const error=solveLeg(this.bones['thigh_'+side],this.bones['calf_'+side],foot,target.ankle,target.q,{kneeSolver});
    this.bones['ball_'+side].quaternion.slerp(this.proxyBones['ball_'+side].quaternion,this.weight);
    const phase=(this.phase+(side==='r'?.25:.75))%1;
    stance[side]=phase<.5;contactWeights[side]=phase<.5?1:phase<.6?1-THREE.MathUtils.smoothstep(phase,.5,.6):THREE.MathUtils.smoothstep(phase,.9,1);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {alignedKnee,footForward} from './knee-alignment.js';
+import {alignedKnee,footForward,headingKnee,kneeBendOffset} from './knee-alignment.js';
 import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -138,7 +138,10 @@ export class FootPlacement {
    if(enforceClearance)sourceSoleGap=Math.max(0,sourceSoleGap);
    const supportOffset=penetration+sourceSoleGap;
    const offset=clamp(Math.max(supportOffset*weight,penetration-Math.max(0,-sourceSoleGap)),-.32,.32);
-   samples.push({side,ankle,target:ankle.clone().addScaledVector(UP,offset),rotation,weight,offset,terrainDelta,sourceSoleGap,changed:Math.abs(offset)>1e-7||original.clone().normalize().angleTo(rotation.clone().normalize())>1e-6});
+   const bendOffset=preserveHinge&&kneeSolver===headingKnee?kneeBendOffset(
+    bones['thigh_'+side].getWorldPosition(new THREE.Vector3()),
+    bones['calf_'+side].getWorldPosition(new THREE.Vector3()),ankle,footForward(foot,original)):0;
+   samples.push({side,ankle,target:ankle.clone().addScaledVector(UP,offset),rotation,weight,offset,terrainDelta,sourceSoleGap,bendOffset,changed:Math.abs(offset)>1e-7||original.clone().normalize().angleTo(rotation.clone().normalize())>1e-6});
   }
   let pelvisLimit=0;
   const terrainChanged=samples.some(s=>s.changed);
@@ -171,7 +174,10 @@ export class FootPlacement {
    let error=0;
    if(s.changed||Math.abs(this.pelvisOffset)>1e-7||preserveHinge){
     for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
-    if(s.changed||Math.abs(this.pelvisOffset)>1e-7)error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation,{kneeSolver});
+    if(s.changed||Math.abs(this.pelvisOffset)>1e-7){
+     const solveKnee=s.bendOffset?(...args)=>headingKnee(...args,s.bendOffset):kneeSolver;
+     error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation,{kneeSolver:solveKnee});
+    }
     if(preserveHinge)alignLegHinge(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],this.hinges[s.side]);
    }
    // Seed the next procedural frame from the actual authored support. Resetting

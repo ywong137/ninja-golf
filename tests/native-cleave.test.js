@@ -5,6 +5,7 @@ import * as T from 'three';
 import {WARRIORS} from '../src/warriors.js';
 import {createWeapon} from '../src/weapons.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
+import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy.mjs';
 
 const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
 const motions=readJSON('../src/motion-data.json'),grips=readJSON('../src/grip-data.json').ronin.sword;
@@ -19,6 +20,7 @@ test('Ronin native ready and cleave preserve anatomical wrists, real blade clear
  const rotation=name=>bones[name].getWorldQuaternion(new T.Quaternion()).normalize();
  // Read neutral wrists from the imported bind pose, before any animation runs.
  const neutral=Object.fromEntries(['r','l'].map(side=>[side,bones['hand_'+side].quaternion.clone().normalize()]));
+ const legAnatomy=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s])]));
  const clips=new Map(rig.animations.map(clip=>[clip.name,clip]));
  function play(name){
   const clip=clips.get(name);assert.ok(clip,`Missing ${name}`);rig.mixer.stopAllAction();
@@ -77,9 +79,16 @@ test('Ronin native ready and cleave preserve anatomical wrists, real blade clear
      const support=plants.get(key),drift=ankle.distanceTo(support.ankle),turn=foot.angleTo(support.foot);
      metrics.maxPlantDrift=Math.max(metrics.maxPlantDrift,drift);metrics.maxPlantTurn=Math.max(metrics.maxPlantTurn,turn);
      assert.ok(drift<.001,`${name}/${seconds}/${side}: planted ankle slides.`);assert.ok(turn<.005,`${name}/${seconds}/${side}: planted shoe turns.`);
-     const forward=position('ball_'+side).sub(ankle).setY(0).normalize(),outward=UP.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
-     const medial=-position('calf_'+side).sub(ankle).dot(outward);metrics.maxMedialKnee=Math.max(metrics.maxMedialKnee,medial);
-     assert.ok(medial<=.020,`${name}/${seconds}/${side}: loaded knee falls ${(medial*100).toFixed(2)} cm inside the shoe plane.`);
+     if(spec.nativeKneeHeading){
+      // A wide stance need not put the hip in the shoe's vertical plane.
+      // Check native joint frames instead of forcing the knee into that plane.
+      const leg=measureLegAnatomy(legAnatomy[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
+      assert.ok(leg.kneeDeviation<.1&&Math.abs(leg.hipTwist)<36&&Math.abs(leg.ankleTwist)<10,`${name}/${seconds}/${side}: invalid native leg ${JSON.stringify(leg)}`);
+     }else{
+      const forward=position('ball_'+side).sub(ankle).setY(0).normalize(),outward=UP.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
+      const medial=-position('calf_'+side).sub(ankle).dot(outward);metrics.maxMedialKnee=Math.max(metrics.maxMedialKnee,medial);
+      assert.ok(medial<=.020,`${name}/${seconds}/${side}: loaded knee falls ${(medial*100).toFixed(2)} cm inside the shoe plane.`);
+     }
     }
    }
    previous=current;
