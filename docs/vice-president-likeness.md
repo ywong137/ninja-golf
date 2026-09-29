@@ -3,6 +3,14 @@
 The latest fitted mesh is documented in [Ethan measured geometry v15](reviews/ethan-measured-geometry-v15.md).
 Its visible improvement is narrower nasal wings. It does not establish a complete facial reconstruction.
 
+The current eye appearance uses a separate skin texture correction. Two bounded UV regions remove duplicate painted eye darkness above the actual openings.
+The thin upper-lid edge remains visible. The actual eyes, gaze, head geometry, skin weights, and all 37 animation clips remain unchanged.
+Opus 5.5 High accepted this limited cleanup in matched portraits and close crops. It did not call this a measured likeness correction.
+
+The eye stencil study compares visible boundaries across four supplied photos. Central lid curvature stays within the manual tracing uncertainty.
+A simple downward orbit shift helps the front view but worsens the tilted view. No new eye-placement or aperture sculpt follows from those measurements.
+Private measurements and comparisons remain in `artifacts/ethan-eye-study/` and `artifacts/ethan-eye-placement/`.
+
 Full character exports apply `assets/characters/vice-president-head-revision.json` after the Blender base sculpt.
 They then apply the reviewed side-only hair recipe through `tools/author-vice-president-hair.py`.
 This adds modest volume above the ears while preserving the measured head, original skinning, and animation payloads.
@@ -145,7 +153,7 @@ Build a separate reviewed candidate:
 blender --background --python tools/build-vice-president.py -- \
   --input /tmp/monk-native.glb \
   --output /tmp/vice-president.glb \
-  --face-texture assets/characters/vice-president-face-warm-eyes.png \
+  --face-texture assets/characters/vice-president-face-clean-eyes.png \
   --hair-shape swept --nose-tip-drop-mm 2
 ```
 
@@ -183,5 +191,17 @@ node tools/render-vice-president-matched.mjs \
 The other material modes are `unlit`, `clay`, `no-normal`, and `no-ao`.
 The root review accepted v14 for integration. It retains a visible under-nose shadow under some lights.
 The private visual comparisons remain outside the public game.
-The final source texture is `assets/characters/vice-president-face-warm-eyes.png`.
+The final source texture is `assets/characters/vice-president-face-clean-eyes.png`.
+The earlier `vice-president-face-warm-eyes.png` remains the separate iris-repair intermediate.
 The old `vice-president-face-baked.jpg` remains the reproducible base for the iris repair.
+
+Rebuild the final eye-skin texture from that intermediate and the generated repair artwork:
+
+```sh
+blender --background --python tools/repair-vice-president-eye-skin.py -- \
+  --output /tmp/vice-president-clean-eyes.png \
+  --report /tmp/vice-president-clean-eyes.json
+```
+
+The two masks exclude the separate iris island. A decoded pixel comparison confirms no changes outside those masks.
+The model stores the replacement image in its original buffer range, with no duplicate image payload.

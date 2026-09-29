@@ -169,7 +169,7 @@ for hero,source in ENEMIES if args.enemies else ROSTER:
   # Reapply the likeness after a full native source export. Clip-only exports
   # already preserve the existing geometry and must not sculpt it a second time.
   likeness=output.with_name('monk.likeness-building.glb')
-  subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-warm-eyes.png')],check=True)
+  subprocess.run([bpy.app.binary_path,'--background','--python',str(ROOT/'tools/build-vice-president.py'),'--','--input',str(output),'--output',str(likeness),'--face-texture',str(ROOT/'assets/characters/vice-president-face-clean-eyes.png')],check=True)
   # The Blender sculpt is the checked baseline. Preserve the measured head
   # revision too; never silently restore the older nose during a full rebuild.
   measured=output.with_name('monk.measured-building.glb')

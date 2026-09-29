@@ -1,0 +1,45 @@
+{
+  "baseDimensions": [
+    2048,
+    2048
+  ],
+  "generatedDimensions": [
+    1254,
+    1254
+  ],
+  "maskEllipses": [
+    {
+      "center": [
+        898,
+        573
+      ],
+      "radii": [
+        78,
+        47
+      ],
+      "fullStrengthRadiusFraction": 0.65
+    },
+    {
+      "center": [
+        1150,
+        573
+      ],
+      "radii": [
+        78,
+        47
+      ],
+      "fullStrengthRadiusFraction": 0.65
+    }
+  ],
+  "maskedPixels": 23006,
+  "outsideMaskLinearError": 0,
+  "eyeIslandExcluded": true,
+  "geometryChanged": false,
+  "registration": "The full generated atlas uses the original normalized UV coordinates. Only two bounded skin patches enter the bake.",
+  "source": "vice-president-face-warm-eyes.png",
+  "artwork": "vice-president-eye-skin-repair.png",
+  "result": "vice-president-face-clean-eyes.png",
+  "sourceSha256": "2e1598a4e6fa7260ab87dc682117d5a51b34d7882709ca1f358b82c899d2966e",
+  "resultSha256": "8cee76914b345b15b7444395d382b7c7d54f49f18ae32755f59140221ddeb096",
+  "review": "Opus5.5 High accepted limited texture cleanup; no measured geometric likeness claim."
+}

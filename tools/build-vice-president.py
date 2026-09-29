@@ -15,7 +15,7 @@ import bpy
 import numpy as np
 from mathutils import Matrix, Quaternion, Vector
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--input',type=pathlib.Path,default=ROOT/'public/models/monk.glb');p.add_argument('--output',type=pathlib.Path,default=pathlib.Path('/tmp/vice-president.glb'));p.add_argument('--blend',type=pathlib.Path);p.add_argument('--face-texture',type=pathlib.Path,default=ROOT/'assets/characters/vice-president-face-warm-eyes.png');p.add_argument('--hair-shape',choices=['baseline','swept'],default='swept');p.add_argument('--nose-tip-drop-mm',type=float,default=2);a=p.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--input',type=pathlib.Path,default=ROOT/'public/models/monk.glb');p.add_argument('--output',type=pathlib.Path,default=pathlib.Path('/tmp/vice-president.glb'));p.add_argument('--blend',type=pathlib.Path);p.add_argument('--face-texture',type=pathlib.Path,default=ROOT/'assets/characters/vice-president-face-clean-eyes.png');p.add_argument('--hair-shape',choices=['baseline','swept'],default='swept');p.add_argument('--nose-tip-drop-mm',type=float,default=2);a=p.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
 if not 0<=a.nose_tip_drop_mm<=2:p.error('--nose-tip-drop-mm must remain between 0 and 2 for this bounded revision.')
 def read_glb(path):
  raw=path.read_bytes();n=struct.unpack_from('<I',raw,12)[0];return json.loads(raw[20:20+n]),bytearray(raw[28+n:])
