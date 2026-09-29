@@ -39,7 +39,8 @@ export function skinGroups(g){
    const weight=predicate=>vertices.reduce((sum,v)=>sum+vertexWeight(v,predicate),0)/3;
    let group=weight(name=>/^spine_|^pelvis$/.test(name))>.65?'torso':null;
    for(const side of ['r','l'])for(const part of ['upperarm','lowerarm']){
-    if(weight(name=>name===part+'_'+side)<=.65)continue;
+    const belongs=name=>name===part+'_'+side||(part==='lowerarm'&&(name==='lowerarm_skin_base_'+side||name==='lowerarm_skin_mid_'+side));
+    if(weight(belongs)<=.65)continue;
     const start=point(g,part+'_'+side),end=point(g,(part==='upperarm'?'lowerarm':'hand')+'_'+side);
     const axis=end.sub(start),fraction=center.clone().sub(start).dot(axis)/axis.lengthSq();
     if(fraction>.15&&fraction<.8)group=part+'_'+side;

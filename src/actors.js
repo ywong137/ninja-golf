@@ -12,6 +12,7 @@ import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
 import {createGolfClub} from './golf-club.js';
 import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
+import {installForearmTwistHelpers} from './forearm-twist.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
@@ -86,6 +87,7 @@ export class Warrior {
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
+    this.forearmTwist=!enemy&&this.nativeHuman?installForearmTwistHelpers(this.model):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
     this.selectionArmRest=Object.fromEntries(['r','l'].map(side=>{
@@ -218,7 +220,7 @@ export class Warrior {
     this.footPlacement?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
-    if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);return;}
+    if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.forearmTwist?.update({refreshMatrices:false});return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
@@ -287,7 +289,7 @@ export class Warrior {
     this.syncHeldObjects(motion,golf);
   }
   syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
-    if(this.handGrip){this.handGrip.apply(motion,golf,motions[this.current]);return;}
+    if(this.handGrip){this.handGrip.apply(motion,golf,motions[this.current]);this.forearmTwist?.update({refreshMatrices:false});return;}
     // Anchor the handle to the evaluated palm after every mixer and torso update.
     // Authored directions control the shaft; the live palm also controls blade roll.
     // Keep the measured closed grip when a source idle clip opens its free hand.
@@ -334,11 +336,12 @@ export class Warrior {
     };
     attach(golf?this.club:this.weapon,'r',motion?.grip,motion?.tip,motion?.roll||0);
     if(this.offhand&&!golf)attach(this.offhand,'l',motion?.offGrip,motion?.offTip,motion?.offRoll||0);
+    this.forearmTwist?.update({refreshMatrices:false});
 
   }
 
   weaponPoints(offhand=false){const held=offhand&&this.offhand?this.offhand:this.weapon;this.root.updateMatrixWorld(true);held.localToWorld(this.tip.fromArray(held.userData.tip));held.getWorldPosition(this.hilt);return [this.hilt,this.tip];}
-  dispose(){this.facialPose?.restore();this.attackLocomotion?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
+  dispose(){this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {
   constructor(scene){this.scene=scene;this.active=new Set();}
