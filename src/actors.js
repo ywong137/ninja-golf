@@ -24,7 +24,7 @@ export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'anatomic-strafe-1']));
-MODEL_REVISIONS.kaede='ace-forefoot-pivot-1';
+for(const model of ['kaede','ayame','sora'])MODEL_REVISIONS[model]='standard-attack-leg-frames-1';
 MODEL_REVISIONS.ronin='ronin-native-leg-frames-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];

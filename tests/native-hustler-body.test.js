@@ -5,6 +5,7 @@ import * as T from 'three';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {attackDefinition} from '../src/combat.js';
 import {footForward} from '../src/knee-alignment.js';
+import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy.mjs';
 
 // Read the exported skeleton, not the authoring curves. Environment overrides
 // let a private candidate pass this same check before it replaces a game asset.
@@ -13,6 +14,7 @@ test('The Hustler heavy cleave steps, transfers weight, pivots, and returns to R
  const records=JSON.parse(fs.readFileSync(process.env.HUSTLER_BODY_RECORDS||new URL('../src/motion-data.json',import.meta.url)));
  const name='Ring_Heavy_Cleave',spec=records[name],g=await loadNativeSkin(model),b={};g.scene.traverse(o=>{if(o.isBone)b[o.name]=o;});
  const point=n=>b[n].getWorldPosition(new T.Vector3()),rotation=n=>b[n].getWorldQuaternion(new T.Quaternion()).normalize();
+ const legBind=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(b['thigh_'+s],b['calf_'+s],b['foot_'+s])]));
  const ready=g.mixer.clipAction(g.animations.find(c=>c.name==='Ring_Ready')).play();ready.time=0;g.mixer.update(0);g.scene.updateMatrixWorld(true);
  const endpointNames=['pelvis','spine_01','spine_02','spine_03','upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l','thigh_r','calf_r','foot_r','ball_r','thigh_l','calf_l','foot_l','ball_l',...Object.keys(b).filter(n=>/^(thumb|index|middle|ring|pinky)_\d+_[rl]$/.test(n))];
  const endpoints=Object.fromEntries(endpointNames.map(n=>[n,{p:point(n),q:rotation(n)}]));
@@ -33,6 +35,11 @@ test('The Hustler heavy cleave steps, transfers weight, pivots, and returns to R
   if(previous&&time>previous.time){for(const s of ['r','l']){const step=point('foot_'+s).distanceTo(previous[s]);maxFootStep=Math.max(maxFootStep,step);maxFootSpeed=Math.max(maxFootSpeed,step/(time-previous.time));}}
   previous={time,r:right,l:left};
   for(const s of ['r','l']){
+   if(spec.nativeKneeHinges){
+    const m=measureLegAnatomy(legBind[s],b['thigh_'+s],b['calf_'+s],b['foot_'+s]);
+    assert.ok(Math.abs(m.hipTwist)<45&&Math.abs(m.ankleTwist)<15&&m.kneeDeviation<.01,`${time}/${s}: ${JSON.stringify(m)}`);
+    assert.ok(m.kneeFlexion>0&&m.kneeFlexion<120,'Native knee folds backward or too far');
+   }
    const ankle=point('foot_'+s),knee=point('calf_'+s),upper=point('thigh_'+s).sub(knee),lower=ankle.clone().sub(knee);
    const flex=180-upper.angleTo(lower)*180/Math.PI;minKnee=Math.min(minKnee,flex);maxKnee=Math.max(maxKnee,flex);
    const forward=footForward(b['foot_'+s],rotation('foot_'+s)),outward=new T.Vector3(forward.z,0,-forward.x).multiplyScalar(s==='r'?-1:1);
@@ -51,7 +58,9 @@ test('The Hustler heavy cleave steps, transfers weight, pivots, and returns to R
  assert.ok(report.pelvisLead>10,'Pelvis turns before the shoulders');
  assert.ok(report.maxAdvance>.34&&report.maxAdvance<.45&&maxLeftLift>.04,'A deliberate, lifted lead step');
  assert.ok(maxRearHeel>.035&&minWidth>.38,'Rear heel pivots while the stance stays broad');
- assert.ok(minKnee>10&&maxKnee<100&&maxMedialKnee<.025,'Knees follow their feet without hyperextension or collapse');
+ assert.ok(minKnee>10&&maxKnee<100,'Knees retain the authored flexion range');
+ // The full native joint frames above also constrain a turning leg's axial twist.
+ if(!spec.nativeKneeHeading)assert.ok(maxMedialKnee<.025,'Loaded knee falls inside the legacy shoe plane');
  assert.ok(maxSupportDrift<.003&&maxSupportTurn<T.MathUtils.degToRad(.25),'Planted feet and toes stay anchored');
  assert.ok(maxFootSpeed<4&&maxFootStep<.018,'Foot transitions have no teleport');
  assert.ok(entryError.position<.003&&entryError.rotationDegrees<.5,'Entry matches Ready, including every finger');

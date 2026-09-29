@@ -16,7 +16,7 @@ function offHinge(bones,side,cal){
  return{deviation:Math.asin(Math.min(1,Math.abs(hinge.dot(lower)))),flex:Math.atan2(hinge.dot(upper.clone().cross(lower)),upper.dot(lower))};
 }
 
-test('Native knee frames preserve solved joints and shoe orientation under an outer transform',async()=>{
+test('Native knee frames repair an injected twist and preserve solved joints under an outer transform',async()=>{
  const g=await loadNativeSkin(new URL('../public/models/kaede.glb',import.meta.url)),bones={};
  g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b});
  g.scene.position.set(2,4,-3);g.scene.rotation.set(.12,.73,-.08);g.scene.scale.setScalar(1.1);g.scene.updateMatrixWorld(true);
@@ -25,7 +25,14 @@ test('Native knee frames preserve solved joints and shoe orientation under an ou
  let maximumOriginalDeviation=0;
  for(const time of [0,.15,.30,.45,.60]){
   a.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+  const source=['thigh_r','calf_r','foot_r','thigh_l','calf_l','foot_l'].map(n=>[bones[n],bones[n].quaternion.clone()]);
   for(const s of ['r','l']){
+   const thigh=bones['thigh_'+s],calf=bones['calf_'+s],foot=bones['foot_'+s];
+   const upper=p(calf).sub(p(thigh)).normalize(),calfRotation=q(calf),footRotation=q(foot);
+   const setWorld=(bone,world)=>{bone.quaternion.copy(q(bone.parent).invert().multiply(world));bone.updateWorldMatrix(false,true);};
+   // Keep a deliberate bad frame even after the source animation is repaired.
+   setWorld(thigh,new T.Quaternion().setFromAxisAngle(upper,.3).multiply(q(thigh)));
+   setWorld(calf,calfRotation);setWorld(foot,footRotation);
    const names=['thigh_','calf_','foot_','ball_'].map(n=>n+s),before=names.map(n=>p(bones[n])),shoe=q(bones['foot_'+s]);
    maximumOriginalDeviation=Math.max(maximumOriginalDeviation,offHinge(bones,s,cal[s]).deviation);
    alignLegHinge(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s],cal[s]);
@@ -33,6 +40,7 @@ test('Native knee frames preserve solved joints and shoe orientation under an ou
    assert.ok(q(bones['foot_'+s]).angleTo(shoe)<1e-4,'Shoe rotation changed');
    const m=offHinge(bones,s,cal[s]);assert.ok(m.deviation<1e-4,'Knee bends across its hinge');assert.ok(m.flex>=-1e-5,'Knee bends backward');
   }
+  for(const [bone,rotation]of source)bone.quaternion.copy(rotation);g.scene.updateMatrixWorld(true);
  }
  assert.ok(maximumOriginalDeviation>.05,'Fixture must expose the old direction-only solve');
 });

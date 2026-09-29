@@ -9,6 +9,7 @@ import * as T from 'three';
 import {createWeapon} from '../src/weapons.js';
 import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
+import {calibrateLegAnatomy,measureLegAnatomy} from './native-leg-anatomy.mjs';
 
 const read=file=>JSON.parse(fs.readFileSync(file));
 const UP=new T.Vector3(0,1,0),degrees=180/Math.PI;
@@ -31,6 +32,7 @@ export async function inspectNativeAce({
  const pos=name=>bones[name].getWorldPosition(new T.Vector3());
  const rot=name=>bones[name].getWorldQuaternion(new T.Quaternion()).normalize();
  const anatomicalBind=Object.fromEntries(['r','l'].map(side=>[side,calibrateArmAnatomy(captureArmPose(bones,side))]));
+ const legBind=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
  const neutral=Object.fromEntries(['r','l'].map(side=>[side,bones['hand_'+side].quaternion.clone().normalize()]));
  function play(name){
   const clip=rig.animations.find(c=>c.name===name);assert.ok(clip,`Missing ${name}`);rig.mixer.stopAllAction();
@@ -63,6 +65,11 @@ export async function inspectNativeAce({
    rearAnkleLow=Math.min(rearAnkleLow,ankleHeight);rearAnkleHigh=Math.max(rearAnkleHigh,ankleHeight);
    trajectory.push({time,tip:weapon.localToWorld(new T.Vector3().fromArray(weapon.userData.tip)),palm:bones.hand_r.localToWorld(new T.Vector3().fromArray(grips.r.center))});
    for(const side of ['r','l']){
+    if(spec.nativeKneeHinges){
+     const leg=measureLegAnatomy(legBind[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
+     assert.ok(Math.abs(leg.hipTwist)<45&&Math.abs(leg.ankleTwist)<15&&leg.kneeDeviation<.01,`${name}/${time}/${side}: ${JSON.stringify(leg)}`);
+     assert.ok(leg.kneeFlexion>0&&leg.kneeFlexion<120,`${name}/${time}/${side}: knee folds backward or too far`);
+    }
     const anatomy=measureArmAnatomy(anatomicalBind[side],captureArmPose(bones,side));
     const violations=armAuthoringViolations(anatomy,{maxHingeDeviationDegrees:1});
     assert.deepEqual(violations,[],`${name}/${time}/${side}: ${JSON.stringify(anatomy)}`);
@@ -93,7 +100,10 @@ export async function inspectNativeAce({
      const anchor=plants.get(key),drift=ankle.distanceTo(anchor.ankle);metrics.maxPlantDrift=Math.max(metrics.maxPlantDrift,drift);
      assert.ok(drift<.001,`${name}/${time}/${side}: planted ankle slides.`);assert.ok(foot.angleTo(anchor.foot)<.005,`${name}/${time}/${side}: planted foot rotates.`);
      const forward=pos('ball_'+side).sub(ankle).setY(0).normalize(),outward=UP.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
-     const medial=-pos('calf_'+side).sub(ankle).dot(outward);metrics.maxMedialKnee=Math.max(metrics.maxMedialKnee,medial);assert.ok(medial<=.020,`${name}/${time}/${side}: loaded knee falls inside its shoe plane.`);
+     const medial=-pos('calf_'+side).sub(ankle).dot(outward);metrics.maxMedialKnee=Math.max(metrics.maxMedialKnee,medial);
+     // A turning thigh can cross the shoe's vertical plane with a correct knee.
+     // Native-frame clips use the hip, hinge, and ankle checks above instead.
+     if(!spec.nativeKneeHeading)assert.ok(medial<=.020,`${name}/${time}/${side}: loaded knee falls inside its shoe plane.`);
     }
    }
    if(previous)metrics.maxHandSpeed=Math.max(metrics.maxHandSpeed,current.hand.distanceTo(previous.hand)/(time-previous.time));
