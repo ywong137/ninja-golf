@@ -1,0 +1,188 @@
+[
+  {
+    "hero": "kaede",
+    "samples": 363,
+    "maxPalmGapMm": 0.0013406831011700952,
+    "maxFrameErrorDegrees": 1.4286365630539068e-05,
+    "maxWristDegrees": 30.006065445662443,
+    "minElbowDegrees": 3.9999970898690447,
+    "maxElbowDegrees": 4.063655571261356,
+    "maxHumeralDegrees": 6.217977103128459,
+    "maxForearmDegrees": 40.387501058296245,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.10468989090553224,
+    "minRigidGapMm": 1.4569657407481063,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.599928685727052,
+    "maxSoleMm": 7.294971811049264,
+    "shotTravelMm": 238.02865430438558,
+    "contactVelocity": [
+      -0.5409647335854125,
+      0.009996398460279079,
+      -9.811977896845262e-09
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000006021836609,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 5.16191365590357e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  },
+  {
+    "hero": "ronin",
+    "samples": 363,
+    "maxPalmGapMm": 0.0008155503467115604,
+    "maxFrameErrorDegrees": 2.3474894161838314e-05,
+    "maxWristDegrees": 29.97817654385681,
+    "minElbowDegrees": 4.000004244325594,
+    "maxElbowDegrees": 4.071575893056269,
+    "maxHumeralDegrees": 68.4263277481636,
+    "maxForearmDegrees": 3.9742940896750056,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.1046898818539568,
+    "minRigidGapMm": 0.9886050895306919,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.6228520620411129,
+    "maxSoleMm": 7.70618037374474,
+    "shotTravelMm": 252.41034771712884,
+    "contactVelocity": [
+      -0.5736445678124866,
+      0.009996813919386196,
+      2.8836413257238202e-08
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000012499223737,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 5.16191365590357e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  },
+  {
+    "hero": "shinobi",
+    "samples": 363,
+    "maxPalmGapMm": 0.0007907899092612944,
+    "maxFrameErrorDegrees": 1.0933637455190003e-05,
+    "maxWristDegrees": 30.00067713107369,
+    "minElbowDegrees": 3.9999988672730353,
+    "maxElbowDegrees": 4.000007578531437,
+    "maxHumeralDegrees": 64.07864139301348,
+    "maxForearmDegrees": 1.7108838670999147,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.10468988559991659,
+    "minRigidGapMm": -0.47937120237376285,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.62314333814682,
+    "maxSoleMm": 7.711477930235109,
+    "shotTravelMm": 252.59568142315774,
+    "contactVelocity": [
+      -0.574065706125264,
+      0.009996805927499044,
+      2.9962152758855516e-08
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000007594942883,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 4.2146848510894035e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  },
+  {
+    "hero": "monk",
+    "samples": 363,
+    "maxPalmGapMm": 0.0008740491295083488,
+    "maxFrameErrorDegrees": 7.2445096183544e-06,
+    "maxWristDegrees": 29.965653394718444,
+    "minElbowDegrees": 4.000012051870092,
+    "maxElbowDegrees": 18.01773682777594,
+    "maxHumeralDegrees": 53.02747838146084,
+    "maxForearmDegrees": 60.01179030628385,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.10468987762060435,
+    "minRigidGapMm": -3.9979408573826425,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.6230455820496412,
+    "maxSoleMm": 7.7083086240629966,
+    "shotTravelMm": 252.48347566379942,
+    "contactVelocity": [
+      -0.5738107352367832,
+      0.009996715927511581,
+      -3.9163485787696453e-08
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000008025621891,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 4.2146848510894035e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  },
+  {
+    "hero": "ayame",
+    "samples": 363,
+    "maxPalmGapMm": 0.0006298529090532226,
+    "maxFrameErrorDegrees": 2.3783381691638923e-05,
+    "maxWristDegrees": 29.465238899463777,
+    "minElbowDegrees": 3.999996426724746,
+    "maxElbowDegrees": 4.000006020990228,
+    "maxHumeralDegrees": 16.598254323145635,
+    "maxForearmDegrees": 30.553811034031618,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.10468989220060372,
+    "minRigidGapMm": 0.37573182766048596,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.6001043609901109,
+    "maxSoleMm": 7.297221793177114,
+    "shotTravelMm": 238.10563237483123,
+    "contactVelocity": [
+      -0.5411396530877144,
+      0.00999640196999826,
+      -3.2412339479037556e-09
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000006008802772,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 5.16191365590357e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  },
+  {
+    "hero": "sora",
+    "samples": 363,
+    "maxPalmGapMm": 0.0006409504346134951,
+    "maxFrameErrorDegrees": 1.6288963005921602e-05,
+    "maxWristDegrees": 29.875393468195302,
+    "minElbowDegrees": 4.0000056641210575,
+    "maxElbowDegrees": 18.011126885639236,
+    "maxHumeralDegrees": 37.754946714580086,
+    "maxForearmDegrees": 70.000735777579,
+    "maxLocalStepDegrees": 0,
+    "maxWorldStepDegrees": 0.10468988352501694,
+    "minRigidGapMm": 1.2913184945299028,
+    "forearmMarginDeficitMm": 0,
+    "minSoleMm": 1.6005339168408925,
+    "maxSoleMm": 7.303197847415732,
+    "shotTravelMm": 238.31126969405807,
+    "contactVelocity": [
+      -0.5416069275928337,
+      0.009996448249511816,
+      3.074370091837854e-08
+    ],
+    "addressFit": true,
+    "addressOffsetMm": 5.000005984256702,
+    "preservation": {
+      "maxNonArmPositionDelta": 0,
+      "maxNonArmQuaternionDelta": 5.16191365590357e-08,
+      "maxAllBonePositionDelta": 0,
+      "maxAllBoneScaleDelta": 0
+    }
+  }
+]

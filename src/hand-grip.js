@@ -5,7 +5,7 @@ const Y=new Vector3(0,1,0);
 const position=bone=>bone.getWorldPosition(new Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new Quaternion());
 export function compatibleNativePair(from,to,defaultStation){
- const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing>0;
+ const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing!==0;
  if(!paired(from)||!paired(to))return false;
  const start=from.primaryGrip??defaultStation,end=to.primaryGrip??defaultStation;
  return Number.isFinite(start)&&Number.isFinite(end)&&Math.abs(start-end)<1e-8&&Math.abs(from.gripSpacing-to.gripSpacing)<1e-8;
@@ -56,6 +56,10 @@ export class HandGrip {
   for(const [kind,sides]of Object.entries(data)){
    this.profiles[kind]={};
    for(const side of ['r','l'])this.profiles[kind][side]=gripFrame(actor.bones,sides[side],side,actor.palmWeaponFrames?.[side]);
+   if(sides.gripSpacing!==undefined){
+    if(!Number.isFinite(sides.gripSpacing)||sides.gripSpacing===0)throw Error(`${kind} needs a finite, nonzero gripSpacing.`);
+    this.profiles[kind].gripSpacing=sides.gripSpacing;
+   }
   }
   this.prepare(false);
  }
@@ -141,12 +145,23 @@ export class HandGrip {
   held.quaternion.copy(rotation(root).invert().multiply(world));held.scale.setScalar(1);
   held.updateWorldMatrix(true,true);
  }
- attachPair(held,station,spacing){
+ attachPair(held,station,spacing,{preservePrimaryFrame=false}={}){
+  if(!Number.isFinite(station)||!Number.isFinite(spacing)||spacing===0)throw Error('A paired grip needs a finite primary station and nonzero signed spacing.');
   const {root,bones}=this.actor,scale=root.getWorldScale(new Vector3()).x;
   const palms=['r','l'].map(side=>bones['hand_'+side].localToWorld(this.active[side].center.clone()));
+  // Golf contact is calibrated against the complete lead-hand frame. Tiny
+  // interpolation errors in the support hand must not steer the club head.
+  if(preservePrimaryFrame){
+   this.attach(held,'r',station);
+   const target=held.localToWorld(new Vector3(0,station-spacing,0));
+   this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,preservePrimaryFrame:true,palmGap:palms[1].distanceTo(target)};
+   return;
+  }
   const axis=palms[0].clone().sub(palms[1]);
   if(axis.lengthSq()<1e-8)throw Error('A two-handed weapon needs separate palm positions.');
-  axis.normalize();
+  // Spacing is primary minus secondary station. Golf places the second hand
+  // toward the head; polearms place it toward the butt.
+  axis.normalize().multiplyScalar(Math.sign(spacing));
   const world=rotation(bones.hand_r).multiply(this.active.r.frame);
   alignWeaponShaft(world,axis);
   const center=palms[0].clone().add(palms[1]).multiplyScalar(.5);
@@ -154,7 +169,7 @@ export class HandGrip {
   held.position.copy(root.worldToLocal(center.addScaledVector(axis,-(station-spacing*.5)*scale)));
   held.quaternion.copy(rotation(root).invert().multiply(world));held.scale.setScalar(1);
   held.updateWorldMatrix(true,true);
-  this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,palmGap:Math.abs(palms[0].distanceTo(palms[1])-spacing*scale)*.5};
+  this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,palmGap:Math.abs(palms[0].distanceTo(palms[1])-Math.abs(spacing)*scale)*.5};
  }
  solveSecondary(held,spacing,weight=this.weight){
   const {actor}=this,{bones,root}=actor,scale=root.getWorldScale(new Vector3()).x;
@@ -212,12 +227,13 @@ export class HandGrip {
    held.userData.primaryGrip=MathUtils.lerp(resting,actor.travelPose?.profile.gripStation??resting,actor.travelPose?.weight??0);
   }
   const station=golf?0:held.userData.primaryGrip;
+  const spacing=golf?(this.active.gripSpacing??clip?.gripSpacing??.09):(clip?.gripSpacing??.09);
   this.attach(held,'r',station);
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
   // A native paired clip authors the support-hand approach. Do not bend its
   // elbow with legacy IK while that hand is still released from the weapon.
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,clip.gripSpacing);}
-  else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&carryActive)){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf});}
+  else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&(carryActive||golf))){this.solveSecondary(held,spacing,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=actor.golfClubFit?.shaftLengthNative??(motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12);
    actor.setGolfClubLength(length);

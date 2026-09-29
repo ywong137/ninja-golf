@@ -1,0 +1,52 @@
+{
+  "releaseBaseline": "2401348790e85559bea28eb41689202f5fb64972",
+  "unitTests": {
+    "passed": 415,
+    "failed": 0
+  },
+  "writerChecks": 24,
+  "quietRecipeChecks": 7,
+  "browserGolfPhases": 150,
+  "finiteContacts": 12,
+  "equipmentChecks": {
+    "heroes": 6,
+    "clubs": 8
+  },
+  "monkFinish": {
+    "samples": 178,
+    "window": [
+      1.8,
+      2.4
+    ],
+    "statistics": {
+      "upperarm_r": {
+        "triangles": 87,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "upperarm_l": {
+        "triangles": 90,
+        "minimumClearance": 0.00458736968472661,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "lowerarm_r": {
+        "triangles": 120,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "lowerarm_l": {
+        "triangles": 125,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      }
+    }
+  }
+}

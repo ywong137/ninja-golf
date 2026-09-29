@@ -1,0 +1,1097 @@
+{
+  "hero": "monk",
+  "source": "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-classification.json",
+  "caveat": "Supporting-face overlap clips each source triangle projection to the finite target triangle. It is local overlap, not watertight volume depth. Dense source tests do not certify every skinned triangle.",
+  "rows": [
+    {
+      "time": 0,
+      "side": "r",
+      "kind": "upperTorso",
+      "pairs": 26,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 44.7505851606306,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.46750436554461344,
+        "intersectionFractionMax": 0.9014028809338983,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.60556363010888
+      },
+      "deepestWitness": {
+        "id": "0:428,425,508|0:602,601,619",
+        "armWeights": [
+          0.8456793427467346,
+          1,
+          1
+        ],
+        "targetArmWeights": [
+          0.050999995321035385,
+          0.2571684420108795,
+          0.40636179596185684
+        ],
+        "sourceFractions": [
+          0.48151902006047353,
+          0.7204639502070457,
+          0.6754077001900551
+        ],
+        "overlap": {
+          "millimetres": 44.7505851606306,
+          "point": [
+            -0.1657575884801134,
+            1.1784529974812339,
+            0.16837792173396118
+          ],
+          "targetBary": [
+            0,
+            0.9067567522523106,
+            0.09324324774768944
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          428,
+          425,
+          508
+        ],
+        "b": [
+          602,
+          601,
+          619
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "side": "r",
+      "kind": "lowerTorso",
+      "pairs": 1,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 4.790120905357848,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.46750436554461344,
+        "intersectionFractionMax": 0.9014028809338983,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.60556363010888
+      },
+      "deepestWitness": {
+        "id": "0:474,500,467|0:768,763,765",
+        "armWeights": [
+          0.9999999701976776,
+          0.9000000059604645,
+          0.10000000149011612
+        ],
+        "targetArmWeights": [
+          0.25278210639953613,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.2167438107741024,
+          0.17841249082816507,
+          -0.07424505577471735
+        ],
+        "overlap": {
+          "millimetres": 4.790120905357848,
+          "point": [
+            -0.16676717536531283,
+            1.1173818194529248,
+            0.17661030620013815
+          ],
+          "targetBary": [
+            0.2517152898371177,
+            0.3627222379649911,
+            0.38556247219789114
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          474,
+          500,
+          467
+        ],
+        "b": [
+          768,
+          763,
+          765
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "side": "l",
+      "kind": "upperTorso",
+      "pairs": 36,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 33.858650924571116,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0,
+        "side": "l",
+        "pairs": 36,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.21201459762739983,
+        "intersectionFractionMax": 0.6211586496783555,
+        "intersectionPointsBeyond35Percent": 53,
+        "zeroArmIntersectionFractionMax": 0.6211586496783555,
+        "maxCrossingVertexLocalInwardMm": 32.014844414212085
+      },
+      "deepestWitness": {
+        "id": "0:292,289,290|0:963,846,955",
+        "armWeights": [
+          0.7497864961624146,
+          0.8056453466415405,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0.5630441904067993,
+          0
+        ],
+        "sourceFractions": [
+          0.4814389203275839,
+          0.4555770819060204,
+          0.667904840435234
+        ],
+        "overlap": {
+          "millimetres": 33.858650924571116,
+          "point": [
+            0.07328013367703269,
+            1.1201006160135292,
+            0.18722324442779098
+          ],
+          "targetBary": [
+            0.9553638939910417,
+            0.044636106008958676,
+            0
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          292,
+          289,
+          290
+        ],
+        "b": [
+          963,
+          846,
+          955
+        ]
+      }
+    },
+    {
+      "time": 0,
+      "side": "l",
+      "kind": "lowerTorso",
+      "pairs": 0,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0,
+        "side": "l",
+        "pairs": 36,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.21201459762739983,
+        "intersectionFractionMax": 0.6211586496783555,
+        "intersectionPointsBeyond35Percent": 53,
+        "zeroArmIntersectionFractionMax": 0.6211586496783555,
+        "maxCrossingVertexLocalInwardMm": 32.014844414212085
+      },
+      "deepestWitness": null
+    },
+    {
+      "time": 0.4,
+      "side": "r",
+      "kind": "upperTorso",
+      "pairs": 27,
+      "newPairs": 4,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 41.68021874564326,
+      "maxNewOverlapMm": 39.83402976954384,
+      "extent": {
+        "time": 0.4,
+        "side": "r",
+        "pairs": 27,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.4643810048621352,
+        "intersectionFractionMax": 0.9127862039782103,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.959510844547722
+      },
+      "deepestWitness": {
+        "id": "0:428,425,508|0:593,577,601",
+        "armWeights": [
+          0.8456793427467346,
+          1,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0,
+          0.2571684420108795
+        ],
+        "sourceFractions": [
+          0.48151902006047353,
+          0.7204639502070457,
+          0.6754077001900551
+        ],
+        "overlap": {
+          "millimetres": 41.68021874564326,
+          "point": [
+            -0.16774988212241262,
+            1.1899488076524665,
+            0.16266364295240296
+          ],
+          "targetBary": [
+            0,
+            0.04619799232981925,
+            0.9538020076701808
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          428,
+          425,
+          508
+        ],
+        "b": [
+          593,
+          577,
+          601
+        ]
+      }
+    },
+    {
+      "time": 0.4,
+      "side": "r",
+      "kind": "lowerTorso",
+      "pairs": 1,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 8.31214213704422,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.4,
+        "side": "r",
+        "pairs": 27,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.4643810048621352,
+        "intersectionFractionMax": 0.9127862039782103,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.959510844547722
+      },
+      "deepestWitness": {
+        "id": "0:474,500,467|0:768,763,765",
+        "armWeights": [
+          0.9999999701976776,
+          0.9000000059604645,
+          0.10000000149011612
+        ],
+        "targetArmWeights": [
+          0.25278210639953613,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.2167438107741024,
+          0.17841249082816507,
+          -0.07424505577471735
+        ],
+        "overlap": {
+          "millimetres": 8.31214213704422,
+          "point": [
+            -0.15803775698136027,
+            1.1123631899943112,
+            0.17661030773141054
+          ],
+          "targetBary": [
+            0.2206722100689401,
+            0.3031019883089653,
+            0.47622580162209466
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          474,
+          500,
+          467
+        ],
+        "b": [
+          768,
+          763,
+          765
+        ]
+      }
+    },
+    {
+      "time": 0.4,
+      "side": "l",
+      "kind": "upperTorso",
+      "pairs": 32,
+      "newPairs": 5,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 1,
+      "maxOverlapMm": 33.555911976406925,
+      "maxNewOverlapMm": 17.43317644830705,
+      "extent": {
+        "time": 0.4,
+        "side": "l",
+        "pairs": 32,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.26239548443779465,
+        "intersectionFractionMax": 0.6388892267005444,
+        "intersectionPointsBeyond35Percent": 56,
+        "zeroArmIntersectionFractionMax": 0.6388892267005444,
+        "maxCrossingVertexLocalInwardMm": 31.942626669300882
+      },
+      "deepestWitness": {
+        "id": "0:292,289,290|0:955,954,959",
+        "armWeights": [
+          0.7497864961624146,
+          0.8056453466415405,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.4814389203275839,
+          0.4555770819060204,
+          0.667904840435234
+        ],
+        "overlap": {
+          "millimetres": 33.555911976406925,
+          "point": [
+            0.10154351216948121,
+            1.151797547995753,
+            0.17772900219549398
+          ],
+          "targetBary": [
+            0.8281347828265024,
+            0.171865217173498,
+            0
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          292,
+          289,
+          290
+        ],
+        "b": [
+          955,
+          954,
+          959
+        ]
+      }
+    },
+    {
+      "time": 0.4,
+      "side": "l",
+      "kind": "lowerTorso",
+      "pairs": 0,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.4,
+        "side": "l",
+        "pairs": 32,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.26239548443779465,
+        "intersectionFractionMax": 0.6388892267005444,
+        "intersectionPointsBeyond35Percent": 56,
+        "zeroArmIntersectionFractionMax": 0.6388892267005444,
+        "maxCrossingVertexLocalInwardMm": 31.942626669300882
+      },
+      "deepestWitness": null
+    },
+    {
+      "time": 0.7333333333333333,
+      "side": "r",
+      "kind": "upperTorso",
+      "pairs": 26,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 44.7505851606306,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.7333333333333333,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.46750436554461344,
+        "intersectionFractionMax": 0.9014028809338983,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.60556363010888
+      },
+      "deepestWitness": {
+        "id": "0:428,425,508|0:602,601,619",
+        "armWeights": [
+          0.8456793427467346,
+          1,
+          1
+        ],
+        "targetArmWeights": [
+          0.050999995321035385,
+          0.2571684420108795,
+          0.40636179596185684
+        ],
+        "sourceFractions": [
+          0.48151902006047353,
+          0.7204639502070457,
+          0.6754077001900551
+        ],
+        "overlap": {
+          "millimetres": 44.7505851606306,
+          "point": [
+            -0.1657575884801134,
+            1.1784529974812339,
+            0.16837792173396118
+          ],
+          "targetBary": [
+            0,
+            0.9067567522523106,
+            0.09324324774768944
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          428,
+          425,
+          508
+        ],
+        "b": [
+          602,
+          601,
+          619
+        ]
+      }
+    },
+    {
+      "time": 0.7333333333333333,
+      "side": "r",
+      "kind": "lowerTorso",
+      "pairs": 1,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 4.790120905357848,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.7333333333333333,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.46750436554461344,
+        "intersectionFractionMax": 0.9014028809338983,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.60556363010888
+      },
+      "deepestWitness": {
+        "id": "0:474,500,467|0:768,763,765",
+        "armWeights": [
+          0.9999999701976776,
+          0.9000000059604645,
+          0.10000000149011612
+        ],
+        "targetArmWeights": [
+          0.25278210639953613,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.2167438107741024,
+          0.17841249082816507,
+          -0.07424505577471735
+        ],
+        "overlap": {
+          "millimetres": 4.790120905357848,
+          "point": [
+            -0.16676717536531283,
+            1.1173818194529248,
+            0.17661030620013815
+          ],
+          "targetBary": [
+            0.2517152898371177,
+            0.3627222379649911,
+            0.38556247219789114
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          474,
+          500,
+          467
+        ],
+        "b": [
+          768,
+          763,
+          765
+        ]
+      }
+    },
+    {
+      "time": 0.7333333333333333,
+      "side": "l",
+      "kind": "upperTorso",
+      "pairs": 36,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 33.858650924571116,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.7333333333333333,
+        "side": "l",
+        "pairs": 36,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.21201459762739983,
+        "intersectionFractionMax": 0.6211586496783555,
+        "intersectionPointsBeyond35Percent": 53,
+        "zeroArmIntersectionFractionMax": 0.6211586496783555,
+        "maxCrossingVertexLocalInwardMm": 32.014844414212085
+      },
+      "deepestWitness": {
+        "id": "0:292,289,290|0:963,846,955",
+        "armWeights": [
+          0.7497864961624146,
+          0.8056453466415405,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0.5630441904067993,
+          0
+        ],
+        "sourceFractions": [
+          0.4814389203275839,
+          0.4555770819060204,
+          0.667904840435234
+        ],
+        "overlap": {
+          "millimetres": 33.858650924571116,
+          "point": [
+            0.07328013367703269,
+            1.1201006160135292,
+            0.18722324442779098
+          ],
+          "targetBary": [
+            0.9553638939910417,
+            0.044636106008958676,
+            0
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          292,
+          289,
+          290
+        ],
+        "b": [
+          963,
+          846,
+          955
+        ]
+      }
+    },
+    {
+      "time": 0.7333333333333333,
+      "side": "l",
+      "kind": "lowerTorso",
+      "pairs": 0,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 0.7333333333333333,
+        "side": "l",
+        "pairs": 36,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.21201459762739983,
+        "intersectionFractionMax": 0.6211586496783555,
+        "intersectionPointsBeyond35Percent": 53,
+        "zeroArmIntersectionFractionMax": 0.6211586496783555,
+        "maxCrossingVertexLocalInwardMm": 32.014844414212085
+      },
+      "deepestWitness": null
+    },
+    {
+      "time": 1.08,
+      "side": "r",
+      "kind": "upperTorso",
+      "pairs": 27,
+      "newPairs": 2,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 41.650500390907496,
+      "maxNewOverlapMm": 23.702369629190972,
+      "extent": {
+        "time": 1.08,
+        "side": "r",
+        "pairs": 27,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.471185258422304,
+        "intersectionFractionMax": 0.8890153529679955,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 23.702369629190958
+      },
+      "deepestWitness": {
+        "id": "0:428,425,508|0:602,601,619",
+        "armWeights": [
+          0.8456793427467346,
+          1,
+          1
+        ],
+        "targetArmWeights": [
+          0.050999995321035385,
+          0.2571684420108795,
+          0.40636179596185684
+        ],
+        "sourceFractions": [
+          0.48151902006047353,
+          0.7204639502070457,
+          0.6754077001900551
+        ],
+        "overlap": {
+          "millimetres": 41.650500390907496,
+          "point": [
+            -0.16895235913848397,
+            1.1826801211963045,
+            0.16908912176052782
+          ],
+          "targetBary": [
+            0,
+            0.9028693628575346,
+            0.09713063714246584
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          428,
+          425,
+          508
+        ],
+        "b": [
+          602,
+          601,
+          619
+        ]
+      }
+    },
+    {
+      "time": 1.08,
+      "side": "r",
+      "kind": "lowerTorso",
+      "pairs": 1,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0.895000106562259,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 1.08,
+        "side": "r",
+        "pairs": 27,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.471185258422304,
+        "intersectionFractionMax": 0.8890153529679955,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 23.702369629190958
+      },
+      "deepestWitness": {
+        "id": "0:474,500,467|0:768,763,765",
+        "armWeights": [
+          0.9999999701976776,
+          0.9000000059604645,
+          0.10000000149011612
+        ],
+        "targetArmWeights": [
+          0.25278210639953613,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.2167438107741024,
+          0.17841249082816507,
+          -0.07424505577471735
+        ],
+        "overlap": {
+          "millimetres": 0.895000106562259,
+          "point": [
+            -0.1766156582215786,
+            1.124379484663493,
+            0.17661030422547289
+          ],
+          "targetBary": [
+            0.29282350373964594,
+            0.42935496393880535,
+            0.2778215323215487
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          474,
+          500,
+          467
+        ],
+        "b": [
+          768,
+          763,
+          765
+        ]
+      }
+    },
+    {
+      "time": 1.08,
+      "side": "l",
+      "kind": "upperTorso",
+      "pairs": 45,
+      "newPairs": 17,
+      "newArmTriangles": 2,
+      "newTorsoTriangles": 7,
+      "maxOverlapMm": 38.07183663593579,
+      "maxNewOverlapMm": 21.18389019138176,
+      "extent": {
+        "time": 1.08,
+        "side": "l",
+        "pairs": 45,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.1496383200021726,
+        "intersectionFractionMax": 0.5887925849254584,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": 0.5887925849254584,
+        "maxCrossingVertexLocalInwardMm": 34.065659852307085
+      },
+      "deepestWitness": {
+        "id": "0:292,289,290|0:963,846,955",
+        "armWeights": [
+          0.7497864961624146,
+          0.8056453466415405,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0.5630441904067993,
+          0
+        ],
+        "sourceFractions": [
+          0.4814389203275839,
+          0.4555770819060204,
+          0.667904840435234
+        ],
+        "overlap": {
+          "millimetres": 38.07183663593579,
+          "point": [
+            0.06648596004942997,
+            1.1079924494303217,
+            0.18241892773195365
+          ],
+          "targetBary": [
+            0.8028904481357086,
+            0.1971095518642914,
+            0
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          292,
+          289,
+          290
+        ],
+        "b": [
+          963,
+          846,
+          955
+        ]
+      }
+    },
+    {
+      "time": 1.08,
+      "side": "l",
+      "kind": "lowerTorso",
+      "pairs": 0,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 1.08,
+        "side": "l",
+        "pairs": 45,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.1496383200021726,
+        "intersectionFractionMax": 0.5887925849254584,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": 0.5887925849254584,
+        "maxCrossingVertexLocalInwardMm": 34.065659852307085
+      },
+      "deepestWitness": null
+    },
+    {
+      "time": 1.5,
+      "side": "r",
+      "kind": "upperTorso",
+      "pairs": 26,
+      "newPairs": 1,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 42.191973545234,
+      "maxNewOverlapMm": 0.5627656936179181,
+      "extent": {
+        "time": 1.5,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.47057786161316106,
+        "intersectionFractionMax": 0.8909943472067791,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.44818345929179
+      },
+      "deepestWitness": {
+        "id": "0:428,425,508|0:602,601,619",
+        "armWeights": [
+          0.8456793427467346,
+          1,
+          1
+        ],
+        "targetArmWeights": [
+          0.050999995321035385,
+          0.2571684420108795,
+          0.40636179596185684
+        ],
+        "sourceFractions": [
+          0.48151902006047353,
+          0.7204639502070457,
+          0.6754077001900551
+        ],
+        "overlap": {
+          "millimetres": 42.191973545234,
+          "point": [
+            -0.16843497428515647,
+            1.1819463965379244,
+            0.16897166397303925
+          ],
+          "targetBary": [
+            0,
+            0.9034398324975903,
+            0.09656016750240926
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          428,
+          425,
+          508
+        ],
+        "b": [
+          602,
+          601,
+          619
+        ]
+      }
+    },
+    {
+      "time": 1.5,
+      "side": "r",
+      "kind": "lowerTorso",
+      "pairs": 1,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 1.5192412118128373,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 1.5,
+        "side": "r",
+        "pairs": 26,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.47057786161316106,
+        "intersectionFractionMax": 0.8909943472067791,
+        "intersectionPointsBeyond35Percent": 52,
+        "zeroArmIntersectionFractionMax": null,
+        "maxCrossingVertexLocalInwardMm": 26.44818345929179
+      },
+      "deepestWitness": {
+        "id": "0:474,500,467|0:768,763,765",
+        "armWeights": [
+          0.9999999701976776,
+          0.9000000059604645,
+          0.10000000149011612
+        ],
+        "targetArmWeights": [
+          0.25278210639953613,
+          0,
+          0
+        ],
+        "sourceFractions": [
+          0.2167438107741024,
+          0.17841249082816507,
+          -0.07424505577471735
+        ],
+        "overlap": {
+          "millimetres": 1.5192412118128373,
+          "point": [
+            -0.17502597292493655,
+            1.1231421701424884,
+            0.17661030456415275
+          ],
+          "targetBary": [
+            0.28569925635842314,
+            0.41861969036662233,
+            0.2956810532749545
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          474,
+          500,
+          467
+        ],
+        "b": [
+          768,
+          763,
+          765
+        ]
+      }
+    },
+    {
+      "time": 1.5,
+      "side": "l",
+      "kind": "upperTorso",
+      "pairs": 43,
+      "newPairs": 15,
+      "newArmTriangles": 2,
+      "newTorsoTriangles": 7,
+      "maxOverlapMm": 37.422982723466674,
+      "maxNewOverlapMm": 21.017588028551053,
+      "extent": {
+        "time": 1.5,
+        "side": "l",
+        "pairs": 43,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.16130997963416566,
+        "intersectionFractionMax": 0.5920267688592945,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": 0.5920267688592945,
+        "maxCrossingVertexLocalInwardMm": 33.73180879279998
+      },
+      "deepestWitness": {
+        "id": "0:292,289,290|0:963,846,955",
+        "armWeights": [
+          0.7497864961624146,
+          0.8056453466415405,
+          1
+        ],
+        "targetArmWeights": [
+          0,
+          0.5630441904067993,
+          0
+        ],
+        "sourceFractions": [
+          0.4814389203275839,
+          0.4555770819060204,
+          0.667904840435234
+        ],
+        "overlap": {
+          "millimetres": 37.422982723466674,
+          "point": [
+            0.06779134088796568,
+            1.1100677657218985,
+            0.18306955946839898
+          ],
+          "targetBary": [
+            0.8272811779551558,
+            0.17271882204484446,
+            0
+          ]
+        },
+        "newArmTriangle": false,
+        "newTorsoTriangle": false,
+        "a": [
+          292,
+          289,
+          290
+        ],
+        "b": [
+          963,
+          846,
+          955
+        ]
+      }
+    },
+    {
+      "time": 1.5,
+      "side": "l",
+      "kind": "lowerTorso",
+      "pairs": 0,
+      "newPairs": 0,
+      "newArmTriangles": 0,
+      "newTorsoTriangles": 0,
+      "maxOverlapMm": 0,
+      "maxNewOverlapMm": 0,
+      "extent": {
+        "time": 1.5,
+        "side": "l",
+        "pairs": 43,
+        "corePurePairs": 0,
+        "intersectionFractionMin": 0.16130997963416566,
+        "intersectionFractionMax": 0.5920267688592945,
+        "intersectionPointsBeyond35Percent": 54,
+        "zeroArmIntersectionFractionMax": 0.5920267688592945,
+        "maxCrossingVertexLocalInwardMm": 33.73180879279998
+      },
+      "deepestWitness": null
+    }
+  ]
+}

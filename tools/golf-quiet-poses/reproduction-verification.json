@@ -1,0 +1,38 @@
+[
+  {
+    "hero": "ronin",
+    "posesSha256": "0e31ff62263e637277d273e91cfc768959bbe76ffd4a187b1a6bb59db356380e",
+    "byteExact": true,
+    "minimumSole": 0.0016228520620411128
+  },
+  {
+    "hero": "shinobi",
+    "posesSha256": "5e7295aef16e252d60f4035011aef6234361eadec725731b9f8b6f94429c2d59",
+    "byteExact": true,
+    "minimumSole": 0.00162314333814682
+  },
+  {
+    "hero": "monk",
+    "posesSha256": "a6087ef891faf7c4b44396de986b2c1eab2f017da86002fd82c2c33aec0edab4",
+    "byteExact": true,
+    "minimumSole": 0.0016230455820496412
+  },
+  {
+    "hero": "kaede",
+    "posesSha256": "1076a9ed1cab1945ca5a709b6ea017db26fa4618fa2fc763e471b3c7e9892b2a",
+    "byteExact": true,
+    "minimumSole": 0.001599928685727052
+  },
+  {
+    "hero": "ayame",
+    "posesSha256": "46f4161f19307c370a9784d493180de3c20b77c0dff66448c9f1898e67a2182f",
+    "byteExact": true,
+    "minimumSole": 0.0016001043609901108
+  },
+  {
+    "hero": "sora",
+    "posesSha256": "0e05dea63a86a123e22907efa47ffd31bcd017e82bd0b9716e66cf32d1ae0944",
+    "byteExact": true,
+    "minimumSole": 0.0016005339168408926
+  }
+]

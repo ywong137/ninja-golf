@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "sourceCommit": "2401348790e85559bea28eb41689202f5fb64972",
+  "reproduction": "Extract the source model from sourceCommit, then run tools/bake-native-golf.mjs with --source and the archived poses.",
+  "models": [
+    {
+      "hero": "ronin",
+      "originalSha256": "4a3ad37557fe9ef6e741debe64c2a0b1a503a79346e4132d4f96e48e556315bc",
+      "modelSha256": "3506b004abe32b03c1892c09d888f5e4cc17756506246a1cfcc19cfb9be18d6d",
+      "poseJsonSha256": "80d794380a7a814edace98402a99328a25b2e95f56cf3a71941d7101b2b2647d",
+      "poseArchiveSha256": "62b18376b5199a9731ccffc3ea9a080e22a8a407a7d096619d70620c02e8ac04",
+      "geometrySha256": "37dfe24b7003ea682e23f4217f97ca0e9586091fa38383019db5c61bf0c9777b",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 418,
+          "declaredDuration": 2.4
+        }
+      ]
+    },
+    {
+      "hero": "shinobi",
+      "originalSha256": "d0e0f48e5673ebd357ce695b29c4e4a947e4523293e26598b3b7c0b215474b94",
+      "modelSha256": "4cc5d16ce5fc26957e865b7119de1394ad11096a4c9231fd434f9d7af3128568",
+      "poseJsonSha256": "bedefdc991da9fd412418e26c0ece0ea391a81106ca2ecc3afc2b3b32ce8f7aa",
+      "poseArchiveSha256": "284f6a0a5460d7a560aeb32fa731f653292d33c3cfbbdb9ae86229b911631e71",
+      "geometrySha256": "cc8fbd69d77ca2c4ed8b20262c0ed8bd0755eae29ac8246ea1cfc3cd694d262c",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 442,
+          "declaredDuration": 2.4
+        }
+      ]
+    },
+    {
+      "hero": "monk",
+      "originalSha256": "652aedc56b0e98202467c133f965400ec4132540b949b53408aeb2719f1e4961",
+      "modelSha256": "4a5ba8ee2943957f1cf5674225eaa7cab5e2b42c38ff1679dfea17f1246ae8f6",
+      "poseJsonSha256": "4ec3f0470a5ac1d5e5d4f424c911dce35eaeec639e2c2c8706025531b8d45d4a",
+      "poseArchiveSha256": "486ee16229bba9c24baef7605ea0165d41e5a1df01e96e442c2d9ee1be362d19",
+      "geometrySha256": "261ada07af9800613a8aff6d61ef24d55852e2208e229525c4aa15d4d824be2c",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 448,
+          "declaredDuration": 2.4
+        }
+      ]
+    },
+    {
+      "hero": "kaede",
+      "originalSha256": "105fd6f4f4c658a03c67b6a214d20b8a9dd4d1f912f81728b8247c5214a2f7aa",
+      "modelSha256": "e91550c038ed4898e52626ff953c0d11c3bd70316fec5e5d9988eeafb394bba2",
+      "poseJsonSha256": "3a057b037d76459cbc88ccb85a4b11c05ea14a4578dd3c921f65e5c285abe180",
+      "poseArchiveSha256": "0c6354fecca9e1f9e2fe0db461d6c9186296b2f93794949c34a4c5b4164b3bb9",
+      "geometrySha256": "382642cddc0873a0f7acb4c98af4bdc152ce5db4acfc41618d529969b3bf1ca5",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 391,
+          "declaredDuration": 2.4000000953674316
+        }
+      ]
+    },
+    {
+      "hero": "ayame",
+      "originalSha256": "79040431a72949e8cafce1b2135d913b8c3aa3baa44857c3c1193f34cf39be71",
+      "modelSha256": "44f3bb92ba66566437893771ed96c606c483e72d64e4c5a459868682c62098d4",
+      "poseJsonSha256": "066c352459ec6eea2332e37839fe0e82c20650e47b6b5a32f9066cde636700c8",
+      "poseArchiveSha256": "cc8cce7844cef4af49c51b4e6f7b1c50ef66f768e84700c5b9e48f3452c32e79",
+      "geometrySha256": "e0b44a991b0868e9aeeaa5f6cf08f3d3c8fbf1e4512980fe778b26d675c888c9",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 463,
+          "declaredDuration": 2.4
+        }
+      ]
+    },
+    {
+      "hero": "sora",
+      "originalSha256": "4b96664a0806037b34e618909ca30221f3bc68856ed2b51ae3b926238fa27aba",
+      "modelSha256": "d6006d263acfb882332b32696d1474dade6ac7b58ab7252caca1626974d1d47c",
+      "poseJsonSha256": "3514f9c1db4c6e8a3bba177d7df9d588c77c03b08368166f4d98b0cd5b8ef640",
+      "poseArchiveSha256": "1d892dc3bdfbfa2c83ee760067656dfda433553aa9d615d605b04523bbd30db6",
+      "geometrySha256": "22a71df2ee399ac51d20a45a0e166c022551de558a6dfcb627e449d4affdabd8",
+      "geometryUnchanged": true,
+      "unchangedNonGolfClips": 34,
+      "clips": [
+        {
+          "name": "Golf_Address",
+          "frames": 241,
+          "declaredDuration": 2
+        },
+        {
+          "name": "Golf_Putt",
+          "frames": 182,
+          "declaredDuration": 1.5
+        },
+        {
+          "name": "Golf_Swing",
+          "frames": 433,
+          "declaredDuration": 2.4
+        }
+      ]
+    }
+  ]
+}

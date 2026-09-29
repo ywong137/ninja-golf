@@ -142,8 +142,8 @@ export function clubBodyOrientation(clubRotation){
 
 export function createGolfClub(short='DR'){
  specification(short);const root=new THREE.Group();root.name='Golf club';
- const grip=mesh(root,cylinder,rubber,'Golf club grip');grip.position.y=.045;grip.scale.set(.012,.21,.012);
- if(!gripDetailGeometry){const rings=[];for(let i=0;i<18;i++){const ring=new THREE.TorusGeometry(.012,.00025,4,20);ring.rotateX(Math.PI/2);ring.translate(0,-.052+i*.011,0);rings.push(ring);}gripDetailGeometry=mergeGeometries(rings);rings.forEach(g=>g.dispose());}
+ const grip=mesh(root,cylinder,rubber,'Golf club grip');grip.position.y=.07;grip.scale.set(.012,.26,.012);
+ if(!gripDetailGeometry){const rings=[];for(let i=0;i<23;i++){const ring=new THREE.TorusGeometry(.012,.00025,4,20);ring.rotateX(Math.PI/2);ring.translate(0,-.052+i*.011,0);rings.push(ring);}gripDetailGeometry=mergeGeometries(rings);rings.forEach(g=>g.dispose());}
  mesh(root,gripDetailGeometry,scoring,'Grip channels');
  const shaft=mesh(root,shaftGeometry,steel,'Golf club shaft');shaft.position.y=.63;shaft.scale.set(.005,.98,.005);
  const head=new THREE.Group();head.name='Golf club head';head.position.y=1.12;root.add(head);

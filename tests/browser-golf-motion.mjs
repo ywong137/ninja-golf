@@ -28,7 +28,7 @@ try{
      const before=Object.fromEntries(['r','l'].map(s=>[s,actor.bones['hand_'+s].getWorldQuaternion(new T.Quaternion())]));
      actor.syncHeldObjects(undefined,true);
      const grips=Object.fromEntries(['r','l'].map(s=>{
-      const palm=actor.bones['hand_'+s].localToWorld(actor.palmGrips[s].clone()),station=s==='r'?0:-motions[name].gripSpacing;
+      const palm=actor.bones['hand_'+s].localToWorld(actor.palmGrips[s].clone()),station=s==='r'?0:-(actor.handGrip.active.gripSpacing??motions[name].gripSpacing);
       const gap=palm.distanceTo(actor.club.localToWorld(new T.Vector3(0,station,0)))/actor.root.scale.x;
       return[s,{gap,wristCorrection:before[s].angleTo(actor.bones['hand_'+s].getWorldQuaternion(new T.Quaternion())),...measureGripSurface(surfaces[s],actor.club,actor.handGrip.active[s].radius)}];
      }));
@@ -55,10 +55,10 @@ try{
   assert.ok(r.clubJoins.overlap>=.009&&r.clubJoins.headGap<1e-7,`${r.hero}/${r.name}: disconnected club geometry`);
   for(const [side,g]of Object.entries(r.grips)){
    const label=`${r.hero}/${r.name}/${r.time}/${side}`;
-   assert.ok(g.gap<.003,label+': detached grip');assert.ok(g.wristCorrection<.02,label+': runtime changed native wrist');
-   assert.ok(g.maxPenetration<.0021&&Object.values(g.groups).every(x=>x.contactGap<.005),label+': fingers lost contact');
+   assert.ok(g.gap<.00025,label+': detached grip');assert.ok(g.wristCorrection<.002,label+': runtime changed native wrist');
+   assert.ok(g.maxPenetration<.0008&&Object.values(g.groups).every(x=>x.contactGap<.0012),label+': fingers lost contact');
   }
   if(r.faceGap!==null){assert.ok(Math.abs(r.faceGap)<1e-6,`${r.hero}: finite face misses the ball`);assert.ok(Math.abs(r.soleHeight-.002)<1e-6,`${r.hero}: club sole height`);}
  }
- console.log(`Checked ${report.length} native golf phases, both hands, fixed club length, and six finite clubface contacts.`);
+ console.log(`Checked ${report.length} native golf phases, both hands, fixed club length, and twelve finite clubface contacts.`);
 }finally{await browser.close();}

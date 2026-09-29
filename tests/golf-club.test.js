@@ -60,7 +60,7 @@ test('club switches reuse shared geometry without moving the dynamic mount',()=>
 test('the grip and unit shaft retain the existing animated length contract',()=>{
  const {root,shaft,head}=createGolfClub(),grip=root.getObjectByName('Golf club grip');
  shaft.geometry.computeBoundingBox();close(shaft.geometry.boundingBox.max.y-shaft.geometry.boundingBox.min.y,1);
- close(grip.position.y+grip.scale.y/2,.15);close(shaft.position.y-shaft.scale.y/2,.14);close(shaft.position.y+shaft.scale.y/2,head.position.y);
+ close(grip.position.y-grip.scale.y/2,-.06);close(grip.position.y+grip.scale.y/2,.20);close(shaft.position.y-shaft.scale.y/2,.14);close(shaft.position.y+shaft.scale.y/2,head.position.y);
  const length=.955;shaft.scale.y=length-.14;shaft.position.y=.14+shaft.scale.y/2;head.position.y=length;
  close(shaft.position.y-shaft.scale.y/2,.14);close(shaft.position.y+shaft.scale.y/2,head.position.y);
 });

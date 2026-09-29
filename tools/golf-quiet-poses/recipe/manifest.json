@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "node": "v25.8.0",
+  "three": "0.186.1",
+  "inputs": {
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-ronin.json": {
+      "sha256": "593e00913b393147525ff70c0ff4fd7bf35c51397efb6d5148fdba1b1e29e989",
+      "bytes": 49838494
+    },
+    "/tmp/swing-retarget-worker/ronin/poses.json": {
+      "sha256": "328da62113dcb7ba1748c79b73bc18f45ffd3b42267a0cf97f8223506f099567",
+      "bytes": 5434758
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-poses.json": {
+      "sha256": "0e31ff62263e637277d273e91cfc768959bbe76ffd4a187b1a6bb59db356380e",
+      "bytes": 7955280
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-report.json": {
+      "sha256": "d06d737dd61f0bffd1c9f694c3518d36d5b05dc0c76e379af678488d34f97d05",
+      "bytes": 44253
+    },
+    "/Users/yishan/ninja-golf/public/models/ronin.glb": {
+      "sha256": "4a3ad37557fe9ef6e741debe64c2a0b1a503a79346e4132d4f96e48e556315bc",
+      "bytes": 7648056
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-shinobi.json": {
+      "sha256": "4dc774337444b9b397cc7f5186210a52ae4747ead201b8f1f8d68373d164a93b",
+      "bytes": 43970861
+    },
+    "/tmp/swing-retarget-worker/shinobi/poses.json": {
+      "sha256": "0651c5b0eaf82203a54ed55cb366d4b412a58214e46623fc6bc12c756fc37ed5",
+      "bytes": 5427566
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-poses.json": {
+      "sha256": "5e7295aef16e252d60f4035011aef6234361eadec725731b9f8b6f94429c2d59",
+      "bytes": 7943345
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-report.json": {
+      "sha256": "5d1e7c40c5ff76ae0e239ea244e17966504906eaae14db1820330b2135c8ea55",
+      "bytes": 44282
+    },
+    "/Users/yishan/ninja-golf/public/models/shinobi.glb": {
+      "sha256": "d0e0f48e5673ebd357ce695b29c4e4a947e4523293e26598b3b7c0b215474b94",
+      "bytes": 12311224
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-monk.json": {
+      "sha256": "c90b9182e9b775743dfd0f7dff8469c6f58252ed946867dae6c1f79b0eed1bfd",
+      "bytes": 57974443
+    },
+    "/tmp/swing-retarget-worker/monk/poses.json": {
+      "sha256": "dab43e1c426853729a039844f62e945012c7dbc201b38eb6227e4a690c7106d0",
+      "bytes": 5364002
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-poses.json": {
+      "sha256": "a6087ef891faf7c4b44396de986b2c1eab2f017da86002fd82c2c33aec0edab4",
+      "bytes": 7853062
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-report.json": {
+      "sha256": "3afc8ba87093ecea2fab584bb4ae07f2151c868f8649ee2d0a834ed37bcc5d1c",
+      "bytes": 44259
+    },
+    "/Users/yishan/ninja-golf/public/models/monk.glb": {
+      "sha256": "652aedc56b0e98202467c133f965400ec4132540b949b53408aeb2719f1e4961",
+      "bytes": 16192836
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-kaede.json": {
+      "sha256": "324534cb16459a304b4fe8531cd2a77af7e03317c520b38ba3dfcb587a95b2ec",
+      "bytes": 94028791
+    },
+    "/tmp/ninja-golf-closed-chain/adaptive-poses.json": {
+      "sha256": "e4b783fd660fd3e1485b2c9a51c3cf0e10dbf00e9054c0e54b3111b9706bbd23",
+      "bytes": 7731391
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-poses.json": {
+      "sha256": "1076a9ed1cab1945ca5a709b6ea017db26fa4618fa2fc763e471b3c7e9892b2a",
+      "bytes": 7850201
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-report.json": {
+      "sha256": "7d81de3d2cb9022237bb0d6a3c4f8403d12bf1cd8c77df334357a96b770b45c2",
+      "bytes": 44314
+    },
+    "/Users/yishan/ninja-golf/public/models/kaede.glb": {
+      "sha256": "105fd6f4f4c658a03c67b6a214d20b8a9dd4d1f912f81728b8247c5214a2f7aa",
+      "bytes": 10113212
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-ayame.json": {
+      "sha256": "16455f8fb52ac436a2b9482fde8c10efe03a81d583b7435db69e839d755b7f4c",
+      "bytes": 73514311
+    },
+    "/tmp/swing-retarget-worker/ayame/poses.json": {
+      "sha256": "e3c782602e030beb8989faa4eec6f77b2e177cee0d2dc47a787a0c39f899154a",
+      "bytes": 5415595
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-poses.json": {
+      "sha256": "46f4161f19307c370a9784d493180de3c20b77c0dff66448c9f1898e67a2182f",
+      "bytes": 7928663
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-report.json": {
+      "sha256": "3544a23abb79d91f8944e22c535eef6495276ac645bc01e107194623df7f1f63",
+      "bytes": 44304
+    },
+    "/Users/yishan/ninja-golf/public/models/ayame.glb": {
+      "sha256": "79040431a72949e8cafce1b2135d913b8c3aa3baa44857c3c1193f34cf39be71",
+      "bytes": 9696636
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/dense-input/input-sora.json": {
+      "sha256": "80a3004acaa6250f449e70f12cff0c0a33cc7623667dec0cf02560dd23443ce7",
+      "bytes": 73645647
+    },
+    "/tmp/swing-retarget-worker/sora/poses.json": {
+      "sha256": "f07afcbcabe60f8bee7504dc4c51b2a7ff24b82bf635f2f19fff9c3f058e377b",
+      "bytes": 5417017
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-poses.json": {
+      "sha256": "0e05dea63a86a123e22907efa47ffd31bcd017e82bd0b9716e66cf32d1ae0944",
+      "bytes": 7930996
+    },
+    "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-report.json": {
+      "sha256": "3f743f0b728da2fbf7a3fec728bf70f45ea1f7f39f4449dd2533147153a9becd",
+      "bytes": 44266
+    },
+    "/Users/yishan/ninja-golf/public/models/sora.glb": {
+      "sha256": "4b96664a0806037b34e618909ca30221f3bc68856ed2b51ae3b926238fa27aba",
+      "bytes": 13999616
+    }
+  },
+  "dependencies": {
+    "src/golf-club.js": {
+      "sha256": "2de9e15b98f05e70b66d4181f670755503af7805f93af6426676ba79ebdc2e63",
+      "bytes": 12123
+    },
+    "src/golf-club-fit.js": {
+      "sha256": "e5408c3c8e3adcd8531ea1393bc1d1d5f6c9917d55b429a49174d0cd51772e44",
+      "bytes": 11388
+    },
+    "src/golf-equipment.js": {
+      "sha256": "41fe61245616c7ed6e88981a788ed1e858171d3028d941e6ff2f33fc100fffc6",
+      "bytes": 124
+    },
+    "tests/native-skin-helper.mjs": {
+      "sha256": "20fff5bb7ce6e07500f9a1b783f96d51cf9ef0276f5d2b9e37a556e9bf61f7ba",
+      "bytes": 5601
+    },
+    "node_modules/three/package.json": {
+      "sha256": "f9c474a27c920b9435353a6235968f4453436bee0444fac7e5fd289c8fa463de",
+      "bytes": 3672
+    }
+  },
+  "outputs": {
+    "ronin.json": {
+      "sha256": "83cd96f16c9c8767ec097a5d2008cd2f055673923e50f99269a107f24a4570bc",
+      "bytes": 74295
+    },
+    "shinobi.json": {
+      "sha256": "08b1ddf0adbc5d4ecf458f8156bbc95748fb4bbef3ce7882f71770c1f40ebeb3",
+      "bytes": 74551
+    },
+    "monk.json": {
+      "sha256": "39ed4219bd147282349ad12ef8e951cb3c4c5d4c627ac7e96918cc7ecd9f370e",
+      "bytes": 74224
+    },
+    "kaede.json": {
+      "sha256": "0e663a655d46690c83bbd986029c62aed0f607b64a916070099725b721ef17f9",
+      "bytes": 72444
+    },
+    "ayame.json": {
+      "sha256": "ecd0a86db6c2a59bdb5362e96290588e061c3d4b222b4d15a4e143f2ff58b1c9",
+      "bytes": 74403
+    },
+    "sora.json": {
+      "sha256": "f2d15b01e3bbd29fa534240d5c4b24a44665b4ef074183265076a11c88b3c76d",
+      "bytes": 76026
+    }
+  }
+}

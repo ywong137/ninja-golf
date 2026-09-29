@@ -64,10 +64,10 @@ function crosses(a,b){
  return false;
 }
 
-function radialInset(g,upper,lower,side){
+function radialInset(g,upper,lower,side,details){
  const shoulder=point(g,'upperarm_'+side),axis=point(g,'lowerarm_'+side).sub(shoulder),axisLength=axis.length();
  axis.normalize();
- let depth=0,inside=0;
+ let depth=0,inside=0;const witnesses=[];
  const examined=new Set();
  for(const triangle of lower)for(let k=0;k<3;k++){
   const key=triangle.meshId+':'+triangle.vertices[k];if(examined.has(key))continue;examined.add(key);
@@ -78,12 +78,12 @@ function radialInset(g,upper,lower,side){
   ray.set(center,radial.multiplyScalar(1/radius));
   let surface=Infinity;
   for(const triangle of upper)if(ray.intersectTriangle(...triangle.points,false,hit))surface=Math.min(surface,hit.distanceTo(center));
-  if(Number.isFinite(surface)&&surface>radius+.001){inside++;depth=Math.max(depth,surface-radius);}
+  if(Number.isFinite(surface)&&surface>radius+.001){inside++;depth=Math.max(depth,surface-radius);if(details)witnesses.push({meshId:triangle.meshId,vertex:triangle.vertices[k],depth:surface-radius});}
  }
- return{interiorForearmVertices:inside,maxRadialPenetration:depth};
+ return{interiorForearmVertices:inside,maxRadialPenetration:depth,...(details?{radialWitnesses:witnesses}:{})};
 }
 
-export function measureArmSkin(g,metadata,side){
+export function measureArmSkin(g,metadata,side,{details=false}={}){
  g.scene.updateMatrixWorld(true);
  const cache=metadata.meshes.map(mesh=>{mesh.skeleton.update();return new Map();});
  const triangles=metadata.triangles.map(triangle=>{
@@ -98,10 +98,10 @@ export function measureArmSkin(g,metadata,side){
  const torso=triangles.filter(t=>t.group==='torso'),upper=triangles.filter(t=>t.group==='upperarm_'+side),lower=triangles.filter(t=>t.group==='lowerarm_'+side);
  const counts={};
  for(const [name,a,b]of [['fold_'+side,upper,lower],['forearmTorso_'+side,lower,torso],['upperarmTorso_'+side,upper,torso]]){
-  let pairs=0;const uniqueA=new Set(),uniqueB=new Set();
-  for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)if(crosses(a[i],b[j])){pairs++;uniqueA.add(i);uniqueB.add(j);}
-  counts[name]={pairs,trianglesA:uniqueA.size,trianglesB:uniqueB.size};
+  let pairs=0;const uniqueA=new Set(),uniqueB=new Set(),crossingPairs=[];
+  for(let i=0;i<a.length;i++)for(let j=0;j<b.length;j++)if(crosses(a[i],b[j])){pairs++;uniqueA.add(i);uniqueB.add(j);if(details)crossingPairs.push({a:{meshId:a[i].meshId,vertices:a[i].vertices},b:{meshId:b[j].meshId,vertices:b[j].vertices}});}
+  counts[name]={pairs,trianglesA:uniqueA.size,trianglesB:uniqueB.size,...(details?{crossingPairs}:{})};
  }
- Object.assign(counts['fold_'+side],radialInset(g,upper,lower,side));
+ Object.assign(counts['fold_'+side],radialInset(g,upper,lower,side,details));
  return counts;
 }

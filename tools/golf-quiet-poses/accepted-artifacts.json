@@ -1,0 +1,221 @@
+{
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/author-pendulum.mjs": {
+    "sha256": "29a57558672ca72b07c13443fe2a3871c06d8962daf58b74cbbb30b9908b24d4",
+    "bytes": 6674,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/fixed-local.mjs": {
+    "sha256": "be615986a87a03c3c6c38a67cfa4e4ee0622c2cfffe40c84a2ae28289eeaee8b",
+    "bytes": 4701,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/check-poses.mjs": {
+    "sha256": "482a086d7253270766df9e78b200905579a4e5561ca526afda74b01ad3c59d61",
+    "bytes": 6874,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/check-rigid.mjs": {
+    "sha256": "f4c16085b43063ab7860983e2d5614411908731c964b1cec10d1571479cbe182",
+    "bytes": 2901,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/audit-pendulum.mjs": {
+    "sha256": "26c95bc5090b34de8f4efbfec13e0553e7e83033ac2be778d3bdaef13aacd9f7",
+    "bytes": 11694,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/quantify-pendulum.mjs": {
+    "sha256": "f63b7a6214ba9c942fc6dcbcc717c3fe3b84d79d58eff6f388ff14ceca22eef8",
+    "bytes": 4594,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/classify-pendulum.mjs": {
+    "sha256": "d1586cbbe2d0ecc23680f05edd79ca96825f237851fb5c5ca1951faf7b2bc4be",
+    "bytes": 3151,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/render-pendulum.mjs": {
+    "sha256": "bc11c89886b03c7b5e59d2b36e258a12052b1f34f1d5e6da590874fb697e7be9",
+    "bytes": 4310,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/pendulum-summary.json": {
+    "sha256": "b1c23f90b7fbe1ea47151e639c808d6f6824e7fd4305ff3573d88391d4eb1a3f",
+    "bytes": 5971,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-poses.json": {
+    "sha256": "1076a9ed1cab1945ca5a709b6ea017db26fa4618fa2fc763e471b3c7e9892b2a",
+    "bytes": 7850201,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-report.json": {
+    "sha256": "7d81de3d2cb9022237bb0d6a3c4f8403d12bf1cd8c77df334357a96b770b45c2",
+    "bytes": 44314,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-native-check.json": {
+    "sha256": "d98312c5aea8d459bf92631dbab3657fdff03f2c21773c07ec8a7aa220a8c253",
+    "bytes": 599801,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum-rigid-check.json": {
+    "sha256": "379cb59450e3abfcc3d449234280020996b02e0aa0648d6b93d239c166518690",
+    "bytes": 331774,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/kaede/pendulum.png": {
+    "sha256": "d3840259c0cd622bf887d394fa0c81c1fd28f007d13110ada2c943a9cc269416",
+    "bytes": 419598,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-poses.json": {
+    "sha256": "0e31ff62263e637277d273e91cfc768959bbe76ffd4a187b1a6bb59db356380e",
+    "bytes": 7955280,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-report.json": {
+    "sha256": "d06d737dd61f0bffd1c9f694c3518d36d5b05dc0c76e379af678488d34f97d05",
+    "bytes": 44253,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-native-check.json": {
+    "sha256": "fe313c1ca3334ea899d0ddbcaa3f4a0671dbec414e76962c972062d62d4e77ce",
+    "bytes": 599837,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum-rigid-check.json": {
+    "sha256": "7b9fcafc35ef0f32a70826af0cd45d70d09fa33d8ed6601ffd3cb2bcfe99e337",
+    "bytes": 332833,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ronin/pendulum.png": {
+    "sha256": "2ca50e75acd42d7ddbe9c99c86fc1bc6bc44d04a5d6996ce5f02e5e5c5942e75",
+    "bytes": 491489,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-poses.json": {
+    "sha256": "5e7295aef16e252d60f4035011aef6234361eadec725731b9f8b6f94429c2d59",
+    "bytes": 7943345,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-report.json": {
+    "sha256": "5d1e7c40c5ff76ae0e239ea244e17966504906eaae14db1820330b2135c8ea55",
+    "bytes": 44282,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-native-check.json": {
+    "sha256": "fce9a125f06e39300f566fecc704846051af0fa3bc02184a6dd85cc0722c9c3a",
+    "bytes": 602287,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-rigid-check.json": {
+    "sha256": "c3e57622262773db0bdd42ee0f072e9780ac58c6447e654f3b42e4ac84795ac7",
+    "bytes": 332458,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum.png": {
+    "sha256": "5fa3e1302c9f043cda335fea115345793c634da43edd592f56fb314e770afffb",
+    "bytes": 521542,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-poses.json": {
+    "sha256": "a6087ef891faf7c4b44396de986b2c1eab2f017da86002fd82c2c33aec0edab4",
+    "bytes": 7853062,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-report.json": {
+    "sha256": "3afc8ba87093ecea2fab584bb4ae07f2151c868f8649ee2d0a834ed37bcc5d1c",
+    "bytes": 44259,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-native-check.json": {
+    "sha256": "5a7b1a41c8d1cb895a5f58dfca3193b5108472b3b5855c185136ea3b2405c91e",
+    "bytes": 603286,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-rigid-check.json": {
+    "sha256": "127c0b4bb3c1fb51d8d309946d675f770290a0effe09e1f688551e871e0d9a97",
+    "bytes": 336358,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum.png": {
+    "sha256": "e9561779691a12b601d757f4e165c607e690f08c7b2220e21cea3a389246a868",
+    "bytes": 518365,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-poses.json": {
+    "sha256": "46f4161f19307c370a9784d493180de3c20b77c0dff66448c9f1898e67a2182f",
+    "bytes": 7928663,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-report.json": {
+    "sha256": "3544a23abb79d91f8944e22c535eef6495276ac645bc01e107194623df7f1f63",
+    "bytes": 44304,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-native-check.json": {
+    "sha256": "4d883a59754146804f7389d5cf73f986360c9173a38a84a63a5f72854220298a",
+    "bytes": 601999,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum-rigid-check.json": {
+    "sha256": "09339f7fdeee1b68d0bd11d49ebae1707933c2068c59db337115d6556cef162c",
+    "bytes": 333568,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/ayame/pendulum.png": {
+    "sha256": "c2a0fd5b1d9ed1c82a3f738cce0ab95c61b21fe588767e509539f47e5fdfd95b",
+    "bytes": 445025,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-poses.json": {
+    "sha256": "0e05dea63a86a123e22907efa47ffd31bcd017e82bd0b9716e66cf32d1ae0944",
+    "bytes": 7930996,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-report.json": {
+    "sha256": "3f743f0b728da2fbf7a3fec728bf70f45ea1f7f39f4449dd2533147153a9becd",
+    "bytes": 44266,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-native-check.json": {
+    "sha256": "5e6ca02cf8bf14ebd3256128aa118a3456ab31d674529c235e422f4ec286f6c1",
+    "bytes": 604533,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum-rigid-check.json": {
+    "sha256": "f29663618de7aa8115b2211161ddcbf553d9835b7ec3496d01b063e2430e3485",
+    "bytes": 348074,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/sora/pendulum.png": {
+    "sha256": "344aeaa7381410d0abe517e73a16f9e76e8b6fd063f6f8fe9a6c59780fc186a3",
+    "bytes": 458678,
+    "matchesRecordedHash": true
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-exact-skin.json": {
+    "sha256": "295d23e03a0569894500a5e082e3134734743ad19badf28ae48fc2fcd63a4f2f",
+    "bytes": 1491424
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-contact-extent.json": {
+    "sha256": "9833c14e6dd25f8b3935dd117289fab73411680b277c1430dc70272b6953b2ea",
+    "bytes": 269555
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/shinobi/pendulum-classification.json": {
+    "sha256": "fc825508c2640b46c0b82a158a5b3fb2beca8547234a63eb989109675cc713ed",
+    "bytes": 652536
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-exact-skin.json": {
+    "sha256": "841bde745b2c656aa70d81c44a97e3421721fdd7f61fbc49aa6ab651c265dfad",
+    "bytes": 2100834
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-contact-extent.json": {
+    "sha256": "f24b9197d021d1e8b3ab791c8ecf3d3dbc77f93e80cb5f465985c46e2cb6345a",
+    "bytes": 327676
+  },
+  "/tmp/ninja-golf-closed-chain/address-putt-worker/monk/pendulum-classification.json": {
+    "sha256": "f746889fbdd2c3dabc6f63f6cebc28fd6f2180f3af4d5707914da8a6e2626031",
+    "bytes": 800120
+  }
+}
