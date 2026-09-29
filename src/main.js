@@ -243,13 +243,30 @@ class Game {
       const distance=Math.hypot(p.x-e.root.position.x,p.z-e.root.position.z),definition=ENEMY_TYPES[e.type];e.cooldown-=dt;e.stun=Math.max(0,(e.stun||0)-dt);
       if(distance>90){this.scene.remove(e.root);this.enemies.splice(i,1);continue;}
       let enemyMoving=false;
-      if(e.stun<=0&&distance>1.8&&!e.enemyAction&&e.lift<.1&&(engaged.has(e)||distance>9||this.playerVelocity.x**2+this.playerVelocity.z**2>9)){
-        const engagement=engagementTarget({x:e.root.position.x,z:e.root.position.z,type:e.type,slot:e.slot},p,this.playerVelocity,engaged.has(e));engagement.y=heightAt(this.course,engagement.x,engagement.z);if(this.world.collision.blocked(engagement,.34,2,true)){engagement.x=p.x;engagement.y=p.y;engagement.z=p.z;}const target=this.world.buildingNavigation.waypoint(e.root.position,engagement,e,this.time);v1.set(target.x-e.root.position.x,0,target.z-e.root.position.z).normalize();e.moveYaw=Math.atan2(v1.x,v1.z);
-        const remaining=Math.hypot(target.x-e.root.position.x,target.z-e.root.position.z);const speed=Math.min(remaining/dt,e.speed*(distance>10?1.4:definition.ranged&&distance<13?.7:1)),nx=e.root.position.x+v1.x*speed*dt,nz=e.root.position.z+v1.z*speed*dt;
-        if(lieAt(this.course,nx,nz)!=='Water'){e.root.position.x=nx;e.root.position.z=nz;enemyMoving=speed>.4;}else{const tx=e.root.position.x+v1.z*speed*dt,tz=e.root.position.z-v1.x*speed*dt;if(lieAt(this.course,tx,tz)!=='Water'){e.root.position.x=tx;e.root.position.z=tz;enemyMoving=speed>.4;}}
-      }
+      const waiting=!engaged.has(e)&&!definition.ranged&&distance<=11&&Math.hypot(this.playerVelocity.x,this.playerVelocity.z)<=3;
+      if(e.stun<=0&&!e.enemyAction&&e.lift<.1&&(distance>1.8||waiting||definition.ranged)){
+        const engagement=engagementTarget({x:e.root.position.x,z:e.root.position.z,type:e.type,slot:e.slot},p,this.playerVelocity,engaged.has(e));
+        engagement.y=heightAt(this.course,engagement.x,engagement.z);
+        if(this.world.collision.blocked(engagement,.34,2,true)){
+          // A blocked waiting position must not send another grunt into the attack space.
+          Object.assign(engagement,waiting?e.root.position:p);
+        }
+        const target=this.world.buildingNavigation.waypoint(e.root.position,engagement,e,this.time);
+        const remaining=Math.hypot(target.x-e.root.position.x,target.z-e.root.position.z);
+        // Different start/stop distances prevent perpetual tiny steps near a waiting position.
+        const approaching=!waiting||remaining>(e.repositioning?.25:.75);
+        e.repositioning=waiting&&approaching;
+        if(approaching){
+          v1.set(target.x-e.root.position.x,0,target.z-e.root.position.z).normalize();e.moveYaw=Math.atan2(v1.x,v1.z);
+          const speed=Math.min(remaining/Math.max(dt,.0001),e.speed*(waiting?.55:distance>10?1.4:definition.ranged&&distance<13?.7:1));
+          const nx=e.root.position.x+v1.x*speed*dt,nz=e.root.position.z+v1.z*speed*dt;
+          if(lieAt(this.course,nx,nz)!=='Water'){e.root.position.x=nx;e.root.position.z=nz;enemyMoving=speed>.4;}else{const tx=e.root.position.x+v1.z*speed*dt,tz=e.root.position.z-v1.x*speed*dt;if(lieAt(this.course,tx,tz)!=='Water'){e.root.position.x=tx;e.root.position.z=tz;enemyMoving=speed>.4;}}
+        }
+      }else e.repositioning=false;
       for(let j=0;j<i;j++){const other=this.enemies[j];if(other.dead||other.emerging)continue;v2.copy(e.root.position).sub(other.root.position);v2.y=0;const d=v2.length();if(d<1.15&&d>.001){const sx=e.root.position.x+v2.x*(1.15-d)/d*dt*4,sz=e.root.position.z+v2.z*(1.15-d)/d*dt*4;if(lieAt(this.course,sx,sz)!=='Water'){e.root.position.x=sx;e.root.position.z=sz;}}}
-      this.slideOnLand(e.root.position,enemyStart,.3,e.lift);enemyMoving=enemyMoving&&Math.hypot(e.root.position.x-enemyStart.x,e.root.position.z-enemyStart.z)>dt*.2;
+      this.slideOnLand(e.root.position,enemyStart,.3,e.lift);
+      const enemyMoveSpeed=Math.hypot(e.root.position.x-enemyStart.x,e.root.position.z-enemyStart.z)/Math.max(dt,.0001);
+      enemyMoving=enemyMoving&&enemyMoveSpeed>.2;
       const toward=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.root.rotation.y=turnToward(e.root.rotation.y,e.enemyAction?e.enemyAction.yaw:enemyMoving&&!definition.ranged?(e.moveYaw??toward):toward,dt*12);
       if(engaged.has(e)&&distance<definition.reach&&this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&e.cooldown<=0&&e.lift<.1&&e.stun<=0&&!e.enemyAction){
         e.enemyAction={token:`enemy-${++this.enemyActionSerial}`,duration:definition.duration,time:0,hitIndex:0,yaw:toward,target:p.clone().add(new THREE.Vector3(this.playerVelocity.x*.22,1,this.playerVelocity.z*.22))};e.cooldown=definition.duration+definition.recovery+Math.random()*.6;e.readyAt=this.time+e.cooldown+(Math.random()<.65?1.6+Math.random()*2.6:0);
@@ -262,7 +279,7 @@ class Game {
           a.hitIndex++;if(!e.enemyAction)break;
         }
       }else e.strike=0;
-      e.update(this.time,dt,{moving:enemyMoving,sprinting:distance>10,attack:e.strike,enemyAction:e.enemyAction,focused:definition.ranged,moveAngle:(e.moveYaw||0)-e.root.rotation.y});
+      e.update(this.time,dt,{moving:enemyMoving,sprinting:!waiting&&distance>10,moveSpeed:enemyMoveSpeed,attack:e.strike,enemyAction:e.enemyAction,focused:definition.ranged,moveAngle:(e.moveYaw||0)-e.root.rotation.y});
       if(e.enemyAction?.time>=definition.duration)e.enemyAction=null;
     }
     this.projectiles.update(dt,p,(damage,source,attacker)=>this.hurt(damage,source,attacker),this.world.collision);

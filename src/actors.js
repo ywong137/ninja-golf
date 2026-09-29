@@ -246,7 +246,11 @@ export class Warrior {
     else if(!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85);
     else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving&&(moveSpeed??1)>.05?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.wasParry=parry>0;this.wasGuardBreak=guardBreak>0;this.lastGuardHitToken=guardHitToken;
-    if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current))this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1));
+    if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current)){
+      // Match the enemy's steps to slower formation movement and collision-limited travel.
+      const pace=this.enemy&&moveSpeed!==null?THREE.MathUtils.clamp(moveSpeed/(ENEMY_TYPES[this.type].speed*(sprinting?1.4:1)),.1,1.5):1;
+      this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1)*pace);
+    }
     this.mixer.update(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};

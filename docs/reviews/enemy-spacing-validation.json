@@ -1,0 +1,68 @@
+{
+  "baseline": {
+    "initialSectors": 2,
+    "finalSectors": 2,
+    "minRadius": 7.399999999999998,
+    "finalTravelPerEnemy": 0,
+    "maxStep": 0,
+    "waiting": 12
+  },
+  "updated": {
+    "standby": {
+      "initialSectors": 2,
+      "finalSectors": 4,
+      "minRadius": 6.103120092671305,
+      "finalTravelPerEnemy": 0,
+      "maxStep": 0,
+      "waiting": 12
+    },
+    "attacks": 11,
+    "maxMelee": 3,
+    "pacedFrames": 1547,
+    "closeRadius": 6.083833333333452,
+    "errors": []
+  },
+  "performance": {
+    "course": "Crane Coast",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "deviceScaleFactor": 1,
+    "renderRatio": 1,
+    "contactShading": false,
+    "fps": 53.49037173206798,
+    "p95": 33.39999999999782,
+    "enemies": 64,
+    "calls": 917,
+    "triangles": 5841083,
+    "hero": "The Ronin",
+    "moving": true,
+    "layerFrames": 836
+  },
+  "buildingStanceChecks": 3072,
+  "cityPerformance": {
+    "course": "Neo-Tokyo After Dark",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "deviceScaleFactor": 1,
+    "renderRatio": 1,
+    "contactShading": false,
+    "fps": 60.11763883451006,
+    "p95": 16.799999999999272,
+    "enemies": 64,
+    "calls": 805,
+    "triangles": 3401579,
+    "building": "cyberpunk-0-podium",
+    "initiallyObstructed": 64,
+    "maxCombatMs": 45.299999952316284,
+    "navigationRoutes": 518,
+    "hero": "The Ronin",
+    "moving": false,
+    "layerFrames": 0
+  }
+}

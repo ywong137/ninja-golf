@@ -7,7 +7,7 @@ import {BuildingNavigation} from '../src/building-navigation.js';
 import {moveOnLand} from '../src/land-movement.js';
 import {Projectiles} from '../src/projectiles.js';
 import {previewShot} from '../src/golf-guide.js';
-import {buildingRelief} from '../src/building-ball.js';
+import {buildingRelief,GOLF_STANCE_CLEARANCE} from '../src/building-ball.js';
 const course=COURSE_SETS[0].holes[0],site=routePoint(course,.2);
 const point=(dx,dz)=>({x:site.x+dx,z:site.z+dz,y:heightAt(course,site.x+dx,site.z+dz)});
 const building={id:'test-clubhouse',kind:'box',x:site.x,z:site.z,halfWidth:2,halfDepth:3,yaw:0,minY:heightAt(course,site.x,site.z)-4,maxY:heightAt(course,site.x,site.z)+20};
@@ -55,7 +55,7 @@ test('A ball beside a building gets a dry free-drop position with room for every
  const relief=buildingRelief(course,collision,ball);assert.equal(relief.status,'relief');
  assert.ok(Math.hypot(relief.position.x-course.greenX,relief.position.z-course.length)>=Math.hypot(ball.x-course.greenX,ball.z-course.length));
  assert.notEqual(lieAt(course,relief.position.x,relief.position.z),'Water');
- for(let i=0;i<32;i++){const angle=i*Math.PI/16,x=relief.position.x-Math.sin(angle)*1.04,z=relief.position.z-Math.cos(angle)*1.04;assert.equal(collision.blocked({x,y:heightAt(course,x,z),z},.38,2,true),false);}
+ for(let i=0;i<32;i++){const angle=i*Math.PI/16,x=relief.position.x-Math.sin(angle)*(GOLF_STANCE_CLEARANCE-.38),z=relief.position.z-Math.cos(angle)*(GOLF_STANCE_CLEARANCE-.38);assert.equal(collision.blocked({x,y:heightAt(course,x,z),z},.38,2,true),false);}
  assert.equal(buildingRelief(course,collision,relief.position).status,'clear');
 });
 

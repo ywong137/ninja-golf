@@ -23,7 +23,7 @@ try{
    for(let i=0;i<frames;i++){step();const bad=overlaps(g.player.root.position);if(bad.length){maxPenetration++;firstBad??={frame:i,obstacles:bad,position:g.player.root.position.toArray()};}maxTravel=Math.max(maxTravel,start.distanceTo(g.player.root.position));}
    g.input.clear();return {start:start.toArray(),end:g.player.root.position.toArray(),maxPenetration,firstBad,maxTravel,attached:g.player.root.parent===g.scene};
   };
-  window.buildingTest={g,T,position,dry,overlaps,reset,face,step,walk};
+  window.buildingTest={g,T,position,dry,overlaps,reset,face,step,walk,ballRadius:g.ball.geometry.parameters.radius*g.ball.scale.x};
  });
  const themes=process.env.BUILDING_THEMES?process.env.BUILDING_THEMES.split(',').map(Number):[0,1,2,3];assert.ok(themes.length&&themes.every(t=>Number.isInteger(t)&&t>=0&&t<4),'BUILDING_THEMES must contain comma-separated indices 0–3');
  const reports=[];let previousRecords=null;
@@ -99,24 +99,32 @@ try{
    const initial=g.enemies.filter(e=>e.emerging).map(e=>({site:e.spawnSite,landing:e.emerging.landing.toArray(),blocked:overlaps(e.emerging.landing,.3)}));for(let frame=0;frame<150;frame++)step();return {initial,remaining:g.enemies.filter(e=>e.emerging).length,attached:g.enemies.every(e=>e.root.parent===g.scene),landedBlocked:g.enemies.flatMap(e=>overlaps(e.root.position,.3))};
   });assert.ok(result.emergence.initial.length>0);assert.ok(result.emergence.initial.every(e=>e.blocked.length===0),JSON.stringify(result.emergence));assert.equal(result.emergence.remaining,0);assert.equal(result.emergence.attached,true);assert.deepEqual(result.emergence.landedBlocked,[]);
   result.ball=await page.evaluate(()=>{
-   const {g,records,body,position,reset,overlaps}=window.buildingTest;reset();const wall=records.find(o=>o.id==='jp-pagoda-body-0')||body;
-   const origin=position(wall.x,wall.z-wall.halfDepth-3);origin.y+=.13;g.ball.position.copy(origin);g.lie='Rough';g.club=0;g.aim=0;g.power=.3;g.launchBall();g.ball.position.set(wall.x,(wall.minY+wall.maxY)/2,wall.z-wall.halfDepth-2);g.velocity.set(0,0,14);let reflected=false,penetrations=0;
-   for(let i=0;i<40&&g.phase==='flight';i++){g.updateBall(1/60);if(overlaps(g.ball.position,.12,0).length)penetrations++;if(g.velocity.z<0){reflected=true;break;}}
-   const roof=records.filter(o=>o.kind==='box').sort((a,b)=>b.maxY-a.maxY)[0];g.ball.position.copy(origin);g.launchBall();const strokes=g.strokes,penalties=g.penalties,relief=g.shotOrigin.clone();g.ball.position.set(roof.x,roof.maxY+.14,roof.z);g.velocity.set(0,-.25,0);for(let i=0;i<30;i++)g.updateBall(1/60);
+   const {g,records,body,position,reset,overlaps,ballRadius}=window.buildingTest;reset();const wall=records.find(o=>o.id==='jp-pagoda-body-0')||body;
+   const origin=position(wall.x,wall.z-wall.halfDepth-3);origin.y+=ballRadius;g.ball.position.copy(origin);g.lie='Rough';g.club=0;g.aim=0;g.power=.3;g.launchBall();g.ball.position.set(wall.x,(wall.minY+wall.maxY)/2,wall.z-wall.halfDepth-2);g.velocity.set(0,0,14);let reflected=false,penetrations=0;
+   for(let i=0;i<40&&g.phase==='flight';i++){g.updateBall(1/60);if(overlaps(g.ball.position,ballRadius,0).length)penetrations++;if(g.velocity.z<0){reflected=true;break;}}
+   const roof=records.filter(o=>o.kind==='box').sort((a,b)=>b.maxY-a.maxY)[0];g.ball.position.copy(origin);g.launchBall();const strokes=g.strokes,penalties=g.penalties,relief=g.shotOrigin.clone();g.ball.position.set(roof.x,roof.maxY+ballRadius+.01,roof.z);g.velocity.set(0,-.25,0);for(let i=0;i<30;i++)g.updateBall(1/60);
    return {wall:wall.id,reflected,penetrations,roof:roof.id,reliefError:g.ball.position.distanceTo(relief),penaltyDelta:g.penalties-penalties,strokeDelta:g.strokes-strokes,phase:g.phase};
   });assert.equal(result.ball.reflected,true,JSON.stringify(result.ball));assert.equal(result.ball.penetrations,0,JSON.stringify(result.ball));assert.equal(result.ball.penaltyDelta,1);assert.equal(result.ball.strokeDelta,1);assert.equal(result.ball.phase,'aim');assert.ok(result.ball.reliefError<1e-8);
   result.freeDrop=await page.evaluate(()=>{
-   const {g,body,position,reset,overlaps,dry}=window.buildingTest;reset();let start;
-   for(const [dx,dz,extent]of [[1,0,body.halfWidth],[-1,0,body.halfWidth],[0,1,body.halfDepth],[0,-1,body.halfDepth]]){const p=position(body.x+dx*(extent+.35),body.z+dz*(extent+.35));if(dry(p)&&!overlaps(p,.13,0).length&&g.world.collision.blocked(p,1.5,2.2,true)){start=p;break;}}
+   const {g,body,position,reset,overlaps,dry,ballRadius}=window.buildingTest;reset();let start;
+   for(const [dx,dz,extent]of [[1,0,body.halfWidth],[-1,0,body.halfWidth],[0,1,body.halfDepth],[0,-1,body.halfDepth]]){const p=position(body.x+dx*(extent+.35),body.z+dz*(extent+.35));if(dry(p)&&!overlaps(p,ballRadius,0).length&&g.world.collision.blocked(p,1.5,2.2,true)){start=p;break;}}
    if(!start)throw Error(`No real near-wall free-drop fixture for ${body.id}`);
-   g.ball.position.copy(start).add({x:0,y:.13,z:0});g.player.root.position.copy(start);g.shotOrigin.copy(position(0,0)).add({x:0,y:.13,z:0});g.shotStartLie='Rough';g.phase='flight';const strokes=g.strokes,penalties=g.penalties,pinBefore=Math.hypot(g.ball.position.x-g.course.greenX,g.ball.position.z-g.course.length);g.land();
-   const drop=g.ball.position.clone(),stances=[];for(let i=0;i<16;i++){g.aim=i*Math.PI/8;g.placePlayer();g.player.update(g.time,0,{golf:true,groundHeight:g.groundHeight});stances.push({aim:g.aim,position:g.player.root.position.toArray(),blocked:overlaps(g.player.root.position,.38,2.2),attached:g.player.root.parent===g.scene,visible:g.player.root.visible});}
+   g.ball.position.copy(start).add({x:0,y:ballRadius,z:0});g.player.root.position.copy(start);g.shotOrigin.copy(position(0,0)).add({x:0,y:ballRadius,z:0});g.shotStartLie='Rough';g.phase='flight';const strokes=g.strokes,penalties=g.penalties,pinBefore=Math.hypot(g.ball.position.x-g.course.greenX,g.ball.position.z-g.course.length);g.land();
+   const drop=g.ball.position.clone(),stances=[],selectedHero=g.playerIndex,selectedClub=g.club;
+   for(let hero=0;hero<6;hero++){
+    g.selectWarrior(hero);
+    for(let club=0;club<8;club++){
+     g.selectClub(club);
+     for(let i=0;i<16;i++){g.aim=i*Math.PI/8;g.placePlayer();g.player.update(g.time,0,{golf:true,groundHeight:g.groundHeight});stances.push({hero,club,aim:g.aim,position:g.player.root.position.toArray(),blocked:overlaps(g.player.root.position,.38,2.2),attached:g.player.root.parent===g.scene,visible:g.player.root.visible});}
+    }
+   }
+   g.selectWarrior(selectedHero);g.selectClub(selectedClub);
    return {start:start.toArray(),drop:drop.toArray(),distance:Math.hypot(drop.x-start.x,drop.z-start.z),strokeDelta:g.strokes-strokes,penaltyDelta:g.penalties-penalties,pinBefore,pinAfter:Math.hypot(drop.x-g.course.greenX,drop.z-g.course.length),phase:g.phase,notice:g.lastShot.relief,shotYards:g.lastShot.distance,expectedShotYards:Math.hypot(start.x-g.shotOrigin.x,start.z-g.shotOrigin.z)*1.09361,noticeText:document.querySelector('#shot-result').textContent,stances};
   });assert.ok(result.freeDrop.distance>.01&&result.freeDrop.distance<=12,JSON.stringify(result.freeDrop));assert.equal(result.freeDrop.strokeDelta,0);assert.equal(result.freeDrop.penaltyDelta,0);assert.ok(result.freeDrop.pinAfter>=result.freeDrop.pinBefore-1e-6);assert.equal(result.freeDrop.notice,true);assert.ok(Math.abs(result.freeDrop.shotYards-result.freeDrop.expectedShotYards)<1e-8);assert.match(result.freeDrop.noticeText,/Free drop from building.*No penalty/);assert.equal(result.freeDrop.phase,'aim');for(const stance of result.freeDrop.stances){assert.deepEqual(stance.blocked,[],JSON.stringify(stance));assert.equal(stance.attached,true);assert.equal(stance.visible,true);}
   result.unplayableDrop=await page.evaluate(async()=>{
-   const {g,body,position,reset}=window.buildingTest,{buildingRelief}=await import('/src/building-ball.js');reset();
+   const {g,body,position,reset,ballRadius}=window.buildingTest,{buildingRelief}=await import('/src/building-ball.js');reset();
    // Defensive restored-state case: a ball inside an existing solid has no clear drop path.
-   const origin=position(0,0).add({x:0,y:.13,z:0});g.shotOrigin.copy(origin);g.shotStartLie='Tee';g.ball.position.copy(position(body.x,body.z)).add({x:0,y:.13,z:0});g.phase='flight';const status=buildingRelief(g.course,g.world.collision,g.ball.position).status,strokes=g.strokes,penalties=g.penalties;g.land();
+   const origin=position(0,0).add({x:0,y:ballRadius,z:0});g.shotOrigin.copy(origin);g.shotStartLie='Tee';g.ball.position.copy(position(body.x,body.z)).add({x:0,y:ballRadius,z:0});g.phase='flight';const status=buildingRelief(g.course,g.world.collision,g.ball.position).status,strokes=g.strokes,penalties=g.penalties;g.land();
    return {fixture:'restored ball inside solid',status,strokeDelta:g.strokes-strokes,penaltyDelta:g.penalties-penalties,originError:g.ball.position.distanceTo(origin),phase:g.phase};
   });assert.equal(result.unplayableDrop.status,'unplayable',JSON.stringify(result.unplayableDrop));assert.equal(result.unplayableDrop.strokeDelta,1);assert.equal(result.unplayableDrop.penaltyDelta,1);assert.ok(result.unplayableDrop.originError<1e-8);assert.equal(result.unplayableDrop.phase,'aim');
   result.projectile=await page.evaluate(()=>{
@@ -126,5 +134,7 @@ try{
   });assert.equal(result.projectile.attached,true);assert.equal(result.projectile.removed,true);assert.equal(result.projectile.blockedDamage,0,JSON.stringify(result.projectile));assert.equal(result.projectile.controlDamage,7,JSON.stringify(result.projectile));
   reports.push(result);
  }
- assert.deepEqual(errors,[]);console.log(JSON.stringify(reports,null,2));console.log('Actual player, dodge, enemy pursuit, emergence, camera, openings, and course reload building checks passed.');
+ assert.deepEqual(errors,[]);
+ const summary=reports.map(report=>({...report,freeDrop:{...report.freeDrop,stances:{tested:report.freeDrop.stances.length,blocked:report.freeDrop.stances.filter(stance=>stance.blocked.length).length}}}));
+ console.log(JSON.stringify(summary,null,2));console.log('Actual player, dodge, enemy pursuit, emergence, camera, openings, and course reload building checks passed.');
 }finally{await browser.close();}

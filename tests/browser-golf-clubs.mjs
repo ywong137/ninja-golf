@@ -1,6 +1,7 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
+import {GOLF_STANCE_CLEARANCE} from '../src/building-ball.js';
 
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
@@ -31,8 +32,10 @@ try{
     const bodyDown=new T.Vector3(0,1,0).applyQuaternion(p.golfClub.body.getWorldQuaternion(new T.Quaternion()));
     const size=new T.Box3().setFromObject(p.clubHead).getSize(new T.Vector3()),grip=p.club.getObjectByName('Golf club grip');
     const shaftStart=p.clubShaft.position.y-p.clubShaft.scale.y/2,shaftEnd=p.clubShaft.position.y+p.clubShaft.scale.y/2,endpointError=Math.abs(shaftEnd-p.clubHead.position.y);
+    const fit=p.golfClubFit,offset=fit.ballOffsetNative,ready=fit.addressOffsetNative;
+    const stanceRadius=1.1*Math.max(Math.hypot(offset.x,offset.z),Math.hypot(offset.x-ready.x,offset.z-ready.z))+.38;
     const joints=Object.values(p.bones),before=JSON.stringify(joints.map(b=>[b.position.toArray(),b.quaternion.toArray(),b.scale.toArray()]));p.setGolfClub(code==='PT'?'7I':'PT');
-    faces.push({hero,code,alignment:face.dot(desired),neckAlignment:shaftAxis.dot(neckAxis),bodyDown:bodyDown.toArray(),finiteHead:size.toArray().every(Number.isFinite),headSize:size.toArray(),gripRadius:grip.scale.x,shaftStart,endpointError,bonesPreserved:before===JSON.stringify(joints.map(b=>[b.position.toArray(),b.quaternion.toArray(),b.scale.toArray()]))});
+    faces.push({hero,code,stanceRadius,alignment:face.dot(desired),neckAlignment:shaftAxis.dot(neckAxis),bodyDown:bodyDown.toArray(),finiteHead:size.toArray().every(Number.isFinite),headSize:size.toArray(),gripRadius:grip.scale.x,shaftStart,endpointError,bonesPreserved:before===JSON.stringify(joints.map(b=>[b.position.toArray(),b.quaternion.toArray(),b.scale.toArray()]))});
    }
   }
   return{manual,automatic,replacement,par3Club,otherClub,showcase,faces};
@@ -41,5 +44,6 @@ try{
  for(const result of report.manual)assert.equal(result.selected,result.head,JSON.stringify(result));
  assert.deepEqual(report.automatic.map(r=>r.head),['PT','SW','7I']);assert.equal(report.replacement.head,'PW');assert.equal(report.par3Club.head,'5I');assert.equal(report.otherClub.head,'DR');assert.equal(report.showcase.head,'DR');
  for(const row of report.faces){assert.ok(row.alignment>.99999,JSON.stringify(row));assert.ok(row.neckAlignment>.99999,JSON.stringify(row));assert.ok(Math.abs(row.bodyDown[1]+1)<1e-5,JSON.stringify(row));assert.equal(row.bonesPreserved,true,JSON.stringify(row));assert.equal(row.finiteHead,true,JSON.stringify(row));assert.ok(row.headSize.every(s=>s>.01&&s<.25),JSON.stringify(row));assert.equal(row.gripRadius,.012);assert.ok(Math.abs(row.shaftStart-.14)<1e-8,JSON.stringify(row));assert.ok(row.endpointError<1e-8,JSON.stringify(row));}
- assert.deepEqual(errors,[]);console.log('Eight runtime clubs, six hero actual face normals, straight necks, and joint invariance pass.');
+ for(const row of report.faces)assert.ok(row.stanceRadius<=GOLF_STANCE_CLEARANCE,`Building relief cannot fit this stance: ${JSON.stringify(row)}`);
+ assert.deepEqual(errors,[]);console.log('Eight runtime clubs, six hero actual face normals, straight necks, joint invariance, and building stance clearance pass.');
 }finally{await browser.close();}

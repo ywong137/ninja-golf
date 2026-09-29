@@ -21,10 +21,12 @@ export function resolveBuildingBall(collision,before,position,velocity){
  return{hit:true,unplayableRoof:n.y>.6&&inward<1.7};
 }
 
-// Leave room for the 1.04m address offset and the golfer's body at every aim angle.
+// The current 48 hero/club fits need up to 1.78m for the root offset and body collider.
+// Reserve another 32cm for the stance. Browser checks cover every fit and aim direction.
+export const GOLF_STANCE_CLEARANCE=2.1;
 // Artificial structures grant a free drop; the drop cannot move closer to the cup.
 export function buildingRelief(course,collision,ball){
- const ground={x:ball.x,y:heightAt(course,ball.x,ball.z),z:ball.z},clear=p=>!collision?.blocked(p,1.5,2.2,true);
+ const ground={x:ball.x,y:heightAt(course,ball.x,ball.z),z:ball.z},clear=p=>!collision?.blocked(p,GOLF_STANCE_CLEARANCE,2.2,true);
  if(clear(ground))return {status:'clear'};
  const pinDistance=Math.hypot(ball.x-course.greenX,ball.z-course.length),away=Math.atan2(ball.x-course.greenX,ball.z-course.length);
  for(let radius=.25;radius<=12;radius+=.25)for(let i=0;i<48;i++){
