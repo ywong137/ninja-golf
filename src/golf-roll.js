@@ -1,7 +1,9 @@
 import {heightAt,lieAt,waterSurfaceAt} from './course.js';
 import {resolveBuildingBall,buildingRelief} from './building-ball.js';
+import {BALL_RADIUS} from './golf-equipment.js';
+export {BALL_RADIUS} from './golf-equipment.js';
 
-export const BALL_STEP=1/120,BALL_RADIUS=.13;
+export const BALL_STEP=1/120;
 export function ballSurface(course,p){return{ground:heightAt(course,p.x,p.z)+BALL_RADIUS,lie:lieAt(course,p.x,p.z),water:waterSurfaceAt(course,p.x,p.z)};}
 export function ballHazard(p,surface,time){
  if(surface.lie==='Water'&&surface.water!=null&&p.y<=surface.water+BALL_RADIUS)return'Water';

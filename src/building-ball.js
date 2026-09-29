@@ -1,8 +1,9 @@
 import {heightAt,lieAt} from './course.js';
+import {BALL_RADIUS} from './golf-equipment.js';
 
 // Building surfaces are solid but do not become playable terrain.
 export function resolveBuildingBall(collision,before,position,velocity){
- const hit=collision?.sweepSphere(before,position,.13,true);
+ const hit=collision?.sweepSphere(before,position,BALL_RADIUS,true);
  if(!hit)return null;
  const n=hit.normal,inward=-(velocity.x*n.x+velocity.y*n.y+velocity.z*n.z);
  // A ball can start exactly on a surface after the previous bounce.
@@ -29,8 +30,8 @@ export function buildingRelief(course,collision,ball){
  for(let radius=.25;radius<=12;radius+=.25)for(let i=0;i<48;i++){
   const angle=away+(i%2?1:-1)*Math.ceil(i/2)*Math.PI/24,x=ball.x+Math.sin(angle)*radius,z=ball.z+Math.cos(angle)*radius;
   if(Math.hypot(x-course.greenX,z-course.length)<pinDistance-1e-6||['Water','Out of bounds','Bunker','Green'].includes(lieAt(course,x,z)))continue;
-  const p={x,y:heightAt(course,x,z),z};if(!clear(p)||!collision.segmentClear(ground,p,.13,0,true))continue;
-  return {status:'relief',position:{x,y:p.y+.13,z}};
+  const p={x,y:heightAt(course,x,z),z};if(!clear(p)||!collision.segmentClear(ground,p,BALL_RADIUS,0,true))continue;
+  return {status:'relief',position:{x,y:p.y+BALL_RADIUS,z}};
  }
  return {status:'unplayable'};
 }

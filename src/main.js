@@ -54,9 +54,9 @@ class Game {
   }
   get warrior(){return WARRIORS[this.playerIndex];}
   stopShowcase(){if(!this.showcase)return;this.showcaseSettings={speed:this.showcase.clock.speed,paused:this.showcase.clock.paused};this.showcase.dispose();this.showcase=null;}
-  startShowcase(){this.stopShowcase();this.showcase=new CharacterShowcase(this.player,this.showcaseSettings);this.updateShowcaseUI();}
+  startShowcase(){this.stopShowcase();this.player.setGolfClub('DR');this.showcase=new CharacterShowcase(this.player,this.showcaseSettings);this.updateShowcaseUI();}
   updateShowcaseUI(){if(this.showcase)this.ui.showcaseState(this.showcase.state);}
-  selectWarrior(i){this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=new Warrior(i);this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();}this.audio.play('click');}
+  selectWarrior(i){this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=new Warrior(i);this.updateClubModel();this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();}this.audio.play('click');}
   selectScreen(){this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;this.startShowcase();this.updateCamera(0,{immediate:true});}
   setCourse(index){this.courseIndex=index;this.roundCourse=COURSE_SETS[index];this.holes=this.roundCourse.holes;this.audio.setCourse(this.roundCourse.id);}
   home(){this.stopShowcase();this.mode='home';this.paused=false;this.setCourse(Math.floor(Math.random()*COURSE_SETS.length));this.loadHole(this.roundCourse.preview?.hole||0);this.player.root.visible=false;this.aimLine.visible=false;this.aimMarker.visible=false;this.trail.visible=false;this.ballBeacon.visible=false;this.ui.closeModal();this.input.clear();this.ui.homeCourse(this.roundCourse);this.restoreOffer();}
@@ -66,13 +66,21 @@ class Game {
 
   begin(i=this.playerIndex,courseIndex=0){this.stopShowcase();this.mode='game';this.setCourse(courseIndex);this.selectWarrior(i);this.scores=[];this.scorePenalties=[];this.kills=0;this.bestCombo=0;this.resolve=35;this.mode='game';this.paused=false;this.loadHole(0);this.audio.start();this.ui.toast('Q / E selects a club. A / D aims. Press SPACE twice to swing.',6000);this.save();}
   loadHole(index){
-    this.hole=index;this.course=this.holes[index];this.groundHeight=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.scene.userData.courseTheme=this.course.theme;this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.club=this.course.par===3?2:0;this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
+    this.hole=index;this.course=this.holes[index];this.groundHeight=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.scene.userData.courseTheme=this.course.theme;this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.club=this.course.par===3?2:0;this.updateClubModel();this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
     this.ball.position.set(0,heightAt(this.course,0,0)+BALL_RADIUS,0);this.shotOrigin.copy(this.ball.position);this.ball.visible=true;this.trail.visible=false;this.lie='Tee';this.player.root.visible=this.mode==='game';this.aimAtPin();this.placePlayer();this.cameraYaw=this.aim;this.camera.position.set(-9,heightAt(this.course,0,0)+8,-14);this.currentLook=this.ball.position.clone().add(new THREE.Vector3(0,2,20));this.refreshAim();
   }
-  placePlayer(){const p=this.ball.position,facing=(this.aim||0)+Math.PI/2,x=p.x-Math.sin(facing)*1.04,z=p.z-Math.cos(facing)*1.04;this.player.root.position.set(x,heightAt(this.course,x,z),z);this.player.root.rotation.set(0,facing,0);this.player.root.scale.setScalar(1.1);}
+  placePlayer(addressWeight=1){
+    const p=this.ball.position,facing=(this.aim||0)+Math.PI/2,fit=this.player.golfClubFit;
+    const offset=fit.ballOffsetNative,ready=fit.addressOffsetNative;
+    const ox=offset.x-(ready?.x??0)*addressWeight,oz=offset.z-(ready?.z??0)*addressWeight;
+    const x=p.x-1.1*(Math.cos(facing)*ox+Math.sin(facing)*oz),z=p.z-1.1*(-Math.sin(facing)*ox+Math.cos(facing)*oz);
+    // Anchor the strike to the ball's lie. Foot placement handles the nearby slope.
+    this.player.root.position.set(x,p.y-BALL_RADIUS+1.1*(ready?.y??0)*addressWeight,z);this.player.root.rotation.set(0,facing,0);this.player.root.scale.setScalar(1.1);
+  }
   aimAtPin(){this.aim=Math.atan2(this.course.greenX-this.ball.position.x,this.course.length-this.ball.position.z);}
   changeClub(delta){if(this.phase!=='aim'||this.mode!=='game'||this.paused)return;this.selectClub((this.club+delta+CLUBS.length)%CLUBS.length);}
-  selectClub(i){if(this.phase!=='aim'||this.mode!=='game'||this.paused)return;this.club=i;this.charging=false;this.power=1;this.refreshAim();this.audio.play('click');}
+  updateClubModel(){this.player.setGolfClub(CLUBS[this.club].short);if(this.mode==='game'&&this.ball&&this.course)this.placePlayer();}
+  selectClub(i){if(this.phase!=='aim'||this.mode!=='game'||this.paused||!Number.isInteger(i)||!CLUBS[i])return;this.club=i;this.updateClubModel();this.charging=false;this.power=1;this.refreshAim();this.audio.play('click');}
   refreshAim(){
     const club=CLUBS[this.club],preview=previewShot(this.course,club,this.warrior,this.lie,this.charging?this.power:1,this.aim,this.ball.position,this.world.collision);this.shotPreview=preview;
     this.aimMarker.position.set(preview.landing.x,preview.landing.y+.03,preview.landing.z);
@@ -123,7 +131,7 @@ class Game {
     if(distance<12||this.shotStartLie==='Green'){this.phase='aim';this.aimAtPin();this.placePlayer();this.selectBestClub();this.refreshAim();this.power=1;this.ui.toast(reliefNotice+(this.lie==='Green'?'On the green. Read the line and choose your pace.':'A short walk. Your next shot is ready.'));return;}
     this.spawnWave(14);this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast(reliefNotice||'Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
   }
-  selectBestClub(){const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;}
+  selectBestClub(){const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;this.updateClubModel();}
   slideOnLand(position,from,radius=.38,lift=0){moveOnLand(position,from,this.course,this.world.collision,radius,lift);}
   spawnWave(count){
     const p=this.player.root.position,yaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);
@@ -315,9 +323,9 @@ class Game {
           if(this.input.tap('KeyQ'))this.changeClub(-1);if(this.input.tap('KeyE'))this.changeClub(1);
           if(this.input.tap('Space'))this.swing();if(this.input.tap('KeyR'))this.toggleSurvey();
           if(this.charging){this.chargeTime+=dt;this.power=.08+.92*(.5-.5*Math.cos(this.chargeTime*2.5));this.refreshAim();}
-          this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true});
+          this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,putting:this.club===7,previewPose:this.club===7?{clip:'Golf_Putt',time:0}:null});
         }else if(this.phase==='swing'){
-          this.swingElapsed+=dt;this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:1,putting:this.club===7});if(this.swingElapsed>=this.contactTime)this.launchBall();
+          this.swingElapsed+=dt;this.swingTimer=Math.max(0,this.swingTimer-dt);this.placePlayer(1-THREE.MathUtils.smoothstep(this.swingElapsed,0,Math.min(.35,this.contactTime*.6)));this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:1,putting:this.club===7});if(this.swingElapsed>=this.contactTime)this.launchBall();
         }else if(this.phase==='flight'){
           if(this.input.tap('Space'))this.fastFlight=true;this.updateBall(dt*(this.fastFlight?3:1));this.swingTimer=Math.max(0,this.swingTimer-dt);this.player.update(this.time,dt,{groundHeight:this.groundHeight,golf:true,swing:this.swingTimer>0?1:0,putting:this.club===7});
         }else if(this.phase==='combat')this.updateCombat(dt);

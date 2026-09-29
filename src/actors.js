@@ -10,6 +10,8 @@ import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
+import {createGolfClub} from './golf-club.js';
+import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
@@ -84,6 +86,7 @@ export class Warrior {
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
+    this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
     this.selectionArmRest=Object.fromEntries(['r','l'].map(side=>{
       const upperAxis=this.bones['lowerarm_'+side].position.clone().normalize();
@@ -102,11 +105,8 @@ export class Warrior {
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
     if(enemy?ENEMY_TYPES[type].dualWield:WARRIORS[type].dualWield){this.offhand=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.offhand.position.set(0,.05,0);this.offhand.rotation.set(Math.PI/2,0,0);this.bones.hand_l.add(this.offhand);}
-    this.club=new THREE.Group();this.club.position.set(0,.04,0);this.root.add(this.club);
-    part(this.club,'cyl','#252a27',0,.045,0,.012,.21,.012).name='Golf club grip';
-    // The shaft enters the grip by 1 cm; its head endpoint stays at 1.12 m.
-    this.clubShaft=part(this.club,'cyl','#b7c4c2',0,.63,0,.008,.98,.008,.85);this.clubShaft.name='Golf club shaft';
-    this.clubHead=part(this.club,'cyl','#3c4947',.047,1.12,0,.065,.07,.08,.8);this.clubHead.name='Golf club head';this.clubHead.rotation.z=-.15;this.club.visible=false;
+    this.golfClub=createGolfClub();this.club=this.golfClub.root;this.club.position.set(0,.04,0);this.root.add(this.club);
+    this.clubShaft=this.golfClub.shaft;this.clubHead=this.golfClub.head;this.club.visible=false;
     // A small bag and real club shafts retain the golf silhouette without obscuring the armor.
     const back=this.bones.spine_03;const bag=new THREE.Group();bag.position.set(.13,.03,-.18);bag.rotation.z=.22;back.add(bag);part(bag,'cyl','#4b4434',0,-.13,0,.083,.49,.083);for(let i=0;i<3;i++){part(bag,'cyl','#a5b1ad',-.045+i*.04,.18,0,.006,.39,.006,.6);part(bag,'box','#9ca9a5',-.025+i*.04,.37,0,.065,.03,.03,.75);}
     if(enemy||this.nativeHuman)bag.visible=false;
@@ -138,6 +138,23 @@ export class Warrior {
       this.handGrip=new HandGrip(this,gripData[WARRIORS[type].model]);
       this.handGrip.engage(!!motions[this.current]?.twoHanded);this.syncHeldObjects();
     }
+    this.setGolfClub('DR');
+  }
+  setGolfClub(short='DR'){
+    this.golfClub.setClub(short);this.clubShort=short;
+    if(!this.enemy&&this.handGrip){
+      const putting=short==='PT',clip=this.actions.get(putting?'Golf_Putt':'Golf_Swing')?.getClip();
+      if(clip){
+        if(!this.golfClubFits.has(short))this.golfClubFits.set(short,calibrateGolfClub({root:this.root,hand:this.bones.hand_r,clip,addressClip:this.actions.get(putting?'Golf_Putt':'Golf_Address').getClip(),restPose:this.golfRestPose,grip:this.handGrip.profiles.golf.r,club:this.golfClub,contactTime:putting?22/30:1.4,actorScale:1.1}));
+        this.golfClubFit=this.golfClubFits.get(short);
+        if(!this.golfClubFit.addressFit?.accepted)throw new Error(`Cannot place ${short} at address: ${this.golfClubFit.addressFit?.reason??'missing address calibration'}`);
+        this.clubHead.quaternion.identity();this.golfClub.setBodyOrientation(this.golfClubFit.bodyQuaternion);
+        this.setGolfClubLength(this.golfClubFit.shaftLengthNative);
+      }
+    }
+  }
+  setGolfClubLength(length){
+    this.clubShaft.scale.y=Math.max(.1,length-.14);this.clubShaft.position.y=.14+this.clubShaft.scale.y*.5;this.clubHead.position.y=length;
   }
   play(name,fade=.16,once=false,speed=1){
     // A compatible native pair already authors both arms. Preserve it through

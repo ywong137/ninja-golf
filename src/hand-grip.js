@@ -219,9 +219,8 @@ export class HandGrip {
   else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,clip.gripSpacing);}
   else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&carryActive)){this.solveSecondary(held,clip?.gripSpacing??.09,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
-   const length=motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12;
-   actor.clubShaft.scale.y=Math.max(.1,length-.14);actor.clubShaft.position.y=.14+actor.clubShaft.scale.y*.5;
-   actor.clubHead.position.y=length;
+   const length=actor.golfClubFit?.shaftLengthNative??(motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12);
+   actor.setGolfClubLength(length);
   }
   actor.root.updateMatrixWorld(true);
  }

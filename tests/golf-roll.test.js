@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {COURSE_SETS,CLUBS,WARRIORS,heightAt,lieAt} from '../src/course.js';
 import {previewShot} from '../src/golf-guide.js';
-import {applyRollingResistance,capturesCup,ballHazard} from '../src/golf-roll.js';
-const origin=(c,x,z)=>({x,z,y:heightAt(c,x,z)+.13});
+import {BALL_RADIUS,applyRollingResistance,capturesCup,ballHazard} from '../src/golf-roll.js';
+const origin=(c,x,z)=>({x,z,y:heightAt(c,x,z)+BALL_RADIUS});
 const putt=(c,p,aim,power=1)=>previewShot(c,CLUBS[7],WARRIORS[0],lieAt(c,p.x,p.z),power,aim,p);
 
 test('Lotus Crossing controlled putt stops in rough before the organic island shore',()=>{
@@ -34,11 +34,11 @@ test('Putting responds to uphill/downhill direction and increasing surface resis
  const rest={x:0,y:0,z:0};assert.ok(Math.abs(applyRollingResistance(c,{...p},rest,{ground:p.y,lie:'Green'},.1,.2)-.3)<1e-12);assert.deepEqual(rest,{x:0,y:0,z:0});
 });
 test('Swept cup checks preserve speed, height, and narrow miss rules',()=>{
- const cup={x:0,y:2,z:0},a={x:-1,y:2.13,z:0},b={x:1,y:2.13,z:0};
+ const cup={x:0,y:2,z:0},a={x:-1,y:2+BALL_RADIUS,z:0},b={x:1,y:2+BALL_RADIUS,z:0};
  assert.equal(capturesCup(a,b,{x:5,y:0,z:0},cup),true);
  assert.equal(capturesCup(a,b,{x:6,y:0,z:0},cup),false);
  assert.equal(capturesCup({...a,z:.33},{...b,z:.33},{x:5,y:0,z:0},cup),false);
  assert.equal(capturesCup(a,{...b,y:3},{x:5,y:0,z:0},cup),false);
- assert.equal(ballHazard({y:18},{ground:12,lie:'Water',water:14},1),null);assert.equal(ballHazard({y:14.1},{ground:12,lie:'Water',water:14},1),'Water');
+ assert.equal(ballHazard({y:18},{ground:12,lie:'Water',water:14},1),null);assert.equal(ballHazard({y:14+BALL_RADIUS/2},{ground:12,lie:'Water',water:14},1),'Water');
  assert.equal(ballHazard({y:5},{ground:5,lie:'Out of bounds'},1),'Out of bounds');
 });

@@ -6,7 +6,7 @@ try{
  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
  const results=await page.evaluate(async()=>{
-  const {heightAt,lieAt}=await import('/src/course.js'),g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();
+  const {heightAt,lieAt}=await import('/src/course.js'),{BALL_RADIUS}=await import('/src/golf-equipment.js'),g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();
   const results=[],cases=[{theme:0,hole:6,kind:'fringe'},{theme:0,hole:6,kind:'overhit'},{theme:0,hole:0,kind:'sand'},{theme:1,hole:2,kind:'sand'},{theme:2,hole:6,kind:'sand'},{theme:0,hole:0,kind:'water'},{theme:2,hole:6,kind:'water'},{theme:1,hole:0,kind:'uphill'},{theme:1,hole:0,kind:'downhill'},{theme:3,hole:0,kind:'cup'}];
   const original={land:g.land,holed:g.holed,penalty:g.penalty};let observed,travel;
   const sampleTravel=()=>{const p=g.ball.position,lie=lieAt(g.course,p.x,p.z);travel.surfaces.add(lie);const distance=Math.hypot(p.x-travel.x,p.z-travel.z);if(distance>1e-6){const rise=heightAt(g.course,p.x,p.z)-heightAt(g.course,travel.x,travel.z);travel.distance+=distance;travel.rise+=rise;travel.slopes.push(rise/distance);}travel.x=p.x;travel.z=p.z;};
@@ -20,7 +20,7 @@ try{
    if(spec.kind==='water'){const {shorelinePoint}=await import('/src/shoreline.js');const p=shorelinePoint(c.pond,Math.PI);x=p[0]-3;z=p[1];}
    if(spec.kind==='uphill'||spec.kind==='downhill'){z=c.length+7;aim=spec.kind==='uphill'?Math.PI/2:-Math.PI/2;power=.4;}
    if(spec.kind==='cup'){z=c.length-4;aim=0;power=.45;}
-   g.ball.position.set(x,heightAt(c,x,z)+.13,z);g.lie=lieAt(c,x,z);g.club=7;g.aim=aim;g.power=power;g.charging=true;g.refreshAim();g.charging=false;const preview={...g.shotPreview,landing:{...g.shotPreview.landing}};
+   g.ball.position.set(x,heightAt(c,x,z)+BALL_RADIUS,z);g.lie=lieAt(c,x,z);g.club=7;g.aim=aim;g.power=power;g.charging=true;g.refreshAim();g.charging=false;const preview={...g.shotPreview,landing:{...g.shotPreview.landing}};
    observed=null;travel={x,z,distance:0,rise:0,surfaces:new Set([g.lie]),slopes:[]};g.launchBall();for(let frame=0;frame<1900&&g.phase==='flight';frame++){g.updateBall(frame%2?1/60:1/20);if(!observed)sampleTravel();}
    if(!observed)throw new Error(`Putt never terminated: ${spec.kind}`);
    results.push({...spec,preview:preview.outcome,actual:observed.outcome,error:Math.hypot(preview.landing.x-observed.x,preview.landing.z-observed.z),previewLie:preview.lie,actualLie:observed.lie,surfaces:[...travel.surfaces],traveled:travel.distance,meanSlope:travel.rise/travel.distance,minSlope:Math.min(...travel.slopes),maxSlope:Math.max(...travel.slopes)});

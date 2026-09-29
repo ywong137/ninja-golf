@@ -2,14 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {COURSES,CLUBS,WARRIORS,heightAt} from '../src/course.js';
 import {previewShot} from '../src/golf-guide.js';
+import {BALL_RADIUS} from '../src/golf-equipment.js';
 import {engagementTarget,ENEMY_TYPES} from '../src/combat.js';
 import {SceneryCollision} from '../src/scenery-collision.js';
 import {telegraphGeometry} from '../src/effects.js';
 
 test('Shot planning follows wind and terrain instead of a fixed carry arc',()=>{
- const c=COURSES[0],origin={x:0,y:heightAt(c,0,0)+.13,z:0};const calm=previewShot({...c,wind:[0,0]},CLUBS[0],WARRIORS[0],'Tee',1,0,origin),wind=previewShot({...c,wind:[4,0]},CLUBS[0],WARRIORS[0],'Tee',1,0,origin);
- assert.ok(wind.landing.x>calm.landing.x+2);assert.ok(Math.abs(calm.landing.y-heightAt(c,calm.landing.x,calm.landing.z)-.13)<.001);assert.ok(calm.points.some(p=>p.y>origin.y+10));
- const putt=previewShot(c,CLUBS[7],WARRIORS[0],'Green',.5,0,{x:c.greenX,y:heightAt(c,c.greenX,c.length-9)+.13,z:c.length-9});assert.ok(putt.distance>4&&putt.distance<9);assert.ok(putt.points.every(p=>Object.values(p).every(Number.isFinite)));
+ const c=COURSES[0],origin={x:0,y:heightAt(c,0,0)+BALL_RADIUS,z:0};const calm=previewShot({...c,wind:[0,0]},CLUBS[0],WARRIORS[0],'Tee',1,0,origin),wind=previewShot({...c,wind:[4,0]},CLUBS[0],WARRIORS[0],'Tee',1,0,origin);
+ assert.ok(wind.landing.x>calm.landing.x+2);assert.ok(Math.abs(calm.landing.y-heightAt(c,calm.landing.x,calm.landing.z)-BALL_RADIUS)<.001);assert.ok(calm.points.some(p=>p.y>origin.y+10));
+ const putt=previewShot(c,CLUBS[7],WARRIORS[0],'Green',.5,0,{x:c.greenX,y:heightAt(c,c.greenX,c.length-9)+BALL_RADIUS,z:c.length-9});assert.ok(putt.distance>4&&putt.distance<9);assert.ok(putt.points.every(p=>Object.values(p).every(Number.isFinite)));
 });
 test('Waiting enemies leave room for attackers and approach distinct lanes',()=>{
  const player={x:0,z:0},v={x:0,z:0};for(let type=0;type<3;type++){const e={x:0,z:7,type,slot:2};const waiting=engagementTarget(e,player,v,false),attacking=engagementTarget(e,player,v,true);assert.ok(Math.hypot(waiting.x,waiting.z)>6);assert.ok(Math.hypot(attacking.x,attacking.z)<ENEMY_TYPES[type].reach);}
