@@ -1,0 +1,337 @@
+{
+  "baselineCommit": "e23763fa6722c4553064ac47b36fef1bdf77c63d",
+  "modelSha256": "ea0cf7b8df3d77910e5601f994dd6a620218425f239039935aa2ff38d67be200",
+  "recordSha256": "d4a127c8838b90a265a858e714c87890a972a42e0a7775f62ee61012dc0edf33",
+  "anatomy": {
+    "rate": 480,
+    "skin": true,
+    "mountedFrame": [
+      -0.5851723120802954,
+      -0.7792425659463974,
+      0.19585683718393576,
+      0.10951934952409709
+    ],
+    "passed": true,
+    "violationCount": 0,
+    "violations": [],
+    "clips": {
+      "Ring_Heavy_Cleave": {
+        "samples": 511,
+        "maxWristDegrees": 15.998684700371397,
+        "maxFlexionDegrees": 90.0000089750671,
+        "maxHumeralRollDegrees": 58.24043980378273,
+        "maxForearmTwistDegrees": 54.99712224361964,
+        "maxHingeDeviationDegrees": 0.0052549448939060465,
+        "maxArmStep120Hz": 9.015288106737797,
+        "maxHandSpeed": 9.190092729855944,
+        "minBladeHeight": 0.3447755902466041,
+        "maxFoldDepth": 0,
+        "maxForearmTorsoPairs": 0,
+        "maxUpperarmTorsoPairs": 0,
+        "contacts": [
+          {
+            "time": 0.36,
+            "activeHand": "r",
+            "tip": [
+              -0.18890971850112329,
+              1.5396332529956234,
+              1.419957847195113
+            ],
+            "palm": [
+              -0.19652682108447428,
+              0.9194997891773661,
+              0.7911482839718704
+            ],
+            "velocity": [
+              -0.16790359010418202,
+              -17.220733632148953,
+              9.424908159477814
+            ],
+            "speed": 19.63188101684572,
+            "fractionOfGlobalPeak": 0.8038464326375367,
+            "signedEdgeAlignment": 0.9112815591489221,
+            "faceAlignment": 0.09046219705319952
+          }
+        ],
+        "peakTipSpeed": 24.422427244505734
+      }
+    }
+  },
+  "weaponClearance": {
+    "head": {
+      "triangles": 3136,
+      "samples": 510,
+      "minimumClearance": 0.0155261825299104,
+      "crossingSamples": 0,
+      "crossings": 0,
+      "closest": {
+        "time": 0.21666666666666667,
+        "source": "Flat steel blade",
+        "headMesh": "Mesh_2"
+      }
+    },
+    "torso": {
+      "triangles": 1709,
+      "samples": 510,
+      "minimumClearance": 0.03,
+      "crossingSamples": 0,
+      "crossings": 0,
+      "closest": null
+    },
+    "legs": {
+      "triangles": 1048,
+      "samples": 510,
+      "minimumClearance": 0.020623092844958942,
+      "crossingSamples": 0,
+      "crossings": 0,
+      "closest": {
+        "time": 0.475,
+        "source": "Woven handle binding",
+        "headMesh": "Mesh"
+      }
+    }
+  },
+  "runtime": [
+    {
+      "source": "idle",
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "guard",
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "repeat",
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 16.85745177114537,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 0,
+      "runTime": 0.55,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 4.509747244882934e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 0,
+      "runTime": 0.8,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 11.174378853600976,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 0,
+      "runTime": 1.05,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 1.5707963267948966,
+      "runTime": 0.55,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 1.5707963267948966,
+      "runTime": 0.8,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 4.47545209131181e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 1.5707963267948966,
+      "runTime": 1.05,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.048451935481479,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 3.141592653589793,
+      "runTime": 0.55,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.066076842362142,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 3.141592653589793,
+      "runTime": 0.8,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": 3.141592653589793,
+      "runTime": 1.05,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.7755575615628914e-16,
+      "maxArmStep120": 10.337457844457457,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": -1.5707963267948966,
+      "runTime": 0.55,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": -1.5707963267948966,
+      "runTime": 0.8,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.002388770861584,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    },
+    {
+      "source": "run",
+      "angle": -1.5707963267948966,
+      "runTime": 1.05,
+      "samples": 256,
+      "crossings": 0,
+      "minimumClearance": 0.017078796714053924,
+      "maxPalmGap": 2.5438405243138006e-16,
+      "maxArmStep120": 10.592303983062415,
+      "maxWrist": 15.998684700371305,
+      "closest": {
+        "time": 0.2125,
+        "side": "r",
+        "headMesh": "Mesh_2"
+      }
+    }
+  ],
+  "preservation": {
+    "preservedOriginalBytes": 10268516,
+    "preservedAnimations": 36,
+    "replacements": [
+      "Ring_Heavy_Cleave"
+    ]
+  }
+}

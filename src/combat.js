@@ -63,7 +63,7 @@ const STYLE_ATTACKS={
       {name:'Double crescent',duration:.928,hits:[.32,.608],reach:7,arc:Math.PI,damage:29,lunge:1},
     ],
     heavy:[
-      {name:'Crescent wheel',reach:7,arc:2.5,damage:90,lunge:4},
+      {name:'Crescent wheel',duration:1.06,hits:[.36],reach:7,arc:2.5,damage:90,lunge:4},
       {name:'Driving crescent',reach:6.5,arc:1.8,damage:104,lunge:3,launch:6},
       {name:'Double orbit',duration:.984,hits:[.336,.636],reach:8.5,arc:Math.PI,damage:63,lunge:.6},
       {name:'Eclipse',reach:9,arc:Math.PI,damage:145,lunge:1.2,launch:7},
