@@ -254,6 +254,9 @@ export class Warrior {
       this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1)*pace);
     }
     this.mixer.update(dt);
+    // Extracted root travel and the skeleton use the same action clock.
+    // An attack started by input this frame still has time zero.
+    if(action?.planarRoot&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.mixer.update(0);}
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
     if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!motions[this.current]?.nativeAttackReady&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
@@ -272,7 +275,7 @@ export class Warrior {
     const authoredAttack=!!action;
     if(authoredAttack)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
     if(golf||dodge||emerging||selection||cinematic||action?.kind==='musou')this.attackLocomotion?.reset();
-    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
+    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf||selection)this.travelPose?.reset();

@@ -12,6 +12,7 @@ import {createCourseSurfaceSampler} from './terrain.js';
 import { Warrior, Effects, CrowdRenderer, loadWarriorAssets } from './actors.js';
 import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
 import { attackDefinition, strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
+import {attackRootDelta} from './attack-root-motion.js';
 import {createSurvey,moveSurvey,surveyPosition} from './survey.js';
 import {readRoundSave} from './round.js';
 import { Projectiles } from './projectiles.js';
@@ -175,7 +176,7 @@ class Game {
     if(this.time>(this.chainExpires||0))this.lightChain=0;
     const step=kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1),definition=attackDefinition(kind,step,this.warrior.combatStyle);
     const motion=motions[combatMotionName(this.warrior,kind,step)];
-    this.action={...definition,impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    this.action={...definition,impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     if(kind==='musou')this.invincible=Math.max(this.invincible,definition.duration);
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
@@ -199,20 +200,24 @@ class Game {
     const m=input.move;this.camera.getWorldDirection(v1);const movementYaw=Math.atan2(v1.x,v1.z);let {x:dx,z:dz}=cameraRelativeMove(m.x,m.y,movementYaw);
     const pd=p.distanceTo(this.ball.position),moving=Math.hypot(dx,dz)>.1,sprinting=input.down('ShiftLeft','ShiftRight')||input.padSprint;
     updatePlayerGuard(this.guard,{time:this.time,dt,held:input.guarding,allowed:!this.action&&this.dodgeTimer===0});
-    this.focused=input.focused||this.guard.active;const speed=(this.dodgeTimer>.18?11:this.time<this.guard.breakPoseUntil?2:this.guard.active?2.3:sprinting?8:this.focused?5.3:5.6)*this.warrior.speed*(this.action?.kind==='musou'?0:this.action?.45:1);
+    this.focused=input.focused||this.guard.active;const speed=(this.dodgeTimer>.18?11:this.time<this.guard.breakPoseUntil?2:this.guard.active?2.3:sprinting?8:this.focused?5.3:5.6)*this.warrior.speed*(this.action?.kind==='musou'?0:this.action?(this.action.movementScale??.45):1);
     const norm=Math.max(1,Math.hypot(dx,dz));dx/=norm;dz/=norm;this.playerVelocity={x:dx*speed,z:dz*speed};
     let mx=dx*speed,mz=dz*speed;
-    if(this.action){this.action.time+=dt;this.attackTimer=Math.max(0,this.action.duration-this.action.time);const a=this.action;const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.rootAdvance*Math.PI/(2*a.duration);mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;
-      while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}
+    let rootX=0,rootZ=0;
+    if(this.action){const a=this.action,previousTime=a.time;a.time+=dt;this.attackTimer=Math.max(0,a.duration-a.time);
+      if(a.planarRoot){const delta=attackRootDelta(a.planarRoot,previousTime,a.time,a.duration,this.attackYaw,this.player.root.scale.x);rootX=delta.x;rootZ=delta.z;}
+      else{const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.rootAdvance*Math.PI/(2*a.duration);mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;}
     }
     const movementStartX=p.x,movementStartZ=p.z,movementStart={x:p.x,y:p.y,z:p.z};
-    const x=clamp(p.x+mx*dt,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+mz*dt,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
+    const x=clamp(p.x+mx*dt+rootX,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+mz*dt+rootZ,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
     p.set(x,heightAt(this.course,x,z),z);
     if(this.action)this.player.root.rotation.y=this.attackYaw;
     else if(this.guard.active)this.player.root.rotation.y=this.cameraYaw;
     else if(this.focused)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,this.cameraYaw,dt*20);
     else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18);
     this.slideOnLand(p,movementStart);
+    // Resolve impacts from the collision-corrected position for this frame.
+    if(this.action){const a=this.action;while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}}
     if(moving){this.stepTime=(this.stepTime||0)+dt;if(this.stepTime>(sprinting?.26:.37)){this.audio.play('step',lieAt(this.course,p.x,p.z));this.stepTime=0;}}
     if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
     if(this.guardBufferedAttack&&!guardAttackRecovering(this.guard,this.time)){const queued=this.guardBufferedAttack;this.guardBufferedAttack=null;if(queued.expires>=this.time)this.attack(queued.kind);}
