@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import {WARRIORS} from '../src/warriors.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {samplePlanarRoot} from '../src/attack-root-motion.js';
+import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy.mjs';
 
 const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
 const motions=readJSON(process.env.NINJA_MOTION_RECORD||'../src/motion-data.json');
@@ -54,6 +55,9 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
   return bone.getWorldPosition(new THREE.Vector3());
  };
  g.scene.updateMatrixWorld(true);
+ const bones=Object.fromEntries(['r','l'].flatMap(s=>['thigh_','calf_','foot_'].map(n=>[n+s,g.scene.getObjectByName(n+s)])));
+ const anatomy=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s])]));
+ const anatomic={samples:0,kneeDeviation:0,hipTwist:0,ankleTwist:0};
  const lengths=Object.fromEntries(['r','l'].map(side=>[side,{
   thigh:point('thigh_'+side).distanceTo(point('calf_'+side)),
   shin:point('calf_'+side).distanceTo(point('foot_'+side)),
@@ -97,22 +101,30 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     // plane. This catches toe-out and turned stances that actor-X checks miss.
     const outward=up.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
     const shin=knee.clone().sub(ankle),rawMedial=-shin.dot(outward);
-    const headingGait=kind==='gait'&&/Run_(Right|Left)/.test(name);
+    const headingSolve=kind==='gait'&&/Run_(Right|Left)/.test(name);
     // A running hip need not share the shoe's vertical plane. Measure the knee
     // relative to the straight hip–ankle line, not a vertical line from the shoe.
-    // Native frame, hip and ankle rotation have separate strafe regression tests.
+    // Strafe tests separately check native hip, knee and ankle frames.
     const legAxis=ankle.clone().sub(hip),fraction=knee.clone().sub(hip).dot(legAxis)/legAxis.lengthSq();
     const alignedShin=hip.clone().addScaledVector(legAxis,fraction).sub(ankle);
-    const medial=headingGait?-(shin.clone().sub(alignedShin)).dot(outward):rawMedial;
+    const medial=headingSolve?-(shin.clone().sub(alignedShin)).dot(outward):rawMedial;
+    // A heel pivot changes the foot's sagittal plane. Validate its actual joint
+    // frames instead of forcing the knee back into a vertical shoe plane.
+    if(spec.nativeKneeHeading){
+     const measured=measureLegAnatomy(anatomy[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
+     anatomic.samples++;
+     for(const key of ['kneeDeviation','hipTwist','ankleTwist'])anatomic[key]=Math.max(anatomic[key],Math.abs(measured[key]));
+     assert.ok(measured.kneeDeviation<.1&&Math.abs(measured.hipTwist)<45&&Math.abs(measured.ankleTwist)<15,`${name}/${seconds}/${side}: invalid joint frames ${JSON.stringify(measured)}`);
+    }
     const state=supportState(kind,name,spec,seconds,side);
     if(impact)assert.ok(state.loaded,`${name} ${side}: impact has no authored support`);
-    if(state.loaded){
+    if(state.loaded&&!spec.nativeKneeHeading){
      loadedSamples++;retain(worst[kind==='selection'?'selectionMedial':'loadedMedial'],medial,name,seconds,side);
      if(loadedByKind[kind])retain(loadedByKind[kind],medial,name,seconds,side);
      if(impact)retain(impactMedial,medial,name,seconds,side);
      // Report frontal shin tilt without dividing by a near-zero forward offset.
      retain(worst.shinMedialDegrees,Math.atan2(Math.max(0,medial),Math.max(1e-9,shin.y))*degrees,name,seconds,side);
-    }else retain(worst.swingMedial,medial,name,seconds,side);
+    }else if(!spec.nativeKneeHeading)retain(worst.swingMedial,medial,name,seconds,side);
     retain(worst.lengthError,Math.abs(hip.distanceTo(knee)-lengths[side].thigh),name,seconds,side);
     retain(worst.lengthError,Math.abs(knee.distanceTo(ankle)-lengths[side].shin),name,seconds,side);
     const old=previous[side],dt=old?seconds-old.seconds:0;
@@ -134,7 +146,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
    }
   }
  }
- t.diagnostic(JSON.stringify({hero:hero.model,clips:cases.length,samples,loadedSamples,impactSamples,loadedByKind,impactMedial,...worst}));
+ t.diagnostic(JSON.stringify({hero:hero.model,clips:cases.length,samples,loadedSamples,impactSamples,anatomic,loadedByKind,impactMedial,...worst}));
  assert.ok(loadedSamples>500&&impactSamples>=8,'Sample complete support intervals and exact regular-attack impacts');
  assert.ok(worst.loadedMedial.value<=.020,`Loaded knee collapses inside the foot plane: ${JSON.stringify(worst.loadedMedial)}`);
  // Near-straight selection legs have a small geometric residual. The measured

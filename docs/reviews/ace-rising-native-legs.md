@@ -113,3 +113,45 @@ The writer preserves existing payloads and appends new animation data. Use the o
 The original body reference comes from Quaternius Universal Animation Library 2 under CC0. Native motion, joints, contacts, and timing use authored adaptations.
 
 Local review images, scripts, measurements, and Opus responses live in `artifacts/source-motion-review/opus-ace/`.
+
+## Forefoot pivot and leg-frame follow-up
+
+The original hinge correction left excessive rotation at the hip and ankle. The rear shoe did not follow the pelvic turn.
+
+The revised attack pivots around the rear forefoot. Its toe joint counter-rotates as the heel rises, keeping the shoe near the ground.
+The preparation places the rear foot 8 cm farther back. The rear knee extends to 38 degrees at impact.
+The foot follows an outward recovery path from 0.72 to 1.04 seconds. Its heel settles by 1.18 seconds.
+
+An earlier candidate landed at 0.96 seconds. Dense surface checks found thigh intersections during that step.
+The final path gives the pelvis time to unwind. Both legs retain their original segment lengths.
+
+New checks measure actual bone frames at the hip, knee, and ankle. A vertical plane above the shoe cannot validate a turning leg.
+The source motion stays below 45 degrees of hip axial rotation and 15 degrees of ankle axial rotation.
+The previous rear-leg values reached 94 and 79 degrees respectively. These project bounds do not establish universal human joint limits.
+
+At 480 Hz, 745 samples show no crossings between the central leg surfaces. The minimum measured gap is 6 mm.
+The rear shoe remains within 3 mm of the ground during support. Its forefoot contact remains fixed during each pivot.
+The joint checks reject the preceding published motion. The surface check rejects the earlier recovery candidate.
+
+Only seven leg and toe rotation channels change. The original geometry, textures, upper-body curves, and 36 unrelated animations remain intact.
+The model grows by approximately 266 KB. Terrain adjustment uses the revised knee heading for this attack.
+
+Actual Claude Opus 5.5 High reviewed the pivot and recovery images. Its feedback prompted a lower recovery step.
+Still images cannot establish the quality of a moving pose. Browser checks cover the full attack, terrain adjustment, and frame-rate changes.
+
+The author requires the pre-pivot model and curves from commit `a9d1142`:
+
+```sh
+node tools/author-ace-pivot.mjs --input BASE.glb --curves BASE.json.gz --output /tmp/ace-pivot.glb --record /tmp/ace-pivot.json
+```
+
+The existing `bake-attack-curves.mjs` command installs the final reviewed curve source without the earlier model.
+Local renders, measurements, Opus reviews, and muted gameplay video live in `artifacts/source-motion-review/ace-pivot/`.
+
+All 460 release tests pass in the isolated checkout. The production build succeeds.
+Gameplay checks pass at 40, 60, and 120 FPS on the tested course slope.
+Maximum measured hip rotation is 44.5 degrees in gameplay. Maximum ankle rotation is 18.4 degrees after terrain adjustment.
+Planted ankle drift stays below 0.2 mm; toe drift stays below 1.2 mm.
+Muted combat averages 56.7 FPS at 1440 × 900 with 34–48 enemies and no browser errors.
+The central recovery interval clears the ground by at least 19 mm. The knee remains bent about 54 degrees before landing at 1.00 seconds.
+Opus's final still review found no visible leg-shape blocker. Its remaining questions concern motion and contact, which the numerical and gameplay checks address only in part.
