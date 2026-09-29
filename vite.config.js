@@ -1,2 +1,3 @@
 import { defineConfig } from 'vite';
-export default defineConfig({ base: './', build: { chunkSizeWarningLimit: 900 } });
+import {playbackMotionPlugin} from './tools/playback-motion.mjs';
+export default defineConfig({ base: './', plugins:[playbackMotionPlugin()], build: { chunkSizeWarningLimit: 900 } });

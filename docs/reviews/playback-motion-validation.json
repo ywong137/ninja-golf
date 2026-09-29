@@ -1,0 +1,156 @@
+{
+  "previousRelease": "309e9efb11e27f12448c11a5f1f7eb2a683ac3b6",
+  "date": "2026-09-29",
+  "sampledPoses": 126053,
+  "comparison": [
+    {
+      "variant": "reference",
+      "samples": 2394,
+      "transformValues": 3280528,
+      "hash": "2e860db11f7974916a6e49043535839fd856a90843698de8287bf3f84e6bf426",
+      "images": [
+        {
+          "kind": "golf",
+          "hash": "f14a43c1422e20e3f885d384e26ae6b6c3c73020365087163cbe59202dd9ea45"
+        },
+        {
+          "kind": "heavy",
+          "hash": "22cc37721525a3fa74a27c36b9a92223e51ccf6c2e9b43f25e4392b8e9fa7d15"
+        },
+        {
+          "kind": "musou",
+          "hash": "a54bdb916b6cfb1c2b83ebd4f082c5f7c6140ec90ad84835481ae7f676fc295f"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "variant": "playback",
+      "samples": 2394,
+      "transformValues": 3280528,
+      "hash": "2e860db11f7974916a6e49043535839fd856a90843698de8287bf3f84e6bf426",
+      "images": [
+        {
+          "kind": "golf",
+          "hash": "f14a43c1422e20e3f885d384e26ae6b6c3c73020365087163cbe59202dd9ea45"
+        },
+        {
+          "kind": "heavy",
+          "hash": "22cc37721525a3fa74a27c36b9a92223e51ccf6c2e9b43f25e4392b8e9fa7d15"
+        },
+        {
+          "kind": "musou",
+          "hash": "a54bdb916b6cfb1c2b83ebd4f082c5f7c6140ec90ad84835481ae7f676fc295f"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "startup": {
+    "note": "Cold browser contexts, local Vite preview with gzip, seeded title selection, Chrome Metal 1440x900. Includes shader and asset loading; not a remote-network benchmark.",
+    "rows": [
+      {
+        "round": 0,
+        "variant": "reference",
+        "gameReadyMs": 5490.199999809265,
+        "readyMs": 7670.699999809265,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 7309989,
+            "decodedBytes": 25055389,
+            "durationMs": 963.9000000953674
+          }
+        ],
+        "totalEncodedBytes": 229128439,
+        "scriptDurationSeconds": 2.366595,
+        "errors": []
+      },
+      {
+        "round": 0,
+        "variant": "playback",
+        "gameReadyMs": 4445.700000047684,
+        "readyMs": 6566.100000143051,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 3946388,
+            "decodedBytes": 13515083,
+            "durationMs": 506.7000000476837
+          }
+        ],
+        "totalEncodedBytes": 225764838,
+        "scriptDurationSeconds": 2.079081,
+        "errors": []
+      },
+      {
+        "round": 1,
+        "variant": "playback",
+        "gameReadyMs": 4339.900000095367,
+        "readyMs": 6426.800000190735,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 3946388,
+            "decodedBytes": 13515083,
+            "durationMs": 524.0999999046326
+          }
+        ],
+        "totalEncodedBytes": 225764838,
+        "scriptDurationSeconds": 1.998872,
+        "errors": []
+      },
+      {
+        "round": 1,
+        "variant": "reference",
+        "gameReadyMs": 4783,
+        "readyMs": 6863.099999904633,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 7309989,
+            "decodedBytes": 25055389,
+            "durationMs": 908.5999999046326
+          }
+        ],
+        "totalEncodedBytes": 229128439,
+        "scriptDurationSeconds": 2.017637,
+        "errors": []
+      },
+      {
+        "round": 2,
+        "variant": "reference",
+        "gameReadyMs": 4602.700000047684,
+        "readyMs": 6620.400000095367,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 7309989,
+            "decodedBytes": 25055389,
+            "durationMs": 866.6000001430511
+          }
+        ],
+        "totalEncodedBytes": 229128439,
+        "scriptDurationSeconds": 1.957001,
+        "errors": []
+      },
+      {
+        "round": 2,
+        "variant": "playback",
+        "gameReadyMs": 4193.799999952316,
+        "readyMs": 6270.900000095367,
+        "course": "heather-crown",
+        "script": [
+          {
+            "encodedBytes": 3946388,
+            "decodedBytes": 13515083,
+            "durationMs": 452.7999999523163
+          }
+        ],
+        "totalEncodedBytes": 225764838,
+        "scriptDurationSeconds": 1.997756,
+        "errors": []
+      }
+    ]
+  }
+}
