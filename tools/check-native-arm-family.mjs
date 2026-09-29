@@ -5,6 +5,7 @@ import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-hel
 import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {createWeapon} from '../src/weapons.js';
 import {verifyAnimationReplacement} from './verify-animation-replacement.mjs';
+import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
 const read=file=>JSON.parse(fs.readFileSync(file));
 const Y=new T.Vector3(0,1,0),DEGREES=180/Math.PI;
@@ -58,7 +59,7 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
   rig.mixer.stopAllAction();const clip=rig.animations.find(c=>c.name===name);
   if(!clip)throw Error('Missing native clip: '+name);
   const action=rig.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
-  return time=>{action.time=Math.min(time,clip.duration);rig.mixer.update(0);rig.scene.updateMatrixWorld(true);};
+  return time=>{action.time=Math.min(time,clip.duration);rig.mixer.update(0);const root=motions[name]?.planarRoot?samplePlanarRoot(motions[name].planarRoot,time):{x:0,z:0};rig.scene.position.set(root.x,0,root.z);rig.scene.updateMatrixWorld(true);};
  };
  sampleClip(readyName)(0);
  const ready=motions[readyName]?.poses?.[0];if(!ready)throw Error('Supply the matching '+readyName+' record.');

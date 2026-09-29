@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {alignedKnee,footForward} from './knee-alignment.js';
+import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 // Motion records are immutable. Join continuous sole/toe support once per clip.
@@ -56,8 +57,9 @@ export function attackFootContacts(clip,time,motion){
 
 export class FootPlacement {
  constructor(root,bones){
-  this.root=root;this.bones=bones;this.saved=[];this.pelvisOffset=0;this.feet={};root.updateMatrixWorld(true);
+  this.root=root;this.bones=bones;this.saved=[];this.pelvisOffset=0;this.feet={};this.hinges={};root.updateMatrixWorld(true);
   for(const side of ['r','l']){
+   this.hinges[side]=calibrateLegHinge(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
    const foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),clearance=ankle.y-root.position.y,inverse=foot.getWorldQuaternion(new THREE.Quaternion()).invert(),toe=bones['ball_'+side].getWorldPosition(new THREE.Vector3()).sub(ankle),forward=toe.clone().setY(0).normalize();
    const heel=forward.multiplyScalar(-.065).addScaledVector(UP,-clearance);
    this.feet[side]={clearance,offset:0,toeRoll:0,normal:UP.clone(),soleUp:UP.clone().applyQuaternion(inverse),contacts:[toe.applyQuaternion(inverse),heel.applyQuaternion(inverse)]};
@@ -65,9 +67,9 @@ export class FootPlacement {
  }
  restore(){for(const [bone,position,rotation]of this.saved){bone.position.copy(position);bone.quaternion.copy(rotation);}this.saved=[];}
  reset(){this.report=null;this.pelvisOffset=0;for(const foot of Object.values(this.feet)){foot.offset=0;foot.toeRoll=0;foot.normal.copy(UP);}}
- apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null,preserveAuthored=false}={}){
+ apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null,preserveAuthored=false,preserveHinge=false}={}){
   if(!enabled||!groundHeight){this.reset();return;}
-  if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance);return;}
+  if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance,preserveHinge);return;}
   const root=this.root,bones=this.bones;root.updateMatrixWorld(true);const response=1-Math.exp(-24*Math.min(dt,.05)),samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),height=groundHeight(ankle.x,ankle.z);
@@ -111,9 +113,9 @@ export class FootPlacement {
    this.report.feet.push({side:s.side,offset:s.target.y-s.ankle.y,lift:s.lift,weight:s.weight,stance:stance?.[s.side]??s.weight>.95,reachError:error,toeRoll,terrainDelta:s.terrainDelta});
   }
  }
- // Attack animation supplies the foot lift and pivot. Only terrain deviation from
- // the actor's reference plane changes that pose; flat ground is an exact no-op.
- applyAuthored(dt,groundHeight,contactWeights,stance){
+ // Attack animation supplies the foot lift and pivot. Terrain changes support
+ // relative to the actor's plane. An opted-in hinge correction also fixes blends.
+ applyAuthored(dt,groundHeight,contactWeights,stance,preserveHinge=false){
   const previousPelvisOffset=this.pelvisOffset;this.reset();const {root,bones}=this;root.updateMatrixWorld(true);const samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),rotation=foot.getWorldQuaternion(new THREE.Quaternion()),original=rotation.clone(),weight=contactWeights?.[side]??0;
@@ -162,9 +164,10 @@ export class FootPlacement {
   this.report={pelvisOffset:this.pelvisOffset,pelvisWanted,pelvisLimit,preserveAuthored:true,feet:[]};
   for(const s of samples){
    let error=0;
-   if(s.changed||Math.abs(this.pelvisOffset)>1e-7){
+   if(s.changed||Math.abs(this.pelvisOffset)>1e-7||preserveHinge){
     for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
-    error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation);
+    if(s.changed||Math.abs(this.pelvisOffset)>1e-7)error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation);
+    if(preserveHinge)alignLegHinge(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],this.hinges[s.side]);
    }
    // Seed the next procedural frame from the actual authored support. Resetting
    // these values makes the downhill foot jump when an attack returns to idle.

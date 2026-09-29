@@ -49,7 +49,7 @@ const STYLE_ATTACKS={
     ],
     heavy:[
       {name:'Gale cut',duration:.84,hits:[.376],reach:6,arc:2.2,damage:82,lunge:2.4,knockback:19},
-      {name:'Updraft',reach:5.6,arc:2.4,damage:91,lunge:1.7,launch:7},
+      {name:'Updraft',duration:1.55,hits:[.62555],reach:5.6,arc:2.4,damage:91,lunge:1.7,launch:7},
       {name:'Silk whirlwind',reach:6.5,arc:Math.PI,damage:60,lunge:.5},
       {name:'Falling blossoms',reach:7.5,arc:Math.PI,damage:140,lunge:1,launch:5},
     ],

@@ -21,7 +21,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'closed-golf-grip-1']));
+const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,name==='kaede'?'ace-native-lunge-1':'closed-golf-grip-1']));
 MODEL_REVISIONS.ayame='hustler-heavy-body-1';
 MODEL_REVISIONS.shinobi='backswept-blade-clearance-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
@@ -277,7 +277,7 @@ export class Warrior {
     if(golf||dodge||emerging||selection||cinematic||action?.kind==='musou')this.attackLocomotion?.reset();
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
-    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:authoredAttack||!!attackSteps,preserveHinge:!!motions[this.current]?.nativeKneeHinges,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf||selection)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){

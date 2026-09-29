@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {WARRIORS} from '../src/warriors.js';
 import {attackDefinition} from '../src/combat.js';
+import {samplePlanarRoot} from '../src/attack-root-motion.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const pilot=Object.entries(motions).filter(([,clip])=>clip.athleticAttack);
 test('Athletic attacks keep support targets fixed and lift before foot travel',()=>{
@@ -19,7 +20,9 @@ test('Athletic attacks keep support targets fixed and lift before foot travel',(
    // round-off. Keep the bound below 0.006 degrees; native support tests also
    // check the actual foot quaternion and planted toe, not only this record.
    const yawTolerance=clip.nativeAttachment?1e-4:1e-6;
-   for(const row of rows){assert.ok(Math.hypot(...row[key].map((v,i)=>v-rows[0][key][i]))<positionTolerance,`${name}: planted ${side} moved`);assert.ok(Math.abs(row[yaw]-rows[0][yaw])<yawTolerance,`${name}: planted ${side} twisted`);}
+   const worldFoot=row=>{const root=clip.planarRoot?samplePlanarRoot(clip.planarRoot,row.t*clip.duration):{x:0,z:0};return[row[key][0]+root.x,row[key][1]-root.z,row[key][2]];};
+   const anchor=worldFoot(rows[0]);
+   for(const row of rows){assert.ok(Math.hypot(...worldFoot(row).map((v,i)=>v-anchor[i]))<positionTolerance,`${name}: planted ${side} moved`);assert.ok(Math.abs(row[yaw]-rows[0][yaw])<yawTolerance,`${name}: planted ${side} twisted`);}
   }
   // Native records retain ankle rotations and heel/toe roll. Their actual
   // sole contacts receive separate native and runtime geometry checks.

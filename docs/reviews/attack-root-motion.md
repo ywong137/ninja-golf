@@ -28,7 +28,7 @@ The skeleton uses the same action clock. Dodging discards the remaining movement
 
 `movementScale` controls manual movement during that attack. Its default remains 0.45. A planted lunge can explicitly choose zero.
 
-No installed attack currently enables this path. The new Ace animation remains a review candidate.
+The Ace rising heavy attack now uses this path. Its native legs and terrain checks are documented in `ace-rising-native-legs.md`.
 
 ## Validation
 
@@ -46,11 +46,11 @@ The candidate uses the CC0 Quaternius UAL2 body motion and native arm lengths. I
 
 The cutting stroke clears the skin and leads with the blade edge. Recovery includes sideways blade motion. It is not another damaging stroke.
 
-The source motion needed slower timing and corrected foot contacts. The revised candidate lasts 1.3 seconds and hits at 0.42555 seconds.
+The source motion needed slower timing and corrected foot contacts. An earlier candidate lasted 1.3 seconds and hit at 0.42555 seconds.
 
 Local controller checks found under 2.6 mm of planted ankle drift and under 21 mm of toe drift on sloped terrain.
 
-Those measurements do not approve the animation. Transitions, joint speeds, full-body deformation, and visual timing still need review.
+Those measurements did not approve that candidate. Later review corrected transitions, body timing, native knee hinges, and the rear-leg stance.
 
 Reproduction files and reports live in `artifacts/source-motion-review/opus-ace/`. Temporary working files remain in `/tmp/ninja-opus-ace/`.
 

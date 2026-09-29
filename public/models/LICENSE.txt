@@ -31,3 +31,7 @@ Ninja Golf additions:
 - Motion references and phase analysis: docs/character-motion-study.md.
 
 No assets from Samurai Warriors or Dynasty Warriors are included.
+
+The Ace rising attack adapts Sword_Regular_A and Sword_Regular_A_Rec from
+Quaternius Universal Animation Library 2, CC0. Native joints, foot contacts,
+timing, transitions, and root travel were re-authored for this game.
