@@ -61,3 +61,37 @@ It restores source rotations between samples because Three.js can skip writes fo
 Without that restoration, the added shoe rotation accumulates during a static pose.
 
 Ignored review evidence remains in `artifacts/source-motion-review/ronin-legs/`.
+
+## Attack-to-run transition
+
+The moving-attack layer previously continued over the running motion during its release.
+That overlap could twist the hip and ankle after the attack ended.
+Removing the overlap alone caused a visible foot jump.
+
+The running transition now starts from the displayed foot positions and rotations.
+It blends those targets into the running paths over the existing 0.12-second transition.
+The moving-attack layer stops when running takes control.
+Terrain adjustment transports the existing knee bend with the shoe's terrain rotation.
+This preserves the bend direction when the recovery foot points downward.
+
+The browser checks now include the half-second after each Ronin attack.
+Across 360 cases, maximum hip rotation is 44.16 degrees during attacks and 26.42 degrees during exits.
+Maximum ankle rotation is 18.36 degrees during attacks and 22.85 degrees during exits.
+The loaded ankle remains below 14.42 degrees during exits.
+The same checks bound foot displacement between frames and retain the earlier hinge and planted-foot limits.
+
+A second browser check covers all six characters leaving their first light and heavy attacks.
+It covers four movement directions, three slopes, and 40/120 FPS: 288 cases.
+It verifies that the attack layer stops, the feet do not jump, and the knees remain clear of the terrain.
+The existing six-character running check and the Ace rear-pivot gameplay check also pass.
+
+Muted crowded combat averages 47.12 FPS at 1440 × 900 with 22–41 enemies and no browser errors.
+The isolated release passes all 462 unit tests and the production build.
+The obsolete scalar knee-plane helper and its test were removed; runtime checks now exercise the actual terrain solver.
+
+Opus 5.5 High reviewed two sets of transition images.
+It found no definite knee or ankle reversal, but described the forward running posture as too low.
+The second set uses a camera on the character's side; its two rows show different movement directions.
+Opus mistook those rows for the proposed second camera angle, so that part of its response does not describe the setup correctly.
+Measured knee-joint clearance remains above 22.5 cm across the 288 transition cases.
+That resolves the suspected terrain contact. It does not establish a natural running style; that concern remains for further motion review.

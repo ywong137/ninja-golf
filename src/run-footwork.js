@@ -31,6 +31,11 @@ export class RunFootwork{
   this.hinges=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegHinge(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
  }
  restore(){for(const [bone,q]of this.saved)bone.quaternion.copy(q);this.saved=[];}
+ captureEntry(){
+  this.root.updateMatrixWorld(true);
+  this.entry=Object.fromEntries(['r','l'].map(side=>[side,{p:point(this.bones['foot_'+side]),q:rotation(this.bones['foot_'+side])}]));
+ }
+ resetEntry(){this.entry=null;}
  apply(actions,phase,blend){
   this.report=null;if(!actions?.length||blend<=0)return;
   const active=actions.map(action=>({name:action.getClip().name,weight:action.getEffectiveWeight()})).filter(a=>a.weight>1e-6);
@@ -47,10 +52,11 @@ export class RunFootwork{
    }
    target.applyMatrix4(this.model.matrixWorld);q.premultiply(modelQ);
    const thigh=this.bones['thigh_'+side],calf=this.bones['calf_'+side],foot=this.bones['foot_'+side];
-   target.lerp(point(foot),1-blend);q.slerp(rotation(foot),1-blend);
+   target.lerp(this.entry?.[side].p??point(foot),1-blend);q.slerp(this.entry?.[side].q??rotation(foot),1-blend);
    for(const bone of [thigh,calf,foot])this.saved.push([bone,bone.quaternion.clone()]);
    const error=solveLeg(thigh,calf,foot,target,q,{maxReach:.999,kneeSolver:headingKnee});alignLegHinge(thigh,calf,foot,this.hinges[side]);reports.push({side,error});
   }
   this.report=reports;
+  if(blend>=1)this.entry=null;
  }
 }

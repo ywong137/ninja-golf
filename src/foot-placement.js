@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {alignedKnee,footForward,headingKnee,kneeBendOffset} from './knee-alignment.js';
+import {alignedKnee,footForward,headingKnee} from './knee-alignment.js';
 import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -138,10 +138,16 @@ export class FootPlacement {
    if(enforceClearance)sourceSoleGap=Math.max(0,sourceSoleGap);
    const supportOffset=penetration+sourceSoleGap;
    const offset=clamp(Math.max(supportOffset*weight,penetration-Math.max(0,-sourceSoleGap)),-.32,.32);
-   const bendOffset=preserveHinge&&kneeSolver===headingKnee?kneeBendOffset(
-    bones['thigh_'+side].getWorldPosition(new THREE.Vector3()),
-    bones['calf_'+side].getWorldPosition(new THREE.Vector3()),ankle,footForward(foot,original)):0;
-   samples.push({side,ankle,target:ankle.clone().addScaledVector(UP,offset),rotation,weight,offset,terrainDelta,sourceSoleGap,bendOffset,changed:Math.abs(offset)>1e-7||original.clone().normalize().angleTo(rotation.clone().normalize())>1e-6});
+   let kneeForward=null;
+   if(preserveHinge&&kneeSolver===headingKnee){
+    // Transport the authored bend with the shoe's terrain tilt. A horizontal
+    // heading loses the bend plane when the recovering foot points downward.
+    const hip=bones['thigh_'+side].getWorldPosition(new THREE.Vector3());
+    const knee=bones['calf_'+side].getWorldPosition(new THREE.Vector3()),axis=ankle.clone().sub(hip);
+    kneeForward=knee.sub(hip);kneeForward.addScaledVector(axis,-kneeForward.dot(axis)/axis.lengthSq());
+    kneeForward.applyQuaternion(rotation.clone().multiply(original.clone().invert()));
+   }
+   samples.push({side,ankle,target:ankle.clone().addScaledVector(UP,offset),rotation,weight,offset,terrainDelta,sourceSoleGap,kneeForward,changed:Math.abs(offset)>1e-7||original.clone().normalize().angleTo(rotation.clone().normalize())>1e-6});
   }
   let pelvisLimit=0;
   const terrainChanged=samples.some(s=>s.changed);
@@ -175,7 +181,7 @@ export class FootPlacement {
    if(s.changed||Math.abs(this.pelvisOffset)>1e-7||preserveHinge){
     for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
     if(s.changed||Math.abs(this.pelvisOffset)>1e-7){
-     const solveKnee=s.bendOffset?(...args)=>headingKnee(...args,s.bendOffset):kneeSolver;
+     const solveKnee=s.kneeForward?(hip,ankle,upper,lower)=>headingKnee(hip,ankle,upper,lower,s.kneeForward):kneeSolver;
      error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation,{kneeSolver:solveKnee});
     }
     if(preserveHinge)alignLegHinge(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],this.hinges[s.side]);

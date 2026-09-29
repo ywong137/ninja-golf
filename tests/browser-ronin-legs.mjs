@@ -18,15 +18,30 @@ try{
  if(!moving)for(const[j,[from,to]]of spec.footPlants[s].entries()){if(action.time<Math.max(.12,from+.04)||action.time>to-.04)continue;const p=b['foot_'+s].getWorldPosition(new T.Vector3()),key=s+j;anchors[key]??=p;row.drift=Math.max(row.drift,p.distanceTo(anchors[key]));}
  }
  }
+ row.exitHip=0;row.exitAnkle=0;row.exitLoadedAnkle=0;row.exitHinge=0;row.exitFootSpeed=0;
+ let feet=['r','l'].map(side=>b['foot_'+side].getWorldPosition(new T.Vector3()));
+ for(let i=0;i<Math.ceil(hz*.5);i++){
+  time+=1/hz;const moving=movement!==null,speed=moving?2.5:0;
+  if(moving){w.root.position.x+=Math.sin(movement)*speed/hz;w.root.position.z+=Math.cos(movement)*speed/hz;w.root.position.y=groundHeight(w.root.position.x,w.root.position.z);}
+  w.update(time,1/hz,{groundHeight,moving,moveSpeed:speed,moveAngle:movement??0});
+  const next=['r','l'].map(side=>b['foot_'+side].getWorldPosition(new T.Vector3()));
+  for(let j=0;j<2;j++)row.exitFootSpeed=Math.max(row.exitFootSpeed,next[j].distanceTo(feet[j])*hz);feet=next;
+  for(const side of ['r','l']){
+   const m=measureLegAnatomy(cal[side],b['thigh_'+side],b['calf_'+side],b['foot_'+side]);
+   row.exitHip=Math.max(row.exitHip,Math.abs(m.hipTwist));row.exitAnkle=Math.max(row.exitAnkle,Math.abs(m.ankleTwist));row.exitHinge=Math.max(row.exitHinge,m.kneeDeviation);
+   if((w.footPlacement.report?.feet.find(f=>f.side===side)?.weight??0)>.9)row.exitLoadedAnkle=Math.max(row.exitLoadedAnkle,Math.abs(m.ankleTwist));
+  }
+ }
  rows.push(row);w.dispose();
  }
  return rows;
  });
  assert.deepEqual(errors,[]);
  for(const row of report){
-  assert.ok(row.hinge<.1,JSON.stringify(row));
+  assert.ok(row.hinge<.1&&row.exitHinge<.1,JSON.stringify(row));
+  assert.ok(row.exitHip<50&&row.exitAnkle<30&&row.exitLoadedAnkle<20&&row.exitFootSpeed<12,JSON.stringify(row));
   assert.ok(row.hip<50&&row.ankle<22,JSON.stringify(row));
   if(row.movement===null)assert.ok(row.drift<.004,JSON.stringify(row));
  }
- console.log(JSON.stringify({cases:report.length,maxHip:Math.max(...report.map(r=>r.hip)),maxAnkle:Math.max(...report.map(r=>r.ankle)),maxKneeSidebend:Math.max(...report.map(r=>r.hinge)),maxPlantDrift:Math.max(...report.map(r=>r.drift))}));
+ console.log(JSON.stringify({cases:report.length,maxHip:Math.max(...report.map(r=>r.hip)),maxAnkle:Math.max(...report.map(r=>r.ankle)),maxKneeSidebend:Math.max(...report.map(r=>r.hinge)),maxPlantDrift:Math.max(...report.map(r=>r.drift)),exitHip:Math.max(...report.map(r=>r.exitHip)),exitAnkle:Math.max(...report.map(r=>r.exitAnkle)),exitLoadedAnkle:Math.max(...report.map(r=>r.exitLoadedAnkle)),exitFootSpeed:Math.max(...report.map(r=>r.exitFootSpeed))}));
 }finally{await browser.close();}

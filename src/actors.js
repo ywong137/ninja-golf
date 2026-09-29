@@ -222,6 +222,9 @@ export class Warrior {
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
     this.handGrip?.restore();this.handGrip?.prepare(golf);
+    // Capture the displayed feet before removing the moving-attack layer.
+    // The run crossfade starts there instead of jumping to the mixer pose.
+    if(!action&&moving&&!this.running&&this.attackLocomotion?.weight>0)this.runFootwork?.captureEntry();
     this.footPlacement?.restore();this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
@@ -270,6 +273,7 @@ export class Warrior {
 
     }
     if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend);
+    else this.runFootwork?.resetEntry();
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
     let contactWeights=null,stance=null;
     if(this.running||this.guardWalking){
@@ -279,7 +283,7 @@ export class Warrior {
     const authoredAttack=!!action;
     const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
     if(authoredFeet)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
-    if(golf||dodge||emerging||selection||cinematic||action?.kind==='musou')this.attackLocomotion?.reset();
+    if(golf||dodge||emerging||selection||cinematic||this.running||action?.kind==='musou')this.attackLocomotion?.reset();
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredFeet||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});

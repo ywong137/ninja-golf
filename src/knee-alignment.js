@@ -43,14 +43,3 @@ export function headingKnee(hip,ankle,upper,lower,forward,bendOffset=0){
  if(radius<1e-8||bend.lengthSq()<1e-8)return alignedKnee(hip,ankle,upper,lower,forward);
  return center.addScaledVector(bend.normalize().applyAxisAngle(axis,bendOffset),radius);
 }
-
-// Retain an authored knee plane when terrain changes the ankle target.
-export function kneeBendOffset(hip,knee,ankle,forward){
- const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee);
- const axis=ankle.clone().sub(hip).normalize();
- const center=hip.clone().addScaledVector(axis,knee.clone().sub(hip).dot(axis));
- const source=knee.clone().sub(center),reference=headingKnee(hip,ankle,upper,lower,forward).sub(center);
- if(source.lengthSq()<1e-10||reference.lengthSq()<1e-10)return 0;
- source.normalize();reference.normalize();
- return Math.atan2(axis.dot(reference.clone().cross(source)),reference.dot(source));
-}
