@@ -8,7 +8,7 @@ import {loadNativeSkin} from './native-skin-helper.mjs';
 import {bakeNativeFootSupport} from '../tools/bake-native-foot-support.mjs';
 import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
-const record=new URL('../src/motion-data.json',import.meta.url);
+const record=new URL(process.env.NINJA_MOTION_RECORD||'../src/motion-data.json',import.meta.url);
 const motions=JSON.parse(fs.readFileSync(record));
 const modelPath=hero=>process.env.NINJA_KNEE_MODEL_DIR?path.join(process.env.NINJA_KNEE_MODEL_DIR,hero+'.glb'):new URL('../public/models/'+hero+'.glb',import.meta.url);
 function player(g,clip){

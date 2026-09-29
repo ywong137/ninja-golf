@@ -44,7 +44,37 @@ The first full CI run caught missing torso/roll metadata and old foot tests that
 
 The revised recovery lifts the rear heel, steps earlier, and preserves toe contact in three dimensions. Foot tests now include root travel without changing limits.
 
-The passing measurements do not establish complete visual or anatomical accuracy. Recovery timing remains a possible polish item.
+The passing measurements do not establish complete visual or anatomical accuracy.
+
+## Recovery follow-up
+
+Opus identified a separate balance problem after the knee correction. The body stayed behind the front foot while the rear foot remained airborne.
+
+The revision keeps the rear toe planted until 0.78 seconds. The rear foot lands directly in its final stance at 1.00 seconds.
+
+This reduces single-foot support from 0.40 to 0.22 seconds. The pelvis advances continuously during recovery, without its previous backward movement.
+
+The front foot finishes its pivot before the main support interval. Its angle now uses the planted shoe pose, which removes a 13 mm gap.
+
+Tests check actual weighted shoe vertices during recovery. The tests also reject delayed landing, backward body movement, and a sliding rear foot after landing.
+
+The preparation and impact poses differ from the previous release by less than 0.015 mm at their joints. Maximum bone rotation difference is 0.004 degrees.
+
+The original geometry and 36 unrelated animations remain intact. Only `Fan_Heavy_Rising` changes in the motion records.
+
+Actual Claude Opus 5.5 High compared both recovery versions. It found no visible anatomical or balance blocker in the supplied views.
+
+Its review also identified an abrupt upper-body unwind near landing. That motion still needs refinement; the revised feet do not establish complete dynamic balance.
+
+The mass estimate uses approximate joint centers and proportions from the official [OpenSim Rajagopal model](https://github.com/opensim-org/opensim-models/blob/master/Models/Rajagopal/README.txt).
+It helps compare candidates. It is not a calibrated body model, and its noisy acceleration estimate cannot prove physical correctness.
+
+The local workspace also contains unfinished golf and Ronin changes. Seven failures from those files do not belong to this release.
+An isolated copy of the committed files verifies this release without removing those changes.
+
+All 453 release tests pass, and the production build succeeds. Dense arm and blade checks still find no intersections.
+Final browser checks pass at 40, 60, and 120 FPS. Crowded gameplay averages 55.3 FPS at 1440 × 900, with 24–47 enemies.
+The tested slope produces less than 0.2 mm ankle drift and 3.4 mm toe drift. Knee side-bend stays below 0.001 degrees.
 
 ## Rebuild
 

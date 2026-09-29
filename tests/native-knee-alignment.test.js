@@ -8,7 +8,7 @@ import {loadNativeSkin} from './native-skin-helper.mjs';
 import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
 const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
-const motions=readJSON('../src/motion-data.json');
+const motions=readJSON(process.env.NINJA_MOTION_RECORD||'../src/motion-data.json');
 const selections=readJSON('../src/selection-data.json');
 const gaits=readJSON('../src/locomotion-data.json');
 const regular=['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'];
