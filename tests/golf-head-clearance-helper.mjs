@@ -9,7 +9,8 @@ const repo=path.resolve(process.env.NINJA_GOLF_REPO??process.cwd());
 const load=relative=>import(pathToFileURL(path.join(repo,relative)));
 const T=await load('node_modules/three/build/three.module.js');
 const {loadNativeSkin}=await load('tests/native-skin-helper.mjs');
-const {installForearmTwistHelpers}=await load('src/forearm-twist.js');
+const {installLimbSkinning}=await load('src/forearm-twist.js');
+const {golfShoulderSkinWeight}=await load('src/golf-shoulder-skin.js');
 const {createGolfClub}=await load('src/golf-club.js');
 const {captureGolfRestPose,calibrateGolfClub}=await load('src/golf-club-fit.js');
 const {headSurfaceMetadata:headOnlyMetadata,measureTriangleHeadClearance}=await load('tools/blade-head-surface.mjs');
@@ -26,7 +27,7 @@ function headSurfaceMetadata(g,{includeNeck=false}={}){
  return head.filter(s=>s.triangles.length);
 }
 const limbs=['upperarm_r','upperarm_l','lowerarm_r','lowerarm_l','hand_r','hand_l'];
-const canonical=name=>name.replace(/^lowerarm_skin_(?:base|mid)_([rl])$/,'lowerarm_$1');
+const canonical=name=>name.replace(/^(lowerarm|upperarm)_skin_(?:base|mid)_([rl])$/,'$1_$2');
 
 function armTriangles(scene,headSurfaces) {
   const groups=Object.fromEntries(limbs.map(name=>[name,[]]));
@@ -100,7 +101,7 @@ export async function inspectGolfHeadClearance(model,{start=1.6,end=2.4,includeN
   });
   const headBefore=headSurfaceMetadata(gltf,{includeNeck});
   const originalGroups=armTriangles(scene,headBefore);
-  const helper=installForearmTwistHelpers(scene);
+  const helper=installLimbSkinning(scene,{upperArms:hero==='kaede'?['r']:[]});
   try {
     const head=headSurfaceMetadata(gltf,{includeNeck}),groups=armTriangles(scene,head);
     for (const limb of limbs) {
@@ -125,7 +126,7 @@ export async function inspectGolfHeadClearance(model,{start=1.6,end=2.4,includeN
       }
       for (const item of bound) item.object[item.property].fromArray(item.interpolant.evaluate(time));
       scene.updateMatrixWorld(true);
-      helper.update();
+      helper.update({upperArmWeight:golfShoulderSkinWeight(time)});
       club.root.position.copy(hand.localToWorld(grip.center.clone()));
       club.root.quaternion.copy(hand.getWorldQuaternion(new T.Quaternion()).multiply(grip.frame));club.root.updateMatrixWorld(true);
       const cache=new Map();
@@ -168,7 +169,7 @@ export async function inspectGolfHeadClearance(model,{start=1.6,end=2.4,includeN
       model,pathSha256:createHash('sha256').update(fs.readFileSync(model)).digest('hex'),clip:clip.name,
       window:[start,end],samples:times.length,times,
       sampling:'60 Hz, every native key, and adjacent native-key midpoints within the selected window.',
-      classification:'Any triangle with a vertex carrying at least 50% weight from the named limb. Forearm helper weights pool with lowerarm; fingers pool with hand. Shaft and grip use their complete rendered meshes.',
+      classification:'Any triangle with a vertex carrying at least 50% weight from the named limb. Limb helper weights pool with their anatomical arm segment; fingers pool with hand. Shaft and grip use their complete rendered meshes.',
       head:'Actual skinned Head descendants, including jaw/eyes/hair'+(includeNeck?' and neck-weighted skin':'')+'. Rigid eyewear is outside this focused test.',
       clearanceCap:.005,helperVersion:helper.report.version,statistics,rows,
     };

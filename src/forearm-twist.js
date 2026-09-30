@@ -6,6 +6,7 @@ const TAU=2*Math.PI,DEGREES=180/Math.PI;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=(x,a,b)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const wrapped=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
+const followNative=arm=>{for(const helper of [arm.base,arm.mid]){helper.position.copy(arm.lower.position);helper.quaternion.copy(arm.lower.quaternion);helper.scale.copy(arm.lower.scale);}arm.previousAngle=null;};
 const finiteQuaternion=q=>[q.x,q.y,q.z,q.w].every(Number.isFinite)&&q.lengthSq()>1e-12;
 
 /**
@@ -18,9 +19,16 @@ const finiteQuaternion=q=>[q.x,q.y,q.z,q.w].every(Number.isFinite)&&q.lengthSq()
  * Reset that opt-in history with update({continuousTwist:true,resetContinuity:true}).
  * update({refreshMatrices:false}) leaves world/palette refresh to the renderer.
  */
-export function installForearmTwistHelpers(scene,{sides=['r','l'],stations=[.12,.5,.9],overflow='reject'}={}){
+export function installForearmTwistHelpers(scene,options={}){
+ return installLimbSkinning(scene,{...options,upperArms:[]});
+}
+
+// Optional upper-arm helpers stay identical to their native joint unless enabled
+// by update({upperArmWeight}). They never change any anatomical joint frame.
+export function installLimbSkinning(scene,{sides=['r','l'],stations=[.12,.5,.9],overflow='reject',upperArms=[]}={}){
  if(!scene?.isObject3D)throw new TypeError('Supply the loaded human scene, before animation.');
  if(!Array.isArray(sides)||!sides.length||new Set(sides).size!==sides.length||sides.some(s=>!['r','l'].includes(s)))throw new Error('Choose unique native sides: r and/or l.');
+ if(!Array.isArray(upperArms)||new Set(upperArms).size!==upperArms.length||upperArms.some(s=>!['r','l'].includes(s)))throw new Error('Choose unique upper-arm sides: r and/or l.');
  if(stations.length!==3||stations.some(x=>!Number.isFinite(x))||stations[0]<0||stations[2]>1||!(stations[0]<stations[1]&&stations[1]<stations[2]))throw new Error('Supply three increasing forearm stations within [0,1].');
  if(!['reject','nearest'].includes(overflow))throw new Error('Choose overflow="reject" or explicitly choose "nearest".');
  scene.updateWorldMatrix(true,true);
@@ -28,22 +36,24 @@ export function installForearmTwistHelpers(scene,{sides=['r','l'],stations=[.12,
  scene.traverse(o=>{if(o.isBone){if(bones.has(o.name))throw new Error('The scene has duplicate bone names: '+o.name);bones.set(o.name,o);}if(o.isSkinnedMesh)meshes.push(o);});
  if(!meshes.length)throw new Error('The human scene has no skinned meshes.');
  const bindValidation={maximumPositionError:0,maximumQuaternionErrorRadians:0,maximumScaleError:0};
- const arms=sides.map(side=>{
-  const upper=bones.get('upperarm_'+side),lower=bones.get('lowerarm_'+side),hand=bones.get('hand_'+side);
-  if(!upper||!lower||!hand||lower.parent!==upper)throw new Error('Side '+side+' needs upperarm -> lowerarm and a native hand bone.');
-  let parent=hand;while(parent&&parent!==lower)parent=parent.parent;if(!parent)throw new Error('hand_'+side+' must descend from lowerarm_'+side+'.');
-  if(!finiteQuaternion(lower.quaternion))throw new Error('lowerarm_'+side+' has an invalid rest quaternion.');
-  for(const bone of [upper,lower,hand]){const mesh=meshes.find(m=>m.skeleton.bones.includes(bone)&&m.skeleton.bones.includes(bone.parent));if(!mesh)throw new Error('Cannot verify the local bind frame for '+bone.name+'.');const skeleton=mesh.skeleton,index=skeleton.bones.indexOf(bone),parentIndex=skeleton.bones.indexOf(bone.parent),expected=skeleton.boneInverses[parentIndex].clone().multiply(skeleton.boneInverses[index].clone().invert()),p=new Vector3(),q=new Quaternion(),s=new Vector3();expected.decompose(p,q,s);const positionError=p.distanceTo(bone.position),quaternionError=q.normalize().angleTo(bone.quaternion.clone().normalize()),scaleError=s.distanceTo(bone.scale);bindValidation.maximumPositionError=Math.max(bindValidation.maximumPositionError,positionError);bindValidation.maximumQuaternionErrorRadians=Math.max(bindValidation.maximumQuaternionErrorRadians,quaternionError);bindValidation.maximumScaleError=Math.max(bindValidation.maximumScaleError,scaleError);if(positionError>1e-5*Math.max(1,p.length())||quaternionError>1e-5||scaleError>1e-5*Math.max(1,s.length()))throw new Error('Install forearm helpers before animation. '+bone.name+' differs from its inverse-bind local transform.');}
+ const segments=[...sides.map(side=>({side,kind:'forearm',key:side,stations})),...upperArms.map(side=>({side,kind:'upperarm',key:'upper_'+side,stations:[.05,.4,.85]}))];
+ const arms=segments.map(segment=>{
+  const {side,kind}=segment,isUpper=kind==='upperarm';
+  const upper=bones.get((isUpper?'clavicle_':'upperarm_')+side),lower=bones.get((isUpper?'upperarm_':'lowerarm_')+side),hand=bones.get((isUpper?'lowerarm_':'hand_')+side);
+  if(!upper||!lower||!hand||lower.parent!==upper)throw new Error('Side '+side+' needs the complete native '+kind+' chain.');
+  let parent=hand;while(parent&&parent!==lower)parent=parent.parent;if(!parent)throw new Error(hand.name+' must descend from '+lower.name+'.');
+  if(!finiteQuaternion(lower.quaternion))throw new Error(lower.name+' has an invalid rest quaternion.');
+  for(const bone of [upper,lower,hand]){const mesh=meshes.find(m=>m.skeleton.bones.includes(bone)&&m.skeleton.bones.includes(bone.parent));if(!mesh)throw new Error('Cannot verify the local bind frame for '+bone.name+'.');const skeleton=mesh.skeleton,index=skeleton.bones.indexOf(bone),parentIndex=skeleton.bones.indexOf(bone.parent),expected=skeleton.boneInverses[parentIndex].clone().multiply(skeleton.boneInverses[index].clone().invert()),p=new Vector3(),q=new Quaternion(),s=new Vector3();expected.decompose(p,q,s);const positionError=p.distanceTo(bone.position),quaternionError=q.normalize().angleTo(bone.quaternion.clone().normalize()),scaleError=s.distanceTo(bone.scale);bindValidation.maximumPositionError=Math.max(bindValidation.maximumPositionError,positionError);bindValidation.maximumQuaternionErrorRadians=Math.max(bindValidation.maximumQuaternionErrorRadians,quaternionError);bindValidation.maximumScaleError=Math.max(bindValidation.maximumScaleError,scaleError);if(positionError>1e-5*Math.max(1,p.length())||quaternionError>1e-5||scaleError>1e-5*Math.max(1,s.length()))throw new Error('Install limb helpers before animation. '+bone.name+' differs from its inverse-bind local transform.');}
   const localHand=lower.worldToLocal(hand.getWorldPosition(new Vector3())),length=localHand.length();
-  if(!(length>1e-8))throw new Error('Side '+side+' has zero rest forearm length.');
+  if(!(length>1e-8))throw new Error('Side '+side+' has zero rest '+kind+' length.');
   const restQuaternion=lower.quaternion.clone().normalize(),axis=localHand.clone().multiply(lower.scale).normalize().applyQuaternion(restQuaternion);
-  const baseName='lowerarm_skin_base_'+side,midName='lowerarm_skin_mid_'+side;
-  if(bones.has(baseName)||bones.has(midName))throw new Error('Forearm helpers already exist for side '+side+'. Dispose them before reinstalling.');
+  const prefix=isUpper?'upperarm_skin_':'lowerarm_skin_',baseName=prefix+'base_'+side,midName=prefix+'mid_'+side;
+  if(bones.has(baseName)||bones.has(midName))throw new Error(kind+' helpers already exist for side '+side+'. Dispose them before reinstalling.');
   const make=name=>{const b=new Bone();b.name=name;b.position.copy(lower.position);b.quaternion.copy(lower.quaternion);b.scale.copy(lower.scale);return b;};
-  return{side,upper,lower,hand,restQuaternion,restInverse:restQuaternion.clone().invert(),axis,localHand,length,base:make(baseName),mid:make(midName),previousAngle:null,delta:new Quaternion(),twist:new Quaternion(),swing:new Quaternion(),half:new Quaternion()};
+  return{...segment,isUpper,upper,lower,hand,restQuaternion,restInverse:restQuaternion.clone().invert(),axis,localHand,length,base:make(baseName),mid:make(midName),previousAngle:null,delta:new Quaternion(),twist:new Quaternion(),swing:new Quaternion(),half:new Quaternion()};
  });
  const report={version:2,defaultTwistMode:'stateless principal angle',bindValidation,helperCount:arms.length*2,stations:stations.slice(),overflowPolicy:overflow,meshes:[],modifiedVertices:0,splitVertices:0,protectedFingerVertices:0,quantizedOverflowVertices:0,maximumInfluences:0,updates:0,angles:{},singularities:0,disposed:false};
- for(const arm of arms)report.angles[arm.side]={principalDegrees:0,unwrappedDegrees:0,branchTurns:0};
+ for(const arm of arms)report.angles[arm.key]={principalDegrees:0,unwrappedDegrees:0,branchTurns:0};
  const plans=meshes.map((mesh,meshId)=>{
   const sourceSkeleton=mesh.skeleton,position=mesh.geometry.attributes.position,ids=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
   if(!position||ids?.itemSize!==4||weights?.itemSize!==4||ids.count!==position.count||weights.count!==position.count)throw new Error('Mesh '+mesh.name+' needs four matching skin indices and weights.');
@@ -58,7 +68,7 @@ export function installForearmTwistHelpers(scene,{sides=['r','l'],stations=[.12,
    const expansions=[];
    for(const entry of source){const a=byIndex.get(entry.index);if(!a){expansions.push([entry]);continue;}
     const p=new Vector3().fromBufferAttribute(position,id).applyMatrix4(mesh.bindMatrix).applyMatrix4(sourceSkeleton.boneInverses[entry.index]);
-    const f=p.dot(a.arm.localHand)/a.arm.localHand.lengthSq();let choices;
+    const f=p.dot(a.arm.localHand)/a.arm.localHand.lengthSq(),stations=a.arm.stations;let choices;
     if(f<stations[1]){const t=smooth(f,stations[0],stations[1]);choices=[{index:a.baseIndex,weight:entry.weight*(1-t)},{index:a.midIndex,weight:entry.weight*t}];}
     else if(f<stations[2]){const t=smooth(f,stations[1],stations[2]);choices=[{index:a.midIndex,weight:entry.weight*(1-t)},{index:entry.index,weight:entry.weight*t}];}
     else choices=[entry];
@@ -76,18 +86,30 @@ export function installForearmTwistHelpers(scene,{sides=['r','l'],stations=[.12,
  // All preflight checks finish before any scene or mesh mutation.
  for(const arm of arms){arm.upper.add(arm.base,arm.mid);}
  const palettes=new Map();for(const plan of plans){let extended=palettes.get(plan.sourceSkeleton);if(!extended){const added=plan.additions.flatMap(a=>[a.arm.base,a.arm.mid]),inverses=plan.additions.flatMap(a=>[plan.sourceSkeleton.boneInverses[a.index].clone(),plan.sourceSkeleton.boneInverses[a.index].clone()]);extended=new Skeleton([...plan.sourceSkeleton.bones,...added],[...plan.sourceSkeleton.boneInverses.map(m=>m.clone()),...inverses]);palettes.set(plan.sourceSkeleton,extended);}const geometry=plan.sourceGeometry.clone();geometry.setAttribute('skinIndex',new Uint16BufferAttribute(plan.newIds,4));geometry.setAttribute('skinWeight',new Float32BufferAttribute(plan.newWeights,4));plan.privateGeometry=geometry;plan.mesh.geometry=geometry;plan.mesh.skeleton=extended;report.meshes.push(plan.metrics);report.modifiedVertices+=plan.metrics.modifiedVertices;report.splitVertices+=plan.metrics.splitVertices;report.protectedFingerVertices+=plan.metrics.protectedFingerVertices;report.quantizedOverflowVertices+=plan.metrics.quantizedOverflowVertices;report.maximumInfluences=Math.max(report.maximumInfluences,plan.metrics.maximumInfluences);}
- function update({continuousTwist=false,resetContinuity=false,refreshMatrices=true}={}){
-  if(report.disposed)throw new Error('The forearm helper instance is disposed.');
-  for(const arm of arms){const delta=arm.delta.copy(arm.lower.quaternion).normalize().multiply(arm.restInverse),projection=delta.x*arm.axis.x+delta.y*arm.axis.y+delta.z*arm.axis.z,norm=Math.hypot(projection,delta.w);
-   if(norm<1e-10){report.singularities++;throw new Error('Undefined forearm twist at a perpendicular 180° swing on side '+arm.side+'. Preserve a continuous pose path before updating helpers.');}
+ function update({continuousTwist=false,resetContinuity=false,refreshMatrices=true,upperArmWeight=0}={}){
+  if(!Number.isFinite(upperArmWeight)||upperArmWeight<0||upperArmWeight>1)throw new Error('upperArmWeight must be between zero and one.');
+  if(report.disposed)throw new Error('The limb helper instance is disposed.');
+  report.upperArmWeight=upperArmWeight;
+  for(const arm of arms){
+   if(arm.isUpper&&upperArmWeight===0){
+    followNative(arm);continue;
+   }
+   const delta=arm.delta.copy(arm.lower.quaternion).normalize().multiply(arm.restInverse),projection=delta.x*arm.axis.x+delta.y*arm.axis.y+delta.z*arm.axis.z,norm=Math.hypot(projection,delta.w);
+   if(norm<1e-10){report.singularities++;if(arm.isUpper){followNative(arm);continue;}throw new Error('Undefined forearm twist at a perpendicular 180° swing on side '+arm.side+'. Preserve a continuous pose path before updating helpers.');}
    const twist=arm.twist.set(arm.axis.x*projection/norm,arm.axis.y*projection/norm,arm.axis.z*projection/norm,delta.w/norm),swing=arm.swing.copy(delta).multiply(twist.conjugate()),principal=wrapped(2*Math.atan2(projection,delta.w)),angle=!continuousTwist||resetContinuity||arm.previousAngle===null?principal:principal+TAU*Math.round((arm.previousAngle-principal)/TAU);
    arm.previousAngle=continuousTwist?angle:null;arm.base.position.copy(arm.lower.position);arm.mid.position.copy(arm.lower.position);arm.base.scale.copy(arm.lower.scale);arm.mid.scale.copy(arm.lower.scale);
    arm.base.quaternion.copy(swing).multiply(arm.restQuaternion).normalize();arm.mid.quaternion.copy(swing).multiply(arm.half.setFromAxisAngle(arm.axis,angle*.5)).multiply(arm.restQuaternion).normalize();
-   const angles=report.angles[arm.side];angles.principalDegrees=principal*DEGREES;angles.unwrappedDegrees=angle*DEGREES;angles.branchTurns=Math.round((angle-principal)/TAU);
+   if(arm.isUpper){
+    // A principal-angle branch has no unique partial twist. Fade this optional
+    // skin correction to the native surface before that branch or singularity.
+    const confidence=(1-smooth(Math.abs(principal)*DEGREES,165,175))*smooth(norm,.001,.02);
+    for(const helper of [arm.base,arm.mid])helper.quaternion.slerp(arm.lower.quaternion,1-.25*upperArmWeight*confidence).normalize();
+   }
+   const angles=report.angles[arm.key];angles.principalDegrees=principal*DEGREES;angles.unwrappedDegrees=angle*DEGREES;angles.branchTurns=Math.round((angle-principal)/TAU);
   }
   if(refreshMatrices){scene.updateWorldMatrix(true,true);for(const palette of palettes.values())palette.update();}report.updates++;return report.angles;
  }
  function dispose(){if(report.disposed)return;for(const plan of plans){plan.mesh.geometry=plan.sourceGeometry;plan.mesh.skeleton=plan.sourceSkeleton;plan.privateGeometry.dispose();}for(const palette of palettes.values())palette.dispose();for(const arm of arms){arm.base.removeFromParent();arm.mid.removeFromParent();}report.disposed=true;}
  update({resetContinuity:true});
- return{update,dispose,report,helpers:Object.fromEntries(arms.map(a=>[a.side,{base:a.base,mid:a.mid}]))};
+ return{update,dispose,report,helpers:Object.fromEntries(arms.filter(a=>!a.isUpper).map(a=>[a.side,{base:a.base,mid:a.mid}])),upperArmHelpers:Object.fromEntries(arms.filter(a=>a.isUpper).map(a=>[a.side,{base:a.base,mid:a.mid}]))};
 }

@@ -1,0 +1,334 @@
+{
+  "sourceCommit": "7252715ec0d2d691840e534574f3a10bebb72714",
+  "scope": "Ace Golf_Swing lead upper-arm skin; anatomical joints and model assets unchanged",
+  "runtime": {
+    "rows": [
+      {
+        "hero": 0,
+        "helpers": [],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 0,
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      },
+      {
+        "hero": 1,
+        "helpers": [],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 0,
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      },
+      {
+        "hero": 2,
+        "helpers": [],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 0,
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      },
+      {
+        "hero": 3,
+        "helpers": [
+          "r"
+        ],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 146.74830160675165,
+        "restart": {
+          "before": 1,
+          "immediate": 1,
+          "usesTwoActions": true,
+          "mid": 0.5000004768371582,
+          "end": 0
+        },
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      },
+      {
+        "hero": 4,
+        "helpers": [],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 0,
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      },
+      {
+        "hero": 5,
+        "helpers": [],
+        "samples": 145,
+        "maxWeightError": 0,
+        "maxUpperTwist": 0,
+        "idleWeight": 0,
+        "deathWeight": 0,
+        "disposed": true
+      }
+    ],
+    "crowdUnchanged": true
+  },
+  "head": {
+    "samples": 2432,
+    "statistics": {
+      "upperarm_r": {
+        "triangles": 189,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "upperarm_l": {
+        "triangles": 188,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "lowerarm_r": {
+        "triangles": 382,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "lowerarm_l": {
+        "triangles": 220,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "hand_r": {
+        "triangles": 824,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "hand_l": {
+        "triangles": 817,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "clubShaft": {
+        "triangles": 80,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      },
+      "clubGrip": {
+        "triangles": 80,
+        "minimumClearance": 0.005,
+        "maxCrossings": 0,
+        "worstTime": null,
+        "firstFailure": null
+      }
+    }
+  },
+  "skin": {
+    "samples": 1153,
+    "maxima": {
+      "fold_r": {
+        "before": 0,
+        "after": 0
+      },
+      "forearmTorso_r": {
+        "before": 0,
+        "after": 0
+      },
+      "upperarmTorso_r": {
+        "before": 72,
+        "after": 63
+      },
+      "fold_l": {
+        "before": 0,
+        "after": 0
+      },
+      "forearmTorso_l": {
+        "before": 0,
+        "after": 0
+      },
+      "upperarmTorso_l": {
+        "before": 35,
+        "after": 35
+      }
+    },
+    "increasedPairCountSamples": 132,
+    "newForearmOrFold": []
+  },
+  "surfaceBend": {
+    "edges": 296,
+    "rows": [
+      {
+        "time": 1.31,
+        "before": {
+          "max": {
+            "key": "141,146",
+            "degrees": 166.25462232877277,
+            "change": 165.67084903355314
+          },
+          "p95": {
+            "key": "158,163",
+            "degrees": 36.646911856168884,
+            "change": 33.138442839690526
+          },
+          "sum": 134371.25741359915,
+          "folds": 16
+        },
+        "after": {
+          "max": {
+            "key": "141,146",
+            "degrees": 165.36321165070927,
+            "change": 164.77943835548965
+          },
+          "p95": {
+            "key": "158,163",
+            "degrees": 36.2983631598087,
+            "change": 32.78989414333034
+          },
+          "sum": 132934.2650698741,
+          "folds": 16
+        }
+      },
+      {
+        "time": 1.4,
+        "before": {
+          "max": {
+            "key": "158,163",
+            "degrees": 127.72814525789114,
+            "change": 124.21967624141278
+          },
+          "p95": {
+            "key": "128,164",
+            "degrees": 53.44441247133435,
+            "change": 41.912486412418275
+          },
+          "sum": 126968.29493583317,
+          "folds": 14
+        },
+        "after": {
+          "max": {
+            "key": "158,163",
+            "degrees": 120.7577987729458,
+            "change": 117.24932975646745
+          },
+          "p95": {
+            "key": "146,162",
+            "degrees": 97.12193940029917,
+            "change": 35.23170587513274
+          },
+          "sum": 106233.57703556838,
+          "folds": 13
+        }
+      },
+      {
+        "time": 1.471,
+        "before": {
+          "max": {
+            "key": "124,136",
+            "degrees": 175.36565472230401,
+            "change": 171.1559973849669
+          },
+          "p95": {
+            "key": "120,121",
+            "degrees": 56.89369403120748,
+            "change": 51.31903991410001
+          },
+          "sum": 177657.2819140967,
+          "folds": 15
+        },
+        "after": {
+          "max": {
+            "key": "158,163",
+            "degrees": 162.52125322329076,
+            "change": 159.0127842068124
+          },
+          "p95": {
+            "key": "162,167",
+            "degrees": 64.05808260502785,
+            "change": 39.88277826505066
+          },
+          "sum": 138787.19653812938,
+          "folds": 15
+        }
+      },
+      {
+        "time": 1.55,
+        "before": {
+          "max": {
+            "key": "124,136",
+            "degrees": 146.42655484885887,
+            "change": 142.21689751152175
+          },
+          "p95": {
+            "key": "162,167",
+            "degrees": 74.12962063602674,
+            "change": 49.954316296049555
+          },
+          "sum": 154710.80124501124,
+          "folds": 14
+        },
+        "after": {
+          "max": {
+            "key": "158,163",
+            "degrees": 139.60881100258402,
+            "change": 136.10034198610566
+          },
+          "p95": {
+            "key": "159,162",
+            "degrees": 10.340878347006043,
+            "change": 37.75380112024219
+          },
+          "sum": 125235.11085237763,
+          "folds": 14
+        }
+      },
+      {
+        "time": 1.65,
+        "before": {
+          "max": {
+            "key": "149,163",
+            "degrees": 171.70112932212638,
+            "change": 148.3470965155569
+          },
+          "p95": {
+            "key": "159,162",
+            "degrees": 4.062961892845067,
+            "change": 44.03171757440317
+          },
+          "sum": 141915.2245495434,
+          "folds": 14
+        },
+        "after": {
+          "max": {
+            "key": "141,146",
+            "degrees": 127.9295103266091,
+            "change": 127.34573703138948
+          },
+          "p95": {
+            "key": "163,167",
+            "degrees": 67.96624763490159,
+            "change": 38.23668794232774
+          },
+          "sum": 110714.898419014,
+          "folds": 15
+        }
+      }
+    ]
+  },
+  "limitations": [
+    "Underarm folds and the faceted inner-arm edge remain.",
+    "The grip path and shoulder motion still need a joint redesign."
+  ]
+}
