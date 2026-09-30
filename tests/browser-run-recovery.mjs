@@ -10,7 +10,7 @@ try{
  const rows=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js');
-  const {measureLegAnatomy}=await import('/src/leg-anatomy.js');await loadWarriorAssets();
+  const {measureLegAnatomy}=await import('/src/leg-anatomy.js'),{runSupportPoint}=await import('/tools/run-contact-measurement.mjs');await loadWarriorAssets();
   const position=b=>b.getWorldPosition(new T.Vector3()),rotation=b=>b.getWorldQuaternion(new T.Quaternion()).normalize(),rows=[];
   const cases=[{angle:0,sprint:false,focused:false},{angle:0,sprint:true,focused:false},...[0,1,2,3,4,5,6,7].map(i=>({angle:i*Math.PI/4,sprint:false,focused:true}))].map(c=>({...c,slope:0,rate:120}));
   for(const rate of [40,60])for(const slope of [-.1,.1])for(const sprint of [false,true])cases.push({angle:0,sprint,focused:false,slope,rate});
@@ -30,7 +30,7 @@ try{
      row.minimumFlex=Math.min(row.minimumFlex,m.kneeFlexion);row.maximumFlex=Math.max(row.maximumFlex,m.kneeFlexion);
      const values={hinge:m.kneeDeviation,hip:Math.abs(m.hipTwist),ankleTwist:Math.abs(m.ankleTwist)};
      if(phase>=.44&&phase<=.82){Object.assign(values,{freePitch:Math.abs(m.anklePitch),freeOffPitch:m.ankleOffPitch});row.freeSamples++;}
-     if(phase>.04&&phase<.24){holds[side]??=ankle.clone();row.supportDrift=Math.max(row.supportDrift,ankle.distanceTo(holds[side]));}else holds[side]=null;
+     const contact=runSupportPoint(p,side);if(contact.loaded){if(holds[side]?.id!==contact.id)holds[side]={id:contact.id,p:contact.point.clone()};row.supportDrift=Math.max(row.supportDrift,contact.point.distanceTo(holds[side].p));}else holds[side]=null;
      if(previous[side]){values.shoeSpeed=shoe.angleTo(previous[side].shoe)/dt;values.kneeSpeed=bend.angleTo(previous[side].bend)/dt;}
      previous[side]={shoe,bend};
      for(const contact of p.footPlacement.feet[side].contacts){const v=contact.clone().applyQuaternion(shoe).add(ankle);row.minimumClearance=Math.min(row.minimumClearance,v.y-ground(v.x,v.z));}

@@ -111,7 +111,7 @@ export class Warrior {
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
-    this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index)):null;
+    this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index),this.footPlacement.feet):null;
     this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].combatStyle],motions):null;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
@@ -230,11 +230,11 @@ export class Warrior {
     // Capture the moving-attack pose before removing it, but undo terrain first:
     // the terrain layer applies support and shoe tilt again after the run blend.
     this.footPlacement?.restore();
-    if(!action&&moving&&!this.running&&this.attackLocomotion?.weight>0)this.runFootwork?.captureEntry({includeBody:this.attackLocomotion.pelvisGaitWeight>0});
+    if(!action&&moving&&!this.running&&(this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined))this.runFootwork?.captureEntry({includeBody:this.attackLocomotion.pelvisGaitWeight>0||this.runFootwork.exitAge!==undefined});
     this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
-    if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.forearmTwist?.update({refreshMatrices:false});return;}
+    if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.forearmTwist?.update({refreshMatrices:false});return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
@@ -278,14 +278,15 @@ export class Warrior {
       if(action){for(const name of ['spine_01','spine_02']){const bone=this.bones[name];this.coreScales.push([bone,bone.scale.clone()]);const squash=1-Math.sin(action.time/action.duration*Math.PI)*.012;bone.scale.multiply(new THREE.Vector3(1/Math.sqrt(squash),squash,1/Math.sqrt(squash)));}}
 
     }
-    if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend);
-    else this.runFootwork?.resetEntry();
+    if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend,{dt});
+    else{this.runFootwork?.resetEntry();this.runFootwork?.resetDirection();this.runFootwork?.applyExit(selection||previewPose?0:dt);}
     const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
     let contactWeights=null,stance=null;
     if(this.running||this.guardWalking){
       contactWeights={};stance={};const running=this.running,phase=running?this.runPhase:this.guardWalkPhase,support=running ? .28 : .5;
       for(const [side,offset]of running?[['r',0],['l',.5]]:[['r',.25],['l',.75]]){const p=(phase+offset)%1;stance[side]=p<support;contactWeights[side]=p<support?1:p<support+.10?1-THREE.MathUtils.smoothstep(p,support,support+.10):THREE.MathUtils.smoothstep(p,.90,1);}
     }
+    if(this.running&&this.runFootwork.gaitContacts)({contactWeights,stance}=this.runFootwork.gaitContacts);
     const authoredAttack=!!action;
     const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
     if(authoredFeet&&!this.guardWalking)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
