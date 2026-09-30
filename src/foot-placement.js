@@ -69,7 +69,7 @@ export class FootPlacement {
  reset(){this.report=null;this.pelvisOffset=0;for(const foot of Object.values(this.feet)){foot.offset=0;foot.toeRoll=0;foot.normal.copy(UP);}}
  apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null,preserveAuthored=false,preserveHinge=false,enforceClearance=false,kneeSolver=alignedKnee}={}){
   if(!enabled||!groundHeight){this.reset();return;}
-  if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance,{preserveHinge,enforceClearance,kneeSolver});return;}
+  if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance,{golf,preserveHinge,enforceClearance,kneeSolver});return;}
   const root=this.root,bones=this.bones;root.updateMatrixWorld(true);const response=1-Math.exp(-24*Math.min(dt,.05)),samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),height=groundHeight(ankle.x,ankle.z);
@@ -115,7 +115,7 @@ export class FootPlacement {
  }
  // Attack animation supplies the foot lift and pivot. Terrain changes support
  // relative to the actor's plane. An opted-in hinge correction also fixes blends.
- applyAuthored(dt,groundHeight,contactWeights,stance,{preserveHinge=false,enforceClearance=false,kneeSolver=alignedKnee}={}){
+ applyAuthored(dt,groundHeight,contactWeights,stance,{golf=false,preserveHinge=false,enforceClearance=false,kneeSolver=alignedKnee}={}){
   const previousPelvisOffset=this.pelvisOffset;this.reset();const {root,bones}=this;root.updateMatrixWorld(true);const samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),rotation=foot.getWorldQuaternion(new THREE.Quaternion()),original=rotation.clone(),weight=contactWeights?.[side]??0;
@@ -151,7 +151,7 @@ export class FootPlacement {
   }
   let pelvisLimit=0;
   const terrainChanged=samples.some(s=>s.changed);
-  if(terrainChanged)for(const s of samples){
+  if(!golf&&terrainChanged)for(const s of samples){
    const hip=bones['thigh_'+s.side].getWorldPosition(new THREE.Vector3()),knee=bones['calf_'+s.side].getWorldPosition(new THREE.Vector3());
    const length=(hip.distanceTo(knee)+knee.distanceTo(s.ankle))*.985,horizontal=Math.hypot(s.target.x-hip.x,s.target.z-hip.z);
    const available=Math.sqrt(Math.max(.01,length*length-horizontal*horizontal));
@@ -161,7 +161,7 @@ export class FootPlacement {
   // Prepare the body for the next support before a clip changes contact weights.
   // The probes depend on terrain, not the current attack phase or crossfade.
   let downhill=0;const reach=.7*root.scale.x;
-  for(let i=0;i<8;i++){
+  for(let i=0;!golf&&i<8;i++){
    const a=i*Math.PI/4,height=groundHeight(root.position.x+Math.cos(a)*reach,root.position.z+Math.sin(a)*reach);
    if(Number.isFinite(height))downhill=Math.min(downhill,height-root.position.y);
   }
@@ -169,7 +169,9 @@ export class FootPlacement {
   // Reach remains a hard bound; the terrain reserve avoids a late support snap.
   let pelvisStep=(pelvisWanted-previousPelvisOffset)*(1-Math.exp(-24*Math.min(dt,.05)));
   if(enforceClearance)pelvisStep=clamp(pelvisStep,-2.1*Math.min(dt,.05),1.5*Math.min(dt,.05));
-  this.pelvisOffset=terrainChanged||pelvisWanted<-.0000001||(enforceClearance&&Math.abs(previousPelvisOffset)>1e-7)?Math.min(pelvisLimit,previousPelvisOffset+pelvisStep):0;
+  // Golf's calibrated hands and club require the authored pelvis height.
+  // Terrain can adjust the legs without shifting the club away from the ball.
+  this.pelvisOffset=!golf&&(terrainChanged||pelvisWanted<-.0000001||(enforceClearance&&Math.abs(previousPelvisOffset)>1e-7))?Math.min(pelvisLimit,previousPelvisOffset+pelvisStep):0;
   if(Math.abs(this.pelvisOffset)>1e-7){
    const pelvis=bones.pelvis;this.saved.push([pelvis,pelvis.position.clone(),pelvis.quaternion.clone()]);
    const position=pelvis.getWorldPosition(new THREE.Vector3()).addScaledVector(UP,this.pelvisOffset);
@@ -178,11 +180,30 @@ export class FootPlacement {
   this.report={pelvisOffset:this.pelvisOffset,pelvisWanted,pelvisLimit,preserveAuthored:true,feet:[]};
   for(const s of samples){
    let error=0;
+   if(golf){
+    const thigh=bones['thigh_'+s.side],calf=bones['calf_'+s.side],foot=bones['foot_'+s.side];
+    const hip=thigh.getWorldPosition(new THREE.Vector3()),knee=calf.getWorldPosition(new THREE.Vector3());
+    const reach=(hip.distanceTo(knee)+knee.distanceTo(s.ankle))*.999;
+    if(hip.distanceTo(s.target)>reach){
+     // A nearly straight backswing leg can run out of reach on a slope.
+     // Raise its heel around the supported toe instead of shifting the club.
+     const relative=bones['ball_'+s.side].getWorldPosition(new THREE.Vector3()).sub(s.ankle);
+     relative.applyQuaternion(s.rotation.clone().multiply(foot.getWorldQuaternion(new THREE.Quaternion()).invert()));
+     const toe=s.target.clone().add(relative),axis=UP.clone().cross(footForward(foot,s.rotation)).normalize();
+     const target=angle=>toe.clone().sub(relative.clone().applyAxisAngle(axis,angle));
+     let lo=0,hi=.45;
+     if(hip.distanceTo(target(hi))<reach){
+      for(let i=0;i<16;i++){const mid=(lo+hi)/2;if(hip.distanceTo(target(mid))>reach)lo=mid;else hi=mid;}
+      const turn=new THREE.Quaternion().setFromAxisAngle(axis,hi);
+      s.target.copy(target(hi));s.rotation.premultiply(turn);s.kneeForward?.applyQuaternion(turn);s.changed=true;
+     }
+    }
+   }
    if(s.changed||Math.abs(this.pelvisOffset)>1e-7||preserveHinge){
     for(const name of ['thigh_','calf_','foot_']){const bone=bones[name+s.side];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);}
     if(s.changed||Math.abs(this.pelvisOffset)>1e-7){
      const solveKnee=s.kneeForward?(hip,ankle,upper,lower)=>headingKnee(hip,ankle,upper,lower,s.kneeForward):kneeSolver;
-     error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation,{kneeSolver:solveKnee});
+     error=solveLeg(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],s.target,s.rotation,{maxReach:golf?.999:.985,kneeSolver:solveKnee});
     }
     if(preserveHinge)alignLegHinge(bones['thigh_'+s.side],bones['calf_'+s.side],bones['foot_'+s.side],this.hinges[s.side]);
    }

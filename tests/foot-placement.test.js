@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {FootPlacement} from '../src/foot-placement.js';
+import {FootPlacement,attackFootContacts} from '../src/foot-placement.js';
+import {headingKnee} from '../src/knee-alignment.js';
 import {COURSE_SETS,heightAt,ellipse} from '../src/course.js';
 import {courseSurfaceHeight} from '../src/terrain.js';
 const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
@@ -36,21 +37,37 @@ test('Native slope support preserves all six bodies and the exact golf hand path
 });
 
 test('Golf terrain support retains the native heel pivot on flat ground',async()=>{
+ const record=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url))).Golf_Swing;
  for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora']){
   const rig=await nativeRig(hero),{root,bones,mixer,placement,clips}=rig;
+  const shoes=[];root.traverse(mesh=>{
+   if(!mesh.isSkinnedMesh)return;
+   const {skinIndex:ids,skinWeight:w,position}=mesh.geometry.attributes,vertices=[];
+   for(let i=0;i<position.count;i++){
+    let amount=0;for(let k=0;k<4;k++)if(/^(foot|ball)_[rl]$/.test(mesh.skeleton.bones[ids.getComponent(i,k)].name))amount+=w.getComponent(i,k);
+    if(amount>.9)vertices.push(i);
+   }
+   if(vertices.length)shoes.push({mesh,vertices});
+  });
+  const sole=()=>Math.min(...shoes.flatMap(({mesh,vertices})=>{mesh.skeleton.update();return vertices.map(i=>mesh.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(mesh.matrixWorld).y);}));
   const action=mixer.clipAction(clips.find(c=>c.name==='Golf_Swing')).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
   for(let frame=0;frame<=72;frame++){
    placement.restore();action.time=frame/30;mixer.update(0);root.updateMatrixWorld(true);
    const hands=['r','l'].map(s=>position(bones['hand_'+s]));
    const rotations=['r','l'].map(s=>bones['foot_'+s].getWorldQuaternion(new THREE.Quaternion()).normalize());
-   placement.apply(1/60,()=>0,{golf:true});
+   const beforeSole=sole();
+   placement.apply(1/60,()=>0,{golf:true,preserveAuthored:true,preserveHinge:true,kneeSolver:headingKnee,...attackFootContacts(record,frame/30,null)});
    for(const [i,side]of ['r','l'].entries()){
     const now=bones['foot_'+side].getWorldQuaternion(new THREE.Quaternion()).normalize();
     // Native nonuniform bind scales produce about 0.001 degrees of roundoff.
     assert.ok(now.angleTo(rotations[i])<1e-4,`${hero}/${frame}: terrain support flattened the authored heel pivot`);
     assert.ok(position(bones['hand_'+side]).distanceTo(hands[i])<1e-8,`${hero}/${frame}: golf hand path changed`);
    }
-   for(const gap of soleGaps(rig,()=>0))assert.ok(Math.abs(gap)<.002,`${hero}/${frame}: golf support gap ${gap}`);
+   // The toe bone sits inside the shoe. It rises as the physical toe rolls.
+   // Verify the actual shoe surface, not a stationary bone used as a sole proxy.
+   root.updateMatrixWorld(true);const afterSole=sole();
+   assert.ok(Math.abs(afterSole-beforeSole)<.0001,`${hero}/${frame}: terrain changed the authored sole support`);
+   assert.ok(Math.abs(afterSole)<.003,`${hero}/${frame}: physical shoe support gap ${afterSole}`);
    assert.ok(placement.report.feet.every(f=>f.reachError<.001),`${hero}/${frame}: native backswing leg was shortened`);
   }
  }

@@ -84,3 +84,6 @@ The compact `tools/golf-quiet-poses` recipe separately reproduces the address an
 
 The old `author-native-golf.mjs` workflow does not reproduce these accepted paths.
 Do not replace the accepted models, profiles, or paired-grip metadata with its output without a new review.
+
+The later [golf leg-frame correction](golf-leg-frames.md) changes only the six leg rotation tracks.
+Its separate author and source hashes reproduce that later pass.

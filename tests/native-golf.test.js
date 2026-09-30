@@ -19,11 +19,11 @@ for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${hero
    }
   }
   rig.mixer.stopAllAction();const action=rig.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
-  action.time=0;rig.mixer.update(0);helpers.update();const lead=point('foot_r'),trailToe=point('ball_l');
+  action.time=0;rig.mixer.update(0);helpers.update();const leadToe=point('ball_r').setY(0),trailToe=point('ball_l').setY(0);
   for(let frame=0;frame<=Math.round(duration*30);frame++){
    const seconds=frame/30;action.time=seconds;rig.mixer.update(0);helpers.update();
-   assert.ok(point('foot_r').distanceTo(lead)<.001,`${name}: lead foot slides`);
-   assert.ok(point('ball_l').distanceTo(trailToe)<.001,`${name}: trail toe slides`);
+   assert.ok(point('ball_r').setY(0).distanceTo(leadToe)<.001,`${name}: lead forefoot slides`);
+   assert.ok(point('ball_l').setY(0).distanceTo(trailToe)<.001,`${name}: trail toe slides`);
    if(name!=='Golf_Swing')continue;
    for(const side of ['r','l']){
     const skin=measureArmSkin(rig,surface,side,{details:hero==='monk'&&side==='l'});

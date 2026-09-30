@@ -24,11 +24,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'anatomic-strafe-1']));
-for(const model of ['kaede','ayame','sora'])MODEL_REVISIONS[model]='standard-attack-leg-frames-1';
-MODEL_REVISIONS.ronin='ronin-native-leg-frames-1';
-MODEL_REVISIONS.monk='ethan-native-leg-frames-1';
-MODEL_REVISIONS.shinobi='shinobi-native-leg-frames-1';
+const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'golf-native-leg-frames-1']));
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
