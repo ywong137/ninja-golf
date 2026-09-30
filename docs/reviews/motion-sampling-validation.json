@@ -1,0 +1,184 @@
+{
+  "baseline": "b174c45",
+  "numericComparisons": 255158,
+  "tests": 563,
+  "browser": [
+    {
+      "variant": "reference",
+      "samples": 2394,
+      "transformValues": 3280528,
+      "hash": "b167343a375ceaecf728e6a3d2ce5a58416f513b976a7b29dbd9e3a913984b2a",
+      "images": [
+        {
+          "kind": "golf",
+          "hash": "0b04d2852b0eb9f2218d1629dc3a3baf5df4ab85b9bc7fefbe0476aca1a73275",
+          "path": "/tmp/ninja-sampling/browser/reference-golf.png"
+        },
+        {
+          "kind": "heavy",
+          "hash": "e2cd57dd96d5fa33fd5f73ab1a9e2c57513cd37651435872f3d062309aa9bdc0",
+          "path": "/tmp/ninja-sampling/browser/reference-heavy.png"
+        },
+        {
+          "kind": "musou",
+          "hash": "29087ff35b4d6ce2b7087fea03eb236d63b0a5a09a26e0c2f90352ad9ed2d22b",
+          "path": "/tmp/ninja-sampling/browser/reference-musou.png"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "variant": "playback",
+      "samples": 2394,
+      "transformValues": 3280528,
+      "hash": "b167343a375ceaecf728e6a3d2ce5a58416f513b976a7b29dbd9e3a913984b2a",
+      "images": [
+        {
+          "kind": "golf",
+          "hash": "0b04d2852b0eb9f2218d1629dc3a3baf5df4ab85b9bc7fefbe0476aca1a73275",
+          "path": "/tmp/ninja-sampling/browser/playback-golf.png"
+        },
+        {
+          "kind": "heavy",
+          "hash": "e2cd57dd96d5fa33fd5f73ab1a9e2c57513cd37651435872f3d062309aa9bdc0",
+          "path": "/tmp/ninja-sampling/browser/playback-heavy.png"
+        },
+        {
+          "kind": "musou",
+          "hash": "29087ff35b4d6ce2b7087fea03eb236d63b0a5a09a26e0c2f90352ad9ed2d22b",
+          "path": "/tmp/ninja-sampling/browser/playback-musou.png"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "samplingBenchmark": {
+    "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/154.0.0.0 Safari/537.36",
+    "clips": 129,
+    "samplesPerRound": 200000,
+    "rounds": [
+      {
+        "reference": {
+          "milliseconds": 555.4000000953674,
+          "checksum": -28468.749740446816
+        },
+        "optimized": {
+          "milliseconds": 177.29999995231628,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "optimized": {
+          "milliseconds": 171.79999995231628,
+          "checksum": -28468.749740446816
+        },
+        "reference": {
+          "milliseconds": 552.4000000953674,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "reference": {
+          "milliseconds": 554.5,
+          "checksum": -28468.749740446816
+        },
+        "optimized": {
+          "milliseconds": 176.89999985694885,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "optimized": {
+          "milliseconds": 174.70000004768372,
+          "checksum": -28468.749740446816
+        },
+        "reference": {
+          "milliseconds": 553,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "reference": {
+          "milliseconds": 567.7999999523163,
+          "checksum": -28468.749740446816
+        },
+        "optimized": {
+          "milliseconds": 178.39999985694885,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "optimized": {
+          "milliseconds": 175.10000014305115,
+          "checksum": -28468.749740446816
+        },
+        "reference": {
+          "milliseconds": 557.0999999046326,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "reference": {
+          "milliseconds": 553,
+          "checksum": -28468.749740446816
+        },
+        "optimized": {
+          "milliseconds": 170.10000014305115,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "optimized": {
+          "milliseconds": 177.20000004768372,
+          "checksum": -28468.749740446816
+        },
+        "reference": {
+          "milliseconds": 543.8999998569489,
+          "checksum": -28468.749740446816
+        }
+      },
+      {
+        "reference": {
+          "milliseconds": 555.1000001430511,
+          "checksum": -28468.749740446816
+        },
+        "optimized": {
+          "milliseconds": 175.5,
+          "checksum": -28468.749740446816
+        }
+      }
+    ],
+    "medianMilliseconds": {
+      "reference": 554.5,
+      "optimized": 175.5
+    },
+    "medianSpeedup": 3.1595441595441596
+  },
+  "bundle": [
+    {
+      "name": "index-h0xUnmAi.js",
+      "bytes": 13773832,
+      "sha256": "eb5c02f3a84e1958812204f5de9a788f495166ae0212d4a2acddbe3d528a2800"
+    }
+  ],
+  "crowdBenchmark": {
+    "course": "Crane Coast",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Max, Unspecified Version)",
+    "viewport": [
+      1440,
+      900
+    ],
+    "deviceScaleFactor": 1,
+    "renderRatio": 1,
+    "contactShading": false,
+    "fps": 57.61652668814486,
+    "p95": 16.799999999999272,
+    "enemies": 64,
+    "calls": 849,
+    "triangles": 4144258,
+    "hero": "The Ace",
+    "moving": true,
+    "layerFrames": 888
+  },
+  "productionSmoke": "Drive, one stroke, combat, club selection, and pause/resume passed with no browser errors."
+}

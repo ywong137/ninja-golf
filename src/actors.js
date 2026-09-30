@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
-import { motions, sampleMotion, combatMotionName } from './motion.js';
+import { motions, sampleMotionInto, combatMotionName } from './motion.js';
 import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
 import {FootPlacement,attackFootContacts} from './foot-placement.js';
@@ -80,6 +80,7 @@ function clipsFor(index){
 }
 export class Warrior {
   constructor(type=0,enemy=false,appearance={family:type%3,palette:0}){
+    this.motionSample={};
     this.appearance=enemy?resolveEnemyAppearance(appearance):null;
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+this.appearance.family:type;
     this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
@@ -277,7 +278,7 @@ export class Warrior {
     }
     if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend,{dt});
     else{this.runFootwork?.resetEntry();this.runFootwork?.resetDirection();this.runFootwork?.applyExit(selection||previewPose?0:dt);}
-    const motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0);
+    const motion=sampleMotionInto(this.current,this.actions.get(this.current)?.time||0,this.motionSample);
     let contactWeights=null,stance=null;
     if(this.running||this.guardWalking){
       contactWeights={};stance={};const running=this.running,phase=running?this.runPhase:this.guardWalkPhase,support=running ? .28 : .5;
@@ -310,7 +311,7 @@ export class Warrior {
     }
     this.syncHeldObjects(motion,golf);
   }
-  syncHeldObjects(motion=sampleMotion(this.current,this.actions.get(this.current)?.time||0),golf=false){
+  syncHeldObjects(motion=sampleMotionInto(this.current,this.actions.get(this.current)?.time||0,this.motionSample),golf=false){
     if(this.handGrip){this.handGrip.apply(motion,golf,motions[this.current]);this.forearmTwist?.update({refreshMatrices:false});return;}
     // Anchor the handle to the evaluated palm after every mixer and torso update.
     // Authored directions control the shaft; the live palm also controls blade roll.

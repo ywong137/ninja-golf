@@ -4,17 +4,26 @@ import {chromium} from 'playwright';
 import {projectPlaybackMotions} from '../tools/playback-motion.mjs';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 
-const output='/tmp/ninja-playback-motion';fs.mkdirSync(output,{recursive:true});
+const compareSampler=process.argv.includes('--sampler');
+const output=compareSampler?'/tmp/ninja-sampling/browser':'/tmp/ninja-playback-motion';fs.mkdirSync(output,{recursive:true});
 const full=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url),'utf8'));
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 const reports=[];
 try {
- for(const [variant,records]of [['reference',full],['playback',projectPlaybackMotions(full)]]){
+ for(const [variant,records]of [['reference',compareSampler?projectPlaybackMotions(full):full],['playback',projectPlaybackMotions(full)]]){
   const context=await browser.newContext({viewport:{width:1200,height:800}}),page=await context.newPage(),errors=[];
   try {
    await disableHmr(page);page.on('pageerror',error=>errors.push(error.message));
    // Use the same module projection as the release plugin, against the actual actor runtime.
    await page.route('**/src/motion-data.json*',route=>route.fulfill({contentType:'application/javascript',body:`export default ${JSON.stringify(records)};`}));
+   if(compareSampler&&variant==='reference'){
+    const current=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8');
+    const before=fs.readFileSync(new URL('./fixtures/motion-sampler-before.js',import.meta.url),'utf8');
+    const wrappers=`export function sampleMotion(name,seconds){return sampleReference(motions[name]||selectionMotions[name],seconds,name);}
+export function sampleMotionInto(name,seconds,_output){return sampleMotion(name,seconds);}\n`;
+    const body=current.slice(0,current.indexOf('// Cubic Hermite'))+before+wrappers+current.slice(current.indexOf('export const ATTACK_CLIPS'));
+    await page.route('**/src/motion.js*',route=>route.fulfill({contentType:'application/javascript',body}));
+   }
    await page.goto('http://localhost:5173/tests/rig-stage.html');
    const report=await page.evaluate(async()=>{
     const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js'),{combatMotionName}=await import('/src/motion.js');
