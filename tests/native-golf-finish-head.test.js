@@ -1,4 +1,4 @@
-// Exact skin regression for the Vice President and Ace golf finishes. Run from the repository root.
+// Exact skin regression for every golf finish. Run from the repository root.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -11,17 +11,21 @@ const load=relative=>import(pathToFileURL(path.join(repo,relative)));
 const T=await load('node_modules/three/build/three.module.js');
 const {loadNativeSkin}=await load('tests/native-skin-helper.mjs');
 const {installForearmTwistHelpers}=await load('src/forearm-twist.js');
+const {createGolfClub}=await load('src/golf-club.js');
+const {captureGolfRestPose,calibrateGolfClub}=await load('src/golf-club-fit.js');
 const {headSurfaceMetadata,measureTriangleHeadClearance}=await load('tools/blade-head-surface.mjs');
-const limbs=['upperarm_r','upperarm_l','lowerarm_r','lowerarm_l'];
+const limbs=['upperarm_r','upperarm_l','lowerarm_r','lowerarm_l','hand_r','hand_l'];
 const canonical=name=>name.replace(/^lowerarm_skin_(?:base|mid)_([rl])$/,'lowerarm_$1');
 
 function armTriangles(scene,headSurfaces) {
   const groups=Object.fromEntries(limbs.map(name=>[name,[]]));
+  const handBones={};
+  for(const side of ['r','l'])scene.getObjectByName('hand_'+side).traverse(bone=>{if(bone.isBone)handBones[bone.name]='hand_'+side;});
   let meshId=0;
   scene.traverse(mesh=>{
     if (!mesh.isSkinnedMesh) return;
     const id=meshId++,attributes=mesh.geometry.attributes,index=mesh.geometry.index;
-    const names=mesh.skeleton.bones.map(bone=>canonical(bone.name));
+    const names=mesh.skeleton.bones.map(bone=>handBones[bone.name]??canonical(bone.name));
     const headVertices=new Set(headSurfaces.find(surface=>surface.mesh===mesh)?.triangles.flat()??[]);
     const weights=Object.fromEntries(limbs.map(limb=>[limb,Array.from({length:attributes.position.count},(_,vertex)=>{
       let sum=0;
@@ -47,9 +51,9 @@ function armTriangles(scene,headSurfaces) {
 }
 
 function timesFor(clip) {
-  const start=1.8,end=2.4,keys=new Set([start,end,2.2]);
+  const start=1.6,end=2.4,keys=new Set([start,end,2.2]);
   assert.ok(clip.duration>=end-1e-6,'Golf_Swing ends before the finish window.');
-  for (let i=108;i<=144;i++) keys.add(i/60);
+  for (let i=96;i<=144;i++) keys.add(i/60);
   // Every authored key and its adjacent midpoint matters. Do not rely on a
   // sparse set of named golf phases or AnimationMixer's cached property state.
   for (const track of clip.tracks) {
@@ -69,6 +73,10 @@ export async function inspectGolfFinish(model) {
   const gltf=await loadNativeSkin(model),scene=gltf.scene;
   const clip=gltf.animations.find(item=>item.name==='Golf_Swing');
   assert.ok(clip,'Missing Golf_Swing.');
+  const hero=path.basename(model,'.glb'),profile=JSON.parse(fs.readFileSync(path.join(repo,'src/grip-data.json')))[hero].golf.r;
+  const hand=scene.getObjectByName('hand_r'),grip={center:new T.Vector3().fromArray(profile.center),frame:new T.Quaternion().fromArray(profile.frame)},club=createGolfClub();
+  const fit=calibrateGolfClub({root:scene,hand,clip,restPose:captureGolfRestPose(scene),grip,club,contactTime:1.4});
+  club.shaft.scale.y=fit.shaftLengthNative-.14;club.shaft.position.y=.14+club.shaft.scale.y*.5;
   const rest=[];
   scene.traverse(object=>rest.push({object,position:object.position.clone(),quaternion:object.quaternion.clone(),scale:object.scale.clone()}));
   const bound=clip.tracks.map(track=>{
@@ -87,8 +95,13 @@ export async function inspectGolfFinish(model) {
       assert.deepEqual(signature(groups[limb]),signature(originalGroups[limb]),
         `${limb}: helper installation changed the set of tested surface triangles.`);
     }
+    for(const [name,mesh] of [['clubShaft',club.shaft],['clubGrip',club.root.getObjectByName('Golf club grip')]]){
+      const index=mesh.geometry.index,position=mesh.geometry.attributes.position;
+      groups[name]=Array.from({length:(index?.count??position.count)/3},(_,triangleIndex)=>({mesh,meshId:name,triangleIndex,vertices:[0,1,2].map(k=>index?index.getX(triangleIndex*3+k):triangleIndex*3+k)}));
+    }
+    const parts=Object.keys(groups);
     const times=timesFor(clip),rows=[],firstFailures={};
-    const statistics=Object.fromEntries(limbs.map(limb=>[limb,{
+    const statistics=Object.fromEntries(parts.map(limb=>[limb,{
       triangles:groups[limb].length,minimumClearance:.005,maxCrossings:0,worstTime:null,firstFailure:null,
     }]));
     for (const time of times) {
@@ -100,9 +113,11 @@ export async function inspectGolfFinish(model) {
       for (const item of bound) item.object[item.property].fromArray(item.interpolant.evaluate(time));
       scene.updateMatrixWorld(true);
       helper.update();
+      club.root.position.copy(hand.localToWorld(grip.center.clone()));
+      club.root.quaternion.copy(hand.getWorldQuaternion(new T.Quaternion()).multiply(grip.frame));club.root.updateMatrixWorld(true);
       const cache=new Map();
       function posed(row) {
-        if (!cache.has(row.mesh)) { row.mesh.skeleton.update(); cache.set(row.mesh,new Map()); }
+        if (!cache.has(row.mesh)) { row.mesh.skeleton?.update(); cache.set(row.mesh,new Map()); }
         const points=cache.get(row.mesh);
         return row.vertices.map(vertex=>{
           if (!points.has(vertex)) points.set(vertex,row.mesh.getVertexPosition(vertex,new T.Vector3()).applyMatrix4(row.mesh.matrixWorld));
@@ -110,7 +125,7 @@ export async function inspectGolfFinish(model) {
         });
       }
       const current={time,limbs:{}};
-      for (const limb of limbs) {
+      for (const limb of parts) {
         const triangles=groups[limb].map(posed);
         const result=measureTriangleHeadClearance(head,{[limb]:triangles},{distanceCap:.005});
         current.limbs[limb]=result;
@@ -138,22 +153,22 @@ export async function inspectGolfFinish(model) {
     }
     return {
       model,pathSha256:createHash('sha256').update(fs.readFileSync(model)).digest('hex'),clip:clip.name,
-      window:[1.8,2.4],samples:times.length,times,
+      window:[1.6,2.4],samples:times.length,times,
       sampling:'60 Hz, every native key, and adjacent native-key midpoints within the finish window.',
-      classification:'Any triangle with a vertex carrying at least 50% weight from the named limb. Forearm helper weights pool with lowerarm.',
+      classification:'Any triangle with a vertex carrying at least 50% weight from the named limb. Forearm helper weights pool with lowerarm; fingers pool with hand. Shaft and grip use their complete rendered meshes.',
       head:'Actual skinned Head descendants, including jaw/eyes/hair. Rigid eyewear is outside this focused test.',
       clearanceCap:.005,helperVersion:helper.report.version,statistics,rows,
     };
   } finally {helper.dispose();}
 }
 
-for(const [model,label] of [['monk','Vice President'],['kaede','Ace']])test(`${label} golf finish keeps both upper arms and forearms outside the actual head surface`,async t=>{
+for(const [model,label] of [['ronin','Ronin'],['shinobi','Shinobi'],['monk','Vice President'],['kaede','Ace'],['ayame','Hustler'],['sora','Closer']])test(`${label} golf finish keeps arms, hands, and club shaft outside the actual head surface`,async t=>{
   const directory=path.resolve(process.env.NINJA_GOLF_MODEL_DIR??path.join(repo,'public/models'));
   const report=await inspectGolfFinish(path.join(directory,model+'.glb'));
-  if (process.env.NINJA_GOLF_HEAD_REPORT) fs.writeFileSync(model==='monk'?process.env.NINJA_GOLF_HEAD_REPORT:process.env.NINJA_GOLF_HEAD_REPORT.replace(/\.json$/,'.kaede.json'),JSON.stringify(report,null,2)+'\n');
+  if (process.env.NINJA_GOLF_HEAD_REPORT) fs.writeFileSync(model==='monk'?process.env.NINJA_GOLF_HEAD_REPORT:process.env.NINJA_GOLF_HEAD_REPORT.replace(/\.json$/,'.'+model+'.json'),JSON.stringify(report,null,2)+'\n');
   t.diagnostic(JSON.stringify({samples:report.samples,statistics:report.statistics}));
   const failures=Object.entries(report.statistics).filter(([,result])=>result.maxCrossings>0);
   assert.deepEqual(failures.map(([limb,result])=>({limb,time:result.firstFailure.time,worstTime:result.worstTime,
     maxCrossings:result.maxCrossings,vertices:result.firstFailure.vertices})),[],
-    'An actual arm surface crosses the head or jaw during Golf_Swing. Keep the candidate rejected; inspect the reported limb and time.');
+    'An arm, hand, or club surface crosses the head or jaw during Golf_Swing. Keep the candidate rejected; inspect the reported part and time.');
 });

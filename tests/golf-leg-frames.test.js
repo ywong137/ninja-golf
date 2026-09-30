@@ -27,11 +27,11 @@ for(const hero of heroes)test(`${hero}: golf knees hinge forward and both forefe
    }
    if(last&&time-last.time>1e-5)peak.pelvisSpeed=Math.max(peak.pelvisSpeed,sample.pelvis.distanceTo(last.pelvis)/(time-last.time));
    if(name!=='Golf_Swing'||time<=1.42)assert.ok(p('foot_r').distanceTo(lead)<.0005,`${name}/${time}: lead ankle drift ${p('foot_r').distanceTo(lead)}`);
-   if(name==='Golf_Swing'&&time>=1.91){const turn=hero==='kaede'?35:25;assert.ok(Math.abs(q('foot_r').angleTo(leadQ)-turn*Math.PI/180)<.001,`Lead foot loses its ${turn}-degree finish pivot`);}
+   if(name==='Golf_Swing'&&time>=1.91)assert.ok(Math.abs(q('foot_r').angleTo(leadQ)-35*Math.PI/180)<.001,'Lead foot loses its 35-degree finish pivot');
    last=sample;
   }
  }
- assert.ok(peak.toeDrift<.0005,'Forefoot slides horizontally during the swing');
+ assert.ok(peak.toeDrift<.0005,`Forefoot slides horizontally during the swing: ${peak.toeDrift} m`);
  assert.ok(peak.soleDrift<.001,'Actual shoe surface leaves or penetrates its support plane');
  assert.ok(peak.kneeSpeed<4&&peak.shoeSpeed<6,'Leg frame changes abruptly');
  t.diagnostic(JSON.stringify(peak));
