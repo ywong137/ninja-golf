@@ -1,4 +1,4 @@
-# Reviewed Ace golf finish
+# Reviewed golf finishes
 
 `ace-rotations.json.gz` contains eleven native rotation channels for `Golf_Swing`.
 The channels change the finish after 1.68 seconds. They retain the 2.4-second clip duration.
@@ -40,3 +40,35 @@ The saved curves contain the reviewed result, including the continuous paired-ha
 Replaying these curves requires no optimization during play.
 
 See [the review](../../docs/reviews/ace-golf-finish.md) for results and remaining grip limitations.
+
+## Remaining roster
+
+The Ronin, Shinobi, Vice President, Hustler, and Closer now use individual finish fits.
+Their files are `<model>-rotations.json.gz`. Each file contains eleven rotation channels.
+Use each model from commit `9d04ee3` as its source:
+
+```sh
+git show 9d04ee3:public/models/ronin.glb > /tmp/ronin-before-finish.glb
+node tools/bake-golf-finish.mjs --hero ronin --input /tmp/ronin-before-finish.glb --output /tmp/ronin-finish.glb
+```
+
+These files include source and output hashes. The builder checks both.
+They preserve all other channels and the complete source binary payload.
+Geometry, skin weights, finger profiles, lower-body movement, address, and impact remain unchanged.
+
+Each fit uses the accepted Ace finish as a pose reference.
+It transfers the club frame relative to the chest and scales the reach for each skeleton.
+The palm frames and grip spacing come from that character's existing grip profile.
+The fitting pass solves both arms together against the native elbow calibration.
+It adjusts the clavicles, elbow bend planes, and shared club frame.
+The transition bounds grow smoothly after 1.68 seconds, preventing an immediate elbow adjustment.
+Forearm rotation starts from the existing pose and gradually approaches the fitted finish.
+The chest turns another 20 degrees; the head keeps its original world rotation.
+
+The saved curves replay the reviewed results without a runtime solver.
+Each asset grows by about 262 KB. See [the roster review](../../docs/reviews/roster-golf-finish.md).
+
+The Ronin and Vice President also use shallower lead-elbow folds to preserve their thicker sleeves.
+The final assets pass the existing sleeve constraints without changing skin weights or collision tolerances.
+
+The Vice President completes the new fold at 2.18 seconds to reduce late club travel.

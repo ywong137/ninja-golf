@@ -7,9 +7,9 @@ import {loadNativeSkin} from './native-skin-helper.mjs';
 import {measureTriangleHeadClearance} from '../tools/blade-head-surface.mjs';
 
 // These checks use the deformed skin. A finger bone near the shaft is not contact.
-test('Ace golf grasp keeps the complete hands separate and all fingers on the finite handle',async t=>{
-  const model=process.env.NINJA_GOLF_MODEL_DIR?path.join(process.env.NINJA_GOLF_MODEL_DIR,'kaede.glb'):new URL('../public/models/kaede.glb',import.meta.url);
-  const profiles=JSON.parse(fs.readFileSync(process.env.NINJA_GOLF_PROFILE_FILE??new URL('../src/grip-data.json',import.meta.url))).kaede.golf;
+for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${hero}: golf grasp keeps both hands separate and all fingers on the finite handle`,async t=>{
+  const model=process.env.NINJA_GOLF_MODEL_DIR?path.join(process.env.NINJA_GOLF_MODEL_DIR,hero+'.glb'):new URL('../public/models/'+hero+'.glb',import.meta.url);
+  const profiles=JSON.parse(fs.readFileSync(process.env.NINJA_GOLF_PROFILE_FILE??new URL('../src/grip-data.json',import.meta.url)))[hero].golf;
   const g=await loadNativeSkin(model),bones={},groups=['palm','thumb','index','middle','ring','pinky'];
   const hands=Object.fromEntries(['r','l'].map(side=>[side,{all:[],surfaces:Object.fromEntries(groups.map(f=>[f,[]])),vertices:Object.fromEntries(groups.map(f=>[f,[]]))}]));
   g.scene.traverse(mesh=>{

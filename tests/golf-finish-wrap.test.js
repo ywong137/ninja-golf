@@ -5,16 +5,16 @@ import path from 'node:path';
 import * as T from 'three';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 
-test('Ace completes the high golf finish with the shaft lowered behind the head',async t=>{
+for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${hero}: completes the high golf finish with the shaft lowered behind the head`,async t=>{
   const file=process.env.NINJA_GOLF_MODEL_DIR
-    ?path.join(process.env.NINJA_GOLF_MODEL_DIR,'kaede.glb')
-    :new URL('../public/models/kaede.glb',import.meta.url);
+    ?path.join(process.env.NINJA_GOLF_MODEL_DIR,hero+'.glb')
+    :new URL('../public/models/'+hero+'.glb',import.meta.url);
   const g=await loadNativeSkin(file),point=n=>g.scene.getObjectByName(n).getWorldPosition(new T.Vector3());
   g.scene.updateMatrixWorld(true);
   const armLength=point('lowerarm_r').distanceTo(point('upperarm_r'))+point('hand_r').distanceTo(point('lowerarm_r'));
   const clip=g.animations.find(c=>c.name==='Golf_Swing');
   const action=g.mixer.clipAction(clip).setLoop(T.LoopOnce).play();action.clampWhenFinished=true;
-  const frame=new T.Quaternion().fromArray(JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).kaede.golf.r.frame);
+  const frame=new T.Quaternion().fromArray(JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)))[hero].golf.r.frame);
   let maximumShaftY=-Infinity,maximumElbowSpeed=0,previous=null;
   for(let i=0;i<=144;i++){
     const time=1.8+i/240;action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);
