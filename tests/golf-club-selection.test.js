@@ -43,5 +43,7 @@ test('automatic clubs, hole defaults, and new players update the same runtime mo
 
 test('selection showcase explicitly uses a driver for its Golf_Swing clip',()=>{
  const game=fixture();game.selectClub(7);active(game,'PT');game.startShowcase();active(game,'DR');assert.equal(game.showcase.player,game.player);
+ game.updateCamera=(dt,options)=>{game.previewCameraUpdate={dt,options};};
  game.mode='selection';game.course={};game.selectWarrior(1);active(game,'DR');assert.equal(game.showcase.player,game.player);
+ assert.equal(game.previewCameraUpdate.dt,0);assert.equal(game.previewCameraUpdate.options.immediate,true);
 });
