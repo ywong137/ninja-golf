@@ -35,3 +35,10 @@ No assets from Samurai Warriors or Dynasty Warriors are included.
 The Ace rising attack adapts Sword_Regular_A and Sword_Regular_A_Rec from
 Quaternius Universal Animation Library 2, CC0. Native joints, foot contacts,
 timing, transitions, and root travel were re-authored for this game.
+
+The Ace golf finish uses measured pose references from Carnegie Mellon
+University's Motion Capture Database, subject 64, trial 64_01, frame 409.
+https://mocap.cs.cmu.edu/
+The database permits use in products, but prohibits direct resale of its data.
+The reference pose was mirrored and refitted to the native skeleton and club.
+The resulting animation is an adaptation, not a direct motion capture replay.
