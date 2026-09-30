@@ -1,0 +1,683 @@
+{
+  "revision": "golf-backswing-2",
+  "previousCommit": "c03de7828ee645c3d245d0b886960476854e7d84",
+  "sourceCommit": "ce08de7a2041eb62cc46e2f0c520d034dd988829",
+  "preservation": [
+    {
+      "hero": "ronin",
+      "previousSha256": "ac4ec2eef5fc9d5927fd99817caafd4502246505ec768af0c741c10ce92ed506",
+      "outputSha256": "52de35719996352f04554e60b1402ba269154ff2f48631e84e8ef7ea31a182b1",
+      "previousBytes": 11878684,
+      "outputBytes": 12005272,
+      "preservedChannels": 8489,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 4.182619578303746e-06,
+      "maxInsideDegrees": 45.35102897752132
+    },
+    {
+      "hero": "shinobi",
+      "previousSha256": "5af11d5e47251331d4fcb0e93a58a33b3f1a97f59cf9c46c6a247e2db97e8b9a",
+      "outputSha256": "da6cbe4fe782d756ba7d8287e34133010c8c7cd249ecdea5b3de1edf15b49547",
+      "previousBytes": 17594552,
+      "outputBytes": 17721140,
+      "preservedChannels": 8872,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 4.829673078902933e-06,
+      "maxInsideDegrees": 37.954972236010924
+    },
+    {
+      "hero": "monk",
+      "previousSha256": "10d83c32ba97bc6e8b37d88050d40ec6f075eda99670bc3021f782cb25fd73f0",
+      "outputSha256": "ae13a4a500b1952bbaab0e995e5fd1425568ac5d649ce40663b6b9b9d38c5d87",
+      "previousBytes": 21470548,
+      "outputBytes": 21597140,
+      "preservedChannels": 6389,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 5.399738656763832e-06,
+      "maxInsideDegrees": 30.781276936173473
+    },
+    {
+      "hero": "kaede",
+      "previousSha256": "93858b1b58779a45c9c4b3d4c0831ae11c66f9820eb37a314004a8ac473db871",
+      "outputSha256": "ee691afb997d1548869c48c490ba2a11bf7b9ba22c60de95b4ba50ea0da46202",
+      "previousBytes": 15394468,
+      "outputBytes": 15521060,
+      "preservedChannels": 8295,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 5.122641877509564e-06,
+      "maxInsideDegrees": 34.19318437180275
+    },
+    {
+      "hero": "ayame",
+      "previousSha256": "6f41934fb9a7a1e1b2c05ba6d66cae5458ce9aa3e85324a76d0680f3a82caedc",
+      "outputSha256": "c9709c8dbc847097595f5f81b20ddecba1d4267b792c482439c47888a5fd9aa1",
+      "previousBytes": 15448816,
+      "outputBytes": 15575404,
+      "preservedChannels": 8872,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 5.122641877509564e-06,
+      "maxInsideDegrees": 42.143034003242946
+    },
+    {
+      "hero": "sora",
+      "previousSha256": "286ee74125e87aa500e06fb480e4c636b1d058c2aae1ac9b3b68643b801823c4",
+      "outputSha256": "e63d5104618f48c010bd82df78aaea61fc41239ca5a90781b92d16b5069e2050",
+      "previousBytes": 18747516,
+      "outputBytes": 18874108,
+      "preservedChannels": 8872,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "clavicle_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r",
+        "clavicle_r"
+      ],
+      "originalCe08BinaryPrefix": true,
+      "originalGeometryWeightsMaterials": true,
+      "maxOutsideDegrees": 5.399738656763832e-06,
+      "maxInsideDegrees": 38.00762390641175
+    }
+  ],
+  "elbowCurvature": {
+    "window": [
+      0.58,
+      1.38
+    ],
+    "rate": 120,
+    "definition": "Distance from each elbow position to the midpoint of its adjacent samples; not a pure wobble amplitude.",
+    "measurements": [
+      {
+        "version": "current",
+        "hero": "ronin",
+        "peaks": {
+          "r": 0.01580756353774534,
+          "l": 0.01773857713824132,
+          "rAt": 1.3,
+          "lAt": 1.3
+        }
+      },
+      {
+        "version": "current",
+        "hero": "shinobi",
+        "peaks": {
+          "r": 0.014515004820488002,
+          "l": 0.007540683179544457,
+          "rAt": 1.2833333333333334,
+          "lAt": 1.325
+        }
+      },
+      {
+        "version": "current",
+        "hero": "monk",
+        "peaks": {
+          "r": 0.013293754749346671,
+          "l": 0.007260878522322412,
+          "rAt": 0.8083333333333333,
+          "lAt": 0.95
+        }
+      },
+      {
+        "version": "current",
+        "hero": "kaede",
+        "peaks": {
+          "r": 0.011594312384405175,
+          "l": 0.01286667568199274,
+          "rAt": 1.325,
+          "lAt": 1.325
+        }
+      },
+      {
+        "version": "current",
+        "hero": "ayame",
+        "peaks": {
+          "r": 0.012628923079054541,
+          "l": 0.02303789658662184,
+          "rAt": 1.3,
+          "lAt": 1.3
+        }
+      },
+      {
+        "version": "current",
+        "hero": "sora",
+        "peaks": {
+          "r": 0.009296313110257111,
+          "l": 0.008372518207051928,
+          "rAt": 1.3666666666666667,
+          "lAt": 0.95
+        }
+      },
+      {
+        "version": "final",
+        "hero": "ronin",
+        "peaks": {
+          "r": 0.007204305259392664,
+          "l": 0.005599018409268975,
+          "rAt": 1.3666666666666667,
+          "lAt": 1.3
+        }
+      },
+      {
+        "version": "final",
+        "hero": "shinobi",
+        "peaks": {
+          "r": 0.005481683853522692,
+          "l": 0.006982666374289737,
+          "rAt": 1.375,
+          "lAt": 1.35
+        }
+      },
+      {
+        "version": "final",
+        "hero": "monk",
+        "peaks": {
+          "r": 0.005340012857719624,
+          "l": 0.005230504179334388,
+          "rAt": 1.3583333333333334,
+          "lAt": 1.3333333333333333
+        }
+      },
+      {
+        "version": "final",
+        "hero": "kaede",
+        "peaks": {
+          "r": 0.006572035619973357,
+          "l": 0.013243739171748896,
+          "rAt": 1.3666666666666667,
+          "lAt": 1.3166666666666667
+        }
+      },
+      {
+        "version": "final",
+        "hero": "ayame",
+        "peaks": {
+          "r": 0.00803787391758679,
+          "l": 0.008220240393360197,
+          "rAt": 1.3666666666666667,
+          "lAt": 1.3
+        }
+      },
+      {
+        "version": "final",
+        "hero": "sora",
+        "peaks": {
+          "r": 0.008359107546093897,
+          "l": 0.008038268993919054,
+          "rAt": 1.3666666666666667,
+          "lAt": 1.3333333333333333
+        }
+      }
+    ]
+  },
+  "headNeckClearance": {
+    "window": [
+      0.58,
+      1.38
+    ],
+    "distanceCap": 0.005,
+    "reports": [
+      {
+        "hero": "Ronin",
+        "samples": 4154,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 89,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 92,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 86,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 93,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 842,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 844,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      },
+      {
+        "hero": "Shinobi",
+        "samples": 4161,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 187,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 187,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 197,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 197,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 800,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 800,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      },
+      {
+        "hero": "Vice President",
+        "samples": 4162,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 87,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 90,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 120,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 125,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 842,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 864,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      },
+      {
+        "hero": "Ace",
+        "samples": 4157,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 189,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 188,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 382,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 220,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 824,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 817,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      },
+      {
+        "hero": "Hustler",
+        "samples": 4161,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 211,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 217,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 222,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 362,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 826,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 826,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      },
+      {
+        "hero": "Closer",
+        "samples": 4161,
+        "statistics": {
+          "upperarm_r": {
+            "triangles": 109,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "upperarm_l": {
+            "triangles": 109,
+            "minimumClearance": 0.0023988700237958815,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_r": {
+            "triangles": 122,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "lowerarm_l": {
+            "triangles": 114,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_r": {
+            "triangles": 889,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "hand_l": {
+            "triangles": 889,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubShaft": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          },
+          "clubGrip": {
+            "triangles": 80,
+            "minimumClearance": 0.005,
+            "maxCrossings": 0,
+            "worstTime": null,
+            "firstFailure": null
+          }
+        }
+      }
+    ]
+  },
+  "independentReview": {
+    "model": [
+      "claude-opus-5-5"
+    ],
+    "permissionDenials": [],
+    "decision": "No new blocking regression; incremental release supported conditional on the final clean checks."
+  },
+  "validation": {
+    "unitTests": {
+      "passed": 559,
+      "failed": 0
+    },
+    "browser": {
+      "golfPhases": 150,
+      "clubContacts": 12,
+      "selectionCycles": 6,
+      "desktopLayouts": 10,
+      "courseThemes": 4
+    },
+    "capture": {
+      "hero": 2,
+      "speed": 1,
+      "frames": 183,
+      "errors": []
+    },
+    "productionBuild": "passed"
+  },
+  "limitations": [
+    "Impact-speed dip and post-impact acceleration remain in the published/source motion.",
+    "Lead-arm roll spikes after 1.38 seconds remain unchanged.",
+    "Cloth and tight Closer hood/hair clearance still need work.",
+    "Head scan does not include rigid eyewear or establish complete body clearance."
+  ]
+}

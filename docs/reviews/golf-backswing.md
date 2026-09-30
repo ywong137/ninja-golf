@@ -1,5 +1,7 @@
 # Golf backswing correction
 
+This page records revision 1. See [revision 2](golf-lead-arm.md) for the straighter lead arms and smoother elbow paths.
+
 All six heroes now fold the trail arm and set the club across their shoulders at the top.
 The previous motion extended both elbows near the top and left the shaft almost vertical.
 The new shaft elevation is about 20–23 degrees at 1.05 seconds.
