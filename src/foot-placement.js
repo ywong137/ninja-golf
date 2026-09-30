@@ -5,6 +5,20 @@ const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 // Motion records are immutable. Join continuous sole/toe support once per clip.
 const contactSchedules=new WeakMap();
+// Imported clips can retime one character without changing the shared motion.
+export function resolveFootSupport(animation,motion){
+ const support=animation.userData?.footSupport;
+ if(!support)return motion;
+ if(!motion||!Number.isFinite(animation.duration)||Math.abs(animation.duration-motion.duration)>1e-5)
+  throw Error(`Foot support requires a matching motion duration: ${animation.name}`);
+ for(const key of ['footPlants','toePlants'])for(const side of ['r','l']){
+  const ranges=support[key]?.[side];
+  if(!Array.isArray(ranges)||ranges.some((range,i)=>!Array.isArray(range)||range.length!==2||
+    !range.every(Number.isFinite)||range[0]<0||range[1]<range[0]||range[1]>animation.duration+1e-6||
+    (i>0&&range[0]<ranges[i-1][1])))throw Error(`Invalid ${key}.${side} in ${animation.name}`);
+ }
+ return {...motion,footPlants:support.footPlants,toePlants:support.toePlants};
+}
 function contactIntervals(clip,side){
  if(!clip?.footPlants?.[side])return null;
  let schedule=contactSchedules.get(clip);if(!schedule){schedule={};contactSchedules.set(clip,schedule);}

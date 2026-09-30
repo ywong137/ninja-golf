@@ -1,0 +1,98 @@
+{
+  "sourceCommit": "9e80579db2a365502229664b16553b5f3f049f05",
+  "sourceSha256": "f1d3be1481c07021119dd86663c91d7a39867c325157c605cae592e2b7938677",
+  "outputSha256": "9ecacbaa02a0cc258bd02db20e94e26f84f7f4f22e6539edc34c6206a15c241f",
+  "sourceBytes": 15810196,
+  "outputBytes": 17054064,
+  "compressedCurves": 2511313,
+  "originalBinaryPrefixPreserved": true,
+  "geometryMaterialsBindingsPreserved": true,
+  "exactCandidateCurvesPreserved": true,
+  "unchangedChannels": 8282,
+  "changedChannels": [
+    [
+      "Head",
+      "rotation"
+    ],
+    [
+      "hand_l",
+      "rotation"
+    ],
+    [
+      "lowerarm_l",
+      "rotation"
+    ],
+    [
+      "upperarm_l",
+      "rotation"
+    ],
+    [
+      "clavicle_l",
+      "rotation"
+    ],
+    [
+      "hand_r",
+      "rotation"
+    ],
+    [
+      "lowerarm_r",
+      "rotation"
+    ],
+    [
+      "upperarm_r",
+      "rotation"
+    ],
+    [
+      "clavicle_r",
+      "rotation"
+    ],
+    [
+      "neck_01",
+      "rotation"
+    ],
+    [
+      "spine_03",
+      "rotation"
+    ],
+    [
+      "spine_02",
+      "rotation"
+    ],
+    [
+      "foot_l",
+      "rotation"
+    ],
+    [
+      "calf_l",
+      "rotation"
+    ],
+    [
+      "thigh_l",
+      "rotation"
+    ],
+    [
+      "foot_r",
+      "rotation"
+    ],
+    [
+      "calf_r",
+      "rotation"
+    ],
+    [
+      "thigh_r",
+      "rotation"
+    ],
+    [
+      "spine_01",
+      "rotation"
+    ],
+    [
+      "pelvis",
+      "translation"
+    ],
+    [
+      "pelvis",
+      "rotation"
+    ]
+  ]
+}

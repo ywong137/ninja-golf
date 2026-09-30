@@ -18,4 +18,5 @@ It also rejects outputs inside `public/` and verifies the rebuilt output hash.
 The fitting step has no runtime cost.
 
 This correction does not resolve the source club-speed dips or torso timing.
+The later [pacing revision](../golf-pacing/README.md) addresses the club-speed dips with a coordinated stroke clock and corrected foot pivots.
 See [the review](../../docs/reviews/golf-release.md) for evidence and remaining work.

@@ -6,7 +6,7 @@ import { createWeapon } from './weapons.js';
 import { motions, sampleMotionInto, combatMotionName } from './motion.js';
 import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
-import {FootPlacement,attackFootContacts} from './foot-placement.js';
+import {FootPlacement,attackFootContacts,resolveFootSupport} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
@@ -25,7 +25,7 @@ export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'golf-backswing-2']));
-MODEL_REVISIONS.kaede='golf-release-1';
+MODEL_REVISIONS.kaede='golf-pacing-1';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -109,6 +109,7 @@ export class Warrior {
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
+    this.footContactMotions=new Map(clipsFor(index).map(c=>[c.name,resolveFootSupport(c,motions[c.name])]));
     this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index),this.footPlacement.feet):null;
     this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].combatStyle],motions):null;
     const hand=this.bones.hand_r;
@@ -287,7 +288,7 @@ export class Warrior {
     if(this.running&&this.runFootwork.gaitContacts)({contactWeights,stance}=this.runFootwork.gaitContacts);
     const authoredAttack=!!action;
     const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
-    if(authoredFeet&&!this.guardWalking)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
+    if(authoredFeet&&!this.guardWalking)({contactWeights,stance}=attackFootContacts(this.footContactMotions.get(this.current),this.actions.get(this.current)?.time||0,motion));
     if(golf||dodge||emerging||selection||cinematic||this.running||action?.kind==='musou')this.attackLocomotion?.reset();
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
