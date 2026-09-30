@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
-import {TREE_DETAIL,foliageEye,shadowFocus,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission} from './foliage-materials.js';
+import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
 import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.js';
 export {queueSceneryRock} from './scenery-rocks.js';
@@ -76,11 +76,11 @@ export class NaturalLandscape{
   for(const {name:tree} of forestSpecies(c.theme)){
   const source=assets.get(tree),shadowPositions=[],shadowUV=[],shadowIds=[],anchors=[];
   for(const rec of this.records.filter(rec=>rec.species===tree)){const view=Math.round(rec.angle/(Math.PI*2)*8)%8,[minX,minZ,maxX,maxZ]=source.shadowViews[view],base=shadowPositions.length/3;
-   for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){const x=rec.x+(minX+(maxX-minX)*i/8)*rec.scale,z=rec.z+(minZ+(maxZ-minZ)*j/8)*rec.scale;shadowPositions.push(x,heightAt(c,x,z)+.035,z);shadowUV.push((view%4+i/8)/4,(1-Math.floor(view/4)+1-j/8)/2);anchors.push(rec.x,rec.z);}
+   for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){const x=rec.x+(minX+(maxX-minX)*i/8)*rec.scale,z=rec.z+(minZ+(maxZ-minZ)*j/8)*rec.scale;shadowPositions.push(x,heightAt(c,x,z)+.035,z);shadowUV.push((view%4+i/8)/4,(1-Math.floor(view/4)+1-j/8)/2);anchors.push(rec.x,rec.y,rec.z);}
    for(let j=0;j<8;j++)for(let i=0;i<8;i++){const n=base+j*9+i;shadowIds.push(n,n+9,n+1,n+1,n+9,n+10);}
   }
-  const shadowGeo=new THREE.BufferGeometry();shadowGeo.setAttribute('position',new THREE.Float32BufferAttribute(shadowPositions,3));shadowGeo.setAttribute('uv',new THREE.Float32BufferAttribute(shadowUV,2));shadowGeo.setAttribute('treeAnchor',new THREE.Float32BufferAttribute(anchors,2));shadowGeo.setIndex(shadowIds);
-  root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk')));
+  const shadowGeo=new THREE.BufferGeometry();shadowGeo.setAttribute('position',new THREE.Float32BufferAttribute(shadowPositions,3));shadowGeo.setAttribute('uv',new THREE.Float32BufferAttribute(shadowUV,2));shadowGeo.setAttribute('treeAnchor',new THREE.Float32BufferAttribute(anchors,3));shadowGeo.setIndex(shadowIds);
+  root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||TREE_DETAIL)));
   }
   for(const [name,records]of placements){
    const source=assets.get(name);if(!source)continue;const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
@@ -94,8 +94,8 @@ export class NaturalLandscape{
    if(source.map){const geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}
   }
  }
- update(time,camera,focus=camera){
-  clock.value=time;foliageEye.value.copy(camera);shadowFocus.value.copy(focus||camera);if(this.last.distanceToSquared(camera)<.25)return;this.last.copy(camera);
+ update(time,camera){
+  clock.value=time;foliageEye.value.copy(camera);if(this.last.distanceToSquared(camera)<.25)return;this.last.copy(camera);
   for(const {mesh,records,lod,isTree,plant,detail=TREE_DETAIL,atlas}of this.groups){let count=0;
    for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree?detail.nearEnd:plant?25:75,far=isTree?detail.farEnd:plant?110:1200;
     if(lod===0?d>=near:lod===1?(d<(isTree?detail.nearStart:near)||d>=far):d<detail.farStart)continue;

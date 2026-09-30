@@ -11,7 +11,6 @@ try{
    await page.evaluate(({theme,hero})=>{
     const g=window.__golfTest;g.selectWarrior(hero);g.audio.pause();g.player.update(.2,0,{selection:true});g.world.applyTheme({theme});g.scene.userData.courseTheme=theme;g.portraitLights.visible=true;g.portraitLights.position.copy(g.player.root.position);g.player.root.updateMatrixWorld(true);
     const head=g.player.bones.Head.getWorldPosition(g.camera.position.clone());head.y+=.19;g.camera.fov=28;g.camera.updateProjectionMatrix();g.camera.position.copy(head).add({x:.22,y:.06,z:1.9});g.camera.lookAt(head);
-    const offset=g.world.sun.position.clone().sub(g.world.sun.target.position);g.world.sun.target.position.copy(g.player.root.position);g.world.sun.position.copy(g.player.root.position).add(offset);g.world.sun.target.updateMatrixWorld();
     for(const e of document.querySelectorAll('.screen,#hud,#toast,#hole-banner'))e.style.visibility='hidden';
     g.player.model.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.userData.nativeSurfaceFinish&&!window.__materialSaved.has(m)){const record={};for(const key of ['roughness','roughnessMap','transparent','alphaTest','alphaToCoverage','forceSinglePass','depthWrite'])record[key]=m[key];window.__materialSaved.set(m,record);}});
    },{theme,hero});

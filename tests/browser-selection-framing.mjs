@@ -61,9 +61,9 @@ try{
   courses.push(await page.evaluate(async course=>{
    const g=window.__golfTest,T=await import('/node_modules/three/build/three.module.js');
    g.setCourse(course);g.loadHole(g.roundCourse.preview?.hole||0);await g.world.waitForAssets();g.selectScreen();g.selectWarrior(2);g.updateCamera(0,{immediate:true});
-   // Exercise the production frame, including its shadow focus and camera clamp.
+   // Exercise the production frame, including its cascaded shadows and camera clamp.
    g.previousTime=performance.now();g.frame();g.camera.updateMatrixWorld(true);g.player.root.updateMatrixWorld(true);
-   if(g.world.sun.target.position.distanceTo(g.player.root.position)>1e-6)throw Error('Selection shadows do not follow the hero');
+   const shadow=g.world.sun.shadow;for(const name of ['Head','foot_r','foot_l']){const point=g.player.bones[name].getWorldPosition(new T.Vector3());if(!Array.from({length:shadow.getViewportCount()},(_,i)=>shadow.getFrustum(i).containsPoint(point)).some(Boolean))throw Error('Selection shadows exclude '+name);}
    const rect=g.ui.selectionViewport(),p=new T.Vector3();let margin=Infinity;
    for(const point of window.measuredPreview[2].hull){p.fromArray(point).applyMatrix4(g.player.root.matrixWorld).project(g.camera);const x=(p.x+1)*innerWidth/2,y=(1-p.y)*innerHeight/2;margin=Math.min(margin,x-rect.left,rect.left+rect.width-x,y-rect.top,rect.top+rect.height-y);}
    if(margin<0)throw Error('Course terrain changes preview framing: '+course+' '+margin);

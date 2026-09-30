@@ -18,7 +18,7 @@ try{
    renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,size,size,pixels);
    let peak=0;for(let i=0;i<pixels.length;i+=4)peak=Math.max(peak,pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722);
    let x=0,y=0,weight=0;for(let i=0;i<pixels.length;i+=4){const l=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;if(l<peak*.1)continue;const p=i/4;x+=(p%size+.5)*l;y+=(Math.floor(p/size)+.5)*l;weight+=l;}
-   const light=g.world.sun.position.clone().sub(g.world.sun.target.position).normalize();
+   const light=g.world.sun.getWorldPosition(new T.Vector3()).normalize();
    registration.push({theme,peak,offset:Math.hypot(x/weight-size/2,y/weight-size/2),lightAgreement:light.dot(sun),waterAgreement:g.world.waterMaterial.uniforms.sunDirection.value.dot(sun)});
   }
   // Backlit leaves brighten under direct light, but a real shadow still blocks it.

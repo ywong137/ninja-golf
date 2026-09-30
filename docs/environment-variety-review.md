@@ -72,3 +72,36 @@ City towers and decorative lights still have simplified geometry and materials.
 Highland scrub remains a documented botanical substitute.
 Close conifer needles can lose coverage as they become smaller than a pixel.
 These changes improve the environment, but do not establish AAA or photorealistic quality.
+
+## Camera-following sunlight
+
+The old shadow camera followed the golfer inside a 110-metre square.
+Ball flight, survey views, and course previews could leave that square.
+Buildings then lost their ground shadows and shadows under their roof edges.
+
+The scene now uses Three.js SunLight with two camera-fitted shadow regions.
+They cover visible receivers out to 280 metres and blend at their boundary.
+The final region fades out before its far limit.
+Each region has a 2048-square shadow map.
+Sun direction, sky alignment, exposure, and theme lighting remain unchanged.
+
+Near-tree ground silhouettes now follow each species' geometry transition.
+They use the rendered camera's position and height.
+This prevents mismatched shadows during flyovers and conifer transitions.
+Distant forest silhouettes remain in use.
+
+The GPU regression measures shadows at 20, 90, 200, and 250 metres.
+It also checks a 450-metre camera translation and an off-centre portrait projection.
+All cases retained a shadow-to-lit luminance ratio near 0.196.
+All five tree species passed checks at both transition endpoints and their midpoint.
+The lighting audit confirmed unchanged alignment with the photographed sun.
+Selection framing passed ten layouts, six complete animation loops, and four courses.
+
+A muted Chrome Metal benchmark used 1440×900 pixels and 64 enemies on Crane Coast.
+The same frozen crowd held 60 FPS with both lighting systems.
+Moving crowds averaged 56.6 FPS before and 51.5 FPS after the change.
+The new lighting's 95th-percentile frame took 33.4 ms; the 99th percentile took 66.5 ms.
+These timings include animation and combat updates, with automatic resolution changes disabled.
+The extra shadow pass increased draw calls from roughly 875 to 1,320.
+These are local measurements, not a guarantee for other hardware or courses.
+The change fixes missing shadows but does not eliminate combat frame-time spikes.

@@ -20,10 +20,10 @@ import {createCoursePath} from './course-path.js';
 import {buildTeeMarkers} from './tee-markers.js';
 import {buildThemeScenery,buildFairwayCover,THEME_LIGHTS} from './course-themes.js';
 import { Sky } from 'three/addons/objects/Sky.js';
+import { SunLight } from 'three/addons/lights/SunLight.js';
 import { heightAt, lieAt, routePoint, waterBasins, waterSurfaceAt, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
-const SUN_OFFSET=new THREE.Vector3(...SUN_DIRECTION).multiplyScalar(170);
 const color = new THREE.Color();
 function material(hex, roughness=.9, metalness=0) { return new THREE.MeshStandardMaterial({color:hex,roughness,metalness}); }
 function addMesh(g, geo, mat, x,y,z, sx=1,sy=1,sz=1) {
@@ -42,11 +42,13 @@ export class World {
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
       }`}));this.nightSky.visible=false;this.nightSky.renderOrder=-100;scene.add(this.nightSky);
-    const sun=SUN_OFFSET.clone().normalize();const u=sky.material.uniforms;
+    const sun=new THREE.Vector3(...SUN_DIRECTION);const u=sky.material.uniforms;
     u.turbidity.value=3.5;u.rayleigh.value=1.7;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.83;u.sunPosition.value.copy(sun);
-    this.sun=new THREE.DirectionalLight('#ffedd0',3.0);this.sun.position.copy(sun).multiplyScalar(150);this.sun.castShadow=true;
-    this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-55,right:55,top:55,bottom:-55,near:1,far:400});this.sun.shadow.bias=-.0004;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=3;
-    scene.add(this.sun,this.sun.target);this.hemisphere=new THREE.HemisphereLight('#d7e6e4','#777a49',.8);scene.add(this.hemisphere);
+    // Fit two shadow cascades to the rendered camera. Flight and survey cameras
+    // can leave the golfer far behind; their visible scenery still needs shadows.
+    this.sun=new SunLight('#ffedd0',3.0);this.sun.position.copy(sun);this.sun.castShadow=true;
+    this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.far=280;this.sun.shadow.bias=-.00015;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=3;
+    scene.add(this.sun);this.hemisphere=new THREE.HemisphereLight('#d7e6e4','#777a49',.8);scene.add(this.hemisphere);
     const env=new THREE.PMREMGenerator(renderer);this.environment=env.fromScene(sky,.04,1,30000);scene.environment=this.environment.texture;scene.environmentIntensity=.18;env.dispose();
     this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');
     this.turfColor=this.texture('turf-color-2k.jpg',true);this.turfNormal=this.texture('turf-normal-2k.jpg');this.turfRoughness=this.texture('turf-roughness-2k.jpg');
@@ -181,11 +183,11 @@ float phase=instanceMatrix[3].y;transformed.y+=abs(position.x)*sin(birdTime*4.+p
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));const m=new THREE.PointsMaterial({map:this.airborneMap,color:city?'#7bf5f5':this.course.theme==='desert'?'#e8c997':'#e4dfcb',size:city?.10:.045,transparent:true,depthWrite:false,opacity:city?.55:.32});this.petals=new THREE.Points(g,m);this.root.add(this.petals);
   }
   update(time,dt,focus,camera){
-    const lightingFocus=focus||this.previewShadowFocus;this.vegetation?.update(time,camera||lightingFocus,lightingFocus);
+    this.vegetation?.update(time,camera||focus||this.previewShadowFocus);
     this.waterMaterial.uniforms.time.value=time;if(this.grassTime)this.grassTime.value=time;if(focus)this.grassFocus?.value.copy(focus);
     if(this.birds){this.birdTime.value=time;for(let i=0;i<9;i++){const a=time*.035+i*.52;obj.position.set(110+Math.sin(a)*65,28+i%3*7+Math.sin(a*2)*3,this.course.length*.55+Math.cos(a)*120);obj.rotation.set(0,Math.atan2(Math.cos(a)*65,-Math.sin(a)*120),Math.sin(a)*.1);obj.scale.setScalar(.9+i%3*.15);obj.updateMatrix();this.birds.setMatrixAt(i,obj.matrix);}this.birds.instanceMatrix.needsUpdate=true;}
     if(this.flag){const p=this.flag.geometry.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*3-time*4)*x*.13);}p.needsUpdate=true;this.flag.geometry.computeVertexNormals();}
     if(this.petals){const p=this.petals.geometry.attributes.position;for(let i=0;i<p.count;i++){p.setX(i,p.getX(i)+dt*.24);p.setY(i,p.getY(i)-dt*.05);if(p.getY(i)<this.petalFloor[i])p.setY(i,this.petalFloor[i]+5);if(p.getX(i)>95){p.setX(i,-75);this.petalFloor[i]=heightAt(this.course,-75,p.getZ(i))+.4;p.setY(i,this.petalFloor[i]+3);}}p.needsUpdate=true;}
-    if(focus)this.updateGrass(focus);if(lightingFocus){this.sun.target.position.copy(lightingFocus);this.sun.position.copy(lightingFocus).add(SUN_OFFSET);this.sun.target.updateMatrixWorld();}
+    if(focus)this.updateGrass(focus);
   }
 }
