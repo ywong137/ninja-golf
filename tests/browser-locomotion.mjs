@@ -14,8 +14,8 @@ try{
     const hipLine=p.bones.thigh_l.getWorldPosition(new T.Vector3()).sub(p.bones.thigh_r.getWorldPosition(new T.Vector3())),shoulderLine=p.bones.upperarm_l.getWorldPosition(new T.Vector3()).sub(p.bones.upperarm_r.getWorldPosition(new T.Vector3()));
     const hipYaw=Math.atan2(hipLine.z,hipLine.x),shoulderYaw=Math.atan2(shoulderLine.z,shoulderLine.x),relativeChest=Math.atan2(Math.sin(shoulderYaw-hipYaw),Math.cos(shoulderYaw-hipYaw));
     for(const [name,value]of [['hips',hipYaw],['relativeChest',relativeChest]]){core[name][0]=Math.min(core[name][0],value);core[name][1]=Math.max(core[name][1],value);}
-    for(const [side,offset]of [['r',0],['l',.5]]){
-     const ankle=p.bones['foot_'+side].getWorldPosition(new T.Vector3()),hip=p.bones['thigh_'+side].getWorldPosition(new T.Vector3()),knee=p.bones['calf_'+side].getWorldPosition(new T.Vector3()),toe=p.bones['ball_'+side].getWorldPosition(new T.Vector3()),phase=(p.runPhase+offset)%1;
+    for(const side of ['r','l']){
+     const ankle=p.bones['foot_'+side].getWorldPosition(new T.Vector3()),hip=p.bones['thigh_'+side].getWorldPosition(new T.Vector3()),knee=p.bones['calf_'+side].getWorldPosition(new T.Vector3()),toe=p.bones['ball_'+side].getWorldPosition(new T.Vector3());
      ranges[side][0]=Math.min(ranges[side][0],ankle.y);ranges[side][1]=Math.max(ranges[side][1],ankle.y);
      const contact=runSupportPoint(p,side);if(contact.loaded){if(holds[side]?.id!==contact.id)holds[side]={id:contact.id,p:contact.point.clone()};maxSupportDrift=Math.max(maxSupportDrift,holds[side].p.distanceTo(contact.point));maxFootPitch=Math.max(maxFootPitch,Math.abs(toe.y-ankle.y));minimumToeHipAlignment=Math.min(minimumToeHipAlignment,toe.clone().sub(ankle).setY(0).normalize().dot(hipLine.clone().setY(0).normalize().cross(new T.Vector3(0,1,0))));}else holds[side]=null;
      // A raised shoe can point downward past vertical; its horizontal toe
