@@ -18,6 +18,7 @@ import {installForearmTwistHelpers} from './forearm-twist.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
+import {enemyStrideRate} from './enemy-locomotion.js';
 import {ENEMY_APPEARANCES,resolveEnemyAppearance,applyEnemyAppearance} from './enemy-appearances.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
@@ -28,6 +29,7 @@ for(const model of ['kaede','ayame','sora'])MODEL_REVISIONS[model]='standard-att
 MODEL_REVISIONS.ronin='ronin-native-leg-frames-1';
 MODEL_REVISIONS.monk='ethan-native-leg-frames-1';
 MODEL_REVISIONS.shinobi='shinobi-native-leg-frames-1';
+for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -260,8 +262,8 @@ export class Warrior {
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.wasParry=parry>0;this.wasGuardBreak=guardBreak>0;this.lastGuardHitToken=guardHitToken;
     if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current)){
       // Match the enemy's steps to slower formation movement and collision-limited travel.
-      const pace=this.enemy&&moveSpeed!==null?THREE.MathUtils.clamp(moveSpeed/(ENEMY_TYPES[this.type].speed*(sprinting?1.4:1)),.1,1.5):1;
-      this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*(sprinting?1.15:1)*pace);
+      const pace=this.enemy&&moveSpeed!==null?enemyStrideRate(this.current,moveSpeed,this.root.scale.x):sprinting?1.15:1;
+      this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*pace);
     }
     this.mixer.update(dt);
     // Extracted root travel and the skeleton use the same action clock.

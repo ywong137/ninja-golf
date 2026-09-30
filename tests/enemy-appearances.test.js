@@ -1,18 +1,21 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import * as T from 'three';
 import{ENEMY_APPEARANCES,enemyAppearanceForSlot,resolveEnemyAppearance}from'../src/enemy-appearances.js';
+import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy.mjs';
 import{ENEMY_TYPES}from'../src/combat.js';import{loadNativeSkin}from'./native-skin-helper.mjs';
 const directory=process.env.ENEMY_APPEARANCE_DIR||new URL('../public/models/',import.meta.url).pathname;
 const read=file=>{const raw=fs.readFileSync(file),n=raw.readUInt32LE(12);return{doc:JSON.parse(raw.subarray(20,20+n)),bin:raw.subarray(28+n)}};
 test('twelve fixed enemy appearances cover each family without changing four combat roles',()=>{
  assert.equal(ENEMY_TYPES.length,4);assert.equal(ENEMY_APPEARANCES.length,3);const seen=new Set();for(let slot=0;slot<12;slot++){let a=resolveEnemyAppearance(enemyAppearanceForSlot(slot));seen.add(a.definition.id+':'+a.definition.palettes[a.palette].id);}assert.equal(seen.size,12);assert.deepEqual(ENEMY_APPEARANCES[1].palettes.map(p=>p.id),['white','red','gray','navy']);assert.deepEqual(ENEMY_APPEARANCES[2].palettes.map(p=>p.id),['black','darkgray','darkblue','burgundy']);assert.throws(()=>enemyAppearanceForSlot(-1));assert.throws(()=>resolveEnemyAppearance({family:3}));
 });
-for(const family of ENEMY_APPEARANCES)test(`${family.id}: every role attack and anatomically forward moving knees`,async()=>{
+for(const family of ENEMY_APPEARANCES)test(`${family.id}: every role attack and native knee frames during running and jumps`,async()=>{
  const file=path.join(directory,family.model+'.glb'),asset=read(file),g=await loadNativeSkin(file),point=name=>g.scene.getObjectByName(name).getWorldPosition(new T.Vector3());
  for(const role of ENEMY_TYPES)assert.ok(g.animations.some(a=>a.name===role.clip),`${family.id} missing ${role.clip}`);
- g.scene.updateMatrixWorld(true);let lengths={};for(const s of['r','l'])lengths[s]=[point('thigh_'+s).distanceTo(point('calf_'+s)),point('calf_'+s).distanceTo(point('foot_'+s))];
- for(const name of ['Jog_Fwd_Loop','Sprint_Loop','Jump_Start','Jump_Loop','Jump_Land']){
-  const clip=g.animations.find(c=>c.name===name);g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;let previous={},minBend=1,maxSpeed=0,maxLength=0;
-  for(let i=0;i<=Math.ceil(clip.duration*240);i++){const time=Math.min(i/240,clip.duration);action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);for(const s of['r','l']){const h=point('thigh_'+s),k=point('calf_'+s),a=point('foot_'+s),axis=a.clone().sub(h);const bend=k.clone().sub(h).addScaledVector(axis,-k.clone().sub(h).dot(axis)/axis.lengthSq());minBend=Math.min(minBend,bend.z);maxLength=Math.max(maxLength,Math.abs(h.distanceTo(k)-lengths[s][0]),Math.abs(k.distanceTo(a)-lengths[s][1]));if(previous[s])maxSpeed=Math.max(maxSpeed,k.distanceTo(previous[s])*240);previous[s]=k;}}
+ g.scene.updateMatrixWorld(true);const calibration=Object.fromEntries(["r","l"].map(s=>[s,calibrateLegAnatomy(...["thigh_","calf_","foot_"].map(n=>g.scene.getObjectByName(n+s)))]));let lengths={};for(const s of['r','l'])lengths[s]=[point('thigh_'+s).distanceTo(point('calf_'+s)),point('calf_'+s).distanceTo(point('foot_'+s))];
+ for(const name of ['Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Jump_Start','Jump_Loop','Jump_Land']){
+  const clip=g.animations.find(c=>c.name===name);g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;let previous={},minBend=1,maxSpeed=0,maxLength=0,hip=0,ankle=0,hinge=0;
+  assert.equal(asset.doc.animations.find(a=>a.name===name).extras?.enemyKneePlaneVersion,2,`${family.id} ${name}: missing corrected frames`);
+  for(let i=0;i<=Math.ceil(clip.duration*240);i++){const time=Math.min(i/240,clip.duration);action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);for(const s of['r','l']){const m=measureLegAnatomy(calibration[s],...["thigh_","calf_","foot_"].map(n=>g.scene.getObjectByName(n+s)));hip=Math.max(hip,Math.abs(m.hipTwist));ankle=Math.max(ankle,Math.abs(m.ankleTwist));hinge=Math.max(hinge,m.kneeDeviation);const h=point('thigh_'+s),k=point('calf_'+s),a=point('foot_'+s),axis=a.clone().sub(h);const bend=k.clone().sub(h).addScaledVector(axis,-k.clone().sub(h).dot(axis)/axis.lengthSq());minBend=Math.min(minBend,bend.z);maxLength=Math.max(maxLength,Math.abs(h.distanceTo(k)-lengths[s][0]),Math.abs(k.distanceTo(a)-lengths[s][1]));if(previous[s])maxSpeed=Math.max(maxSpeed,k.distanceTo(previous[s])*240);previous[s]=k;}}
+  assert.ok(hip<45&&ankle<15&&hinge<.05,JSON.stringify({family:family.id,name,hip,ankle,hinge}));
   assert.ok(minBend>-.001,`${family.id} ${name}: backward knee ${minBend}`);assert.ok(maxSpeed<12,`${family.id} ${name}: knee discontinuity ${maxSpeed} m/s`);assert.ok(maxLength<.00002,`${family.id} ${name}: stretched leg ${maxLength}`);
  }
  if(family.id==='cloth-ninja'){
