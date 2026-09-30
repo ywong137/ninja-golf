@@ -9,7 +9,7 @@ try{
  const report=await page.evaluate(async()=>{
  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{motions,combatMotionName}=await import('/src/motion.js'),{WARRIORS}=await import('/src/warriors.js'),{turnToward}=await import('/src/navigation.js'),{calibrateLegAnatomy,measureLegAnatomy}=await import('/tools/native-leg-anatomy.mjs');await loadWarriorAssets();
  const rows=[];
- for(const hero of [2,3,4,5])for(const turning of hero===2?[false,true]:[false])for(const hz of [40,120])for(const slope of [0,.10,-.10])for(const movement of [null,0,Math.PI/2,Math.PI,-Math.PI/2])for(const kind of ['light','heavy'])for(let step=0;step<4;step++){
+ for(const hero of [1,2,3,4,5])for(const turning of hero<=2?[false,true]:[false])for(const hz of [40,120])for(const slope of [0,.10,-.10])for(const movement of [null,0,Math.PI/2,Math.PI,-Math.PI/2])for(const kind of ['light','heavy'])for(let step=0;step<4;step++){
  const w=new Warrior(hero),b=w.bones,saved=[];for(const [bone,rest]of w.golfRestPose)if(bone.isBone){saved.push([bone,bone.position.clone(),bone.quaternion.clone(),bone.scale.clone()]);bone.position.copy(rest.position);bone.quaternion.copy(rest.quaternion);bone.scale.copy(rest.scale);}w.root.updateMatrixWorld(true);const cal=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(b['thigh_'+s],b['calf_'+s],b['foot_'+s])])),name=combatMotionName(WARRIORS[hero],kind,step),spec=motions[name],groundHeight=(x,z)=>slope*(x+z),row={hero,hz,slope,movement,turning,name,hip:0,ankle:0,hinge:0,drift:0,};
  if(spec.planarRoot){if(name!=='Fan_Heavy_Rising')throw Error('Add a root-motion integration case for '+name);w.dispose();continue;}
  for(const[bone,p,q,s]of saved){bone.position.copy(p);bone.quaternion.copy(q);bone.scale.copy(s);}let time=0;for(let i=0;i<30;i++){time+=1/hz;w.update(time,1/hz,{groundHeight});}
@@ -45,7 +45,7 @@ try{
  return rows;
  });
  fs.writeFileSync('/tmp/ninja-combat-leg-frames.json',JSON.stringify({errors,report},null,2));
- assert.deepEqual(errors,[]);assert.equal(report.length,1170);
+ assert.deepEqual(errors,[]);assert.equal(report.length,1650);
  for(const row of report){
   assert.ok(row.hinge<.1&&row.exitHinge<.1,JSON.stringify(row));
   assert.ok(row.exitHip<50&&row.exitAnkle<30&&row.exitLoadedAnkle<20&&row.exitFootSpeed<12,JSON.stringify(row));

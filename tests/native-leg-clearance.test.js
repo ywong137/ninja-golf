@@ -4,8 +4,9 @@ import * as T from 'three';
 import {WARRIORS} from '../src/warriors.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {measureTriangleHeadClearance as measureSurfaceClearance} from '../tools/blade-head-surface.mjs';
+import {SHINOBI_CLIPS} from '../tools/native-shinobi-profile.mjs';
 const namesFor=hero=>[hero.readyClip,...['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'].map(n=>hero.motionOverrides?.[hero.motionPrefix+n]??hero.motionPrefix+n),...(hero.model==='monk'?['Ethan_Naginata_Musou_Flow','Naginata_Guard_Loop','Naginata_Guard_Impact','Naginata_Guard_Break']:[])];
-for(const [model,names]of ['ronin','kaede','ayame','sora','monk'].map(model=>[model,namesFor(WARRIORS.find(w=>w.model===model))]))test(`${model}: corrected attacks keep the two leg surfaces apart`,async t=>{
+for(const [model,names]of ['ronin','kaede','ayame','sora','monk','shinobi'].map(model=>[model,model==='shinobi'?SHINOBI_CLIPS:namesFor(WARRIORS.find(w=>w.model===model))]))test(`${model}: corrected attacks keep the two leg surfaces apart`,async t=>{
 // The shared triangle checker accepts arbitrary skinned surface regions.
 // Exclude the connected upper-thigh seam, where both legs join the pelvis.
 const g=await loadNativeSkin(new URL(process.env.NINJA_KNEE_MODEL_DIR?process.env.NINJA_KNEE_MODEL_DIR+'/'+model+'.glb':'../public/models/'+model+'.glb',import.meta.url));g.scene.updateMatrixWorld(true);const surfaces={r:[],l:[]},p=n=>g.scene.getObjectByName(n).getWorldPosition(new T.Vector3());
@@ -15,7 +16,7 @@ g.mixer.stopAllAction();const clip=g.animations.find(c=>c.name===name),a=g.mixer
 for(let i=0;i<=Math.ceil(clip.duration*480);i++){const time=Math.min(i/480,clip.duration);a.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);const query={leftLeg:[]};for(const {mesh,triangles}of surfaces.l){mesh.skeleton.update();const cache=new Map();for(const ids of triangles)query.leftLeg.push(ids.map(i=>{if(!cache.has(i))cache.set(i,mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(mesh.matrixWorld));return cache.get(i)}));}const m=measureSurfaceClearance(surfaces.r,query,{distanceCap:.10});result.samples++;result.crossings+=m.crossings;if(m.minimumClearance<result.minimum){result.minimum=m.minimumClearance;result.closest={time,...m.closest}};}
 t.diagnostic(JSON.stringify(result));
 // Each native mesh has a different density. Check the complete selected region.
-const expected={ronin:{r:405,l:397},kaede:{r:621,l:590},ayame:{r:471,l:479},sora:{r:628,l:629},monk:{r:525,l:494}};
+const expected={ronin:{r:405,l:397},kaede:{r:621,l:590},ayame:{r:471,l:479},sora:{r:628,l:629},monk:{r:525,l:494},shinobi:{r:451,l:438}};
 assert.deepEqual(result.triangles,expected[model],'The central thigh, calf, or shoe surface selection changed');
 assert.equal(result.crossings,0,'The leg surfaces intersect');
 assert.ok(result.minimum>.003,'The recovery step must clear the other leg');

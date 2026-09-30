@@ -9,6 +9,7 @@ import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
 import {createWeapon} from '../src/weapons.js';
 import {headSurfaceMetadata,measureTriangleHeadClearance} from './blade-head-surface.mjs';
 import {SHINOBI_CLIPS} from './native-shinobi-profile.mjs';
+import {calibrateLegAnatomy,measureLegAnatomy} from './native-leg-anatomy.mjs';
 
 export const verifyShinobiPreservation=(before,after,{footSupport=false}={})=>verifyArmFamilyPreservation(before,after,SHINOBI_CLIPS,{dualWield:true,footSupport});
 
@@ -27,6 +28,8 @@ export async function inspectNativeShinobi({model,record,rate=480,skin=false,cli
  const result=await inspectNativeArmFamily({model,record,rate,skin,clips,modelKey:'shinobi',readyName:'Twin_Ready',weaponKind:'twin'});
  const records=JSON.parse(fs.readFileSync(record)),grips=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).shinobi.sword,grip=grips.l;
  const rig=await loadNativeSkin(model),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
+ rig.scene.updateMatrixWorld(true);
+ const legBind=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
  const headSurfaces=skin?headSurfaceMetadata(rig):null,limbSurfaces=[];
  if(skin)rig.scene.traverse(mesh=>{
   if(!mesh.isSkinnedMesh)return;
@@ -57,10 +60,15 @@ export async function inspectNativeShinobi({model,record,rate=480,skin=false,cli
   const metrics={minBladeHeight:Infinity,minBladeSeparation:Infinity,peakTipSpeed:0,contacts:[]},trajectory=[];
   const limbHead=skin&&spec.nativeShinobiBodyPilotVersion?{minimumClearance:.05,crossings:0}:null;
   if(limbHead)for(const side of ['r','l'])if(!limbSurfaces.some(s=>s.side===side))throw Error('Missing '+side+' fist/forearm surfaces.');
-  const support={maxDrift:0,maxToeDrift:0,maxTurn:0,maxLoadedMedial:0,maxKneeSpeed:0,maxAnkleSpeed:0},plants={},previous={};
+  const support={maxDrift:0,maxToeDrift:0,maxTurn:0,maxLoadedMedial:0,maxKneeSpeed:0,maxAnkleSpeed:0,maxHipTwist:0,maxAnkleTwist:0,maxKneeSidebend:0},plants={},previous={};
   for(const time of times){
    sample(time);
    for(const side of ['r','l']){
+    if(spec.nativeKneeHeading){
+     const m=measureLegAnatomy(legBind[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
+     support.maxHipTwist=Math.max(support.maxHipTwist,Math.abs(m.hipTwist));support.maxAnkleTwist=Math.max(support.maxAnkleTwist,Math.abs(m.ankleTwist));support.maxKneeSidebend=Math.max(support.maxKneeSidebend,m.kneeDeviation);
+     if(Math.abs(m.hipTwist)>45||Math.abs(m.ankleTwist)>15||m.kneeDeviation>.01||m.kneeFlexion<=0||m.kneeFlexion>=120)fail(name,time,'native leg frame',m,side);
+    }
     const ankle=bones['foot_'+side].getWorldPosition(new T.Vector3()),knee=bones['calf_'+side].getWorldPosition(new T.Vector3()),toe=bones['ball_'+side].getWorldPosition(new T.Vector3()),rotation=bones['foot_'+side].getWorldQuaternion(new T.Quaternion()).normalize();
     const interval=spec.footPlants?.[side]?.findIndex(([start,end])=>time>=start-1e-8&&time<=end+1e-8)??-1,toeInterval=spec.toePlants?.[side]?.findIndex(([start,end])=>time>=start-1e-8&&time<=end+1e-8)??-1;
     if(interval>=0){
@@ -69,12 +77,12 @@ export async function inspectNativeShinobi({model,record,rate=480,skin=false,cli
      support.maxDrift=Math.max(support.maxDrift,drift);support.maxTurn=Math.max(support.maxTurn,turn);support.maxLoadedMedial=Math.max(support.maxLoadedMedial,medial);
      if(drift>.003)fail(name,time,'planted foot drift',drift,side);
      if(turn>.020)fail(name,time,'planted foot turn',turn,side);
-     if(medial>.020)fail(name,time,'loaded knee tracks inward',medial,side);
+     if(!spec.nativeKneeHeading&&medial>.020)fail(name,time,'loaded knee tracks inward',medial,side);
     }
     if(toeInterval>=0){
      const key=side+':toe:'+toeInterval;plants[key]??={toe:toe.clone()};const drift=toe.distanceTo(plants[key].toe),outward=new T.Vector3(0,1,0).cross(toe.clone().sub(ankle).setY(0).normalize()).multiplyScalar(side==='r'?-1:1),medial=-knee.clone().sub(ankle).dot(outward);
      support.maxToeDrift=Math.max(support.maxToeDrift,drift);support.maxLoadedMedial=Math.max(support.maxLoadedMedial,medial);
-     if(drift>.003)fail(name,time,'planted toe drift',drift,side);if(medial>.020)fail(name,time,'toe-supported knee tracks inward',medial,side);
+     if(drift>.003)fail(name,time,'planted toe drift',drift,side);if(!spec.nativeKneeHeading&&medial>.020)fail(name,time,'toe-supported knee tracks inward',medial,side);
     }
     const old=previous[side],dt=old?time-old.time:0;
     if(dt>1e-6){support.maxKneeSpeed=Math.max(support.maxKneeSpeed,knee.distanceTo(old.knee)/dt);support.maxAnkleSpeed=Math.max(support.maxAnkleSpeed,ankle.distanceTo(old.ankle)/dt);}

@@ -15,6 +15,13 @@ const motions=JSON.parse(fs.readFileSync(record));
 const pending=!candidate&&!motions.Twin_Ready?.nativeShinobiVersion;
 let report;
 
+test('all Shinobi combat clips retain the corrected native leg frames',()=>{
+ for(const name of SHINOBI_CLIPS){
+  assert.equal(motions[name].nativeKneeHeading,true,name);
+  assert.equal(motions[name].nativeKneeHinges,true,name);
+ }
+});
+
 test('Shinobi damage events match the authored active-blade contacts', {skip:pending},()=>{
  const names={light:['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep'],heavy:['Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'],musou:['Musou_Flow']};
  for(const [kind,clips]of Object.entries(names))for(const [step,suffix]of clips.entries()){
@@ -60,6 +67,19 @@ test('Shinobi attacks return both arms to their common Ready pose', {skip:pendin
  for(const name of SHINOBI_CLIPS.filter(n=>motions[n].impacts?.length))for(const time of [0,motions[name].duration]){
   const pose=sample(name,time);for(const n of names)assert.ok(pose[n].angleTo(ready[n])<.002,name+'/'+n+': discontinuous Ready endpoint.');
  }
+});
+
+test('musou recovery transfers weight before the final closing step',async()=>{
+ const g=await loadNativeSkin(model),clip=g.animations.find(c=>c.name==='Twin_Musou_Flow'),a=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce);a.clampWhenFinished=true;a.play();
+ const at=time=>{a.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);return Object.fromEntries(['pelvis','foot_r','foot_l','thigh_r','calf_r'].map(n=>[n,g.scene.getObjectByName(n).getWorldPosition(new T.Vector3())]));};
+ const start=at(0),receive=at(2.82),prepare=at(3),step=at(3.1),finish=at(3.3);
+ const supportGap=p=>p.pelvis.clone().sub(p.foot_l).setY(0).length();
+ assert.ok(prepare.pelvis.x-receive.pelvis.x>.08,'Shift the body toward the left support before lifting the right foot.');
+ assert.ok(supportGap(step)<.05,'Keep the pelvis above the left support during the closing step.');
+ for(let time=2.98;time<=3.2;time+=1/120){const p=at(time),flexion=180-p.thigh_r.clone().sub(p.calf_r).angleTo(p.foot_r.clone().sub(p.calf_r))*180/Math.PI;assert.ok(flexion>15,'The rear knee must stay flexed before and during the closing step.');}
+ assert.ok(step.foot_r.y-prepare.foot_r.y>.04,'Lift the closing foot instead of sliding it.');
+ for(let time=2.82;time<3.3;time+=1/120)assert.ok(at(time).foot_l.distanceTo(receive.foot_l)<.001,'Keep the left support planted through recovery.');
+ for(const name of ['pelvis','foot_r','foot_l'])assert.ok(finish[name].distanceTo(start[name])<.001,'Return to the original Ready position: '+name);
 });
 
 test('both Shinobi blades clear the deformed head throughout every combat clip', {skip:pending},async()=>{

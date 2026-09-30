@@ -27,6 +27,7 @@ const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayam
 for(const model of ['kaede','ayame','sora'])MODEL_REVISIONS[model]='standard-attack-leg-frames-1';
 MODEL_REVISIONS.ronin='ronin-native-leg-frames-1';
 MODEL_REVISIONS.monk='ethan-native-leg-frames-1';
+MODEL_REVISIONS.shinobi='shinobi-native-leg-frames-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -285,7 +286,7 @@ export class Warrior {
     }
     const authoredAttack=!!action;
     const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
-    if(authoredFeet)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
+    if(authoredFeet&&!this.guardWalking)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
     if(golf||dodge||emerging||selection||cinematic||this.running||action?.kind==='musou')this.attackLocomotion?.reset();
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
