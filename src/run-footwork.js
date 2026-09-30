@@ -6,6 +6,7 @@ import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
 const caches=new WeakMap();
 const point=bone=>bone.getWorldPosition(new THREE.Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new THREE.Quaternion()).normalize();
+const BODY=['pelvis','spine_01','spine_02','spine_03','ball_r','ball_l'];
 
 // Quaternion blending alone shortens a planted leg when the hips turn between
 // forward and lateral runs. Blend the authored ankle paths, then solve the legs.
@@ -19,7 +20,7 @@ function sampleClips(template,clips){
   const action=mixer.clipAction(clip).reset().setLoop(THREE.LoopOnce);action.clampWhenFinished=true;action.play();
   for(let i=0;i<=count;i++){
    action.time=i/count*clip.duration;mixer.update(0);proxy.updateMatrixWorld(true);
-   rows.push(Object.fromEntries(['r','l'].map(side=>{const foot=proxy.getObjectByName('foot_'+side);return[side,{p:point(foot),q:rotation(foot)}];})));
+   rows.push({...Object.fromEntries(['r','l'].map(side=>{const foot=proxy.getObjectByName('foot_'+side);return[side,{p:point(foot),q:rotation(foot)}];})),body:BODY.map(name=>proxy.getObjectByName(name).quaternion.clone().normalize()),pelvis:proxy.getObjectByName('pelvis').position.clone()});
   }
   data[clip.name]={rows,count};
  }
@@ -30,17 +31,38 @@ export class RunFootwork{
   this.root=root;this.model=model;this.bones=bones;this.saved=[];this.data=sampleClips(template,clips);
   this.hinges=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegHinge(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
  }
- restore(){for(const [bone,q]of this.saved)bone.quaternion.copy(q);this.saved=[];}
- captureEntry(){
+ restore(){for(const [bone,q,p]of this.saved){bone.quaternion.copy(q);if(p)bone.position.copy(p);}this.saved=[];}
+ captureEntry({includeBody=false}={}){
   this.root.updateMatrixWorld(true);
   this.entry=Object.fromEntries(['r','l'].map(side=>[side,{p:point(this.bones['foot_'+side]),q:rotation(this.bones['foot_'+side])}]));
+  this.entryBody=includeBody?BODY.map(name=>this.bones[name].quaternion.clone().normalize()):null;
+  const pelvis=this.bones.pelvis;
+  this.entryPelvis=includeBody?pelvis.position.clone():null;
+  this.entryPelvisRotation=includeBody?rotation(pelvis):null;
  }
- resetEntry(){this.entry=null;}
+ resetEntry(){this.entry=null;this.entryBody=null;this.entryPelvis=null;this.entryPelvisRotation=null;}
  apply(actions,phase,blend){
   this.report=null;if(!actions?.length||blend<=0)return;
   const active=actions.map(action=>({name:action.getClip().name,weight:action.getEffectiveWeight()})).filter(a=>a.weight>1e-6);
   if(!active.length)return;
-  const total=active.reduce((sum,a)=>sum+a.weight,0);this.root.updateMatrixWorld(true);
+  const total=active.reduce((sum,a)=>sum+a.weight,0);
+  // Blend to the native run, not the mixer's already fading body pose. Blending
+  // twice accelerates a large sideways turn sharply at the end of the fade.
+  if(this.entryBody)for(const [j,name]of BODY.entries()){
+   const bone=this.bones[name],target=new THREE.Quaternion(),pelvis=new THREE.Vector3();let accumulated=0;
+   for(const a of active){
+    const {rows,count}=this.data[a.name],at=((phase%1)+1)%1*count,i=Math.min(count-1,Math.floor(at)),t=at-i;
+    const q=rows[i].body[j].clone().slerp(rows[i+1].body[j],t);
+    if(j===0)pelvis.addScaledVector(rows[i].pelvis.clone().lerp(rows[i+1].pelvis,t),a.weight/total);
+    if(!accumulated)target.copy(q);else target.slerp(q,a.weight/(accumulated+a.weight));accumulated+=a.weight;
+   }
+   // The entry feet stay in world space during a turn. Keep the entry pelvis
+   // orientation in that same frame so root yaw cannot wind up the hips.
+   const entry=j===0?rotation(bone.parent).invert().multiply(this.entryPelvisRotation):this.entryBody[j];
+   this.saved.push([bone,bone.quaternion.clone(),j===0?bone.position.clone():null]);bone.quaternion.copy(entry).slerp(target,blend);
+   if(j===0)bone.position.copy(this.entryPelvis).lerp(pelvis,blend);
+  }
+  this.root.updateMatrixWorld(true);
   const modelQ=rotation(this.model),reports=[];
   for(const side of ['r','l']){
    const target=new THREE.Vector3(),q=new THREE.Quaternion();let accumulated=0;
@@ -57,6 +79,6 @@ export class RunFootwork{
    const error=solveLeg(thigh,calf,foot,target,q,{maxReach:.999,kneeSolver:headingKnee});alignLegHinge(thigh,calf,foot,this.hinges[side]);reports.push({side,error});
   }
   this.report=reports;
-  if(blend>=1)this.entry=null;
+  if(blend>=1)this.resetEntry();
  }
 }

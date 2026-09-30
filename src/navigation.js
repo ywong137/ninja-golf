@@ -8,7 +8,10 @@ export function cameraRelativeMove(right, forward, yaw) {
 }
 export function aimDelta(screenRight, seconds) { return -screenRight * seconds * .32; }
 export function wrapAngle(angle) { return Math.atan2(Math.sin(angle), Math.cos(angle)); }
-export function turnToward(from, to, amount) { return from + wrapAngle(to - from) * Math.min(1, amount); }
+export function turnToward(from, to, amount, maxStep=Infinity) {
+  const step=wrapAngle(to-from)*Math.min(1,amount);
+  return from+Math.max(-maxStep,Math.min(maxStep,step));
+}
 export function radarPoint(dx, dz, yaw, radius, range) {
   const right = -dx * Math.cos(yaw) + dz * Math.sin(yaw);
   const forward = dx * Math.sin(yaw) + dz * Math.cos(yaw);

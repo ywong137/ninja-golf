@@ -26,6 +26,7 @@ const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'anatomic-strafe-1']));
 for(const model of ['kaede','ayame','sora'])MODEL_REVISIONS[model]='standard-attack-leg-frames-1';
 MODEL_REVISIONS.ronin='ronin-native-leg-frames-1';
+MODEL_REVISIONS.monk='ethan-native-leg-frames-1';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -209,23 +210,25 @@ export class Warrior {
     const sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum),duration=locomotion[names[0]].duration;
     this.runPhase=((this.runPhase||0)+dt*speed*sum/(this.root.scale.x*duration))%1;
     if(!this.running||this.runSprint!==sprint){
-      if(this.guardWalking){for(const action of this.guardWalkActions)action.fadeOut(.12);this.guardWalking=false;}
-      if(this.running)for(const action of this.runActions)action.fadeOut(.12);else this.actions.get(this.current)?.fadeOut(.12);
+      this.runFade=this.runFootwork?.entryBody?.length ? .24 : .12;
+      if(this.guardWalking){for(const action of this.guardWalkActions)action.fadeOut(this.runFade);this.guardWalking=false;}
+      if(this.running)for(const action of this.runActions)action.fadeOut(this.runFade);else this.actions.get(this.current)?.fadeOut(this.runFade);
       this.runActions=names.map(name=>this.actions.get(name));
       for(const action of this.runActions)action.reset().setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();
       this.running=true;this.runSprint=sprint;this.runBlend=0;
     }
-    this.runBlend=Math.min(1,this.runBlend+dt/.12);
+    this.runBlend=Math.min(1,this.runBlend+dt/this.runFade);
     this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(false,.12);
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
     this.handGrip?.restore();this.handGrip?.prepare(golf);
-    // Capture the displayed feet before removing the moving-attack layer.
-    // The run crossfade starts there instead of jumping to the mixer pose.
-    if(!action&&moving&&!this.running&&this.attackLocomotion?.weight>0)this.runFootwork?.captureEntry();
-    this.footPlacement?.restore();this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
+    // Capture the moving-attack pose before removing it, but undo terrain first:
+    // the terrain layer applies support and shoe tilt again after the run blend.
+    this.footPlacement?.restore();
+    if(!action&&moving&&!this.running&&this.attackLocomotion?.weight>0)this.runFootwork?.captureEntry({includeBody:this.attackLocomotion.pelvisGaitWeight>0});
+    this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
     if(this.dead>0){this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.forearmTwist?.update({refreshMatrices:false});return;}
@@ -284,7 +287,7 @@ export class Warrior {
     const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
     if(authoredFeet)({contactWeights,stance}=attackFootContacts(motions[this.current],this.actions.get(this.current)?.time||0,motion));
     if(golf||dodge||emerging||selection||cinematic||this.running||action?.kind==='musou')this.attackLocomotion?.reset();
-    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined});
+    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredFeet||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     if(golf||selection)this.travelPose?.reset();

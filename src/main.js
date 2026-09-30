@@ -214,7 +214,7 @@ class Game {
     if(this.action)this.player.root.rotation.y=this.attackYaw;
     else if(this.guard.active)this.player.root.rotation.y=this.cameraYaw;
     else if(this.focused)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,this.cameraYaw,dt*20);
-    else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18);
+    else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18,dt*3*Math.PI);
     this.slideOnLand(p,movementStart);
     // Resolve impacts from the collision-corrected position for this frame.
     if(this.action){const a=this.action;while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}}

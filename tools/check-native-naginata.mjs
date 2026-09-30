@@ -8,6 +8,7 @@ import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {createWeapon} from '../src/weapons.js';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
+import {calibrateLegAnatomy,measureLegAnatomy} from './native-leg-anatomy.mjs';
 
 export const NATIVE_NAGINATA_CLIPS = [
   'Ethan_Naginata_Ready',
@@ -42,6 +43,7 @@ export async function validateNativeNaginata({
   const rotation = name => bones[name].getWorldQuaternion(new T.Quaternion()).normalize();
   const neutral = Object.fromEntries(['r','l'].map(side => [side,bones['hand_'+side].quaternion.clone().normalize()]));
   const ankleHeight = Object.fromEntries(['r','l'].map(side => [side,point('foot_'+side).y]));
+  const legBind = Object.fromEntries(['r','l'].map(side => [side,calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
   const clips = new Map(rig.animations.map(clip => [clip.name,clip]));
   const weapon = createWeapon('naginata'), blade = weapon.getObjectByName('Flat steel blade');
   assert.ok(blade?.isMesh, 'Missing the actual naginata blade mesh.');
@@ -73,7 +75,7 @@ export async function validateNativeNaginata({
     const action = rig.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();
     action.clampWhenFinished = true;
     const measured = {samples:0,wrist:0,mcp:0,palmGap:0,frameJump:0,minTipY:Infinity,
-      maxMedial:0,maxPlantDrift:0,maxPlantTurn:0,minBladeY:Infinity,maxLift:0};
+      maxMedial:0,maxPlantDrift:0,maxPlantTurn:0,minBladeY:Infinity,maxLift:0,hipTwist:0,ankleTwist:0,kneeDeviation:0};
     if (includeSkin) Object.assign(measured,{skinSamples:0,maxElbowFold:0,maxForearmTorsoPairs:0});
     if (includeFrames) measured.frames = [];
     const plants = new Map();
@@ -88,6 +90,15 @@ export async function validateNativeNaginata({
       if (time === 0) endpoints[name+'/start'] = snapshot(bones);
       const palms = {}, arms = {};
       for (const side of ['r','l']) {
+        if (spec.nativeKneeHinges) {
+          const leg = measureLegAnatomy(legBind[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
+          measured.hipTwist = Math.max(measured.hipTwist,Math.abs(leg.hipTwist));
+          measured.ankleTwist = Math.max(measured.ankleTwist,Math.abs(leg.ankleTwist));
+          measured.kneeDeviation = Math.max(measured.kneeDeviation,leg.kneeDeviation);
+          assert.ok(Math.abs(leg.hipTwist)<45 && Math.abs(leg.ankleTwist)<15 && leg.kneeDeviation<.01,
+            `${name}/${time}/${side}: ${JSON.stringify(leg)}`);
+          assert.ok(leg.kneeFlexion>0 && leg.kneeFlexion<120,`${name}/${time}/${side}: backward or excessive knee flexion.`);
+        }
         if (includeSkin) {
           const deformed = measureArmSkin(rig,skin,side);
           const fold = deformed['fold_'+side].maxRadialPenetration;
@@ -163,7 +174,9 @@ export async function validateNativeNaginata({
     assert.ok(measured.palmGap < .0025, `${name}: paired palm gap is ${(measured.palmGap*1000).toFixed(3)} mm.`);
     assert.ok(measured.frameJump < 23, `${name}: arm frame jumps ${measured.frameJump.toFixed(2)}° per 120 Hz interval: ${JSON.stringify(measured.worstJump)}.`);
     assert.ok(measured.minBladeY > .10, `${name}: the actual blade approaches the ground.`);
-    assert.ok(measured.maxMedial < .02, `${name}: a loaded knee falls inside its shoe plane.`);
+    // A turning thigh can cross the shoe's vertical plane while preserving its
+    // hinge. Native-frame clips use the actual hip, knee, and ankle checks above.
+    if (!spec.nativeKneeHeading) assert.ok(measured.maxMedial < .02, `${name}: a loaded knee falls inside its shoe plane.`);
     assert.ok(measured.maxPlantTurn < .005, `${name}: a planted shoe rotates.`);
     assert.ok(measured.maxPlantDrift < .001, `${name}: planted foot drift is ${(measured.maxPlantDrift*1000).toFixed(3)} mm.`);
     if (spec.athleticAttack) assert.ok(measured.maxLift > .04, `${name}: no authored foot lift.`);

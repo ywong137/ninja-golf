@@ -48,3 +48,26 @@ test('Releasing backward or sideways attack movement keeps the last heading and 
  }
  steps.dispose();
 });
+
+test('Moving polearm cuts turn the pelvis with the steps while retaining the weapon and chest frames',async()=>{
+ const {root,bones,mixer,clips,steps}=await rig('monk','Naginata');
+ root.position.set(2,0,-3);root.rotation.y=.7;
+ const clip=clips.find(c=>c.name==='Ethan_Naginata_Heavy_Sweep'),action=mixer.clipAction(clip).play();
+ action.time=.22;mixer.update(0);root.updateMatrixWorld(true);
+ const q=n=>bones[n].getWorldQuaternion(new T.Quaternion()).normalize(),p=n=>bones[n].getWorldPosition(new T.Vector3());
+ const source=Object.values(bones).map(b=>[b,b.position.clone(),b.quaternion.clone(),b.scale.clone()]);
+ const pelvis=q('pelvis'),chest=q('spine_03'),hand=q('hand_r'),pair=p('hand_l').sub(p('hand_r'));
+ steps.weight=1;steps.apply(0,{active:true,speed:2.5,angle:0,pelvisGaitWeight:.55});root.updateMatrixWorld(true);
+ const gait=steps.proxyBones.pelvis.getWorldQuaternion(new T.Quaternion());
+ assert.ok(q('pelvis').angleTo(gait)<pelvis.angleTo(gait)*.6,'The legs retain the full sweep turn against the gait');
+ assert.ok(q('pelvis').angleTo(gait)>.05,'The walking layer removes the entire attack turn');
+ assert.ok(q('spine_03').angleTo(chest)<1e-5,'Walking changes the authored chest orientation');
+ assert.ok(q('hand_r').angleTo(hand)<1e-5,'Walking rotates the fitted weapon frame');
+ assert.ok(p('hand_l').sub(p('hand_r')).distanceTo(pair)<1e-5,'Walking pulls the two hands apart');
+ const held=q('pelvis');steps.restore();action.time=.22;mixer.update(0);
+ steps.apply(1/120,{active:false,speed:0,angle:0,pelvisGaitWeight:0});root.updateMatrixWorld(true);
+ assert.ok(q('pelvis').angleTo(held)<3*Math.PI/180,'Releasing movement abruptly drops the pelvic correction');
+ steps.restore();root.updateMatrixWorld(true);
+ for(const [b,p,q,s]of source){assert.ok(b.position.distanceTo(p)<1e-8,b.name);assert.ok(b.quaternion.clone().normalize().angleTo(q.clone().normalize())<1e-6,b.name);assert.ok(b.scale.distanceTo(s)<1e-8,b.name);}
+ steps.dispose();
+});

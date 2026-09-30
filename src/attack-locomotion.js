@@ -4,12 +4,14 @@ import {solveLeg} from './foot-placement.js';
 const DIRECTIONS=['Forward','Right','Backward','Left'];
 const point=bone=>bone.getWorldPosition(new THREE.Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new THREE.Quaternion());
+const SPINE=['spine_01','spine_02','spine_03'];
+function setWorldRotation(bone,q){bone.quaternion.copy(rotation(bone.parent).invert().multiply(q)).normalize();bone.updateWorldMatrix(false,true);}
 
 // Evaluate native combat steps separately from the weapon choreography. World-space
 // targets keep the imported joint axes and each character's actual limb lengths.
 export class AttackLocomotion {
  constructor(root,model,bones,clips,prefix,motionData){
-  this.root=root;this.bones=bones;this.saved=[];this.weight=0;this.phase=0;this.angle=0;
+  this.root=root;this.bones=bones;this.saved=[];this.weight=0;this.phase=0;this.angle=0;this.pelvisGaitWeight=0;
   this.proxyRoot=new THREE.Group();this.proxy=model.clone(true);this.proxyRoot.add(this.proxy);
   const meshes=[];this.proxy.traverse(o=>{if(o.isMesh)meshes.push(o);});for(const mesh of meshes)mesh.removeFromParent();
   this.proxyBones={};this.proxy.traverse(o=>{if(o.isBone)this.proxyBones[o.name]=o;});
@@ -22,9 +24,10 @@ export class AttackLocomotion {
   });
  }
  restore(){for(const [bone,position,q]of this.saved){bone.position.copy(position);bone.quaternion.copy(q);}this.saved=[];}
- reset(){this.weight=0;this.report=null;}
- apply(dt,{active=false,speed=0,angle=0,runPhase=null,kneeSolver}={}){
+ reset(){this.weight=0;this.pelvisGaitWeight=0;this.report=null;}
+ apply(dt,{active=false,speed=0,angle=0,runPhase=null,kneeSolver,pelvisGaitWeight=0}={}){
   const wanted=active&&speed>.10?1:0;
+  if(wanted)this.pelvisGaitWeight=THREE.MathUtils.clamp(pelvisGaitWeight,0,1);
   const previousWeight=this.weight;
   if(wanted&&!this.weight){this.phase=runPhase===null?0:(runPhase+.75)%1;this.angle=angle;}
   if(speed>.10)this.angle+=Math.atan2(Math.sin(angle-this.angle),Math.cos(angle-this.angle))*(1-Math.exp(-16*dt));
@@ -47,10 +50,22 @@ export class AttackLocomotion {
   for(const name of ['pelvis','thigh_r','calf_r','foot_r','ball_r','thigh_l','calf_l','foot_l','ball_l']){
    const bone=this.bones[name];this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);
   }
+  const turnWeight=this.weight*this.pelvisGaitWeight;
+  const spineFrames=turnWeight?SPINE.map(name=>[this.bones[name],rotation(this.bones[name])]):[];
+  for(const [bone]of spineFrames)this.saved.push([bone,bone.position.clone(),bone.quaternion.clone()]);
   const pelvis=this.bones.pelvis,p=point(pelvis),gait=point(this.proxyBones.pelvis);
   // Retain some attack compression and lean while moving the body over its steps.
   p.x=THREE.MathUtils.lerp(p.x,gait.x,this.weight*.85);p.z=THREE.MathUtils.lerp(p.z,gait.z,this.weight*.85);p.y=THREE.MathUtils.lerp(p.y,gait.y,this.weight*.6);
   pelvis.position.copy(pelvis.parent.worldToLocal(p));this.root.updateMatrixWorld(true);
+  if(turnWeight){
+   // Walking supplies some pelvic turn so a wide cut cannot wrench the hips
+   // against forward-facing steps. Keep the chest and weapon orientation,
+   // distributing the difference through all three abdominal/spinal joints.
+   const original=rotation(pelvis),turned=original.clone().slerp(rotation(this.proxyBones.pelvis),turnWeight);
+   const correction=turned.clone().multiply(original.clone().invert());
+   setWorldRotation(pelvis,turned);
+   for(const [i,[bone,q]]of spineFrames.entries())setWorldRotation(bone,new THREE.Quaternion().slerp(correction,(2-i)/3).multiply(q));
+  }
   const contactWeights={},stance={},feet=[];
   for(const target of targets){
    const {side}=target,foot=this.bones['foot_'+side],proxyFoot=this.proxyBones['foot_'+side];
