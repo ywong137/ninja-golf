@@ -42,3 +42,7 @@ https://mocap.cs.cmu.edu/
 The database permits use in products, but prohibits direct resale of its data.
 The reference pose was mirrored and refitted to the native skeleton and club.
 The resulting animation is an adaptation, not a direct motion capture replay.
+
+All six hero backswings also use pose references from CMU subject 64, trial
+64_01, frames 180 through 330. The source motion was mirrored, scaled, and
+refitted to each native skeleton with a shared two-hand club grip.

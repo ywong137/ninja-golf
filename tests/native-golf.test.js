@@ -27,7 +27,7 @@ for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${hero
    if(name!=='Golf_Swing')continue;
    for(const side of ['r','l']){
     const skin=measureArmSkin(rig,surface,side,{details:hero==='monk'&&side==='l'});
-    const reviewed=checkReviewedSleeve({hero,side,frame,fold:skin['fold_'+side],bind:sleeveBind,current:hero==='monk'&&side==='l'?captureSleeveShape(rig,surface):null});
+    const reviewed=checkReviewedSleeve({hero,side,frame,fold:skin['fold_'+side],bind:sleeveBind,current:hero==='monk'&&side==='l'?captureSleeveShape(rig,surface):null,surfaces:surface});
     if(!reviewed)assert.ok(skin['fold_'+side].maxRadialPenetration<.018,`${name}/${side}/${seconds}: unreviewed elbow overlap`);
     // The Monk's loose vest still meets the lead sleeve briefly after impact.
     // Preserve that reviewed boundary while rejecting a forearm crossing the body.

@@ -1,15 +1,12 @@
 {
-  "description": "Reviewed loose left sleeve fold; not a general elbow exemption. See docs/reviews/golf-closed-grips.md.",
+  "description": "Reviewed Vice President backswing sleeve crease. Golf-backswing review replaces the old 27.3 mm radial allowance with a 1 mm limit. Geometry and sleeve volume stay unchanged.",
   "meshId": 0,
   "side": "l",
   "frames": [
     23,
     30
   ],
-  "radialWitnessVertices": [
-    332,
-    339
-  ],
+  "radialWitnessVertices": [],
   "radiusVertices": {
     "332": 0.07524181427760877,
     "339": 0.0726386169686585,
@@ -17,34 +14,10 @@
     "355": 0.05841559722690201,
     "357": 0.03940540602056543
   },
-  "maxRadialProxy": 0.0273,
+  "maxRadialProxy": 0.001,
   "pairs": [
     {
       "upper": [
-        337,
-        296,
-        293
-      ],
-      "lower": [
-        353,
-        332,
-        333
-      ]
-    },
-    {
-      "upper": [
-        293,
-        335,
-        337
-      ],
-      "lower": [
-        353,
-        332,
-        333
-      ]
-    },
-    {
-      "upper": [
         338,
         298,
         296
@@ -53,7 +26,8 @@
         355,
         339,
         332
-      ]
+      ],
+      "maxIntersectionLength": 0.00376
     },
     {
       "upper": [
@@ -65,31 +39,21 @@
         339,
         355,
         357
-      ]
+      ],
+      "maxIntersectionLength": 0.00094
     },
     {
       "upper": [
-        296,
-        337,
-        338
+        338,
+        298,
+        296
       ],
       "lower": [
-        353,
-        332,
-        333
-      ]
-    },
-    {
-      "upper": [
-        296,
-        337,
-        338
+        357,
+        341,
+        339
       ],
-      "lower": [
-        332,
-        353,
-        355
-      ]
+      "maxIntersectionLength": 0.0038
     },
     {
       "upper": [
@@ -101,19 +65,8 @@
         355,
         339,
         332
-      ]
-    },
-    {
-      "upper": [
-        298,
-        338,
-        340
       ],
-      "lower": [
-        339,
-        355,
-        357
-      ]
+      "maxIntersectionLength": 0.03526
     },
     {
       "upper": [
@@ -125,7 +78,21 @@
         357,
         341,
         339
-      ]
+      ],
+      "maxIntersectionLength": 0.00401
+    },
+    {
+      "upper": [
+        298,
+        338,
+        340
+      ],
+      "lower": [
+        339,
+        355,
+        357
+      ],
+      "maxIntersectionLength": 0.00081
     }
   ]
 }
