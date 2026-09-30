@@ -105,3 +105,8 @@ These timings include animation and combat updates, with automatic resolution ch
 The extra shadow pass increased draw calls from roughly 875 to 1,320.
 These are local measurements, not a guarantee for other hardware or courses.
 The change fixes missing shadows but does not eliminate combat frame-time spikes.
+
+The same review found a broad reflection washing out the Japanese roofs.
+Their ceramic material now uses zero metalness and a roughness of 0.86.
+Matched course, close, and reverse views retain the dark tile color.
+This finish adjustment adds no geometry, textures, passes, or draw calls.
