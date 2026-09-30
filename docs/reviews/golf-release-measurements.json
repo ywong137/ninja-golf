@@ -1,0 +1,83 @@
+{
+  "sourceCommit": "6fb899524600c15f13d0b5ea8d04560d6cc8b468",
+  "preservation": [
+    {
+      "hero": "kaede",
+      "sourceCommit": "6fb899524600c15f13d0b5ea8d04560d6cc8b468",
+      "sourceSha256": "ee691afb997d1548869c48c490ba2a11bf7b9ba22c60de95b4ba50ea0da46202",
+      "outputSha256": "f1d3be1481c07021119dd86663c91d7a39867c325157c605cae592e2b7938677",
+      "sourceBytes": 15521060,
+      "outputBytes": 15810196,
+      "originalBinaryPrefixPreserved": true,
+      "geometryMaterialsBindingsPreserved": true,
+      "unchangedChannels": 8297,
+      "changedChannels": [
+        "hand_l",
+        "lowerarm_l",
+        "upperarm_l",
+        "hand_r",
+        "lowerarm_r",
+        "upperarm_r"
+      ],
+      "handPositionChangeMetres": 4.087031007502391e-7,
+      "handRotationChangeDegrees": 0.000032443398557560674,
+      "before": {
+        "rollRate": 2610.3137330021164,
+        "twistRate": 2200.0441930525412,
+        "upperRate": 2654.6972446211757,
+        "lowerRate": 1115.2711270295858,
+        "elbowSecondDifference": 0.003720371404627334,
+        "rollSecondDifference": 4.384318395979307
+      },
+      "after": {
+        "rollRate": 835.7403552549181,
+        "twistRate": 975.0445807725634,
+        "upperRate": 1298.8833163145039,
+        "lowerRate": 1098.2939912506008,
+        "elbowSecondDifference": 0.002828112320280403,
+        "rollSecondDifference": 1.4100487903110306
+      }
+    }
+  ],
+  "surfaceComparison": {
+    "poses": 145,
+    "parts": {
+      "upperarmTorso_r": {
+        "maxBefore": 74,
+        "maxAfter": 74,
+        "maxPairIncrease": 10,
+        "framesWithIncrease": 26
+      },
+      "upperarmTorso_l": {
+        "maxBefore": 6,
+        "maxAfter": 6,
+        "maxPairIncrease": 2,
+        "framesWithIncrease": 1
+      },
+      "forearmTorso_r": {
+        "maxBefore": 0,
+        "maxAfter": 0,
+        "maxPairIncrease": 0,
+        "framesWithIncrease": 0
+      },
+      "forearmTorso_l": {
+        "maxBefore": 0,
+        "maxAfter": 0,
+        "maxPairIncrease": 0,
+        "framesWithIncrease": 0
+      },
+      "fold_r": {
+        "maxBefore": 0,
+        "maxAfter": 0,
+        "maxPairIncrease": 0,
+        "framesWithIncrease": 0
+      },
+      "fold_l": {
+        "maxBefore": 0,
+        "maxAfter": 0,
+        "maxPairIncrease": 0,
+        "framesWithIncrease": 0
+      }
+    }
+  }
+}
