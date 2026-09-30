@@ -18,7 +18,10 @@ try{
      const ankle=p.bones['foot_'+side].getWorldPosition(new T.Vector3()),hip=p.bones['thigh_'+side].getWorldPosition(new T.Vector3()),knee=p.bones['calf_'+side].getWorldPosition(new T.Vector3()),toe=p.bones['ball_'+side].getWorldPosition(new T.Vector3()),phase=(p.runPhase+offset)%1;
      ranges[side][0]=Math.min(ranges[side][0],ankle.y);ranges[side][1]=Math.max(ranges[side][1],ankle.y);
      if(phase>.04&&phase<.24){holds[side]??=ankle.clone();maxSupportDrift=Math.max(maxSupportDrift,holds[side].distanceTo(ankle));maxFootPitch=Math.max(maxFootPitch,Math.abs(toe.y-ankle.y));minimumToeHipAlignment=Math.min(minimumToeHipAlignment,toe.clone().sub(ankle).setY(0).normalize().dot(hipLine.clone().setY(0).normalize().cross(new T.Vector3(0,1,0))));}else holds[side]=null;
-     const axis=ankle.clone().sub(hip),bend=knee.sub(hip);bend.addScaledVector(axis,-bend.dot(axis)/axis.lengthSq());minimumKnee=Math.min(minimumKnee,bend.dot(toe.clone().sub(ankle).setY(0).normalize()));
+     // A raised shoe can point downward past vertical; its horizontal toe
+     // projection no longer describes knee anatomy. Check this relation only
+     // during support; browser-run-recovery measures native hinges throughout.
+     if(phase>.04&&phase<.24){const axis=ankle.clone().sub(hip),bend=knee.sub(hip);bend.addScaledVector(axis,-bend.dot(axis)/axis.lengthSq());minimumKnee=Math.min(minimumKnee,bend.dot(toe.clone().sub(ankle).setY(0).normalize()));}
     }
    }
    const movingClip=p.current;p.update(2,.02,{moving:true,moveSpeed:0});const blockedClip=p.current;

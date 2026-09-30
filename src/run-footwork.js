@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import {headingKnee} from './knee-alignment.js';
-import {solveLeg} from './foot-placement.js';
-import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
+import {calibrateLegAnatomy} from './leg-anatomy.js';
+import {recoveryWeight,solveRecoveryLeg} from './leg-recovery.js';
 
 const caches=new WeakMap();
 const point=bone=>bone.getWorldPosition(new THREE.Vector3());
@@ -29,7 +28,7 @@ function sampleClips(template,clips){
 export class RunFootwork{
  constructor(root,model,bones,template,clips){
   this.root=root;this.model=model;this.bones=bones;this.saved=[];this.data=sampleClips(template,clips);
-  this.hinges=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegHinge(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
+  this.anatomy=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
  }
  restore(){for(const [bone,q,p]of this.saved){bone.quaternion.copy(q);if(p)bone.position.copy(p);}this.saved=[];}
  captureEntry({includeBody=false}={}){
@@ -76,7 +75,8 @@ export class RunFootwork{
    const thigh=this.bones['thigh_'+side],calf=this.bones['calf_'+side],foot=this.bones['foot_'+side];
    target.lerp(this.entry?.[side].p??point(foot),1-blend);q.slerp(this.entry?.[side].q??rotation(foot),1-blend);
    for(const bone of [thigh,calf,foot])this.saved.push([bone,bone.quaternion.clone()]);
-   const error=solveLeg(thigh,calf,foot,target,q,{maxReach:.999,kneeSolver:headingKnee});alignLegHinge(thigh,calf,foot,this.hinges[side]);reports.push({side,error});
+   const weight=recoveryWeight(phase+(side==='r'?0:.5),blend);
+   const error=solveRecoveryLeg(thigh,calf,foot,target,q,this.anatomy[side],weight);reports.push({side,error});
   }
   this.report=reports;
   if(blend>=1)this.resetEntry();
