@@ -7,10 +7,10 @@ import {disableHmr} from './disable-hmr.mjs';
 
 const {values,positionals}=parseArgs({allowPositionals:true,options:{
   hero:{type:'string',default:'3'},speed:{type:'string',default:'1'},
-  model:{type:'string'},help:{type:'boolean'},
+  model:{type:'string'},'grip-profiles':{type:'string'},help:{type:'boolean'},
 }});
 if(values.help){
-  console.log('node tools/capture-golf-playback.mjs OUTPUT.webm [--hero 0..5] [--speed 0.1..1] [--model CANDIDATE.glb]\nRecords one Golf_Swing and its final hold through Warrior.update. Uses fixed address-front and address-side cameras. Audio stays muted. Writes a frame-time report beside the video. Requires the local Vite server on port 5173.');
+  console.log('node tools/capture-golf-playback.mjs OUTPUT.webm [--hero 0..5] [--speed 0.1..1] [--model CANDIDATE.glb] [--grip-profiles GRIPS.json]\nRecords one Golf_Swing and its final hold through Warrior.update. Uses fixed address-front and address-side cameras. Audio stays muted. Writes a frame-time report beside the video. Requires the local Vite server on port 5173.');
   process.exit(0);
 }
 const [output]=positionals,hero=Number(values.hero),speed=Number(values.speed);
@@ -23,6 +23,7 @@ try{
   const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
   await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
   if(values.model){const name=['ronin','shinobi','monk','kaede','ayame','sora'][hero];await page.route(`**/models/${name}.glb?*`,route=>route.fulfill({path:values.model}));}
+  if(values['grip-profiles']){const profiles=JSON.parse(fs.readFileSync(values['grip-profiles'],'utf8'));if(!profiles[['ronin','shinobi','monk','kaede','ayame','sora'][hero]]?.golf)throw Error('The grip profiles lack the selected hero golf grasp.');await page.route('**/src/grip-data.json*',route=>route.fulfill({contentType:'application/javascript',body:'export default '+JSON.stringify(profiles)+';'}));}
   await page.goto('http://localhost:5173/tests/rig-stage.html');
   const result=await page.evaluate(async({hero,speed})=>{
     const T=await import('/node_modules/three/build/three.module.js');

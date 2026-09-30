@@ -49,6 +49,9 @@ The rebuild source and curves are in [tools/golf-finish](../../tools/golf-finish
 
 ## Open grip issue
 
+Update: the [next grasp pass](ace-golf-grasp.md) improves the finger wrap and closes the lead thumb gap described below.
+It adds finite-handle and mutual hand-surface checks. That review also records the remaining limits.
+
 ![Close view of the current golf grip](media/ace-golf-finish-grip.png)
 
 The lead hand still looks too much like a clamp at the handle's end from some close angles.

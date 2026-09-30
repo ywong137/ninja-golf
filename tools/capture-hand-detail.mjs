@@ -4,14 +4,16 @@ import {chromium} from 'playwright';
 import fs from 'node:fs';
 import {disableHmr} from './disable-hmr.mjs';
 import {routeMotionCandidate} from './route-motion-candidate.mjs';
-const {values}=parseArgs({options:{hero:{type:'string'},clip:{type:'string'},times:{type:'string'},output:{type:'string'},framing:{type:'string',default:'hand'},model:{type:'string'},'motion-record':{type:'string'},'ready-record':{type:'string'},'replace-clip':{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/capture-hand-detail.mjs --hero 0..5 --clip CLIP --times 0.05,0.15,0.30 --output /tmp/review-prefix [--framing hand|grip|body]\nOptional candidate: --model MODEL.glb --motion-record MOTION.json --ready-record READY.json --replace-clip ORIGINAL_CLIP\nRenders front, right, left, and three-quarter views from fixed model axes at 1200x800. The left view looks behind the golf finish. Supports golf clips and playable attacks. Audio stays muted.');process.exit(0);}
+const {values}=parseArgs({options:{hero:{type:'string'},clip:{type:'string'},times:{type:'string'},output:{type:'string'},framing:{type:'string',default:'hand'},model:{type:'string'},'grip-profiles':{type:'string'},'shaft-views':{type:'boolean'},'motion-record':{type:'string'},'ready-record':{type:'string'},'replace-clip':{type:'string'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/capture-hand-detail.mjs --hero 0..5 --clip CLIP --times 0.05,0.15,0.30 --output /tmp/review-prefix [--framing hand|grip|body] [--shaft-views]\nOptional candidate: --model MODEL.glb --motion-record MOTION.json --ready-record READY.json --replace-clip ORIGINAL_CLIP [--grip-profiles GRIPS.json]\nRenders front, right, left, and three-quarter views from fixed model axes at 1200x800. The left view looks behind the golf finish. --shaft-views adds four perpendicular views of the complete golf handle, with the shaft vertical. Supports golf clips and playable attacks. Audio stays muted.');process.exit(0);}
 const hero=Number(values.hero),times=values.times?.split(',').map(Number);
 if(!/^[0-5]$/.test(values.hero??'')||!values.clip||!values.output||!times?.length||times.some(t=>!Number.isFinite(t)||t<0)||!['hand','grip','body'].includes(values.framing))throw Error('Supply valid --hero, --clip, --times, --output, and --framing. See --help.');
+if(values['shaft-views']&&!['Golf_Address','Golf_Swing','Golf_Putt'].includes(values.clip))throw Error('--shaft-views requires a golf clip.');
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1200,height:800}}),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
  await routeMotionCandidate(page,{hero,model:values.model,motionRecord:values['motion-record'],readyRecord:values['ready-record'],replaceClip:values['replace-clip']});
+ if(values['grip-profiles']){const profiles=JSON.parse(fs.readFileSync(values['grip-profiles'],'utf8'));if(!profiles[['ronin','shinobi','monk','kaede','ayame','sora'][hero]]?.golf)throw Error('The grip profiles lack the selected hero golf grasp.');await page.route('**/src/grip-data.json*',route=>route.fulfill({contentType:'application/javascript',body:'export default '+JSON.stringify(profiles)+';'}));}
  await page.goto('http://localhost:5173/tests/rig-stage.html');
  await page.evaluate(async({hero,clip,times})=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js'),{ATTACKS,attackDefinition}=await import('/src/combat.js'),{combatMotionName,motions}=await import('/src/motion.js');await loadWarriorAssets();
@@ -42,6 +44,21 @@ try{
    await page.evaluate(({time,name,offset,framing})=>{const {T,actor,camera,scene,renderer,label,clip}=window.detail,hand=actor.bones.hand_r.getWorldPosition(new T.Vector3()),elbow=actor.bones.lowerarm_r.getWorldPosition(new T.Vector3());const target=framing==='body'?new T.Vector3(0,1.12,0):framing==='grip'?hand.lerp(actor.bones.hand_l.getWorldPosition(new T.Vector3()),.5):hand.lerp(elbow,.25);camera.position.copy(target).add(new T.Vector3(...offset).multiplyScalar(framing==='body'?2.4:framing==='grip'?.4:1));camera.lookAt(target);label.textContent=`${clip} · ${time.toFixed(3)}s · ${name} · runtime ${framing}`;renderer.render(scene,camera);},{time,name,offset,framing:values.framing});
    await page.screenshot({path:`${values.output}-${time.toFixed(3)}-${name}.png`});
   }
+  if(values['shaft-views'])for(const angle of [0,90,180,270]){
+   await page.evaluate(({time,angle})=>{
+    const {T,actor,camera,scene,renderer,label,clip}=window.detail;
+    const frame=actor.club.getWorldQuaternion(new T.Quaternion());
+    const target=actor.club.localToWorld(new T.Vector3(0,.07,0));
+    const radians=angle*Math.PI/180;
+    camera.up.set(0,1,0).applyQuaternion(frame);
+    camera.position.copy(target).add(new T.Vector3(Math.cos(radians),0,Math.sin(radians)).applyQuaternion(frame).multiplyScalar(1.4));
+    camera.lookAt(target);
+    label.textContent=`${clip} · ${time.toFixed(3)}s · shaft ${angle}° · complete handle`;
+    renderer.render(scene,camera);
+    camera.up.set(0,1,0);
+   },{time,angle});
+   await page.screenshot({path:`${values.output}-${time.toFixed(3)}-shaft-${angle}.png`});
+  }
  }
- if(errors.length)throw Error(errors.join('\n'));fs.writeFileSync(values.output+'.json',JSON.stringify(report,null,2));console.log(`Rendered ${times.length*4} runtime hand detail views.`);
+ if(errors.length)throw Error(errors.join('\n'));fs.writeFileSync(values.output+'.json',JSON.stringify(report,null,2));console.log(`Rendered ${times.length*(values['shaft-views']?8:4)} runtime hand detail views.`);
 }finally{await browser.close();}
