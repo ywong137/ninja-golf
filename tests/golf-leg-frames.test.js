@@ -27,7 +27,7 @@ for(const hero of heroes)test(`${hero}: golf knees hinge forward and both forefe
    }
    if(last&&time-last.time>1e-5)peak.pelvisSpeed=Math.max(peak.pelvisSpeed,sample.pelvis.distanceTo(last.pelvis)/(time-last.time));
    if(name!=='Golf_Swing'||time<=1.42)assert.ok(p('foot_r').distanceTo(lead)<.0005,`${name}/${time}: lead ankle drift ${p('foot_r').distanceTo(lead)}`);
-   if(name==='Golf_Swing'&&time>=1.91){assert.ok(Math.abs(q('foot_r').angleTo(leadQ)-25*Math.PI/180)<.001,'Lead foot loses its 25-degree finish pivot');}
+   if(name==='Golf_Swing'&&time>=1.91){const turn=hero==='kaede'?35:25;assert.ok(Math.abs(q('foot_r').angleTo(leadQ)-turn*Math.PI/180)<.001,`Lead foot loses its ${turn}-degree finish pivot`);}
    last=sample;
   }
  }

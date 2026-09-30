@@ -1,4 +1,4 @@
-// Exact skin regression for the Monk's golf finish. Run from the repository root.
+// Exact skin regression for the Vice President and Ace golf finishes. Run from the repository root.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -65,7 +65,7 @@ function timesFor(clip) {
   return [...keys].sort((a,b)=>a-b).filter((time,index,array)=>!index||time-array[index-1]>1e-9);
 }
 
-export async function inspectMonkGolfFinish(model) {
+export async function inspectGolfFinish(model) {
   const gltf=await loadNativeSkin(model),scene=gltf.scene;
   const clip=gltf.animations.find(item=>item.name==='Golf_Swing');
   assert.ok(clip,'Missing Golf_Swing.');
@@ -147,10 +147,10 @@ export async function inspectMonkGolfFinish(model) {
   } finally {helper.dispose();}
 }
 
-test('Monk golf finish keeps both upper arms and forearms outside the actual head surface',async t=>{
+for(const [model,label] of [['monk','Vice President'],['kaede','Ace']])test(`${label} golf finish keeps both upper arms and forearms outside the actual head surface`,async t=>{
   const directory=path.resolve(process.env.NINJA_GOLF_MODEL_DIR??path.join(repo,'public/models'));
-  const report=await inspectMonkGolfFinish(path.join(directory,'monk.glb'));
-  if (process.env.NINJA_GOLF_HEAD_REPORT) fs.writeFileSync(process.env.NINJA_GOLF_HEAD_REPORT,JSON.stringify(report,null,2)+'\n');
+  const report=await inspectGolfFinish(path.join(directory,model+'.glb'));
+  if (process.env.NINJA_GOLF_HEAD_REPORT) fs.writeFileSync(model==='monk'?process.env.NINJA_GOLF_HEAD_REPORT:process.env.NINJA_GOLF_HEAD_REPORT.replace(/\.json$/,'.kaede.json'),JSON.stringify(report,null,2)+'\n');
   t.diagnostic(JSON.stringify({samples:report.samples,statistics:report.statistics}));
   const failures=Object.entries(report.statistics).filter(([,result])=>result.maxCrossings>0);
   assert.deepEqual(failures.map(([limb,result])=>({limb,time:result.firstFailure.time,worstTime:result.worstTime,
