@@ -110,3 +110,28 @@ The same review found a broad reflection washing out the Japanese roofs.
 Their ceramic material now uses zero metalness and a roughness of 0.86.
 Matched course, close, and reverse views retain the dark tile color.
 This finish adjustment adds no geometry, textures, passes, or draw calls.
+
+## Animated crowd visibility
+
+Enemy bodies previously bypassed camera and shadow visibility checks.
+Off-screen enemies therefore added work to the main view and both shadow regions.
+The crowd renderer now updates each body's bounds from its current skeleton before visibility checks.
+Preparation scans each shared mesh once; frame updates only transform boxes around the bones.
+The boxes include blended skin weights, whole-body movement, and death rotations and scaling.
+Hero deformation and weapon rendering retain their existing behavior.
+
+The unit checks covered every vertex in all 15 native clips for each of the three enemy models.
+Six samples per clip checked about 1.27 million posed vertices.
+Additional fixtures covered detached binding, nonuniform scale, shear, and large world positions.
+The GPU comparison covered 18 pose/view combinations with 48 enemies.
+It found zero changed pixels, including shadows, and saved 582 draw calls across those frames.
+Removing the crowd restored the original mesh methods and visibility settings.
+
+A muted Chrome Metal comparison used 64 moving enemies at 1440×900 pixels on Crane Coast.
+Each variant measured a complete camera orbit after a ten-second warmup.
+Automatic resolution changes were disabled.
+Average FPS increased from 51.7 to 53.5.
+The final sampled frame decreased from 1,283 draw calls to 1,142.
+Both variants had 33.3 ms and 50 ms frame times at the 95th and 99th percentiles.
+The improvement is modest; animation, foliage, and combat still contribute to frame-time spikes.
+These local timings do not establish performance on other hardware or courses.

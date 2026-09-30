@@ -16,6 +16,7 @@ import {createGolfClub} from './golf-club.js';
 import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import {installLimbSkinning} from './forearm-twist.js';
 import {golfShoulderSkinWeight} from './golf-shoulder-skin.js';
+import {installSkinnedBounds} from './skinned-bounds.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import { ENEMY_TYPES } from './combat.js';
@@ -374,9 +375,17 @@ export class Warrior {
     weight=Math.min(1,weight);
     this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight});
   }
-  dispose(){this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
+  dispose(){this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {
-  constructor(scene){this.scene=scene;this.active=new Set();}
-  update(enemies){const present=new Set(enemies);for(const e of this.active)if(!present.has(e)){this.scene.remove(e.root);e.dispose();this.active.delete(e);}for(const e of enemies)if(!this.active.has(e)){this.scene.add(e.root);this.active.add(e);}}
+  constructor(scene){
+    this.scene=scene;this.active=new Set();const before=scene.onBeforeRender;
+    // Three updates all world matrices before this callback, then tests camera
+    // and shadow visibility. This also covers late root movement and reflections.
+    scene.onBeforeRender=(renderer,renderScene,camera,target)=>{
+      before.call(renderScene,renderer,renderScene,camera,target);
+      for(const actor of this.active)if(actor.root.visible)actor.skinBounds?.update();
+    };
+  }
+  update(enemies){const present=new Set(enemies);for(const e of this.active)if(!present.has(e)){this.scene.remove(e.root);e.dispose();this.active.delete(e);}for(const e of enemies)if(!this.active.has(e)){if(e.enemy)e.skinBounds=installSkinnedBounds(e.model);this.scene.add(e.root);this.active.add(e);}}
 }
