@@ -237,3 +237,26 @@ This change fixes matching completed-attack boundaries; it does not fix that exi
 The full working-tree test run reports 636 passes and six failures.
 The failures come from the pre-existing edited Ronin review test and five checks in the untracked golf-frame study.
 Those studies remain outside this change. No failing check was removed or relaxed.
+
+## Paired running candidate
+
+The connected-combo model now has a separate paired-running revision.
+It holds the sword with both hands during forward running, strafing, backward running, and sprinting.
+The author transfers the fitted Ready arm chains and preserves the source body, head, and leg channels.
+The runtime continues matching arms into an attack while the body retains its crossfade.
+
+The original carry transition crossed sleeve surfaces and reached 86.4 degrees of forearm twist during a lateral run-to-light transition.
+Those failures disappear in the tested paired-running sequences.
+The support hand stays attached during running, attack entry, full attack recovery, resumed running, and stopping.
+
+At 45, 60, and 144 Hz, 42 candidate cases pass all arm, surface, hand-frame, handle-contact, and blade-clearance checks.
+The largest palm gap is 0.0894 mm. The largest complete frame error is 0.0155 degrees.
+The preservation check confirms 630 unchanged body channels, 33 unchanged animations, and 11,657,660 preserved source binary bytes.
+The connected combo still passes its actual-controller check.
+The public roster's existing carry regression passes all 90 cases.
+Eighteen focused unit checks and the production build pass.
+
+This revision remains offline. Dodge, selection, and the unfinished attacks still require compatible grips and review.
+The public roster does not enable the new `pairedTravelGrip` field.
+The model hash is `8920a5c5d88c348ac750ff24efe30941dff6f52e25c2cba4103be4d487c17111`.
+The silent local preview is `artifacts/reviews/ronin-paired-travel/paired-travel.mp4`.

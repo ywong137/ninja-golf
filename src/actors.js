@@ -9,6 +9,7 @@ import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
 import {FootPlacement,attackFootContacts,resolveFootSupport} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
+import {pairedTravelGrip} from './travel-grip.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
@@ -175,18 +176,20 @@ export class Warrior {
   play(name,fade=.16,once=false,speed=1){
     // A compatible native pair already authors both arms. Preserve it through
     // the fade instead of adding a second, independent elbow solve.
-    const settledPair=!this.offhand&&!this.running&&!(this.travelPose?.weight>0)
+    const travelGrip=this.running?pairedTravelGrip(WARRIORS[this.type],this.current):null;
+    const fromGrip=travelGrip??motions[this.current],toGrip=pairedTravelGrip(WARRIORS[this.type],name)??motions[name];
+    const settledPair=!this.offhand&&(!this.running||!!travelGrip)&&!(this.travelPose?.weight>0)
       &&!this.current.startsWith('Golf')&&!name.startsWith('Golf')&&this.handGrip?.secondaryWeight>.999
       &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
-      &&compatibleNativePair(motions[this.current],motions[name],this.weapon.userData.defaultGrip);
-    const preservePair=settledPair&&!this.guardWalking;
+      &&compatibleNativePair(fromGrip,toGrip,this.weapon.userData.defaultGrip);
+    const preservePair=settledPair&&!this.guardWalking&&!this.running;
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const previous=this.actions.get(this.current);
     this.armContinuation?.release(this.mixer.time,fade);
-    const continueArms=fade>0&&settledPair&&/_Guard_(Loop|Impact|Break|Walk_\w+)$/.test(this.current)
-      &&motions[this.current]?.fixedGripFrame===true&&motions[name]?.fixedGripFrame===true&&motions[name]?.athleticAttack
+    const continueArms=fade>0&&settledPair&&(!!travelGrip||/_Guard_(Loop|Impact|Break|Walk_\w+)$/.test(this.current))
+      &&fromGrip?.fixedGripFrame===true&&toGrip?.fixedGripFrame===true&&motions[name]?.athleticAttack
       &&this.armContinuation?.begin(next,this.mixer.time,fade);
     // Ready, completed attacks, and declared combo boundaries can continue only
     // when every incoming transform matches. Other interruptions retain a fade.
@@ -246,7 +249,7 @@ export class Warrior {
     this.runBlend=Math.min(1,this.runBlend+dt/this.runFade);
     this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
-    this.handGrip?.engage(false,.12);
+    this.handGrip?.engage(!!pairedTravelGrip(WARRIORS[this.type],this.current),.12);
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
     this.handGrip?.restore();this.handGrip?.prepare(golf);
@@ -319,8 +322,9 @@ export class Warrior {
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredFeet||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
-    if(golf||selection)this.travelPose?.reset();
-    this.travelPose?.apply(dt,this.running&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
+    const authoredTravel=this.running&&!!pairedTravelGrip(WARRIORS[this.type],this.current);
+    if(golf||selection||authoredTravel)this.travelPose?.reset();
+    this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){
       if(cinematic){
         const head=this.bones.Head,chin=new THREE.Quaternion().setFromAxisAngle(this.facialPose.right,2*Math.PI/180);
@@ -339,7 +343,7 @@ export class Warrior {
     this.syncHeldObjects(motion,golf);
   }
   syncHeldObjects(motion=sampleMotionInto(this.current,this.actions.get(this.current)?.time||0,this.motionSample),golf=false){
-    if(this.handGrip){this.handGrip.apply(motion,golf,motions[this.current]);this.updateSkinDeformation();return;}
+    if(this.handGrip){this.handGrip.apply(motion,golf,pairedTravelGrip(WARRIORS[this.type],this.current)??motions[this.current]);this.updateSkinDeformation();return;}
     // Anchor the handle to the evaluated palm after every mixer and torso update.
     // Authored directions control the shaft; the live palm also controls blade roll.
     // Keep the measured closed grip when a source idle clip opens its free hand.

@@ -122,3 +122,33 @@ The original source-foot-path comparison does not apply to this intentional foot
 
 This improves a single attack. It does not solve the combo's return through Ready or the unfinished weapon motions.
 The next attack needs a continuation from the planted finish, with a separate recovery when no follow-up is queued.
+
+## Paired combat running
+
+Build this revision from the connected two-cut candidate:
+
+```sh
+node tools/ronin-candidates/fixed-grip/author-travel.mjs --candidate /tmp/ninja-ronin-connected-combo --output /tmp/ninja-ronin-paired-travel
+node tools/ronin-candidates/fixed-grip/check-travel-preservation.mjs --candidate /tmp/ninja-ronin-paired-travel --before /tmp/ninja-ronin-connected-combo/ronin.glb
+node tools/ronin-candidates/fixed-grip/check-travel-runtime.mjs --candidate /tmp/ninja-ronin-paired-travel --rate 45
+node tools/ronin-candidates/fixed-grip/check-travel-runtime.mjs --candidate /tmp/ninja-ronin-paired-travel --rate 60
+node tools/ronin-candidates/fixed-grip/check-travel-runtime.mjs --candidate /tmp/ninja-ronin-paired-travel --rate 144
+```
+
+The author transfers the fitted Ready arm chains into five combat runs.
+The body, head, and leg channels retain their source animation.
+The runtime keeps both hands on the sword during those runs.
+The torso still blends when an attack starts; matching arm chains continue together.
+
+`travel.json` enables this behavior only for the candidate Ronin.
+The public roster has no `pairedTravelGrip` configuration yet.
+Other heroes retain their procedural carry.
+
+The preservation check covers 630 body channels, 33 unrelated animations, and all original binary bytes.
+The runtime check covers seven movement patterns at each rate, followed by light and heavy attacks, resumed running, and stopping.
+It measures complete hand frames, handle contact, arm anatomy, arm surfaces, and blade clearance throughout each sequence.
+It does not certify the unfinished attacks, dodge transitions, uneven terrain, or the entire roster.
+
+The original one-handed carry produced sleeve intersections and excessive forearm rotation when entering the fitted attacks.
+The paired revision removes those failures in the tested sequences.
+The changed weapon mount still requires the remaining Ronin family before publication.

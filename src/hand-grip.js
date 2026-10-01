@@ -206,8 +206,9 @@ export class HandGrip {
   if(this.transition){const t=MathUtils.clamp((actor.mixer.time-this.transition.start)/this.transition.duration,0,1);this.weight=MathUtils.lerp(this.transition.from,this.goal,t*t*(3-2*t));if(t===1)this.transition=null;}
   // The free hand closes after the carry arm approaches its authored pose.
   // An early full-strength grab can pull both elbows across the torso.
-  // Release it before running resumes; a fading grab would bend the free wrist.
-  const secondaryWeight=actor.running&&!golf?0:clip?.nativeAttachment&&!golf?this.weight*MathUtils.smoothstep(1-(actor.travelPose?.weight??0),.4,1):this.weight;
+  // Procedural one-handed carry releases it before running resumes. An authored
+  // paired run instead retains both complete hand frames from its native clip.
+  const secondaryWeight=actor.running&&!golf&&!clip?.pairedGrip?0:clip?.nativeAttachment&&!golf?this.weight*MathUtils.smoothstep(1-(actor.travelPose?.weight??0),.4,1):this.weight;
   this.secondaryWeight=secondaryWeight;
   const carryActive=!golf&&(actor.travelPose?.weight??0)>0;
   const holdingLeft=actor.offhand&&!golf?1:secondaryWeight;

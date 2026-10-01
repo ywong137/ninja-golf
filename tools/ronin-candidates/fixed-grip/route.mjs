@@ -23,7 +23,8 @@ export async function routeFixedGripCandidate(page,directory,{withDiagonal=false
    // Native time retains the dense authoring samples. Combat time is shorter
    // for light cuts; damage follows the same normalized contact pose.
    const timings=[[diagonal,.4],...(withReturn?[[returnCut,.5]]:[])].map(([record,duration])=>({duration,hits:record.impacts.map(time=>time*duration/record.duration)}));
-   await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,...'+JSON.stringify(overrides)+'};'}));
+   const travel=fs.existsSync(file('travel.json'))?JSON.parse(fs.readFileSync(file('travel.json'))):null;
+   await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,...'+JSON.stringify(overrides)+'};'+(travel?'\nWARRIORS[0].pairedTravelGrip='+JSON.stringify(travel)+';':'')}));
    await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:'+JSON.stringify(timings)+'};'}));
   }
  }
