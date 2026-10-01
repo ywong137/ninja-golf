@@ -74,6 +74,42 @@ The sequence remains an offline candidate. It does not replace the remaining Ron
 The diagonal's maximum sampled local joint speed is approximately 2,584 degrees per second.
 The numerical checks do not resolve that motion's artistic timing by themselves.
 
+## Guard motions and attack transitions
+
+The candidate now includes all seven guard motions with the same 120 mm palm spacing and complete hand frames.
+Impact and Break rotate the upper body without changing either arm's local grip.
+Break also moves the pelvis down 40 mm and back 45 mm, with both feet planted.
+Both knees compress, and the measured inward knee displacement remains below 0.001 mm.
+
+The native check covers 2,842 samples at 480 Hz.
+It finds no native arm violations or tested arm surface intersections.
+Maximum complete palm-frame error is 0.0000192 degrees.
+Maximum ankle or toe displacement against the original paths is 0.0334 mm.
+The separate Break comparison verifies recovery and unchanged unrelated animation channels.
+
+The first runtime test exposed another blend defect despite those valid individual poses.
+The static guard arms blended independently into the attack, opening the shared grip by 6.71 mm during the light-cut transition.
+The controller now continues the incoming arm motion while retaining the body's existing crossfade.
+This requires explicit fixed-grip metadata, matching local arm transforms, a shared clavicle parent, and a compatible two-hand attachment.
+Missing animation channels use the captured bind transform during comparison and playback.
+The actual model parents both clavicles to `neck_01`; the controller does not assume `spine_03`.
+
+A cancellation fades this layer from its displayed pose into the next mixer pose.
+This prevents the new layer from jumping back to its underlying blend when a dodge interrupts it.
+It does not certify the unfinished candidate's dodge or travel grips.
+
+The guard-to-attack checks cover 14 combinations at each of 60 Hz and 144 Hz.
+Both rates retain the body fade and use the arm continuation.
+They report no native arm violations, tested arm surface intersections, or blade approaches within the 30 mm measurement cap.
+At 60 Hz, maximum palm separation is 0.061 mm and complete frame error is 0.0103 degrees.
+At 144 Hz, maximum palm separation is 0.077 mm and complete frame error is 0.00985 degrees.
+Maximum handle surface intrusion is 1.066 mm, with no guard or pommel intrusion.
+
+Front, side, and quarter renders show the planted guard recoil and the step into the raised attack chamber.
+The ten-clip build reproduces the reviewed local model and all five motion/profile files byte for byte.
+The existing 196-case native-pair regression check also passes, including 90 direct pose handoffs.
+These guard corrections remain part of the offline candidate until the remaining weapon motions use the same fitted grip.
+
 ## Review and remaining work
 
 Actual Claude Opus 5.5 High reviewed the earlier poses.

@@ -8,9 +8,10 @@ import * as T from 'three';
 import {parseGlb} from '../../bake-native-golf.mjs';
 import {patchAnimationTransforms} from '../../patch-animation-rotations.mjs';
 import {loadNativeSkin} from '../../../tests/native-skin-helper.mjs';
-const {values}=parseArgs({options:{output:{type:'string'},'with-diagonal':{type:'boolean'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/fixed-grip/build.mjs --output DIRECTORY [--with-diagonal]\nRun from the repository root. Rebuilds the offline Ronin Ready/Cleave candidate from the retained controls. The optional diagonal cut uses the same complete grip. Does not edit game assets.');process.exit(0);}
+const {values}=parseArgs({options:{output:{type:'string'},'with-diagonal':{type:'boolean'},'with-guards':{type:'boolean'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/fixed-grip/build.mjs --output DIRECTORY [--with-diagonal [--with-guards]]\nRun from the repository root. Rebuilds the offline Ronin Ready/Cleave candidate from the retained controls. Optional diagonal and guard motions use the same complete grip. --with-guards requires --with-diagonal. Does not edit game assets.');process.exit(0);}
 if(!values.output)throw Error('Supply --output DIRECTORY. See --help.');
+if(values['with-guards']&&!values['with-diagonal'])throw Error('--with-guards requires --with-diagonal.');
 const publicRoot=pathModule.resolve('public'),outputRoot=pathModule.resolve(values.output);
 if(outputRoot===publicRoot||outputRoot.startsWith(publicRoot+pathModule.sep))throw Error('Keep candidate outputs outside public/.');
 const output=name=>pathModule.join(pathModule.resolve(values.output),name);
@@ -75,4 +76,15 @@ if(values['with-diagonal']){
   '--input',output('cleave.glb'),'--heavy-record',output('motion.json'),'--grip-profiles',output('grips.json'),
   '--output',output('ronin.glb'),'--record',output('diagonal.json')],{stdio:'pipe'});
 }
-const manifest={inputHash:hash,outputHash:crypto.createHash('sha256').update(fs.readFileSync(output('ronin.glb'))).digest('hex'),samples:data.keys.length,clips:['Ronin_Ready','Ronin_Heavy_Cleave',...(values['with-diagonal']?['Ronin_Cut_Diagonal']:[])],model:output('ronin.glb'),status:profile.status};fs.writeFileSync(output('manifest.json'),JSON.stringify(manifest,null,2));console.log(JSON.stringify(manifest));
+if(values['with-guards']){
+ fs.renameSync(output('ronin.glb'),output('attacks.glb'));
+ execFileSync(process.execPath,[fileURLToPath(new URL('../author-guards.mjs',import.meta.url)),
+  '--input',output('attacks.glb'),'--ready-record',output('ready.json'),'--grip-profiles',output('grips.json'),
+  '--output',output('guards-base.glb'),'--record',output('guards-base.json')],{stdio:'pipe'});
+ for(const body of [false,true])execFileSync(process.execPath,[fileURLToPath(new URL('../author-guard-reactions.mjs',import.meta.url)),
+  '--input',output('guards-base.glb'),'--guard-record',output('guards-base.json'),'--grip-profiles',output('grips.json'),
+  '--output',output(body?'ronin.glb':'guard-reactions-base.glb'),'--record',output(body?'guards.json':'guard-reactions-base.json'),
+  ...(body?['--break-body']:[])],{stdio:'pipe'});
+}
+const guards=values['with-guards']?Object.keys(JSON.parse(fs.readFileSync(output('guards.json')))):[];
+const manifest={inputHash:hash,outputHash:crypto.createHash('sha256').update(fs.readFileSync(output('ronin.glb'))).digest('hex'),samples:data.keys.length,clips:['Ronin_Ready','Ronin_Heavy_Cleave',...(values['with-diagonal']?['Ronin_Cut_Diagonal']:[]),...guards],model:output('ronin.glb'),status:profile.status};fs.writeFileSync(output('manifest.json'),JSON.stringify(manifest,null,2));console.log(JSON.stringify(manifest));

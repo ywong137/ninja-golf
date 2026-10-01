@@ -3,10 +3,15 @@ import path from 'node:path';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {loadNativeSkin} from '../../tests/native-skin-helper.mjs';
-const {values}=parseArgs({options:{input:{type:'string'},output:{type:'string'},record:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/author-guards.mjs --output /tmp/guards.glb --record /tmp/guards.json [--input /tmp/ronin-diagonal-v63.glb]\nTransfer accepted Ready arms and upper trunk onto the existing guard pelvis and leg paths. Candidate files only.');process.exit(0);}
+const {values}=parseArgs({options:{input:{type:'string'},output:{type:'string'},record:{type:'string'},'grip-profiles':{type:'string'},'ready-record':{type:'string'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/author-guards.mjs --output /tmp/guards.glb --record /tmp/guards.json --input CANDIDATE.glb [--grip-profiles ROSTER.json --ready-record READY.json]\nTransfer Ready arms and upper trunk onto the existing guard pelvis and leg paths. Supply both optional files for a newly fitted complete grip. Candidate files only.');process.exit(0);}
 if(!values.input?.endsWith('.glb'))throw Error('Supply --input containing accepted Ronin_Ready.');
 if(!values.output?.endsWith('.glb')||!values.record?.endsWith('.json'))throw Error('Supply --output and --record.');
+if(!!values['grip-profiles']!==!!values['ready-record'])throw Error('Supply both --grip-profiles and --ready-record for a fitted grip.');
+const readyRecord=values['ready-record']?JSON.parse(fs.readFileSync(values['ready-record'])).Ronin_Ready:null;
+if(values['ready-record']&&(!readyRecord?.fixedGripFrame||!(readyRecord.gripSpacing>0)))throw Error('The Ready record must declare a complete fixed grip and positive palm spacing.');
+const profiles=values['grip-profiles']?JSON.parse(fs.readFileSync(values['grip-profiles'])).ronin?.sword:JSON.parse(fs.readFileSync(new URL('./ronin-grip-patch.json',import.meta.url))).sword;
+if(!profiles?.r?.frame||!profiles?.l?.frame)throw Error('The roster profiles must include both complete Ronin sword frames.');
 for(const file of [values.output,values.record]){
  if(path.resolve(file).startsWith(path.resolve(new URL('../../public/',import.meta.url).pathname)+path.sep))throw Error('Model and record outputs must remain outside public/.');
  if(path.resolve(file)===path.resolve(values.input))throw Error('Output must not overwrite the input model.');
@@ -51,10 +56,10 @@ for(const name of names){
   else animation.samplers.push({input:time,output:accessor(Float32Array.from([...vector,...vector]),property==='rotation'?'VEC4':'VEC3'),interpolation:'LINEAR'});
  }
  animation.extras={...animation.extras,nativeRoninGuardVersion:5,reviewCandidate:true};
- records[name]={...original[name],twoHanded:true,gripSpacing:.15,nativeAttachment:true,pairedGrip:true};
+ records[name]={...original[name],twoHanded:true,gripSpacing:readyRecord?.gripSpacing??.15,nativeAttachment:true,pairedGrip:true,...(readyRecord?{fixedGripFrame:true}: {})};
 }
 doc.buffers[0].byteLength=byteLength;let json=Buffer.from(JSON.stringify(doc));json=Buffer.concat([json,Buffer.alloc((4-json.length%4)%4,32)]);let binary=Buffer.concat(chunks);binary=Buffer.concat([binary,Buffer.alloc((4-binary.length%4)%4)]);const header=Buffer.alloc(20);header.writeUInt32LE(0x46546c67,0);header.writeUInt32LE(2,4);header.writeUInt32LE(28+json.length+binary.length,8);header.writeUInt32LE(json.length,12);header.writeUInt32LE(0x4e4f534a,16);const binHeader=Buffer.alloc(8);binHeader.writeUInt32LE(binary.length,0);binHeader.writeUInt32LE(0x004e4942,4);fs.writeFileSync(values.output,Buffer.concat([header,json,binHeader,binary]));
-const out=await loadNativeSkin(values.output),outBones={};out.scene.traverse(b=>{if(b.isBone)outBones[b.name]=b;});const profiles=JSON.parse(fs.readFileSync(new URL('./ronin-grip-patch.json',import.meta.url))).sword;
+const out=await loadNativeSkin(values.output),outBones={};out.scene.traverse(b=>{if(b.isBone)outBones[b.name]=b;});
 const source=p=>[p.x,-p.z,p.y],point=n=>outBones[n].getWorldPosition(new T.Vector3()),q=n=>outBones[n].getWorldQuaternion(new T.Quaternion()),palm=side=>point('hand_'+side).add(new T.Vector3().fromArray(profiles[side].center).applyQuaternion(q('hand_'+side)));
 for(const name of names){const clip=out.animations.find(a=>a.name===name),a=out.mixer.clipAction(clip).setLoop(T.LoopOnce,1);a.clampWhenFinished=true;a.play();const record=records[name];
  record.poses=record.poses.map(p=>{out.mixer.setTime(Math.min(p.t*clip.duration,clip.duration-1e-7));out.scene.updateMatrixWorld(true);const primary=palm('r'),shaft=new T.Vector3().fromArray(profiles.r.axis).applyQuaternion(q('hand_r')),weaponQ=q('hand_r').multiply(new T.Quaternion().fromArray(profiles.r.frame)),legacy=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),shaft).invert().multiply(weaponQ);return{...p,grip:source(primary),tip:source(primary.clone().addScaledVector(shaft,1.15)),secondaryGrip:source(palm('l')),elbowR:source(point('lowerarm_r')),elbowL:source(point('lowerarm_l')),roll:2*Math.atan2(legacy.y,legacy.w)};});a.stop();

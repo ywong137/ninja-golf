@@ -13,6 +13,7 @@ import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
 import {matchesAnimationEntry} from './animation-entry.js';
+import {ArmMotionContinuation} from './arm-motion-continuation.js';
 import {createGolfClub} from './golf-club.js';
 import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import {installLimbSkinning} from './forearm-twist.js';
@@ -98,6 +99,7 @@ export class Warrior {
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
     this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[]}):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
+    this.armContinuation=!enemy&&this.nativeHuman?new ArmMotionContinuation(this.bones,this.golfRestPose):null;
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
     this.selectionArmRest=Object.fromEntries(['r','l'].map(side=>{
       const upperAxis=this.bones['lowerarm_'+side].position.clone().normalize();
@@ -172,14 +174,19 @@ export class Warrior {
   play(name,fade=.16,once=false,speed=1){
     // A compatible native pair already authors both arms. Preserve it through
     // the fade instead of adding a second, independent elbow solve.
-    const preservePair=!this.offhand&&!this.running&&!this.guardWalking&&!(this.travelPose?.weight>0)
+    const settledPair=!this.offhand&&!this.running&&!(this.travelPose?.weight>0)
       &&!this.current.startsWith('Golf')&&!name.startsWith('Golf')&&this.handGrip?.secondaryWeight>.999
       &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
       &&compatibleNativePair(motions[this.current],motions[name],this.weapon.userData.defaultGrip);
+    const preservePair=settledPair&&!this.guardWalking;
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const previous=this.actions.get(this.current);
+    this.armContinuation?.release(this.mixer.time,fade);
+    const continueArms=fade>0&&settledPair&&/_Guard_(Loop|Impact|Break|Walk_\w+)$/.test(this.current)
+      &&motions[this.current]?.fixedGripFrame===true&&motions[name]?.fixedGripFrame===true&&motions[name]?.athleticAttack
+      &&this.armContinuation?.begin(next,this.mixer.time,fade);
     // Continue directly from Ready or a completed attack only when every incoming
     // transform matches. Interrupted attacks and other fades stay intact.
     // GLB key times use float32; the gameplay clock uses float64 seconds.
@@ -196,13 +203,14 @@ export class Warrior {
     }
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
     this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
-      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair}:null;
+      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms}:null;
     next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
     if(previous&&previous!==next){if(directEntry)previous.stop();else{previous.fadeOut(fade);next.fadeIn(fade);}}
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
     this.handGrip?.engage(!!motions[name]?.twoHanded,fade);
   }
   stepGuard(prefix,angle,speed,dt){
+    if(!this.guardWalking)this.armContinuation?.release(this.mixer.time,.1);
     if(this.running){for(const action of this.runActions)action.fadeOut(.1);this.running=false;}
     const names=['Forward','Right','Backward','Left'].map(direction=>`${prefix}_Guard_Walk_${direction}`);
     const direction=[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
@@ -225,6 +233,7 @@ export class Warrior {
     this.runPhase=((this.runPhase||0)+dt*speed*sum/(this.root.scale.x*duration))%1;
     if(!this.running||this.runSprint!==sprint){
       this.runFade=this.runFootwork?.entryBody?.length ? .24 : .12;
+      this.armContinuation?.release(this.mixer.time,this.runFade);
       if(this.guardWalking){for(const action of this.guardWalkActions)action.fadeOut(this.runFade);this.guardWalking=false;}
       if(this.running)for(const action of this.runActions)action.fadeOut(this.runFade);else this.actions.get(this.current)?.fadeOut(this.runFade);
       this.runActions=names.map(name=>this.actions.get(name));
@@ -238,6 +247,7 @@ export class Warrior {
   }
   update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
     this.handGrip?.restore();this.handGrip?.prepare(golf);
+    this.armContinuation?.restore();
     // Capture the moving-attack pose before removing it, but undo terrain first:
     // the terrain layer applies support and shoe tilt again after the run blend.
     this.footPlacement?.restore();
@@ -280,6 +290,7 @@ export class Warrior {
     // Extracted root travel and the skeleton use the same action clock.
     // An attack started by input this frame still has time zero.
     if(action?.planarRoot&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.mixer.update(0);}
+    this.armContinuation?.apply(this.mixer.time);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
     if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!motions[this.current]?.nativeAttackReady&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
