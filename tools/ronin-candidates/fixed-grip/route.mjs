@@ -48,7 +48,7 @@ async function routeShoulder(page){
   if(!installation.test(body)||!golf.test(body)||!finalWeight.test(body))throw Error('The actor changed; review the candidate shoulder route.');
   body=body.replace(installation,"upperArms:['kaede','ronin'].includes(WARRIORS[type].model)?['r']:[],overflow:WARRIORS[type].model==='ronin'?'nearest':'reject'");
   body=body.replace(golf,'if(this.type!==0&&this.forearmTwist.upperArmHelpers.r)');
-  body=body.replace(finalWeight,`if(this.type===0){for(const [name,scale]of [['Ronin_Heavy_Cleave',1],['Ronin_Cut_Diagonal',.76/.60]])for(const action of [this.actions.get(name),this.repeatActions?.get(name)])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time*scale,.40,.46)*(1-THREE.MathUtils.smoothstep(action.time*scale,.58,.66));}weight=Math.min(1,weight);`);
+  body=body.replace(finalWeight,`if(this.type===0){for(const [name,scale]of [['Ronin_Heavy_Cleave',1],['Ronin_Cut_Diagonal',.76/.60]])for(const action of [this.actions.get(name),this.repeatActions?.get(name)])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time*scale,.40,.46)*(1-THREE.MathUtils.smoothstep(action.time*scale,.58,.66));for(const action of [this.actions.get('Ronin_Cut_Return_Connected')])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*(1-THREE.MathUtils.smoothstep(action.time,0,.08));}weight=Math.min(1,weight);`);
   await route.fulfill({response,body});
  });
 }

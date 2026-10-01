@@ -15,6 +15,7 @@ import { Warrior, Effects, CrowdRenderer, loadWarriorAssets } from './actors.js'
 import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
 import { attackDefinition, strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
 import {attackRootDelta} from './attack-root-motion.js';
+import {attackContinuation} from './attack-continuation.js';
 import {createSurvey,moveSurvey,surveyPosition} from './survey.js';
 import {readRoundSave} from './round.js';
 import { Projectiles } from './projectiles.js';
@@ -178,12 +179,13 @@ class Game {
     }
     this.startAttack(kind);
   }
-  startAttack(kind){
+  startAttack(kind,continuation=null){
     exitPlayerGuard(this.guard);
     if(this.time>(this.chainExpires||0))this.lightChain=0;
-    const step=kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1),definition=attackDefinition(kind,step,this.warrior.combatStyle);
-    const motion=motions[combatMotionName(this.warrior,kind,step)];
-    this.action={...definition,impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    const step=continuation?.step??(kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1)),definition=attackDefinition(kind,step,this.warrior.combatStyle);
+    const motionName=continuation?.clip??combatMotionName(this.warrior,kind,step),motion=motions[motionName];
+    if(continuation){definition.duration=motion.combatDuration;definition.hits=motion.impacts.map(time=>time/motion.duration*definition.duration);}
+    this.action={...definition,motionName,syncMotion:!!(continuation||motion.continuations),impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     if(kind==='musou')this.invincible=Math.max(this.invincible,definition.duration);
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
@@ -211,7 +213,9 @@ class Game {
     const norm=Math.max(1,Math.hypot(dx,dz));dx/=norm;dz/=norm;this.playerVelocity={x:dx*speed,z:dz*speed};
     let mx=dx*speed,mz=dz*speed;
     let rootX=0,rootZ=0;
-    if(this.action){const a=this.action,previousTime=a.time;a.time+=dt;this.attackTimer=Math.max(0,a.duration-a.time);
+    const pendingKind=input.tap('HeavyAttack')?'heavy':input.tap('LightAttack')?'light':null;
+    const continuation=attackContinuation(this.action,pendingKind?{kind:pendingKind,expires:this.time}:this.attackBuffer,this.time,dt,motions);
+    if(this.action){const a=this.action,previousTime=a.time;a.time=continuation?continuation.at:a.time+dt;this.attackTimer=Math.max(0,a.duration-a.time);
       if(a.planarRoot){const delta=attackRootDelta(a.planarRoot,previousTime,a.time,a.duration,this.attackYaw,this.player.root.scale.x);rootX=delta.x;rootZ=delta.z;}
       else{const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.rootAdvance*Math.PI/(2*a.duration);mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;}
     }
@@ -234,7 +238,8 @@ class Game {
         const offhand=side==='l',[hilt,tip]=this.player.weaponPoints(offhand);
         this.effects.trail(hilt,tip,this.action.kind==='musou'?2:0,this.action.token,offhand?1:0);
       }
-      if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}
+      if(continuation&&this.attackBuffer?.kind===continuation.kind&&this.attackBuffer.expires>=this.time){this.attackBuffer=null;this.startAttack(continuation.kind,continuation);}
+      else if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}
     }
     if(this.spawnTime<=0&&pd>11){this.spawnWave(10+this.hole*2);this.spawnTime=3.5;}
     const ready=this.enemies.filter(e=>!e.dead&&!e.emerging&&!(e.stun>0)).sort((a,b)=>a.root.position.distanceToSquared(p)-b.root.position.distanceToSquared(p));

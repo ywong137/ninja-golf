@@ -4,6 +4,7 @@ import {finishCharacterMaterial,awaitCharacterMaterials} from './character-mater
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
 import { motions, sampleMotionInto, combatMotionName } from './motion.js';
+import {matchesContinuationBoundary} from './attack-continuation.js';
 import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
 import {FootPlacement,attackFootContacts,resolveFootSupport} from './foot-placement.js';
@@ -187,12 +188,14 @@ export class Warrior {
     const continueArms=fade>0&&settledPair&&/_Guard_(Loop|Impact|Break|Walk_\w+)$/.test(this.current)
       &&motions[this.current]?.fixedGripFrame===true&&motions[name]?.fixedGripFrame===true&&motions[name]?.athleticAttack
       &&this.armContinuation?.begin(next,this.mixer.time,fade);
-    // Continue directly from Ready or a completed attack only when every incoming
-    // transform matches. Interrupted attacks and other fades stay intact.
+    // Ready, completed attacks, and declared combo boundaries can continue only
+    // when every incoming transform matches. Other interruptions retain a fade.
     // GLB key times use float32; the gameplay clock uses float64 seconds.
     const finishedAttack=previous?.loop===THREE.LoopOnce&&previous.time>=previous.getClip().duration-1e-6
       &&motions[this.current]?.athleticAttack;
-    const directEntry=fade>0&&preservePair&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
+    const connectedAttack=previous?.loop===THREE.LoopOnce&&motions[this.current]?.athleticAttack
+      &&matchesContinuationBoundary(motions[this.current],name,previous.time);
+    const directEntry=fade>0&&preservePair&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack||connectedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
       &&![...this.actions.values(),...(this.repeatActions?.values()??[])].some(action=>action!==previous&&action.isScheduled()&&action.enabled)
       &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{restPose:this.golfRestPose,overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
     if(directEntry)fade=0;
@@ -270,7 +273,7 @@ export class Warrior {
     else if(guardEnabled&&guardBreak>0&&!this.wasGuardBreak&&!action&&!dodge)this.play(`${guardPrefix}_Guard_Break`,.045,true);
     else if(emerging){this.play(emerging.progress<.68?'Jump_Loop':'Jump_Land',.10,false,1.8);}
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
-    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,.07,true,motions[name].duration/action.duration);}
+    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,.07,true,motions[name].duration/action.duration);}
     else if(guardImpact&&guardBreak<=0)this.play(`${guardPrefix}_Guard_Impact`,.035,true,parry>0?1.15:1);
     else if(swing>0&&!this.wasSwing)this.play(putting?'Golf_Putt':'Golf_Swing',.10,true,1);
     else if(!action&&!enemyAction&&attack>0&&!this.wasAttack)this.play('Sword_Attack',.07,true,2.2);
@@ -289,7 +292,7 @@ export class Warrior {
     this.mixer.update(dt);
     // Extracted root travel and the skeleton use the same action clock.
     // An attack started by input this frame still has time zero.
-    if(action?.planarRoot&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.mixer.update(0);}
+    if((action?.planarRoot||action?.syncMotion)&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.mixer.update(0);}
     this.armContinuation?.apply(this.mixer.time);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};

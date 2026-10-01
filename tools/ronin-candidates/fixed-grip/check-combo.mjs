@@ -6,11 +6,13 @@ import {chromium} from 'playwright';
 import {disableHmr} from '../../disable-hmr.mjs';
 import {routeFixedGripCandidate} from './route.mjs';
 const {values}=parseArgs({options:{candidate:{type:'string'},rate:{type:'string',default:'144'},'follow-up':{type:'string',default:'heavy'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate DIRECTORY [--rate 60|144|480] [--follow-up heavy|return]\nRequires the diagonal candidate and Vite on localhost:5173. Queues the selected follow-up during the first light cut through the game controller. Chrome runs headlessly with audio muted.');process.exit(0);}
+if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate DIRECTORY [--rate 45|60|144|480] [--follow-up heavy|return]\nRequires the diagonal candidate and Vite on localhost:5173. Queues the selected follow-up during the first light cut through the game controller. Chrome runs headlessly with audio muted.');process.exit(0);}
 const rate=Number(values.rate);
-if(!values.candidate||![60,144,480].includes(rate))throw Error('Supply --candidate DIRECTORY and a valid --rate. See --help.');
+if(!values.candidate||![45,60,144,480].includes(rate))throw Error('Supply --candidate DIRECTORY and a valid --rate. See --help.');
 if(!['heavy','return'].includes(values['follow-up']))throw Error('--follow-up must be heavy or return.');
 const follow=values['follow-up'];
+const firstRecord=JSON.parse(fs.readFileSync(path.join(values.candidate,'diagonal.json'))).Ronin_Cut_Diagonal;
+const branch=follow==='return'?firstRecord.continuations?.light:null;
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:400,height:300}}),errors=[];
@@ -43,8 +45,9 @@ try{
  },{rate,follow});
  fs.writeFileSync(path.join(values.candidate,`combo-${follow==='return'?'return-':''}${rate}.json`),JSON.stringify({...report,errors},null,2));const{rows,...summary}=report;console.log(JSON.stringify({...summary,errors}));
  assert.deepEqual(errors,[]);assert.equal(report.queued,true,'The follow-up input was not buffered.');
- assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal',follow==='return'?'Ronin_Cut_Return':'Ronin_Heavy_Cleave','Ronin_Ready']);
- const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.5:.76);assert.ok(next.t>=.4-1e-9&&next.t<=.4+2/rate+1e-9,'The controller skipped the end of the light cut.');
+ assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal',branch?.clip??(follow==='return'?'Ronin_Cut_Return':'Ronin_Heavy_Cleave'),'Ronin_Ready']);
+ const expectedTime=branch?branch.at/firstRecord.duration*.4:.4;
+ const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.5:.76);assert.ok(next.t>=expectedTime-1e-9&&next.t<=expectedTime+2/rate+1e-9,'The controller missed its authored transition time.');
  assert.equal(next.blended,false,'Matching completed-attack poses should continue directly.');
  assert.equal(report.remainingAction,false);assert.ok(report.maxGripDepth<.0015&&report.maxFittingDepth===0,'The combo intersects the handle or fittings.');
  assert.ok(report.maxPalmGap<.00025&&report.maxFrameError<.04,'The combo transition distorts the complete hand grip.');
