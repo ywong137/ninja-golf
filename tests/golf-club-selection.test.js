@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import * as THREE from 'three';
 import {CLUBS,carryFor} from '../src/course.js';
 import {createGolfClub} from '../src/golf-club.js';
+import {SHOT_HEIGHTS} from '../src/shot-height.js';
 import {BALL_RADIUS} from '../src/golf-equipment.js';
 
 // Exercise the actual Game methods without starting its renderer or CSS loader.
@@ -15,11 +16,11 @@ class FakeWarrior{
  dispose(){this.disposed=true;}
 }
 class FakeShowcase{constructor(player){this.player=player;this.state={};this.clock={speed:1,paused:false};}dispose(){}}
-const context={THREE,CLUBS,carryFor,WARRIORS:[{power:1,health:100},{power:1,health:100}],Warrior:FakeWarrior,CharacterShowcase:FakeShowcase,heightAt:()=>0,ellipse:()=>0,createCourseSurfaceSampler:()=>()=>0,createPlayerGuard:()=>({}),BALL_RADIUS};
+const context={THREE,CLUBS,carryFor,SHOT_HEIGHTS,WARRIORS:[{power:1,health:100},{power:1,health:100}],Warrior:FakeWarrior,CharacterShowcase:FakeShowcase,heightAt:()=>0,ellipse:()=>0,createCourseSurfaceSampler:()=>()=>0,createPlayerGuard:()=>({}),BALL_RADIUS};
 vm.runInNewContext(source.slice(source.indexOf('class Game {'),source.indexOf('\nasync function boot')).replace('class Game {','this.Game=class Game {').replaceAll('import.meta.env.DEV','false'),context);
 function fixture(){
  const game=Object.create(context.Game.prototype);
- Object.assign(game,{mode:'game',phase:'aim',paused:false,club:0,playerIndex:0,player:new FakeWarrior(),scene:new THREE.Scene(),ball:{position:new THREE.Vector3()},world:{cup:new THREE.Vector3(),build(){}},ui:{warriorDetails(){},showcaseState(){}},audio:{play(){}},showcaseSettings:{},refreshAim(){this.refreshCount=(this.refreshCount||0)+1;},placePlayer(){}});
+ Object.assign(game,{mode:'game',phase:'aim',paused:false,club:0,shotHeight:0,playerIndex:0,player:new FakeWarrior(),scene:new THREE.Scene(),ball:{position:new THREE.Vector3()},world:{cup:new THREE.Vector3(),build(){}},ui:{warriorDetails(){},showcaseState(){}},audio:{play(){}},showcaseSettings:{},refreshAim(){this.refreshCount=(this.refreshCount||0)+1;},placePlayer(){}});
  game.updateClubModel();return game;
 }
 function active(game,code){assert.equal(game.player.clubShort,code);assert.equal(game.player.golfClub.head.children[0].userData.clubShort,code);}
@@ -46,4 +47,16 @@ test('selection showcase explicitly uses a driver for its Golf_Swing clip',()=>{
  game.updateCamera=(dt,options)=>{game.previewCameraUpdate={dt,options};};
  game.mode='selection';game.course={};game.selectWarrior(1);active(game,'DR');assert.equal(game.showcase.player,game.player);
  assert.equal(game.previewCameraUpdate.dt,0);assert.equal(game.previewCameraUpdate.options.immediate,true);
+});
+
+
+test('shot height edits cancel charging, preserve aim, lock after commitment, and reset for putting',()=>{
+ const game=fixture();game.aim=.7;game.charging=true;game.power=.4;
+ game.selectShotHeight(-1);assert.equal(game.shotHeight,-1);assert.equal(game.charging,false);assert.equal(game.power,1);assert.equal(game.aim,.7);assert.equal(game.refreshCount,1);
+ game.charging=true;game.selectShotHeight(-1);assert.equal(game.charging,true);assert.equal(game.refreshCount,1);
+ for(const value of [2,-2,NaN,'high'])game.selectShotHeight(value);
+ assert.equal(game.shotHeight,-1);
+ game.selectClub(3);assert.equal(game.shotHeight,-1);game.selectClub(7);assert.equal(game.shotHeight,0);game.selectShotHeight(1);assert.equal(game.shotHeight,0);
+ for(const block of [{mode:'selection'},{phase:'flight'},{phase:'swing'},{phase:'combat'},{paused:true}]){const blocked=fixture();Object.assign(blocked,block);blocked.selectShotHeight(1);assert.equal(blocked.shotHeight,0);}
+ game.selectClub(3);game.selectShotHeight(1);game.lie='Fairway';game.selectBestClub();assert.equal(game.shotHeight,0);
 });

@@ -20,7 +20,7 @@ export class Input {
   poll(dt,combat=false){
     const pad=Array.from(navigator.getGamepads?.()||[]).find(Boolean);this.gamepad=!!pad;this.padX=0;this.padY=0;this.padFocus=false;this.padSprint=false;this.padGuard=false;
     if(pad){const dead=x=>Math.abs(x)<.16?0:x;this.padX=dead(pad.axes[0]||0);this.padY=dead(pad.axes[1]||0);this.lookX+=dead(pad.axes[2]||0)*dt*620;this.lookY+=dead(pad.axes[3]||0)*dt*240;
-      const map=combat?{0:'Interact',1:'Dodge',2:'LightAttack',3:'HeavyAttack',5:'Musou',7:'LightAttack',9:'Escape'}:{0:'Space',1:'ShiftLeft',3:'KeyR',4:'KeyQ',5:'KeyE',9:'Escape',14:'ArrowLeft',15:'ArrowRight'};
+      const map=combat?{0:'Interact',1:'Dodge',2:'LightAttack',3:'HeavyAttack',5:'Musou',7:'LightAttack',9:'Escape'}:{0:'Space',1:'ShiftLeft',3:'KeyR',4:'KeyQ',5:'KeyE',9:'Escape',12:'KeyX',13:'KeyZ',14:'ArrowLeft',15:'ArrowRight'};
       pad.buttons.forEach((b,i)=>{if(b.pressed&&!this.previousButtons[i]&&map[i])this.pressed.add(map[i]);this.previousButtons[i]=b.pressed;});this.padSprint=combat&&!!pad.buttons[10]?.pressed;this.padFocus=pad.buttons[6]?.pressed;this.padGuard=combat&&!!pad.buttons[4]?.pressed;if(this.context==='survey')this.zoom+=((pad.buttons[7]?.value||0)-(pad.buttons[6]?.value||0))*dt*650;
     }else this.previousButtons=[];
   }

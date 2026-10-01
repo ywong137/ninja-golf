@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {heightAt,greenDistance,launchShot,lieAt} from './course.js';
 import {BALL_STEP,BALL_RADIUS,ballSurface,stepRollingBall} from './golf-roll.js';
 // Airborne guides end at first landing. Putts share the live rolling rules.
-export function previewShot(course,club,warrior,lie,power,aim,origin,collision=null){
- const v=launchShot(club,warrior,lie,power,aim),p={...origin},points=[{...p}],h=BALL_STEP;
+export function previewShot(course,club,warrior,lie,power,aim,origin,collision=null,shotHeight=0){
+ const v=launchShot(club,warrior,lie,power,aim,shotHeight),p={...origin},points=[{...p}],h=BALL_STEP;
  if(club.short==='PT'){
   const state={position:p,velocity:v,time:0,stillTime:0},cup={x:course.greenX,y:heightAt(course,course.greenX,course.length),z:course.length};
   for(let i=0;i<=3600;i++){const outcome=stepRollingBall(course,state,BALL_STEP,cup,collision);if(outcome){points.push({...p});return{points,landing:p,lie:state.lie,distance:Math.hypot(p.x-origin.x,p.z-origin.z),outcome};}if(i%16===0)points.push({...p});}

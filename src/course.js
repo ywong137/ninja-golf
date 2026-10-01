@@ -3,6 +3,7 @@ import {gradePonds} from './ponds.js';
 export {pondProfiles,waterSurfaceAt} from './ponds.js';
 export {naturalHeightAt} from './terrain-height.js';
 import {bunkerDistance} from './bunkers.js';
+import {shotHeightProfile} from './shot-height.js';
 import {fairwayDistance,waterAt} from './course-layout.js';
 export {fairwayDistance,dryLandDistance,waterAt,waterBasins,routeNearest,routePoint,fairwayPrimitives,mapOutlines} from './course-layout.js';
 export { COURSE_SETS, COURSES } from './course-data.js';
@@ -36,16 +37,17 @@ export function lieAt(c, x, z) {
 export function heightAt(c,x,z) {
   return gradePonds(c,x,z,naturalHeightAt(c,x,z));
 }
-export function carryFor(club, warrior, lie, power = 1) {
+export function carryFor(club, warrior, lie, power = 1, shotHeight = 0) {
+  const profile=shotHeightProfile(shotHeight);
   const penalty = lie==='Rough' ? .79 : lie==='Bunker' ? (club.short==='SW' ? .87 : .55) : 1;
-  return club.carry*(club.short==='PT'?1:warrior.power)*penalty*power*power;
+  return club.carry*(club.short==='PT'?1:warrior.power*profile.carryScale)*penalty*power*power;
 }
-export function launchShot(club, warrior, lie, power, angle, shape = 0) {
-  const carry = carryFor(club,warrior,lie,power);
+export function launchShot(club, warrior, lie, power, angle, shotHeight = 0) {
+  const carry = carryFor(club,warrior,lie,power,shotHeight),profile=shotHeightProfile(shotHeight);
   if (club.short==='PT') { const speed = Math.sqrt(2*.95*carry); return {x:Math.sin(angle)*speed,y:0,z:Math.cos(angle)*speed,spin:0}; }
-  const loft = (club.loft + shape*5)*Math.PI/180;
+  const loft = (club.loft*profile.loftScale+profile.loftOffset)*Math.PI/180;
   const speed = Math.sqrt(carry*9.81 / Math.sin(2*loft));
-  return { x: Math.sin(angle)*speed*Math.cos(loft), y: speed*Math.sin(loft), z: Math.cos(angle)*speed*Math.cos(loft), spin:shape };
+  return { x: Math.sin(angle)*speed*Math.cos(loft), y: speed*Math.sin(loft), z: Math.cos(angle)*speed*Math.cos(loft), spin:shotHeight };
 }
 export function scoreName(strokes, par) {
   const d=strokes-par;

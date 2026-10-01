@@ -31,6 +31,7 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Survey shot | R or survey button | Y during golf |
 | Pan / orbit / zoom in survey | Drag / right-drag / wheel | Left stick / right stick / triggers |
 | Change club | Q / E or club buttons | LB / RB |
+| Lower / raise shot height | Z / X or shot-height buttons | D-pad down / up |
 | Start swing, then strike | Space or swing button | A |
 | Speed up ball tracking | Space | A |
 | Move | W A S D or arrows | Left stick |
@@ -48,7 +49,11 @@ The production build lives in `dist/`. All game assets and music ship with the b
 
 The power meter repeats. Press the swing button again at the desired power. Carry scales with the square of power.
 
-Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. The landing preview includes wind and terrain. Survey mode initially fits the full planned shot. Drag to explore the course, orbit with the right mouse button, and scroll to zoom. Putting grids show slope, with moving dots pointing downhill. Shot results report distance and the next lie. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
+Choose among eight clubs. Read the lie, wind, elevation, target arc, and course map. The landing preview includes wind and terrain. Survey mode initially fits the full planned shot. Drag to explore the course, orbit with the right mouse button, and scroll to zoom.
+
+Putting grids show slope, with moving dots pointing downhill. Shot results report distance and the next lie. Rough reduces carry. The sand wedge works best in bunkers. Use the putter on greens.
+
+Choose low, normal, or high flight. Low shots sacrifice carry for a flatter flight and more run. High shots sacrifice some carry for a steeper landing and more wind exposure. The carry readout and landing preview follow this choice. Height controls reset the power meter and lock once the swing starts. Putting uses normal height, and each new shot starts at normal height.
 
 After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a screen slash and a 2.85-second face close-up. A six-cut sequence then launches enemies through sparks and shock waves. Hold the focused stance to move independently of facing. Enemies flank and intercept. Three melee attackers and one ranged attacker can commit at once. Grunts often hold a ready stance before attacking. Enemy damage is half the previous release. Ground warnings show committed attacks. Heavy cuts break enemy guards, and a well-timed dodge earns Resolve. Hold V or LB to guard toward the camera. Guard blocks frontal hits but leaves your rear exposed. A timed guard press parries, staggers the attacker, and earns 10 Resolve. Release guard to recover strength faster. A broken guard needs time to recover; dodge to escape immediately, or buffer an attack through its 220 ms recovery. Attacks exit guard immediately. Blade ribbons, sparks, and brief impact pauses reinforce contact. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
 

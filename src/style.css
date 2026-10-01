@@ -48,3 +48,26 @@ body[data-screen=game] .swing-panel{left:50%;right:auto;transform:translateX(-50
 .combat-count{top:max(45%,398px)}
 @media(max-height:760px){.vitality{top:205px}.combat-count{top:370px}.combat-count strong{font-size:54px}.combat-count b{margin-top:10px}}
 @media(max-width:700px){.vitality{width:250px}.vitality>div:first-child,.resolve-label{font-size:9px;letter-spacing:.3px}}
+
+/* Keep the lie and club controls together as shot options change. */
+.golf-equipment-panel{position:absolute;left:38px;bottom:75px;width:270px;display:flex;flex-direction:column;gap:22px}
+.golf-equipment-panel .lie-readout,.golf-equipment-panel .club-panel{position:static;width:100%}
+.shot-height{margin-top:12px;padding-top:11px;border-top:1px solid #dbe2c71a}
+.shot-height-heading{display:flex;justify-content:space-between;font-size:8px;letter-spacing:1.2px;color:#cdd6bb;margin-bottom:8px}
+#shot-height-keys{color:#aab69c;letter-spacing:.5px}
+.shot-height-options{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.shot-height-options button{display:flex;flex-direction:column;align-items:center;gap:3px;background:transparent;border:1px solid #dbe2c729;border-radius:2px;padding:6px;color:#b6c2aa;font-size:10px}
+.shot-height-options button[aria-pressed=true]{background:#e4d4a924;color:#efdaad;border-color:#d8b57099}
+.shot-height-options button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.shot-height-options button:disabled{opacity:.45;cursor:default}
+.shot-height-options svg{width:38px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5}
+.shot-ground{opacity:.22;stroke-dasharray:2 3}
+#shot-height-hint{font-size:10px;line-height:1.45;color:#cbd3bf;margin:9px 0 0;min-height:29px}
+@media(max-height:760px){.golf-equipment-panel{bottom:62px;gap:14px}.shot-height-options svg{display:none}.shot-height-options button{padding:7px 4px}#shot-height-hint{min-height:0}}
+@media(max-height:680px){.golf-equipment-panel .lie-readout b{font-size:40px}.golf-equipment-panel .lie-readout small{margin-top:6px}.golf-equipment-panel{gap:12px}}
+@media(max-width:1000px){.golf-equipment-panel{width:228px}}
+@media(max-width:700px){.golf-equipment-panel{left:15px;width:185px;bottom:62px}}
+@media(max-height:680px){.golf-equipment-panel .club-panel{padding:14px 16px 10px}.golf-equipment-panel .club-selection{margin:8px 0}.golf-equipment-panel .club-tip{margin-top:8px;padding-top:8px}.shot-height{margin-top:8px;padding-top:8px}.shot-height-heading{margin-bottom:6px}}
+body[data-screen=game].survey-active .swing-panel{left:auto;right:238px;transform:none;width:245px}
+@media(max-width:1100px){body[data-screen=game].survey-active .swing-panel{right:211px;width:200px}}
+@media(max-width:900px){body[data-screen=game].survey-active .swing-panel{right:24px;width:245px}}
