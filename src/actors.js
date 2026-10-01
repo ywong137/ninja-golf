@@ -260,7 +260,7 @@ export class Warrior {
     // Capture the moving-attack pose before removing it, but undo terrain first:
     // the terrain layer applies support and shoe tilt again after the run blend.
     this.footPlacement?.restore();
-    if(!action&&moving&&!this.running&&(this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined))this.runFootwork?.captureEntry({includeBody:this.attackLocomotion.pelvisGaitWeight>0||this.runFootwork.exitAge!==undefined});
+    if(!action&&moving&&!this.running&&(this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined))this.runFootwork?.captureEntry({includeBody:true});
     this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;

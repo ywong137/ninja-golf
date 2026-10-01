@@ -14,9 +14,11 @@ try{
  const action={token:1,kind,step:0,time:0,duration:spec.duration};
  function update(action){time+=1/hz;w.root.position.x+=Math.sin(movement)*2.5/hz;w.root.position.z+=Math.cos(movement)*2.5/hz;w.root.position.y=groundHeight(w.root.position.x,w.root.position.z);w.update(time,1/hz,{action,groundHeight,moving:true,moveSpeed:2.5,moveAngle:movement});}
  while(action.time<spec.duration){action.time+=1/hz;update(action);}
- let feet=['r','l'].map(s=>b['foot_'+s].getWorldPosition(new T.Vector3()));const row={hero,hz,slope,movement,kind,hip:0,ankle:0,loadedAnkle:0,hinge:0,footSpeed:0,kneeClearance:Infinity};
+ let feet=['r','l'].map(s=>b['foot_'+s].getWorldPosition(new T.Vector3())),pelvisHeight=b.pelvis.getWorldPosition(new T.Vector3()).y-w.root.position.y;const row={hero,hz,slope,movement,kind,hip:0,ankle:0,loadedAnkle:0,hinge:0,footSpeed:0,kneeClearance:Infinity,pelvisEntrySpeed:0};
  for(let i=0;i<Math.ceil(hz*.5);i++){
  update(null);const next=['r','l'].map(s=>b['foot_'+s].getWorldPosition(new T.Vector3()));
+ const height=b.pelvis.getWorldPosition(new T.Vector3()).y-w.root.position.y;
+ if(i<Math.ceil(hz*.08))row.pelvisEntrySpeed=Math.max(row.pelvisEntrySpeed,Math.abs(height-pelvisHeight)*hz);pelvisHeight=height;
  for(let j=0;j<2;j++)row.footSpeed=Math.max(row.footSpeed,next[j].distanceTo(feet[j])*hz);feet=next;
  if(!w.running)continue;
  if(w.runFootwork.entry&&!row.entryFeet)row.entryFeet=['r','l'].map(s=>w.root.worldToLocal(w.runFootwork.entry[s].p.clone()).toArray());
@@ -35,6 +37,7 @@ try{
   assert.ok(terrainCarry<.001,`Terrain support was captured into the run and will apply twice: ${JSON.stringify({...row,terrainCarry})}`);
   assert.ok(row.hip<40&&row.ankle<25&&row.loadedAnkle<20,JSON.stringify(row));
   assert.ok(row.hinge<.01&&row.footSpeed<12&&row.kneeClearance>.12,JSON.stringify(row));
+  assert.ok(row.pelvisEntrySpeed<2.5,`The body must crossfade with the feet: ${JSON.stringify(row)}`);
  }
- console.log(JSON.stringify({cases:rows.length,minKneeClearance:Math.min(...rows.map(r=>r.kneeClearance)),...Object.fromEntries(['hip','ankle','loadedAnkle','hinge','footSpeed'].map(metric=>[metric,Math.max(...rows.map(r=>r[metric]))]))}));
+ console.log(JSON.stringify({cases:rows.length,minKneeClearance:Math.min(...rows.map(r=>r.kneeClearance)),...Object.fromEntries(['hip','ankle','loadedAnkle','hinge','footSpeed','pelvisEntrySpeed'].map(metric=>[metric,Math.max(...rows.map(r=>r[metric]))]))}));
 }finally{await browser.close();}
