@@ -20,7 +20,9 @@ export async function routeFixedGripCandidate(page,directory,{withDiagonal=false
    const returnCut=withReturn?motions.Ronin_Cut_Return:null;
    if(withReturn&&(!returnCut?.fixedGripFrame||!(returnCut.duration>0)||returnCut.impacts?.length!==1))throw Error('The return record needs its fixed grip, duration, and one contact time.');
    const overrides={Cut_Diagonal:'Ronin_Cut_Diagonal',...(withReturn?{Cut_Return:'Ronin_Cut_Return'}:{})};
-   const timings=[diagonal,...(withReturn?[returnCut]:[])].map(record=>({duration:record.duration,hits:record.impacts}));
+   // Native time retains the dense authoring samples. Combat time is shorter
+   // for light cuts; damage follows the same normalized contact pose.
+   const timings=[[diagonal,.4],...(withReturn?[[returnCut,.5]]:[])].map(([record,duration])=>({duration,hits:record.impacts.map(time=>time*duration/record.duration)}));
    await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,...'+JSON.stringify(overrides)+'};'}));
    await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:'+JSON.stringify(timings)+'};'}));
   }

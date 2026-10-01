@@ -44,7 +44,7 @@ try{
  fs.writeFileSync(path.join(values.candidate,`combo-${follow==='return'?'return-':''}${rate}.json`),JSON.stringify({...report,errors},null,2));const{rows,...summary}=report;console.log(JSON.stringify({...summary,errors}));
  assert.deepEqual(errors,[]);assert.equal(report.queued,true,'The follow-up input was not buffered.');
  assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal',follow==='return'?'Ronin_Cut_Return':'Ronin_Heavy_Cleave','Ronin_Ready']);
- const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.85:.76);assert.ok(next.t>=.6&&next.t<.6+2/rate,'The controller skipped the end of the light cut.');
+ const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.5:.76);assert.ok(next.t>=.4-1e-9&&next.t<=.4+2/rate+1e-9,'The controller skipped the end of the light cut.');
  assert.equal(next.blended,false,'Matching completed-attack poses should continue directly.');
  assert.equal(report.remainingAction,false);assert.ok(report.maxGripDepth<.0015&&report.maxFittingDepth===0,'The combo intersects the handle or fittings.');
  assert.ok(report.maxPalmGap<.00025&&report.maxFrameError<.04,'The combo transition distorts the complete hand grip.');

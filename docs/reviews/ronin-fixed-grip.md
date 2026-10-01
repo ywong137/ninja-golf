@@ -153,6 +153,48 @@ A second authoring run reproduces the final model and return record byte for byt
 The eleven-clip model remains offline; production character assets have not changed.
 Its SHA-256 is `1207ba73b36603a8ecba7069cc904eac84f0192859e8961096ae144769ef52d2`.
 
+## Gameplay timing and first-cut body revision
+
+The candidate route now plays the two light cuts over 0.40 and 0.50 gameplay seconds.
+Their native durations remain 0.60 and 0.85 seconds; contact times scale with playback.
+Heavy Cleave remains 0.76 seconds.
+The faster timings passed Ready entry, recovery, guard transitions, and buffered combos at 60 Hz and 144 Hz.
+
+A direct comparison of native and runtime bone positions confirmed that playback preserves the authored step.
+The original first cut advances the right foot about 29 cm and turns the pelvis at most about 16 degrees.
+A sparse quarter-view sheet made that step appear smaller than it was.
+The independent reviewer corrected their earlier description of static feet after seeing the side view.
+
+The new body candidate extends the step by 16 cm and turns the front foot 14 degrees during that step.
+The pelvis turns ahead of the chest, then the rear heel rises while the shoe pivots.
+The added forward weight transfer also reduces the deep, simultaneous knee compression.
+At normalized phase 0.64, the front knee bends about 56 degrees and the rear knee about 42 degrees.
+The earlier body revision bent both knees by roughly 58 and 53 degrees.
+
+The first pivot attempt drove the shoe's forefoot below the floor by about 12 mm.
+The toe joint now articulates separately from the heel, reducing that depth to the source mesh's existing tolerance.
+The exported revision passes 577 native samples:
+
+- No native leg-bound violations or tested leg-surface crossings.
+- At least 57 mm clearance between the tested central leg surfaces.
+- Maximum planted-ankle drift of 0.55 mm and toe-joint drift of 0.019 mm.
+- Maximum hip twist of 29.75 degrees and ankle twist of 9.47 degrees.
+- Minimum shoe height of -2.336 mm; the source reaches approximately -2.326 mm.
+- Cutting-edge alignment above 0.886 during the contact window.
+- Matching first/last poses and preservation of 36 unrelated animations and the original binary data.
+
+An independent Codex reviewer found the first revision visibly more athletic, with no obvious reversed or inward-collapsing knees.
+They identified a larger remaining problem: both attacks recover to upright Ready, interrupting the combo's momentum.
+The second cut needs a connected entry from the planted finish. Unqueued attacks still need their own recovery.
+No new Opus review occurred during this work.
+
+The retained author and checker are `author-footwork.mjs` and `check-footwork.mjs` in the fixed-grip tools directory.
+The final body revision passes Ready entry, recovery, all 14 guard-to-attack transitions, and the light-to-light combo at both frame rates.
+Maximum runtime palm separation remains below 0.099 mm, with no tested arm intersections or native arm-bound violations.
+Repeated authoring produces byte-identical model and motion files.
+The silent local previews are `artifacts/reviews/ronin-light-body/body-study.mp4` and `body-side.mp4`.
+The revision remains offline while the remaining grip and transition work continues.
+
 ## Review and remaining work
 
 Actual Claude Opus 5.5 High reviewed the earlier poses.

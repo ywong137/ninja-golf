@@ -81,8 +81,10 @@ It also adds the primary wrist track missing from the original Ready clip.
 
 The diagonal retains all 366 exported samples and the original foot paths.
 Its torso inclines 15 degrees above the thigh parents; the head counters that inclination.
-The light cut lasts 0.60 seconds and contacts at 0.2842105263 seconds.
-The candidate route supplies both values to the combat controller.
+The native light clip lasts 0.60 seconds and contacts at 0.2842105263 seconds.
+The candidate route plays it over 0.40 gameplay seconds, with contact at 0.1894736842 seconds.
+The return retains its 0.85-second native clip and plays over 0.50 gameplay seconds, contacting at 0.2558823529 seconds.
+The route scales contact times with playback duration. Heavy Cleave remains 0.76 seconds.
 The diagonal author's default path still produces byte-identical output for the earlier candidate.
 
 The handle measures 270 mm long with a 14 mm radius. The palms sit 120 mm apart.
@@ -97,3 +99,26 @@ The ten-clip model hash is `57c90584d135632e8d994522e512b782ecef13055cd25b7c74d9
 The eleven-clip model hash is `1207ba73b36603a8ecba7069cc904eac84f0192859e8961096ae144769ef52d2`.
 See [the review](../../../docs/reviews/ronin-fixed-grip.md) for findings and remaining work.
 Local silent previews remain in `artifacts/reviews/ronin-fixed-frame/`.
+
+## First-cut footwork
+
+Build the eleven-clip candidate above, then create a separate body revision:
+
+```sh
+node tools/ronin-candidates/fixed-grip/author-footwork.mjs --candidate /tmp/ronin-fixed-return --output /tmp/ronin-footwork
+node tools/ronin-candidates/fixed-grip/check-footwork.mjs --candidate /tmp/ronin-footwork --before /tmp/ronin-fixed-return/ronin.glb
+```
+
+The author checks the eleven-clip source hash and leaves that directory unchanged.
+It modifies only the first light cut. Other clips, the mesh, and textures remain intact.
+`footwork-profile.json` retains the step extension, hip and chest turns, front-foot orientation, heel lift, and toe articulation.
+The front foot turns during its step. The rear shoe pivots around its toe joint as the heel rises.
+The toe joint also extends, preventing the weighted forefoot vertices from sinking during that pivot.
+
+The check measures native leg limits, leg surfaces, shoe height, sole and toe support, cutting-edge direction, and matching endpoints.
+It allows up to 3 mm below the native floor; the source mesh already reaches approximately 2.33 mm below that plane.
+Run the same runtime, guard, and combo checks against the new output directory.
+The original source-foot-path comparison does not apply to this intentional footwork revision.
+
+This improves a single attack. It does not solve the combo's return through Ready or the unfinished weapon motions.
+The next attack needs a continuation from the planted finish, with a separate recovery when no follow-up is queued.
