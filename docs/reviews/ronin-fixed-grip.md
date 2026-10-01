@@ -260,3 +260,35 @@ This revision remains offline. Dodge, selection, and the unfinished attacks stil
 The public roster does not enable the new `pairedTravelGrip` field.
 The model hash is `8920a5c5d88c348ac750ff24efe30941dff6f52e25c2cba4103be4d487c17111`.
 The silent local preview is `artifacts/reviews/ronin-paired-travel/paired-travel.mp4`.
+
+## Preparation timing and braking review
+
+The independent paired-running review found a rapid hand lift when the first light attack starts.
+The prior preparation reached a hand-speed peak of 27.7–29.4 m/s across four sampled running phases.
+A longer torso blend alone did not resolve the abrupt lift.
+
+The new author adds 0.08 native seconds through the first 0.16 seconds of preparation.
+It uses a smooth, increasing time mapping and preserves all pose values.
+Gameplay duration changes from 0.40 to 0.48 seconds.
+The torso blends from a paired run over at least 0.16 seconds, while both arms follow the incoming animation together.
+The first 0.14 seconds now peak at 14.1–14.9 m/s in the same samples.
+The independent Codex review found a readable lift through chest height into overhead preparation, with continuous shoulders and elbows.
+This was a Codex review. No new Opus review occurred.
+
+The preservation check covers 10,193 sampler time keys, 37 unchanged animations, and 11,672,900 original binary bytes.
+Contact, combo timing, planted-foot intervals, and the shoulder correction follow the retimed clip.
+The 60 Hz and 144 Hz runtime checks pass 28 movement-to-attack cases.
+The largest tested palm gap is 0.0894 mm, with no reported arm-bound violations or tested arm/torso crossings.
+The connected combo passes at 60 Hz, and all 21 input cases pass across 45, 60, and 144 Hz.
+Eighteen focused unit checks and the production build pass.
+
+The reviewer also identified foot sliding during braking.
+Actual-controller measurements confirm the issue on flat ground, including when the player releases movement at attack entry.
+The current run exit blends leg rotations; it does not retain a ground anchor for the support foot.
+The attack's contact schedule also activates while some outgoing running poses still have airborne feet.
+These observations require a support-aware braking step, not additional slowing of the arms.
+The full transition and candidate model remain unaccepted for publication.
+
+The silent revised preview is `artifacts/reviews/ronin-paired-travel/travel-retimed.mp4`.
+The independent review is `artifacts/reviews/ronin-fixed-rising/reviewer/travel-retimed-review.md`.
+`inspect-braking.mjs` reproduces the movement diagnostic without playing audio.

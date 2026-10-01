@@ -152,3 +152,29 @@ It does not certify the unfinished attacks, dodge transitions, uneven terrain, o
 The original one-handed carry produced sleeve intersections and excessive forearm rotation when entering the fitted attacks.
 The paired revision removes those failures in the tested sequences.
 The changed weapon mount still requires the remaining Ronin family before publication.
+
+## First-cut preparation
+
+The paired-running review exposed an abrupt lift from waist height into the first cut.
+This revision extends preparation while preserving every authored pose and the connected return's entry.
+
+```sh
+node tools/ronin-candidates/fixed-grip/author-startup.mjs --candidate /tmp/ninja-ronin-paired-travel --output /tmp/ninja-ronin-paired-travel-windup
+node tools/ronin-candidates/fixed-grip/check-startup-preservation.mjs --candidate /tmp/ninja-ronin-paired-travel-windup --before /tmp/ninja-ronin-paired-travel
+node tools/ronin-candidates/fixed-grip/check-travel-runtime.mjs --candidate /tmp/ninja-ronin-paired-travel-windup --rate 60
+node tools/ronin-candidates/fixed-grip/check-travel-runtime.mjs --candidate /tmp/ninja-ronin-paired-travel-windup --rate 144
+node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate /tmp/ninja-ronin-paired-travel-windup --rate 60 --follow-up return
+node tools/ronin-candidates/connected-return/check-inputs.mjs --candidate /tmp/ninja-ronin-paired-travel-windup
+node tools/ronin-candidates/fixed-grip/inspect-braking.mjs --candidate /tmp/ninja-ronin-paired-travel-windup
+```
+
+The native clip lasts 0.68 seconds and plays over 0.48 gameplay seconds.
+Contact occurs at 0.25709 gameplay seconds; the connected return branches at 0.32753 seconds.
+The author also retimes foot-support intervals and the recovery's shoulder correction.
+The runtime gives the torso 0.16 seconds to blend from an opted-in paired run.
+The incoming arms retain their own authored clock throughout that blend.
+
+An independent Codex review accepts the arm preparation but identifies foot sliding during braking.
+The final command measures that unresolved problem using actual controller movement on flat ground.
+It reports near-ground toe drift during the first 0.18 seconds across four running phases, with movement held or released.
+It does not certify the feet or the complete transition. The candidate remains offline.

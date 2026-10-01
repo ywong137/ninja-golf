@@ -182,6 +182,9 @@ export class Warrior {
       &&!this.current.startsWith('Golf')&&!name.startsWith('Golf')&&this.handGrip?.secondaryWeight>.999
       &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
       &&compatibleNativePair(fromGrip,toGrip,this.weapon.userData.defaultGrip);
+    // The run leans and lowers the torso. Give that body change enough time
+    // without delaying the authored arms or the attack's contact marker.
+    if(fade>0&&travelGrip&&settledPair&&motions[name]?.athleticAttack)fade=Math.max(fade,.16);
     const preservePair=settledPair&&!this.guardWalking&&!this.running;
     if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}

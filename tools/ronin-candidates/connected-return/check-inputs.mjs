@@ -8,11 +8,14 @@ import {disableHmr} from '../../../tools/disable-hmr.mjs';
 const {values}=parseArgs({options:{candidate:{type:'string'},help:{type:'boolean'}}});
 if(values.help){console.log('node tools/ronin-candidates/connected-return/check-inputs.mjs --candidate DIRECTORY\nChecks queued, boundary, late, replacement, single-attack, and dodge input at 45, 60, and 144 Hz. Requires Vite on localhost:5173. Uses a headless, muted browser.');process.exit(0);}
 if(!values.candidate)throw Error('Supply --candidate. See --help.');
+const first=JSON.parse(fs.readFileSync(path.join(values.candidate,'diagonal.json'))).Ronin_Cut_Diagonal;
+const branchTime=first.continuations.light.at/first.duration*(first.combatDuration??.4);
+const interruptTime=first.impacts[0]/first.duration*(first.combatDuration??.4)+.011;
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:400,height:300}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);await routeFixedGripCandidate(page,values.candidate,{withDiagonal:true,withReturn:true});
  await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
- const rows=await page.evaluate(async()=>{
+ const rows=await page.evaluate(async({branchTime,interruptTime})=>{
   const{createPlayerGuard}=await import('/src/combat.js');const g=window.__golfTest;g.frame=()=>{};g.paused=true;g.audio.enabled=false;g.audio.pause();const rows=[];
   for(const rate of [45,60,144])for(const mode of ['none','early','edge','late','heavy','replace','dodge']){
    g.clearEnemies();g.selectWarrior(0);g.phase='combat';g.spawnTime=999;g.time+=10;g.groundHeight=()=>0;g.slideOnLand=p=>{p.y=0;};g.player.root.position.set(0,0,45);g.ball.position.set(0,0,190);g.input.clear();g.guard=createPlayerGuard();g.dodgeTimer=0;g.invincible=999;
@@ -24,16 +27,16 @@ try{
     const elapsed=g.time-start;
     if(!sent){
      if(['early','heavy','replace','dodge'].includes(mode)&&elapsed>=.1){g.attack(mode==='heavy'?'heavy':'light');sent=true;}
-     else if(mode==='late'&&elapsed>=.32){g.attack('light');sent=true;}
-     else if(mode==='edge'&&g.action?.time<=.256&&g.action.time+1/rate>=.256){g.input.pressed.add('LightAttack');sent=true;}
+     else if(mode==='late'&&elapsed>=branchTime+.064){g.attack('light');sent=true;}
+     else if(mode==='edge'&&g.action?.time<=branchTime&&g.action.time+1/rate>=branchTime){g.input.pressed.add('LightAttack');sent=true;}
     }
-    if(!replaced&&elapsed>=.2&&['replace','dodge'].includes(mode)){if(mode==='replace')g.attack('heavy');else g.input.pressed.add('Dodge');replaced=true;}
+    if(!replaced&&elapsed>=interruptTime&&['replace','dodge'].includes(mode)){if(mode==='replace')g.attack('heavy');else g.input.pressed.add('Dodge');replaced=true;}
     tick();
    }
    row.remaining=!!(g.action||g.attackBuffer);rows.push(row);g.strike=strike;
   }
   g.paused=true;g.audio.pause();return rows;
- });
+ },{branchTime,interruptTime});
  fs.writeFileSync(path.join(values.candidate,'input-check.json'),JSON.stringify({rows,errors},null,2));
  for(const row of rows){
   assert.equal(row.remaining,false,JSON.stringify(row));

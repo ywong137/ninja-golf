@@ -4,7 +4,7 @@ import {routeMotionCandidate} from '../../route-motion-candidate.mjs';
 export async function routeFixedGripCandidate(page,directory,{withDiagonal=false,withGuards=false,withReturn=false}={}){
  if(withReturn&&!withDiagonal)throw Error('The return route requires its first light cut.');
  const file=name=>path.join(directory,name);
- await routeShoulder(page);
+ await routeShoulder(page,directory);
  await routeMotionCandidate(page,{hero:0,model:file('ronin.glb'),motionRecord:file('motion.json'),readyRecord:file('ready.json'),replaceClip:'Ronin_Heavy_Cleave'});
  if(withDiagonal||withGuards){
   const source=name=>fs.readFileSync(new URL('../../../src/'+name,import.meta.url),'utf8');
@@ -22,7 +22,7 @@ export async function routeFixedGripCandidate(page,directory,{withDiagonal=false
    const overrides={Cut_Diagonal:'Ronin_Cut_Diagonal',...(withReturn?{Cut_Return:'Ronin_Cut_Return'}:{})};
    // Native time retains the dense authoring samples. Combat time is shorter
    // for light cuts; damage follows the same normalized contact pose.
-   const timings=[[diagonal,.4],...(withReturn?[[returnCut,.5]]:[])].map(([record,duration])=>({duration,hits:record.impacts.map(time=>time*duration/record.duration)}));
+   const timings=[[diagonal,diagonal.combatDuration??.4],...(withReturn?[[returnCut,returnCut.combatDuration??.5]]:[])].map(([record,duration])=>({duration,hits:record.impacts.map(time=>time*duration/record.duration)}));
    const travel=fs.existsSync(file('travel.json'))?JSON.parse(fs.readFileSync(file('travel.json'))):null;
    await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,...'+JSON.stringify(overrides)+'};'+(travel?'\nWARRIORS[0].pairedTravelGrip='+JSON.stringify(travel)+';':'')}));
    await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:'+JSON.stringify(timings)+'};'}));
@@ -40,7 +40,10 @@ export async function routeFixedGripCandidate(page,directory,{withDiagonal=false
  return profiles;
 }
 // Candidate-only deformation. Neither the published actor nor its asset changes.
-async function routeShoulder(page){
+async function routeShoulder(page,directory){
+ const diagonalFile=path.join(directory,'diagonal.json');
+ const window=fs.existsSync(diagonalFile)?JSON.parse(fs.readFileSync(diagonalFile)).Ronin_Cut_Diagonal?.shoulderSkinWindow:null;
+ const windows=[['Ronin_Heavy_Cleave',[.40,.46,.58,.66]],['Ronin_Cut_Diagonal',window??[.40,.46,.58,.66].map(t=>t*.60/.76)]];
  await page.route('**/src/actors.js*',async route=>{
   const response=await route.fetch();let body=await response.text();
   const installation=/upperArms:\s*WARRIORS\[type\]\.model\s*===\s*['"]kaede['"]\s*\?\s*\[['"]r['"]\]\s*:\s*\[\]/;
@@ -49,7 +52,7 @@ async function routeShoulder(page){
   if(!installation.test(body)||!golf.test(body)||!finalWeight.test(body))throw Error('The actor changed; review the candidate shoulder route.');
   body=body.replace(installation,"upperArms:['kaede','ronin'].includes(WARRIORS[type].model)?['r']:[],overflow:WARRIORS[type].model==='ronin'?'nearest':'reject'");
   body=body.replace(golf,'if(this.type!==0&&this.forearmTwist.upperArmHelpers.r)');
-  body=body.replace(finalWeight,`if(this.type===0){for(const [name,scale]of [['Ronin_Heavy_Cleave',1],['Ronin_Cut_Diagonal',.76/.60]])for(const action of [this.actions.get(name),this.repeatActions?.get(name)])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time*scale,.40,.46)*(1-THREE.MathUtils.smoothstep(action.time*scale,.58,.66));for(const action of [this.actions.get('Ronin_Cut_Return_Connected')])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*(1-THREE.MathUtils.smoothstep(action.time,0,.08));}weight=Math.min(1,weight);`);
+  body=body.replace(finalWeight,`if(this.type===0){for(const [name,w]of ${JSON.stringify(windows)})for(const action of [this.actions.get(name),this.repeatActions?.get(name)])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time,w[0],w[1])*(1-THREE.MathUtils.smoothstep(action.time,w[2],w[3]));for(const action of [this.actions.get('Ronin_Cut_Return_Connected')])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*(1-THREE.MathUtils.smoothstep(action.time,0,.08));}weight=Math.min(1,weight);`);
   await route.fulfill({response,body});
  });
 }

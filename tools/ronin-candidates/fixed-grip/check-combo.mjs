@@ -46,7 +46,8 @@ try{
  fs.writeFileSync(path.join(values.candidate,`combo-${follow==='return'?'return-':''}${rate}.json`),JSON.stringify({...report,errors},null,2));const{rows,...summary}=report;console.log(JSON.stringify({...summary,errors}));
  assert.deepEqual(errors,[]);assert.equal(report.queued,true,'The follow-up input was not buffered.');
  assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal',branch?.clip??(follow==='return'?'Ronin_Cut_Return':'Ronin_Heavy_Cleave'),'Ronin_Ready']);
- const expectedTime=branch?branch.at/firstRecord.duration*.4:.4;
+ const firstDuration=firstRecord.combatDuration??.4;
+ const expectedTime=branch?branch.at/firstRecord.duration*firstDuration:firstDuration;
  const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.5:.76);assert.ok(next.t>=expectedTime-1e-9&&next.t<=expectedTime+2/rate+1e-9,'The controller missed its authored transition time.');
  assert.equal(next.blended,false,'Matching completed-attack poses should continue directly.');
  assert.equal(report.remainingAction,false);assert.ok(report.maxGripDepth<.0015&&report.maxFittingDepth===0,'The combo intersects the handle or fittings.');
