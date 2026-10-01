@@ -67,3 +67,11 @@ test('a new landing does not reuse the previous contact reach velocity',()=>{
  assert.ok(planner.feet.r.anchor,'A reachable landing released because it inherited stale approach velocity');
  assert.ok(planner.feet.r.support>.1);
 });
+
+test('a long outgoing support does not snap inward when radial swing limits engage',()=>{
+ const feet={r:{p:new Vector3(-.2,.1,-.52),q:new Quaternion(),phase:.20},l:{p:new Vector3(.2,.25,.1),q:new Quaternion(),phase:.70}};
+ const planner=new RunTurnPlanner({heading:0,feet,center:new Vector3()});
+ planner.begin({...options(.21,0),sourceHeading:0});
+ const released=new Vector3(-.2,.15,-.3);planner.place('r',released,new Quaternion());
+ assert.ok(released.distanceTo(feet.r.p)<1e-8,'The radial bound moved the departing footprint before lift');
+});

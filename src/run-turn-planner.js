@@ -114,7 +114,11 @@ export class RunTurnPlanner{
    if(f.rotationOffset)q.premultiply(f.rotationOffset.clone().slerp(f.rotationOffset.clone().identity(),1-fade));
    if(this.dt>0)q.copy(f.lastQ.clone().slerp(q,1-Math.exp(-32*this.dt)));
    const planar=target.clone().sub(this.center).setY(0),radius=planar.length(),start=.42*this.scale,range=.04*this.scale;
-   if(radius>start){const reachable=start+range*Math.tanh((radius-start)/range);target.addScaledVector(planar,(reachable/radius-1)*this.entryWeight);}
+   if(radius>start){
+    const reachable=start+range*Math.tanh((radius-start)/range),release=f.release??f.support;
+    const airborne=MathUtils.smootherstep(p,release,Math.min(1,release+.12));
+    target.addScaledVector(planar,(reachable/radius-1)*this.entryWeight*airborne);
+   }
    const r=right(this.heading),lateral=sign*target.clone().sub(this.center).dot(r),margin=.13*this.scale;
    // Smoothly clear the other leg. Never displace the loaded foot for this.
    const correction=.5*(margin-lateral+Math.sqrt((margin-lateral)**2+.0004));
