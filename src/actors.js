@@ -12,6 +12,7 @@ import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
+import {matchesAnimationEntry} from './animation-entry.js';
 import {createGolfClub} from './golf-club.js';
 import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import {installLimbSkinning} from './forearm-twist.js';
@@ -179,6 +180,12 @@ export class Warrior {
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const previous=this.actions.get(this.current);
+    // Only skip a fade from a settled Ready pose that matches every incoming
+    // transform. Running, guards, interrupted attacks, and other fades stay intact.
+    const directEntry=fade>0&&preservePair&&this.current===WARRIORS[this.type]?.readyClip&&previous?.enabled&&previous.getEffectiveWeight()===1
+      &&![...this.actions.values(),...(this.repeatActions?.values()??[])].some(action=>action!==previous&&action.isScheduled()&&action.enabled)
+      &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
+    if(directEntry)fade=0;
     if(previous===next&&once&&fade>0){
       // Repeated attacks need two actions to crossfade instead of rewinding live bones.
       this.repeatActions??=new Map();const alternate=this.repeatActions.get(name)||this.mixer.clipAction(next.getClip().clone());
@@ -188,7 +195,7 @@ export class Warrior {
     this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
       ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair}:null;
     next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
-    if(previous&&previous!==next){previous.fadeOut(fade);next.fadeIn(fade);}
+    if(previous&&previous!==next){if(directEntry)previous.stop();else{previous.fadeOut(fade);next.fadeIn(fade);}}
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
     this.handGrip?.engage(!!motions[name]?.twoHanded,fade);
   }

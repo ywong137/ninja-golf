@@ -58,3 +58,20 @@ test('A golf support-hand interpolation error cannot steer the calibrated club f
  assert.ok(left.quaternion.angleTo(originalLeft)<1e-7,'Do not correct the native support wrist at runtime.');
  assert.ok(Math.abs(grip.report.palmGap-.00011)<1e-9);
 });
+
+test('An authored fixed sword frame follows the primary palm without moving the support arm',()=>{
+ const root=new Group(),held=new Group(),right=new Group(),left=new Group();root.add(held,right,left);root.scale.setScalar(1.1);
+ held.userData.defaultGrip=0;right.position.set(.1,.8,.3);left.position.copy(right.position).add(new Vector3(.0001,-.12,0));
+ const profile=()=>({center:new Vector3(),axis:new Vector3(0,1,0),frame:new Quaternion(),fingers:[]});
+ const actor={root,weapon:held,bones:{hand_r:right,hand_l:left},palmGrips:{r:new Vector3(),l:new Vector3()},shaftAxes:{r:new Vector3(),l:new Vector3()},current:'Fixed_Attack',mixer:{time:0}};
+ const grip=Object.assign(Object.create(HandGrip.prototype),{actor,profiles:{sword:{r:profile(),l:profile()}},saved:new Map(),weight:1});
+ const clip={nativeAttachment:true,pairedGrip:true,twoHanded:true,gripSpacing:.12,fixedGripFrame:true};
+ root.updateMatrixWorld(true);const leftPosition=left.position.clone(),leftRotation=left.quaternion.clone();
+ grip.apply(null,false,clip);
+ assert.ok(held.quaternion.angleTo(right.quaternion)<1e-7);
+ assert.equal(grip.report.preservePrimaryFrame,true);
+ assert.ok(Math.abs(grip.report.palmGap-.00011)<1e-9);
+ assert.deepEqual(left.position,leftPosition);assert.deepEqual(left.quaternion.toArray(),leftRotation.toArray());
+ grip.restore();grip.apply(null,false,{...clip,fixedGripFrame:false});
+ assert.ok(held.quaternion.angleTo(right.quaternion)>.0001,'Legacy pairs still align the shaft between both palms.');
+});

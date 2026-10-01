@@ -16,7 +16,7 @@ export function patchAnimationTransforms(input,entries){
   const a={bufferView:view,componentType:5126,count:values.length/width,type:width===1?'SCALAR':width===3?'VEC3':'VEC4'};
   if(width===1){a.min=[array[0]];a.max=[array.at(-1)];}doc.accessors.push(a);return doc.accessors.length-1;
  }
- for(const {clip,times,rotations={},translations={},extras={}}of entries){
+ for(const {clip,times,rotations={},newRotations={},translations={},extras={}}of entries){
   if(seen.has(clip))throw Error('Repeated animation: '+clip);seen.add(clip);
   const matches=doc.animations.filter(a=>a.name===clip);if(matches.length!==1)throw Error('Expected one animation: '+clip);const animation=matches[0];
   if(times.length<2||times[0]!==0||times.some((v,i)=>!Number.isFinite(v)||(i&&Math.fround(v)<=Math.fround(times[i-1]))))throw Error('Animation times must start at zero and increase in Float32: '+clip);
@@ -27,6 +27,16 @@ export function patchAnimationTransforms(input,entries){
    const channels=animation.channels.filter(c=>doc.nodes[c.target.node].name===name&&c.target.path==='rotation');
    if(channels.length!==1)throw Error('Expected one existing rotation channel: '+clip+'/'+name);
    channels[0].sampler=animation.samplers.length;animation.samplers.push({input,output:accessor(values,4),interpolation:'LINEAR'});
+  }
+  // New channels require an explicit field so a misspelled replacement fails.
+  for(const [name,values]of Object.entries(newRotations)){
+   if(values.length!==times.length*4)throw Error('Wrong rotation sample count: '+name);
+   for(let i=0;i<values.length;i+=4)if(Math.abs(Math.hypot(...values.slice(i,i+4))-1)>.001)throw Error('Non-unit rotation: '+name);
+   const nodes=doc.nodes.flatMap((node,i)=>node.name===name?[i]:[]);
+   if(nodes.length!==1)throw Error('Expected one existing node: '+name);
+   if(animation.channels.some(c=>c.target.node===nodes[0]&&c.target.path==='rotation'))throw Error('Rotation channel already exists: '+clip+'/'+name);
+   animation.channels.push({target:{node:nodes[0],path:'rotation'},sampler:animation.samplers.length});
+   animation.samplers.push({input,output:accessor(values,4),interpolation:'LINEAR'});
   }
   for(const [name,values]of Object.entries(translations)){
    if(values.length!==times.length*3)throw Error('Wrong translation sample count: '+name);

@@ -149,8 +149,8 @@ export class HandGrip {
   if(!Number.isFinite(station)||!Number.isFinite(spacing)||spacing===0)throw Error('A paired grip needs a finite primary station and nonzero signed spacing.');
   const {root,bones}=this.actor,scale=root.getWorldScale(new Vector3()).x;
   const palms=['r','l'].map(side=>bones['hand_'+side].localToWorld(this.active[side].center.clone()));
-  // Golf contact is calibrated against the complete lead-hand frame. Tiny
-  // interpolation errors in the support hand must not steer the club head.
+  // Complete grip frames fix the blade or club to the primary palm. Tiny
+  // interpolation errors in the support hand must not steer the held object.
   if(preservePrimaryFrame){
    this.attach(held,'r',station);
    const target=held.localToWorld(new Vector3(0,station-spacing,0));
@@ -232,7 +232,7 @@ export class HandGrip {
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
   // A native paired clip authors the support-hand approach. Do not bend its
   // elbow with legacy IK while that hand is still released from the weapon.
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf});}
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf||clip.fixedGripFrame===true});}
   else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&(carryActive||golf))){this.solveSecondary(held,spacing,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=actor.golfClubFit?.shaftLengthNative??(motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12);
