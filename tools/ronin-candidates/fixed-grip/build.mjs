@@ -2,13 +2,17 @@ import fs from 'node:fs';
 import pathModule from 'node:path';
 import crypto from 'node:crypto';
 import {parseArgs} from 'node:util';
+import {execFileSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import * as T from 'three';
 import {parseGlb} from '../../bake-native-golf.mjs';
 import {patchAnimationTransforms} from '../../patch-animation-rotations.mjs';
 import {loadNativeSkin} from '../../../tests/native-skin-helper.mjs';
-const {values}=parseArgs({options:{output:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/fixed-grip/build.mjs --output DIRECTORY\nRun from the repository root. Rebuilds the offline Ronin Ready/Cleave candidate from the retained controls. Does not edit game assets.');process.exit(0);}
+const {values}=parseArgs({options:{output:{type:'string'},'with-diagonal':{type:'boolean'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/fixed-grip/build.mjs --output DIRECTORY [--with-diagonal]\nRun from the repository root. Rebuilds the offline Ronin Ready/Cleave candidate from the retained controls. The optional diagonal cut uses the same complete grip. Does not edit game assets.');process.exit(0);}
 if(!values.output)throw Error('Supply --output DIRECTORY. See --help.');
+const publicRoot=pathModule.resolve('public'),outputRoot=pathModule.resolve(values.output);
+if(outputRoot===publicRoot||outputRoot.startsWith(publicRoot+pathModule.sep))throw Error('Keep candidate outputs outside public/.');
 const output=name=>pathModule.join(pathModule.resolve(values.output),name);
 const profile=JSON.parse(fs.readFileSync(new URL('./profile.json',import.meta.url))),path={knots:profile.knots};
 const raw=fs.readFileSync('public/models/ronin.glb'),hash=crypto.createHash('sha256').update(raw).digest('hex');
@@ -57,6 +61,7 @@ for(const name of Object.keys(actions)){
  }
  const record={...original[name],pairedGrip:true,fixedGripFrame:true,gripSpacing:.12,poses:rows};
  if(name==='Ronin_Heavy_Cleave'){
+  record.nativeSampleRate=profile.sampleRate;
   const remap=source=>{let i=0;while(i<path.knots.length-2&&source>path.knots[i+1].source)i++;const a=path.knots[i],b=path.knots[i+1];return a.t+(source-a.source)/(b.source-a.source)*(b.t-a.t);};
   record.footPlants=Object.fromEntries(Object.entries(original[name].footPlants).map(([s,ranges])=>[s,ranges.map(range=>range.map(remap))]));
   record.toePlants=Object.fromEntries(Object.entries(original[name].toePlants??{}).map(([s,ranges])=>[s,ranges.map(range=>range.map(remap))]));
@@ -64,4 +69,10 @@ for(const name of Object.keys(actions)){
  motions[name]=record;
  fs.writeFileSync(output(name==='Ronin_Ready'?'ready.json':'motion.json'),JSON.stringify({[name]:record}));
 }
-const manifest={inputHash:hash,outputHash:crypto.createHash('sha256').update(candidate).digest('hex'),samples:data.keys.length,model:output('ronin.glb'),status:profile.status};fs.writeFileSync(output('manifest.json'),JSON.stringify(manifest,null,2));console.log(JSON.stringify(manifest));
+if(values['with-diagonal']){
+ fs.renameSync(output('ronin.glb'),output('cleave.glb'));
+ execFileSync(process.execPath,[fileURLToPath(new URL('../author-diagonal-body.mjs',import.meta.url)),
+  '--input',output('cleave.glb'),'--heavy-record',output('motion.json'),'--grip-profiles',output('grips.json'),
+  '--output',output('ronin.glb'),'--record',output('diagonal.json')],{stdio:'pipe'});
+}
+const manifest={inputHash:hash,outputHash:crypto.createHash('sha256').update(fs.readFileSync(output('ronin.glb'))).digest('hex'),samples:data.keys.length,clips:['Ronin_Ready','Ronin_Heavy_Cleave',...(values['with-diagonal']?['Ronin_Cut_Diagonal']:[])],model:output('ronin.glb'),status:profile.status};fs.writeFileSync(output('manifest.json'),JSON.stringify(manifest,null,2));console.log(JSON.stringify(manifest));

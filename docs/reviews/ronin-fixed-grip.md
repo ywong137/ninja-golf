@@ -7,9 +7,15 @@ The blended limb rotations briefly broke the closed grip between the two hands.
 The controller now checks the complete incoming pose before skipping that redundant fade.
 The existing grip layer owns finger rotations, so the comparison excludes only those rotations.
 
-The shortcut requires the character's settled Ready clip, a compatible native pair, and no other active animation.
+The shortcut requires settled Ready or a completed attack, a compatible native pair, and no other active animation.
 It retains fades for different wrist or body positions, guards, running, carry, and interrupted attacks.
 The existing Ethan attack family benefits from this change.
+
+The same redundant fade also affected a completed light cut followed by a heavy attack.
+The controller now skips that fade only when all incoming transforms match the completed attack's pose.
+The completion check allows one microsecond for exported float32 key times and the float64 gameplay clock.
+The complete pose comparison still applies within that tolerance.
+Interrupted attacks and mismatched poses retain their fades.
 
 The grip controller also supports an explicit `fixedGripFrame` motion flag.
 That flag attaches the weapon to the complete primary palm frame.
@@ -43,6 +49,31 @@ These measurements do not establish athletic movement by themselves.
 The fastest sampled local joint rotation remains approximately 2,051 degrees per second during the downswing.
 The side renders show the forward step and trunk inclination, but the full movement still needs artistic review.
 
+## First light cut and combo
+
+The candidate now includes a diagonal light cut with the same complete palm frames.
+It retains all 366 samples from the cleave and compresses the motion to 0.60 seconds.
+The torso inclines 15 degrees above the thigh parents. The head counters that inclination.
+Contact occurs at 0.2842105263 seconds.
+
+The native check covers 1,312 samples across Ready, Heavy Cleave, and the light cut.
+It finds no native arm violations, tested skin intersections, or blade clearance failures.
+Maximum foot-path error against the source cleave is 0.000144 mm.
+Maximum foot rotation difference is 0.0000057 degrees.
+All original binary bytes and 34 unrelated animations remain intact.
+
+The actual game controller queues Heavy Cleave during the light cut and completes both attacks before returning to Ready.
+Before the transition fix, the 144 Hz check measured a 3.26 mm palm gap and 4.05 mm handle intrusion.
+After the fix, the 144 Hz check measures a 0.090 mm gap and 1.07 mm maximum surface intrusion.
+The 60 Hz check measures a 0.061 mm gap and 1.05 mm maximum surface intrusion.
+Neither check finds contact with the guard or pommel.
+The maximum complete hand-frame error is below 0.016 degrees.
+
+Front, side, and quarter views show the step, raised chamber, downward cut, and recovery.
+The sequence remains an offline candidate. It does not replace the remaining Ronin combat family.
+The diagonal's maximum sampled local joint speed is approximately 2,584 degrees per second.
+The numerical checks do not resolve that motion's artistic timing by themselves.
+
 ## Review and remaining work
 
 Actual Claude Opus 5.5 High reviewed the earlier poses.
@@ -61,8 +92,14 @@ The local silent preview remains in `artifacts/reviews/ronin-fixed-frame/`.
 ## Validation
 
 The focused unit checks pass all 27 cases.
-The browser checks pass 138 native-pair transitions, the combat flow, and all six selection animation sequences.
+The browser checks now pass 196 native-pair transitions, including completed attacks and 90 direct pose handoffs.
+The input-buffer checks pass 24 cases, input replacement, dodge cancellation, and Musou recovery behavior.
+The prior combat-flow and six selection-sequence checks also passed before this extension.
 The build succeeds.
+
+The broader attack-transition check still fails Ethan's interrupted light-attack grip bound: 3.91 mm against a 2 mm limit.
+The prior behavior produces identical results for all 48 cases, including that failure.
+This change fixes matching completed-attack boundaries; it does not fix that existing interrupted-attack defect.
 
 The full working-tree test run reports 636 passes and six failures.
 The failures come from the pre-existing edited Ronin review test and five checks in the untracked golf-frame study.

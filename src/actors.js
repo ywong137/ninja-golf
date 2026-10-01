@@ -180,9 +180,12 @@ export class Warrior {
     if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const previous=this.actions.get(this.current);
-    // Only skip a fade from a settled Ready pose that matches every incoming
-    // transform. Running, guards, interrupted attacks, and other fades stay intact.
-    const directEntry=fade>0&&preservePair&&this.current===WARRIORS[this.type]?.readyClip&&previous?.enabled&&previous.getEffectiveWeight()===1
+    // Continue directly from Ready or a completed attack only when every incoming
+    // transform matches. Interrupted attacks and other fades stay intact.
+    // GLB key times use float32; the gameplay clock uses float64 seconds.
+    const finishedAttack=previous?.loop===THREE.LoopOnce&&previous.time>=previous.getClip().duration-1e-6
+      &&motions[this.current]?.athleticAttack;
+    const directEntry=fade>0&&preservePair&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
       &&![...this.actions.values(),...(this.repeatActions?.values()??[])].some(action=>action!==previous&&action.isScheduled()&&action.enabled)
       &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
     if(directEntry)fade=0;

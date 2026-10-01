@@ -15,13 +15,13 @@ try{
   const cases=attacks.flatMap(name=>[[ready,name],[guard,name],[name,ready],[name,guard],[name,name]]);
   cases.push([guard,'Naginata_Guard_Impact'],[guard,'Naginata_Guard_Break'],['Naginata_Guard_Impact',guard],['Naginata_Guard_Break',guard]);
   const rows=[];
-  for(const rate of [60,240])for(const [from,to]of cases)for(const fromTime of from===ready||from===guard?[.4,motions[from].duration-1e-5]:[motions[from].duration-1e-5]){
+  for(const rate of [60,240])for(const [from,to]of cases)for(const fromTime of from===ready||from===guard?[.4,motions[from].duration-1e-5]:[motions[from].duration-1e-5,motions[from].duration]){
    const actor=new Warrior(2);actor.handGrip.restore();actor.mixer.stopAllAction();actor.current='';
    actor.play(from,0,true);actor.actions.get(from).time=fromTime;
    actor.mixer.update(0);actor.syncHeldObjects();
    const previous=actor.actions.get(from),entry=Object.values(actor.bones).map(bone=>({bone,p:bone.position.clone(),q:bone.quaternion.clone().normalize(),s:bone.scale.clone()}));
    actor.play(to,.07,true);
-   const row={rate,from,to,fromTime,preserved:!!actor.heldBlend?.preservePair,direct:!actor.heldBlend,previousStopped:!previous.isScheduled(),maxEntryChange:0,maxArmChange:0,maxPalmGap:0,samples:0};
+   const row={rate,from,to,fromTime,completedAttack:!!motions[from].athleticAttack&&fromTime>=motions[from].duration,preserved:!!actor.heldBlend?.preservePair,direct:!actor.heldBlend,previousStopped:!previous.isScheduled(),maxEntryChange:0,maxArmChange:0,maxPalmGap:0,samples:0};
    for(const {bone,p,q,s}of entry)row.maxEntryChange=Math.max(row.maxEntryChange,bone.position.distanceTo(p),bone.quaternion.clone().normalize().angleTo(q),bone.scale.distanceTo(s));
    for(let frame=0;frame<=Math.ceil(.10*rate);frame++){
     actor.handGrip.restore();actor.mixer.update(1/rate);actor.root.updateMatrixWorld(true);
@@ -62,13 +62,14 @@ try{
   return{rows,exclusions,mismatches};
  });
  for(const row of report.rows){
-  assert.ok(row.preserved||row.direct&&row.from==='Ethan_Naginata_Ready'&&row.previousStopped,JSON.stringify(row));
+  assert.ok(row.preserved||row.direct&&(row.from==='Ethan_Naginata_Ready'||row.completedAttack)&&(row.from===row.to||row.previousStopped),JSON.stringify(row));
   assert.ok(row.maxEntryChange<1e-7,`The animation handoff jumps: ${JSON.stringify(row)}`);
   assert.ok(row.maxArmChange<1e-7,`The grip solver changes an authored arm: ${JSON.stringify(row)}`);
   assert.ok(row.maxPalmGap<.003,`The blended palms leave the handle: ${JSON.stringify(row)}`);
  }
  for(const row of report.exclusions)assert.equal(row.preserved,false,JSON.stringify(row));
  for(const row of report.mismatches)assert.equal(row.blended,true,JSON.stringify(row));
- assert.ok(report.rows.some(row=>row.direct),'The test must exercise a matching Ready handoff.');
+  assert.ok(report.rows.some(row=>row.direct),'The test must exercise a matching Ready handoff.');
+  assert.ok(report.rows.some(row=>row.direct&&row.completedAttack),'The test must exercise a matching completed-attack handoff.');
  console.log(JSON.stringify({cases:report.rows.length,direct:report.rows.filter(r=>r.direct).length,exclusions:report.exclusions,mismatches:report.mismatches,maxEntryChange:Math.max(...report.rows.map(r=>r.maxEntryChange)),maxArmChange:Math.max(...report.rows.map(r=>r.maxArmChange)),maxPalmGap:Math.max(...report.rows.map(r=>r.maxPalmGap))}));
 }finally{await browser.close();}

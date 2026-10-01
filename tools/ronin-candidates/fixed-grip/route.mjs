@@ -1,10 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {routeMotionCandidate} from '../../route-motion-candidate.mjs';
-export async function routeFixedGripCandidate(page,directory){
+export async function routeFixedGripCandidate(page,directory,{withDiagonal=false}={}){
  const file=name=>path.join(directory,name);
  await routeShoulder(page);
  await routeMotionCandidate(page,{hero:0,model:file('ronin.glb'),motionRecord:file('motion.json'),readyRecord:file('ready.json'),replaceClip:'Ronin_Heavy_Cleave'});
+ if(withDiagonal){
+  const source=name=>fs.readFileSync(new URL('../../../src/'+name,import.meta.url),'utf8');
+  const motions=JSON.parse(source('motion-data.json'));
+  for(const name of ['motion.json','ready.json','diagonal.json'])Object.assign(motions,JSON.parse(fs.readFileSync(file(name))));
+  const diagonal=motions.Ronin_Cut_Diagonal;
+  if(!diagonal?.fixedGripFrame||!(diagonal.duration>0)||diagonal.impacts?.length!==1)throw Error('The diagonal record needs its fixed grip, duration, and one contact time.');
+  await page.route('**/src/motion.js*',route=>route.fulfill({contentType:'application/javascript',body:source('motion.js').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(motions)+';')}));
+  await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,Cut_Diagonal:"Ronin_Cut_Diagonal"};'}));
+  await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:[{duration:'+JSON.stringify(diagonal.duration)+',hits:'+JSON.stringify(diagonal.impacts)+'}]};'}));
+ }
  const profiles=JSON.parse(fs.readFileSync(file('grips.json')));
  await page.route('**/src/grip-data.json*',route=>route.fulfill({contentType:'application/javascript',body:'export default '+JSON.stringify(profiles)+';'}));
  await page.route('**/src/weapons.js*',async route=>{
@@ -26,7 +36,7 @@ async function routeShoulder(page){
   if(!installation.test(body)||!golf.test(body)||!finalWeight.test(body))throw Error('The actor changed; review the candidate shoulder route.');
   body=body.replace(installation,"upperArms:['kaede','ronin'].includes(WARRIORS[type].model)?['r']:[],overflow:WARRIORS[type].model==='ronin'?'nearest':'reject'");
   body=body.replace(golf,'if(this.type!==0&&this.forearmTwist.upperArmHelpers.r)');
-  body=body.replace(finalWeight,`if(this.type===0){for(const action of [this.actions.get('Ronin_Heavy_Cleave'),this.repeatActions?.get('Ronin_Heavy_Cleave')])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time,.40,.46)*(1-THREE.MathUtils.smoothstep(action.time,.58,.66));}weight=Math.min(1,weight);`);
+  body=body.replace(finalWeight,`if(this.type===0){for(const [name,scale]of [['Ronin_Heavy_Cleave',1],['Ronin_Cut_Diagonal',.76/.60]])for(const action of [this.actions.get(name),this.repeatActions?.get(name)])if(action?.isScheduled())weight+=THREE.MathUtils.clamp(action.getEffectiveWeight(),0,1)*THREE.MathUtils.smoothstep(action.time*scale,.40,.46)*(1-THREE.MathUtils.smoothstep(action.time*scale,.58,.66));}weight=Math.min(1,weight);`);
   await route.fulfill({response,body});
  });
 }

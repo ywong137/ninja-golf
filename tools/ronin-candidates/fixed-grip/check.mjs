@@ -10,23 +10,37 @@ import {createWeapon,BLADE_PROFILES} from '../../../src/weapons.js';
 import {handSurface,measureGripSurface} from '../../../tools/grip-contact.mjs';
 import {measureBladeHeadClearance} from '../../../tools/blade-head-surface.mjs';
 import {verifyAnimationReplacement} from '../../../tools/verify-animation-replacement.mjs';
-const {values}=parseArgs({options:{candidate:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check.mjs --candidate DIRECTORY\nChecks the rebuilt Ready/Cleave GLB, hand surfaces, native joints, body intersections, and preservation. Writes check.json and exits nonzero on a failed bound.');process.exit(0);}
+const {values}=parseArgs({options:{candidate:{type:'string'},model:{type:'string'},'with-diagonal':{type:'boolean'},output:{type:'string'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check.mjs --candidate DIRECTORY [--model FAMILY.glb --with-diagonal] [--output REPORT.json]\nChecks the candidate clips, complete hand frames, native joints, body intersections, and preservation. Also checks source foot paths for the diagonal cut. Exits nonzero on a failed bound.');process.exit(0);}
 if(!values.candidate)throw Error('Supply --candidate DIRECTORY. See --help.');
 const file=name=>path.join(values.candidate,name);
-const model=file('ronin.glb'),g=await loadNativeSkin(model),bones={};g.scene.traverse(o=>{if(o.isBone)bones[o.name]=o});
+const model=values.model??file('ronin.glb'),g=await loadNativeSkin(model),bones={};g.scene.traverse(o=>{if(o.isBone)bones[o.name]=o});
 const cal=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
 const deformation=installLimbSkinning(g.scene,{upperArms:['r'],overflow:'nearest'}),surfaces=skinGroups(g),hands=Object.fromEntries(['r','l'].map(s=>[s,handSurface(g.scene,s)]));
 const grips=JSON.parse(fs.readFileSync(file('grips.json'))).ronin.sword,neutral=JSON.parse(fs.readFileSync('tools/ronin-candidates/heavy-cleave-frames.json'));
 const allSurfaces=[];g.scene.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;const index=mesh.geometry.index,triangles=[];for(let i=0;i<(index?index.count:mesh.geometry.attributes.position.count);i+=3)triangles.push([0,1,2].map(k=>index?index.getX(i+k):i+k));allSurfaces.push({mesh,triangles});});
 BLADE_PROFILES.odachi.grip=.27;const weapon=createWeapon('odachi'),up=new T.Vector3(0,1,0);
-const report={model,preserved:verifyAnimationReplacement('public/models/ronin.glb',model,[['Ronin_Ready','Ronin_Ready'],['Ronin_Heavy_Cleave','Ronin_Heavy_Cleave']]),samples:0,violations:[],skinCrossings:[],minBladeClearance:.03,maxGripDepth:0,maxFittingDepth:0,maxWrist:0,maxHandFrameError:0,maxPalmGap:0,maxJointSpeed:0};
+const replacements=[['Ronin_Ready','Ronin_Ready'],['Ronin_Heavy_Cleave','Ronin_Heavy_Cleave']];
+if(values['with-diagonal'])replacements.push(['Cut_Diagonal','Ronin_Cut_Diagonal']);
+const report={model,preserved:verifyAnimationReplacement('public/models/ronin.glb',model,replacements),samples:0,violations:[],skinCrossings:[],minBladeClearance:.03,maxGripDepth:0,maxFittingDepth:0,maxWrist:0,maxHandFrameError:0,maxPalmGap:0,maxJointSpeed:0};
+const support=values['with-diagonal']?await loadNativeSkin(model):null;
+const supportAction=support?.mixer.clipAction(support.animations.find(a=>a.name==='Ronin_Heavy_Cleave')).setLoop(T.LoopOnce,1).play();
+if(supportAction){supportAction.clampWhenFinished=true;report.sourceFootPath={maxPositionError:0,maxFootRotationDegrees:0};}
 report.clips={};
-for(const clipName of ['Ronin_Ready','Ronin_Heavy_Cleave']){
+for(const [,clipName]of replacements){
  g.mixer.stopAllAction();const action=g.mixer.clipAction(g.animations.find(a=>a.name===clipName)).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
  let previous=null;report.clips[clipName]=0;
- const times=clipName==='Ronin_Ready'?[0,1,2]:Array.from({length:Math.ceil(.76*960)+1},(_,i)=>Math.min(.76,i/960));
- for(const t of times){action.time=t;g.mixer.update(0);g.scene.updateMatrixWorld(true);deformation.update({upperArmWeight:clipName==='Ronin_Ready'?0:T.MathUtils.smoothstep(t,.40,.46)*(1-T.MathUtils.smoothstep(t,.58,.66))});
+ const duration=action.getClip().duration,diagonal=clipName==='Ronin_Cut_Diagonal';
+ const times=clipName==='Ronin_Ready'?[0,1,2]:Array.from({length:Math.ceil(duration*960)+1},(_,i)=>Math.min(duration,i/960));
+ for(const t of times){const sourceTime=diagonal?t/duration*.76:t;action.time=t;g.mixer.update(0);g.scene.updateMatrixWorld(true);deformation.update({upperArmWeight:clipName==='Ronin_Ready'?0:T.MathUtils.smoothstep(sourceTime,.40,.46)*(1-T.MathUtils.smoothstep(sourceTime,.58,.66))});
+ if(diagonal){
+  supportAction.time=sourceTime;support.mixer.update(0);support.scene.updateMatrixWorld(true);
+  for(const side of ['r','l'])for(const part of ['foot_','ball_']){
+   const name=part+side,actual=bones[name],reference=support.scene.getObjectByName(name);
+   report.sourceFootPath.maxPositionError=Math.max(report.sourceFootPath.maxPositionError,actual.getWorldPosition(new T.Vector3()).distanceTo(reference.getWorldPosition(new T.Vector3())));
+   if(part==='foot_')report.sourceFootPath.maxFootRotationDegrees=Math.max(report.sourceFootPath.maxFootRotationDegrees,actual.getWorldQuaternion(new T.Quaternion()).normalize().angleTo(reference.getWorldQuaternion(new T.Quaternion()).normalize())*180/Math.PI);
+  }
+ }
  const palms=Object.fromEntries(['r','l'].map(s=>[s,bones['hand_'+s].localToWorld(new T.Vector3().fromArray(grips[s].center))]));
  const frame=bones.hand_r.getWorldQuaternion(new T.Quaternion()).normalize().multiply(new T.Quaternion().fromArray(grips.r.frame)).normalize(),shaft=up.clone().applyQuaternion(frame);
  weapon.quaternion.copy(frame);weapon.position.copy(palms.r).addScaledVector(shaft,-weapon.userData.primaryGrip);weapon.updateMatrixWorld(true);
@@ -46,9 +60,10 @@ for(const clipName of ['Ronin_Ready','Ronin_Heavy_Cleave']){
  previous={t,rotations};report.samples++;report.clips[clipName]++;
 }
 }
-fs.writeFileSync(file('check.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({...report,violations:report.violations.slice(0,3),violationCount:report.violations.length,skinCrossings:report.skinCrossings.slice(0,5),crossingSampleCount:report.skinCrossings.length}));
+fs.writeFileSync(values.output??file('check.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({...report,violations:report.violations.slice(0,3),violationCount:report.violations.length,skinCrossings:report.skinCrossings.slice(0,5),crossingSampleCount:report.skinCrossings.length}));
 assert.equal(report.violations.length,0,'Native arm bounds failed. Inspect check.json.');
 assert.equal(report.skinCrossings.length,0,'Arm or elbow skin intersections found. Inspect check.json.');
 assert.ok(report.minBladeClearance>=.0299,'The blade approaches the body. Inspect check.json.');
 assert.ok(report.maxGripDepth<.0015&&report.maxFittingDepth===0,'The hand intersects the handle fittings. Inspect check.json.');
 assert.ok(report.maxWrist<13.81&&report.maxHandFrameError<.03&&report.maxPalmGap<.0002,'The complete hand grip is unstable. Inspect check.json.');
+if(report.sourceFootPath)assert.ok(report.sourceFootPath.maxPositionError<.003&&report.sourceFootPath.maxFootRotationDegrees<1,'The diagonal cut changes its source foot or toe support.');
