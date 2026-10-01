@@ -192,8 +192,20 @@ The retained author and checker are `author-footwork.mjs` and `check-footwork.mj
 The final body revision passes Ready entry, recovery, all 14 guard-to-attack transitions, and the light-to-light combo at both frame rates.
 Maximum runtime palm separation remains below 0.099 mm, with no tested arm intersections or native arm-bound violations.
 Repeated authoring produces byte-identical model and motion files.
+The body model hash is `53a864a42ffb11a134c477fb374b8a379d39a6a2192ea5ad7b632ea59b044b15`.
 The silent local previews are `artifacts/reviews/ronin-light-body/body-study.mp4` and `body-side.mp4`.
 The revision remains offline while the remaining grip and transition work continues.
+
+The heavy follow-up exposed an omitted-track defect in the controller's pose comparison.
+The first cut animates the rear toe and finishes at its rest rotation. Heavy Cleave omits that toe track.
+The comparison previously rejected every omitted outgoing track, even when restoring it would leave the pose unchanged.
+That unnecessary fade opened the support palm by 3.10 mm and drove the hand 3.93 mm into the handle.
+
+The comparison now checks omitted tracks against the already captured rest pose.
+It retains the fade when that data is absent, invalid, or different from the displayed transform.
+Both rotation and translation/scale checks retain their existing tolerances.
+The heavy combo now continues directly at 60 Hz and 144 Hz, with palm gaps below 0.090 mm.
+The 30 focused unit checks and production build pass.
 
 ## Review and remaining work
 

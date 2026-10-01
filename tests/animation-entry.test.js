@@ -36,3 +36,29 @@ test('The shared grip can own finger rotation without concealing a wrist mismatc
  bones.hand_r.quaternion.setFromAxisAngle({x:0,y:1,z:0},.01);
  assert.equal(matchesAnimationEntry(bones,from,from,options),false);
 });
+
+test('An omitted toe track can continue only after returning to the captured nonidentity rest rotation',()=>{
+ const bones={hand_r:new Bone(),ball_l:new Bone()};
+ bones.ball_l.quaternion.setFromAxisAngle({x:1,y:0,z:0},.17);
+ const rest=bones.ball_l.quaternion.clone(),restPose=new Map([[bones.ball_l,{quaternion:rest}]]);
+ const from=clip(turn('hand_r'),turn('ball_l')),to=clip(turn('hand_r'));
+ assert.equal(matchesAnimationEntry(bones,from,to),false,'No bind data must retain the fade.');
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),true);
+ assert.deepEqual(rest.toArray(),bones.ball_l.quaternion.toArray(),'The comparison must not alter the saved rest rotation.');
+ bones.ball_l.quaternion.setFromAxisAngle({x:1,y:0,z:0},.18);
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),false,'An unfinished toe pivot still needs a transition.');
+ bones.ball_l.quaternion.identity();
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),false,'Identity is not this toe’s rest rotation.');
+});
+
+test('Omitted translation and scale tracks require their own captured rest values',()=>{
+ const bones={pelvis:new Bone(),hand_r:new Bone()},restPose=new Map([[bones.pelvis,{position:bones.pelvis.position.clone(),scale:bones.pelvis.scale.clone()}]]);
+ const from=clip(turn('hand_r'),move('pelvis'),new VectorKeyframeTrack('pelvis.scale',[0,1],[1,1,1,1,1,1])),to=clip(turn('hand_r'));
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),true);
+ bones.pelvis.position.y=.002;
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),false);
+ bones.pelvis.position.y=0;bones.pelvis.scale.x=1.001;
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),false);
+ bones.pelvis.scale.x=1;restPose.get(bones.pelvis).position.x=NaN;
+ assert.equal(matchesAnimationEntry(bones,from,to,{restPose}),false);
+});

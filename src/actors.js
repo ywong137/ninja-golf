@@ -194,7 +194,7 @@ export class Warrior {
       &&motions[this.current]?.athleticAttack;
     const directEntry=fade>0&&preservePair&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
       &&![...this.actions.values(),...(this.repeatActions?.values()??[])].some(action=>action!==previous&&action.isScheduled()&&action.enabled)
-      &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
+      &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{restPose:this.golfRestPose,overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
     if(directEntry)fade=0;
     if(previous===next&&once&&fade>0){
       // Repeated attacks need two actions to crossfade instead of rewinding live bones.
