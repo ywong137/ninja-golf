@@ -42,14 +42,28 @@ function pose(v){
 }
 
 export {grips,bind,b,g,surfaces,deformation};
+export function sampleBodyAt(sourceTime){
+ if(!Number.isFinite(sourceTime)||sourceTime<0||sourceTime>sourceAction.getClip().duration+1e-6)throw Error('sourceTime must lie within the source cleave.');
+ sourceAction.time=sourceTime;source.mixer.update(0);source.scene.updateMatrixWorld(true);
+ return Object.fromEntries(Object.entries(sb).map(([n,o])=>[n,{p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()}]));
+}
 export function sampleAt({sourceTime,pitch,target,controls,skin=false}){
- sourceAction.time=sourceTime;source.mixer.update(0);source.scene.updateMatrixWorld(true);restore(Object.fromEntries(Object.entries(sb).map(([n,o])=>[n,{p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()}])));
+ const bodyPose=sampleBodyAt(sourceTime);
  const angle=pitch*D,shaft=new T.Vector3(0,Math.sin(angle),Math.cos(angle)),edge=new T.Vector3(0,-Math.cos(angle),Math.sin(angle));
  const weapon=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(edge,shaft,edge.clone().cross(shaft)));
+ return samplePose({bodyPose,weaponFrame:weapon.toArray(),target,controls,skin});
+}
+// Other attacks supply their body motion and blade orientation explicitly.
+// The shared closure and both complete palm frames remain identical.
+export function samplePose({bodyPose,weaponFrame,target,controls,skin=false,capture=true}){
+ if(!Array.isArray(weaponFrame)||weaponFrame.length!==4||!weaponFrame.every(Number.isFinite)||Math.hypot(...weaponFrame)<1e-10)throw Error('weaponFrame must contain a finite, nonzero quaternion.');
+ if(!Array.isArray(controls)||controls.length!==9||!controls.every(Number.isFinite))throw Error('Supply all nine finite arm controls.');
+ if(!Array.isArray(target)||target.length!==3||!target.every(Number.isFinite))throw Error('target must contain three finite coordinates.');
+ restore(bodyPose);const weapon=Q(weaponFrame),shaft=Y.clone().applyQuaternion(weapon);
  context={clavicles:Object.fromEntries(['r','l'].map(s=>[s,q('clavicle_'+s)])),weapon,shaft,target:V(target),chest:q('spine_03')};
  const result=pose(controls);if(!result.feasible)return result;
  for(const s of ['r','l']){setWorld('upperarm_'+s,result.hands[s].upper);setWorld('lowerarm_'+s,result.hands[s].lower);b['hand_'+s].quaternion.copy(result.hands[s].w);for(const[n,r]of Object.entries(grips[s].rotations))b[n].quaternion.fromArray(r);}g.scene.updateMatrixWorld(true);deformation.update();
  const actual=Object.fromEntries(['r','l'].map(s=>[s,measureArmAnatomy(cal[s],captureArmPose(b,s))]));
  const surface=skin?Object.fromEntries(['r','l'].map(s=>[s,measureArmSkin(g,surfaces,s)])):undefined;
- return{feasible:true,weapon:weapon.toArray(),hilt:result.hilt.toArray(),actual,skin:surface,violations:Object.fromEntries(['r','l'].map(s=>[s,armAuthoringViolations(actual[s],{maxHingeDeviationDegrees:.1})])),pose:snapshot()};
+ return{feasible:true,weapon:weapon.toArray(),hilt:result.hilt.toArray(),actual,skin:surface,violations:Object.fromEntries(['r','l'].map(s=>[s,armAuthoringViolations(actual[s],{maxHingeDeviationDegrees:.1})])),...(capture?{pose:snapshot()}:{})};
 }

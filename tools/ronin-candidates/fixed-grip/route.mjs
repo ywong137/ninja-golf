@@ -1,14 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {routeMotionCandidate} from '../../route-motion-candidate.mjs';
-export async function routeFixedGripCandidate(page,directory,{withDiagonal=false,withGuards=false}={}){
+export async function routeFixedGripCandidate(page,directory,{withDiagonal=false,withGuards=false,withReturn=false}={}){
+ if(withReturn&&!withDiagonal)throw Error('The return route requires its first light cut.');
  const file=name=>path.join(directory,name);
  await routeShoulder(page);
  await routeMotionCandidate(page,{hero:0,model:file('ronin.glb'),motionRecord:file('motion.json'),readyRecord:file('ready.json'),replaceClip:'Ronin_Heavy_Cleave'});
  if(withDiagonal||withGuards){
   const source=name=>fs.readFileSync(new URL('../../../src/'+name,import.meta.url),'utf8');
   const motions=JSON.parse(source('motion-data.json'));
-  for(const name of ['motion.json','ready.json',...(withDiagonal?['diagonal.json']:[]),...(withGuards?['guards.json']:[])])Object.assign(motions,JSON.parse(fs.readFileSync(file(name))));
+  for(const name of ['motion.json','ready.json',...(withDiagonal?['diagonal.json']:[]),...(withGuards?['guards.json']:[]),...(withReturn?['return.json']:[])])Object.assign(motions,JSON.parse(fs.readFileSync(file(name))));
   if(withGuards)for(const [name,record]of Object.entries(motions).filter(([name])=>name.startsWith('Odachi_Guard_'))){
    if(!record.fixedGripFrame||record.gripSpacing!==.12)throw Error('Missing fitted guard record: '+name);
   }
@@ -16,8 +17,12 @@ export async function routeFixedGripCandidate(page,directory,{withDiagonal=false
   if(withDiagonal){
    const diagonal=motions.Ronin_Cut_Diagonal;
    if(!diagonal?.fixedGripFrame||!(diagonal.duration>0)||diagonal.impacts?.length!==1)throw Error('The diagonal record needs its fixed grip, duration, and one contact time.');
-   await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,Cut_Diagonal:"Ronin_Cut_Diagonal"};'}));
-   await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:[{duration:'+JSON.stringify(diagonal.duration)+',hits:'+JSON.stringify(diagonal.impacts)+'}]};'}));
+   const returnCut=withReturn?motions.Ronin_Cut_Return:null;
+   if(withReturn&&(!returnCut?.fixedGripFrame||!(returnCut.duration>0)||returnCut.impacts?.length!==1))throw Error('The return record needs its fixed grip, duration, and one contact time.');
+   const overrides={Cut_Diagonal:'Ronin_Cut_Diagonal',...(withReturn?{Cut_Return:'Ronin_Cut_Return'}:{})};
+   const timings=[diagonal,...(withReturn?[returnCut]:[])].map(record=>({duration:record.duration,hits:record.impacts}));
+   await page.route('**/src/warriors.js*',route=>route.fulfill({contentType:'application/javascript',body:source('warriors.js')+'\nWARRIORS[0].motionOverrides={...WARRIORS[0].motionOverrides,...'+JSON.stringify(overrides)+'};'}));
+   await page.route('**/src/combat.js*',route=>route.fulfill({contentType:'application/javascript',body:source('combat.js')+'\nSTYLE_ATTACKS.odachi={...STYLE_ATTACKS.odachi,light:'+JSON.stringify(timings)+'};'}));
   }
  }
  const profiles=JSON.parse(fs.readFileSync(file('grips.json')));

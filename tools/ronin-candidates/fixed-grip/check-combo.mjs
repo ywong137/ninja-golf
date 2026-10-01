@@ -5,17 +5,19 @@ import {parseArgs} from 'node:util';
 import {chromium} from 'playwright';
 import {disableHmr} from '../../disable-hmr.mjs';
 import {routeFixedGripCandidate} from './route.mjs';
-const {values}=parseArgs({options:{candidate:{type:'string'},rate:{type:'string',default:'144'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate DIRECTORY [--rate 60|144|480]\nRequires the diagonal candidate and Vite on localhost:5173. Queues a heavy attack during the first light cut through the game controller. Chrome runs headlessly with audio muted.');process.exit(0);}
+const {values}=parseArgs({options:{candidate:{type:'string'},rate:{type:'string',default:'144'},'follow-up':{type:'string',default:'heavy'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate DIRECTORY [--rate 60|144|480] [--follow-up heavy|return]\nRequires the diagonal candidate and Vite on localhost:5173. Queues the selected follow-up during the first light cut through the game controller. Chrome runs headlessly with audio muted.');process.exit(0);}
 const rate=Number(values.rate);
 if(!values.candidate||![60,144,480].includes(rate))throw Error('Supply --candidate DIRECTORY and a valid --rate. See --help.');
+if(!['heavy','return'].includes(values['follow-up']))throw Error('--follow-up must be heavy or return.');
+const follow=values['follow-up'];
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:400,height:300}}),errors=[];
  page.on('pageerror',error=>errors.push(error.message));await disableHmr(page);
- await routeFixedGripCandidate(page,values.candidate,{withDiagonal:true});
+ await routeFixedGripCandidate(page,values.candidate,{withDiagonal:true,withReturn:follow==='return'});
  await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
- const report=await page.evaluate(async({rate})=>{
+ const report=await page.evaluate(async({rate,follow})=>{
   const T=await import('/node_modules/three/build/three.module.js'),{createPlayerGuard}=await import('/src/combat.js');
   const {handSurface,measureGripSurface}=await import('/tools/grip-contact.mjs');
   const g=window.__golfTest;g.frame=()=>{};g.paused=true;g.audio.enabled=false;g.audio.pause();g.clearEnemies();g.selectWarrior(0);g.phase='combat';g.spawnTime=999;g.time+=10;g.groundHeight=()=>0;g.slideOnLand=p=>{p.y=0;};g.player.root.position.set(0,0,45);g.ball.position.set(0,0,190);g.input.clear();g.guard=createPlayerGuard();g.dodgeTimer=0;g.invincible=999;
@@ -24,7 +26,7 @@ try{
   const tick=()=>{g.time+=1/rate;g.updateCombat(1/rate);g.input.end();};for(let i=0;i<rate/2;i++)tick();
   g.paused=false;g.attack('light');g.paused=true;const start=g.time,report={rate,transitions:[],rows:[],maxPalmGap:0,maxFrameError:0,maxGripDepth:0,maxFittingDepth:0};let queued=false;
   for(let i=0;i<Math.ceil(1.8*rate);i++){
-   if(!queued&&g.time-start>=.2){g.paused=false;g.attack('heavy');g.paused=true;queued=true;report.queued=!!g.attackBuffer;}
+   if(!queued&&g.time-start>=.2){g.paused=false;g.attack(follow==='return'?'light':'heavy');g.paused=true;queued=true;report.queued=!!g.attackBuffer;}
    tick();actor.root.updateMatrixWorld(true);
    const t=g.time-start,clip=actor.current;
    if(report.transitions.at(-1)?.clip!==clip)report.transitions.push({t,clip,step:g.action?.step,duration:g.action?.duration,blended:!!actor.heldBlend});
@@ -38,11 +40,12 @@ try{
    report.maxPalmGap=Math.max(report.maxPalmGap,gap);report.maxFrameError=Math.max(report.maxFrameError,angle);report.rows.push({t,clip,gap,angle});
   }
   report.remainingAction=!!g.action;g.audio.pause();return report;
- },{rate});
- fs.writeFileSync(path.join(values.candidate,`combo-${rate}.json`),JSON.stringify({...report,errors},null,2));const{rows,...summary}=report;console.log(JSON.stringify({...summary,errors}));
- assert.deepEqual(errors,[]);assert.equal(report.queued,true,'The heavy input was not buffered.');
- assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal','Ronin_Heavy_Cleave','Ronin_Ready']);
- const heavy=report.transitions[1];assert.equal(heavy.step,0);assert.equal(heavy.duration,.76);assert.ok(heavy.t>=.6&&heavy.t<.6+2/rate,'The controller skipped the end of the light cut.');
+ },{rate,follow});
+ fs.writeFileSync(path.join(values.candidate,`combo-${follow==='return'?'return-':''}${rate}.json`),JSON.stringify({...report,errors},null,2));const{rows,...summary}=report;console.log(JSON.stringify({...summary,errors}));
+ assert.deepEqual(errors,[]);assert.equal(report.queued,true,'The follow-up input was not buffered.');
+ assert.deepEqual(report.transitions.map(t=>t.clip),['Ronin_Cut_Diagonal',follow==='return'?'Ronin_Cut_Return':'Ronin_Heavy_Cleave','Ronin_Ready']);
+ const next=report.transitions[1];assert.equal(next.step,follow==='return'?1:0);assert.equal(next.duration,follow==='return'?.85:.76);assert.ok(next.t>=.6&&next.t<.6+2/rate,'The controller skipped the end of the light cut.');
+ assert.equal(next.blended,false,'Matching completed-attack poses should continue directly.');
  assert.equal(report.remainingAction,false);assert.ok(report.maxGripDepth<.0015&&report.maxFittingDepth===0,'The combo intersects the handle or fittings.');
  assert.ok(report.maxPalmGap<.00025&&report.maxFrameError<.04,'The combo transition distorts the complete hand grip.');
 }finally{await browser.close();}

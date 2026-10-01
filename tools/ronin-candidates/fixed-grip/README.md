@@ -1,7 +1,7 @@
 # Ronin fixed-grip candidate
 
-The base candidate changes Ready and Heavy Cleave. Optional flags add the first light cut and seven guard motions.
-Neither build replaces the playable model.
+The base candidate changes Ready and Heavy Cleave. Optional flags add the first two light cuts and seven guard motions.
+These builds do not replace the playable model.
 The other attacks, selection pose, and travel transitions still need the same grip review.
 Do not copy the candidate sword profile into the game before that work finishes.
 
@@ -27,6 +27,21 @@ node tools/ronin-candidates/check-guards.mjs --model /tmp/ronin-fixed-guards/ron
 node tools/ronin-candidates/check-guard-break.mjs --model /tmp/ronin-fixed-guards/ronin.glb --before /tmp/ronin-fixed-guards/guard-reactions-base.glb --output /tmp/ronin-fixed-guards/break-check.json
 ```
 
+Build and check the eleven-clip candidate with the return slash:
+
+```sh
+node tools/ronin-candidates/fixed-grip/build.mjs --output /tmp/ronin-fixed-return --with-diagonal --with-guards --with-return
+node tools/ronin-candidates/fixed-grip/check.mjs --candidate /tmp/ronin-fixed-return --return-only --before /tmp/ronin-fixed-return/before-return.glb --output /tmp/ronin-fixed-return/return-check.json
+```
+
+`--with-return` requires `--with-diagonal`.
+`before-return.glb` retains the family before the second light cut changes.
+`return-profile.json` retains the body timing, blade path, torso rotations, and 31 fitted arm-control keys.
+The source model hash guards its original body and leg reference.
+No discarded temporary model is required to reproduce the return.
+The author removes obsolete scale tracks because this motion uses the rig's bind scales.
+Those tracks previously forced a grip-distorting transition despite matching joint positions and rotations.
+
 `attacks.glb` retains the three-clip candidate before guard authoring.
 The guard check verifies that the new guard export preserves those attacks and all other unrelated animations.
 The build retains `guard-reactions-base.glb` for comparing the added knee and hip compression.
@@ -38,6 +53,8 @@ node tools/ronin-candidates/fixed-grip/check-runtime.mjs --candidate /tmp/ronin-
 node tools/ronin-candidates/fixed-grip/check-runtime.mjs --candidate /tmp/ronin-fixed-family --attack light --rate 144
 node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate /tmp/ronin-fixed-family --rate 60
 node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate /tmp/ronin-fixed-family --rate 144
+node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate /tmp/ronin-fixed-return --rate 60 --follow-up return
+node tools/ronin-candidates/fixed-grip/check-combo.mjs --candidate /tmp/ronin-fixed-return --rate 144 --follow-up return
 node tools/ronin-candidates/fixed-grip/check-guard-runtime.mjs --candidate /tmp/ronin-fixed-guards --rate 60
 node tools/ronin-candidates/fixed-grip/check-guard-runtime.mjs --candidate /tmp/ronin-fixed-guards --rate 144
 ```
@@ -45,6 +62,7 @@ node tools/ronin-candidates/fixed-grip/check-guard-runtime.mjs --candidate /tmp/
 The browser runs headlessly with audio muted.
 The runtime checks include attack entry and recovery to Ready.
 The combo check queues a heavy attack during the light cut through the game's input buffer.
+`--follow-up return` instead queues the second light cut.
 It checks the complete two-hand grip throughout both attacks and recovery.
 Each failed numerical bound produces a nonzero exit status.
 Passing these checks does not establish natural movement or complete artistic acceptance.
@@ -76,5 +94,6 @@ The builder verifies the source model hash before writing files.
 The base model hash is `0893ec7f08a8c6d40190743cad18c2600bcd1ec8640bf623efa46f7d19c674dd`.
 The three-clip model hash is `49b40b5f1b78e4c7b3985dde6f97050806ba020db6673910dd70bf5a5061a774`.
 The ten-clip model hash is `57c90584d135632e8d994522e512b782ecef13055cd25b7c74d90dbd13115529`.
+The eleven-clip model hash is `1207ba73b36603a8ecba7069cc904eac84f0192859e8961096ae144769ef52d2`.
 See [the review](../../../docs/reviews/ronin-fixed-grip.md) for findings and remaining work.
 Local silent previews remain in `artifacts/reviews/ronin-fixed-frame/`.

@@ -110,6 +110,49 @@ The ten-clip build reproduces the reviewed local model and all five motion/profi
 The existing 196-case native-pair regression check also passes, including 90 direct pose handoffs.
 These guard corrections remain part of the offline candidate until the remaining weapon motions use the same fitted grip.
 
+## Return slash
+
+The second light cut now uses the same complete grip as Ready, Cleave, the first cut, and the guards.
+The body turns through the cut while the hands retain their orientation on the handle.
+The arm solver accepts an explicit body pose and blade frame for this motion.
+The existing ten-clip build remains byte-identical after that change.
+
+The earlier return path required more than 100 degrees of forearm twist with the new grip.
+An added torso turn removes that requirement.
+The author retains the source hip, knee, ankle, and toe paths with continuous timing.
+The earlier retiming jumped forward by 25 milliseconds at the end of the cut; that jump is gone.
+The new record lasts 0.85 seconds and contacts at 0.435 seconds.
+It retains 31 fitted control keys and 413 reference frames.
+
+The exported GLB passes 818 native samples at 960 Hz:
+
+- No native arm violations or tested arm surface intersections.
+- Maximum wrist bend: 13.801 degrees; complete palm-frame error: 0.00394 degrees.
+- Maximum palm separation: 0.0298 mm; handle intrusion: 1.017 mm; no fitting intrusion.
+- Blade clearance stays at the 30 mm measurement cap.
+- Cutting-edge alignment stays above 0.921 during the contact window.
+- Maximum hand speed: 5.604 m/s; maximum sampled arm-joint speed: 1,129 degrees/s.
+- Source lower-body positions differ by at most 0.235 mm; foot rotation differs by at most 0.00102 degrees.
+
+Whole-body endpoints match Ready and the completed first cut, including scales.
+The first game test still opened the grip during the transition.
+The retired clip contained slightly different leg-scale tracks that prevented a direct pose continuation.
+The return author now removes those obsolete tracks after verifying that every authored scale equals its bind value.
+This fixes the mismatch without relaxing the controller's pose comparison.
+
+The buffered light-to-light combo passes at 60 Hz and 144 Hz.
+Both rates continue directly into the return and finish in Ready.
+Maximum palm separation is 0.061 mm at 60 Hz and 0.090 mm at 144 Hz.
+Maximum complete frame error is 0.0155 degrees; maximum handle intrusion is 1.066 mm, with no fitting intrusion.
+The 28 focused transition, anatomy, and closure unit checks pass. The game build also passes.
+
+Front, side, and quarter views show the step and torso turn.
+The silent preview is `artifacts/reviews/ronin-fixed-return/ronin-return-quarter-speed.mp4`.
+No new Opus review occurred. The full-family artistic review remains open.
+A second authoring run reproduces the final model and return record byte for byte.
+The eleven-clip model remains offline; production character assets have not changed.
+Its SHA-256 is `1207ba73b36603a8ecba7069cc904eac84f0192859e8961096ae144769ef52d2`.
+
 ## Review and remaining work
 
 Actual Claude Opus 5.5 High reviewed the earlier poses.
@@ -119,7 +162,7 @@ The final review attempt returned Anthropic's weekly account limit before model 
 It did not return a review or an approval denial.
 
 Do not publish this candidate as a complete Ronin replacement.
-Its grip profile would also affect the other attacks, guards, and travel poses.
+Its grip profile also affects the remaining attacks, selection poses, travel poses, and dodges.
 Those motions and their transitions still need fitting and review.
 
 The [reproduction tools](../../tools/ronin-candidates/fixed-grip/README.md) contain the retained controls and checks.
