@@ -12,7 +12,7 @@ try{
   const records=JSON.parse(fs.readFileSync(path.join(dir,'motions.json'))),motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));Object.assign(motions,records);
   const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+JSON.stringify(motions)+';');await page.route('**/src/motion.js*',r=>r.fulfill({contentType:'application/javascript',body:source}));
  }
- await page.goto('http://localhost:5173/tests/rig-stage.html');
+ await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const report=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{calibrateLegAnatomy,measureLegAnatomy}=await import('/src/leg-anatomy.js');await loadWarriorAssets();const rows=[];
   for(let hero=0;hero<6;hero++)for(const clip of ['Golf_Address','Golf_Swing','Golf_Putt'])for(const slope of [0,.08,-.08])for(const hz of [60,120]){

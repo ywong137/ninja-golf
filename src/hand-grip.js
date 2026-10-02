@@ -229,11 +229,17 @@ export class HandGrip {
   }
   const station=golf?0:held.userData.primaryGrip;
   const spacing=golf?(this.active.gripSpacing??clip?.gripSpacing??.09):(clip?.gripSpacing??.09);
+  const blend=actor.heldBlend,closingSourcePair=!golf&&clip?.fixedGripFrame&&secondaryWeight>.999&&(actor.running||actor.recordedStopping||actor.recordedStopPose?.last||blend?.sourcePair&&actor.mixer.time<blend.start+blend.duration);
+  if(closingSourcePair){
+   for(const side of ['r','l'])for(const part of ['upperarm','lowerarm','hand'])this.remember(actor.bones[part+'_'+side]);
+   this.closureReport=actor.pairedGripClosure.apply(this.active,spacing,actor.root.getWorldScale(new Vector3()).x);
+   if(!this.closureReport.feasible)throw Error('Captured carry cannot close the paired grip during '+actor.current+': '+this.closureReport.reason);
+  }else this.closureReport=null;
   this.attach(held,'r',station);
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
   // A native paired clip authors the support-hand approach. Do not bend its
   // elbow with legacy IK while that hand is still released from the weapon.
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf||clip.fixedGripFrame===true});}
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(closingSourcePair||!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf||clip.fixedGripFrame===true});}
   else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&(carryActive||golf))){this.solveSecondary(held,spacing,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=actor.golfClubFit?.shaftLengthNative??(motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12);

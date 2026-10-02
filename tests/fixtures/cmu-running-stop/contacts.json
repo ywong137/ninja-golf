@@ -1,0 +1,37 @@
+{
+  "source": "CMU 143_02",
+  "rate": 120,
+  "reviewOnly": true,
+  "method": "Low, slow sole vertices and side/quarter motion review. These authoring intervals do not measure ground forces.",
+  "fade": 0.025,
+  "feet": {
+    "r": [
+      [
+        0.2,
+        0.275
+      ],
+      [
+        0.5666666666666667,
+        0.625
+      ],
+      [
+        0.75,
+        1.725
+      ]
+    ],
+    "l": [
+      [
+        0.025,
+        0.10833333333333334
+      ],
+      [
+        0.36666666666666664,
+        0.4583333333333333
+      ],
+      [
+        0.7083333333333334,
+        1.725
+      ]
+    ]
+  }
+}

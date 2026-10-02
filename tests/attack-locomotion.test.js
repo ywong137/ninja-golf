@@ -23,7 +23,14 @@ test('Moving attacks step in eight directions with native legs across all six he
    const angle=direction*Math.PI/4,speed=2.5;steps.restore();steps.reset();root.position.set(0,0,0);let maxError=0,maxLift=0,footMin=Infinity,footMax=-Infinity;
    for(let frame=0;frame<120;frame++){
     steps.restore();action.time=clip.duration*.4;mixer.update(0);root.position.x+=Math.sin(angle)*speed/60;root.position.z+=Math.cos(angle)*speed/60;
+    root.updateMatrixWorld(true);
+    const rotation=name=>bones[name].getWorldQuaternion(new T.Quaternion()).normalize();
+    const handPair=()=>bones.hand_l.getWorldPosition(new T.Vector3()).sub(bones.hand_r.getWorldPosition(new T.Vector3()));
+    const chest=rotation('spine_03'),hand=rotation('hand_r'),pair=handPair();
     const report=steps.apply(1/60,{active:true,speed,angle});root.updateMatrixWorld(true);
+    assert.ok(rotation('spine_03').angleTo(chest)<1e-6,`${hero}/${direction}: walking rotates the attack chest`);
+    assert.ok(rotation('hand_r').angleTo(hand)<1e-6,`${hero}/${direction}: walking rotates the weapon grip`);
+    assert.ok(handPair().distanceTo(pair)<1e-6,`${hero}/${direction}/${frame}: walking changes hand spacing by ${handPair().distanceTo(pair)} m`);
     assert.ok(report);for(const foot of steps.report.feet)maxError=Math.max(maxError,foot.error);
     if(frame>20){const y=bones.foot_r.getWorldPosition(new T.Vector3()).y;footMin=Math.min(footMin,y);footMax=Math.max(footMax,y);}
    }

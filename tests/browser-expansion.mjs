@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.click('#audio-toggle');await page.click('#play');
+ await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.click('#audio-toggle');await page.click('#play');
  assert.equal(await page.locator('[data-warrior]').count(),6);
  for(let hero=0;hero<6;hero++){await page.click(`[data-warrior="${hero}"]`);await page.waitForTimeout(700);await page.screenshot({path:`/tmp/ninja-new-hero-${hero}.png`});}
  await page.click('#begin');assert.ok(await page.locator('#courses').isVisible());

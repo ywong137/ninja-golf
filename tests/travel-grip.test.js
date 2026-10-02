@@ -4,7 +4,7 @@ import {pairedTravelGrip} from '../src/travel-grip.js';
 const grip={nativeAttachment:true,pairedGrip:true,fixedGripFrame:true,twoHanded:true,gripSpacing:.12};
 test('Paired travel applies only to a configured hero and the authored combat runs',()=>{
  const hero={pairedTravelGrip:grip};
- for(const name of ['Run_Forward','Run_Right','Run_Backward','Run_Left','Sprint_Forward'])assert.equal(pairedTravelGrip(hero,name),grip);
+ for(const name of ['Run_Start','Run_Stop_Left','Run_Stop_Right','Run_Forward','Run_Right','Run_Backward','Run_Left','Sprint_Forward'])assert.equal(pairedTravelGrip(hero,name),grip);
  for(const name of ['Golf_Swing','Ronin_Selection_Idle','Roll','Ronin_Cut_Diagonal','Jog_Fwd_Loop'])assert.equal(pairedTravelGrip(hero,name),null);
  assert.equal(pairedTravelGrip({},'Run_Forward'),null);
  assert.equal(pairedTravelGrip(undefined,'Run_Forward'),null);

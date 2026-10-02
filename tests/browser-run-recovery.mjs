@@ -2,10 +2,12 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
+import {routeModelDirectory} from '../tools/route-model-directory.mjs';
 
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
+ await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);
  await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const rows=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
@@ -74,7 +76,7 @@ try{
  const disabled=controlSource.replace("from 'three'","from '/node_modules/three/build/three.module.js'");let routed=0;
  await page.route('**/src/leg-recovery.js*',r=>{routed++;return r.fulfill({body:disabled,contentType:'application/javascript'});});
  await page.reload();const sourceContinuity=await page.evaluate(sampleContinuity);assert.ok(routed>0,'Source control route was not used');
- fs.writeFileSync('/tmp/ninja-run-recovery.json',JSON.stringify({errors,rows,continuity,sourceContinuity},null,2));
+ fs.writeFileSync(process.env.NINJA_RUN_RECOVERY_REPORT??'/tmp/ninja-run-recovery.json',JSON.stringify({errors,rows,continuity,sourceContinuity},null,2));
  assert.deepEqual(errors,[]);assert.equal(rows.length,108);
  for(const row of rows){
   assert.ok(row.freeSamples>20,JSON.stringify(row));

@@ -1,6 +1,30 @@
 # Production quality targets
 
-## Shared leg correction — October 2, 2026
+## Shared posture and contact correction — October 2, 2026
+
+The game remains a playable alpha. The core golf/combat loop, six heroes, four nine-hole courses, and sixteen music recordings exist.
+Natural full-body animation and AAA presentation remain unfinished.
+
+All six heroes now share the same posture fit and anatomical runtime corrections.
+The terrain solver preserves free-leg shape when it lowers the pelvis on a slope.
+Moving attacks limit residual pelvis rotation while preserving the chest, weapon, and paired grip.
+Turning steps predict reach only until their scheduled liftoff.
+
+The integrated release passes 837 unit and asset tests, 2,130 combat cases, 108 running cases, and 48 turn cases.
+It also passes 42 controller interruptions, 90 running exits, golf checks, and six complete character-preview loops.
+The preview fits ten tested layouts and all four course backgrounds. Gameplay smoke passes without browser errors.
+Dense moving combat averages 51.18 FPS with 64 enemies at 1440×900 on this M1 Max, at a 1.0 rendering ratio.
+A separate ten-second polearm combat recording averages 54.47 FPS with 23–38 enemies and no browser errors.
+All 36 cup and scorecard regressions pass, along with course selection and survey controls.
+Those checks use controlled putts; complete fairway encounters still need a fresh full-round review.
+All automated playback remains muted.
+
+Opus 5.5 High found no backward knees in 72 sampled panels across the roster.
+The review still identifies weak push-off, limited forward arm drive, and an excessive sustained lean.
+Those movement issues and weapon-specific weight transfer remain open. Numerical checks do not establish finished animation quality.
+See [the shared posture review](reviews/shared-posture.md) for evidence and scope.
+
+## Previous shared leg correction — October 2, 2026
 
 The game remains a playable alpha. Natural movement and AAA presentation remain incomplete.
 All six heroes now use calibrated joint balancing during running turns. Supporting feet use bounded pivots with preserved leg lanes.

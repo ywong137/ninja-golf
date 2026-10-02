@@ -101,7 +101,8 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     // plane. This catches toe-out and turned stances that actor-X checks miss.
     const outward=up.clone().cross(forward).multiplyScalar(side==='l'?1:-1);
     const shin=knee.clone().sub(ankle),rawMedial=-shin.dot(outward);
-    const headingSolve=kind==='gait'&&/Run_(Right|Left)/.test(name);
+    const headingSolve=kind==='gait'&&/Run_(Right|Left)/.test(name)
+     ||clip.userData?.nativeLegFrames===1&&/_Guard_Walk_(Right|Left)$/.test(name);
     // A running hip need not share the shoe's vertical plane. Measure the knee
     // relative to the straight hip–ankle line, not a vertical line from the shoe.
     // Strafe tests separately check native hip, knee and ankle frames.
@@ -110,7 +111,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     const medial=headingSolve?-(shin.clone().sub(alignedShin)).dot(outward):rawMedial;
     // A heel pivot changes the foot's sagittal plane. Validate its actual joint
     // frames instead of forcing the knee back into a vertical shoe plane.
-    if(spec.nativeKneeHeading){
+    if(spec.nativeKneeHeading||clip.userData?.nativeLegFrames===1){
      const measured=measureLegAnatomy(anatomy[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
      anatomic.samples++;
      for(const key of ['kneeDeviation','hipTwist','ankleTwist'])anatomic[key]=Math.max(anatomic[key],Math.abs(measured[key]));

@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
+import {routeModelDirectory} from '../tools/route-model-directory.mjs';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
-try{const page=await browser.newPage();await disableHmr(page);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
+try{const page=await browser.newPage();await disableHmr(page);await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
 const rows=await page.evaluate(async()=>{
  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{measureLegAnatomy}=await import('/src/leg-anatomy.js'),{WARRIORS}=await import('/src/warriors.js');const {runSupportPoint}=await import('/tools/run-contact-measurement.mjs');await loadWarriorAssets();const rows=[];
  function distance(a,b,c,d){const u=b.clone().sub(a),v=d.clone().sub(c),w=a.clone().sub(c),A=u.dot(u),B=u.dot(v),C=v.dot(v),D=u.dot(w),E=v.dot(w),den=A*C-B*B;let s=den>1e-12?T.MathUtils.clamp((B*E-C*D)/den,0,1):0,t=(B*s+E)/C;if(t<0){t=0;s=T.MathUtils.clamp(-D/A,0,1)}else if(t>1){t=1;s=T.MathUtils.clamp((B-D)/A,0,1)}return a.clone().addScaledVector(u,s).distanceTo(c.clone().addScaledVector(v,t));}

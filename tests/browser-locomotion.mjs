@@ -1,9 +1,10 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
+import {routeModelDirectory} from '../tools/route-model-directory.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
- const page=await browser.newPage({viewport:{width:1600,height:900}});await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');
+ const page=await browser.newPage({viewport:{width:1600,height:900}});await disableHmr(page);await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const reports=await page.evaluate(async({onlyHero})=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{WARRIORS}=await import('/src/warriors.js');const {runSupportPoint}=await import('/tools/run-contact-measurement.mjs');await loadWarriorAssets();const reports=[],players=[];
   const cases=[{angle:0,sprint:false,focused:false},{angle:0,sprint:true,focused:false},...[0,Math.PI/2,Math.PI,-Math.PI/2,Math.PI/4,3*Math.PI/4,-3*Math.PI/4,-Math.PI/4].map(angle=>({angle,sprint:false,focused:true}))];
@@ -26,8 +27,12 @@ try{
    }
    const movingClip=p.current;p.update(2,.02,{moving:true,moveSpeed:0});const blockedClip=p.current;
    p.update(2.1,.02,{blocking:true,moving:true,moveAngle:0,moveSpeed:2.3});const guardClip=p.current;
-   p.update(2.2,.02,{moving:true,moveSpeed:speed});const resumeClip=p.current;
-   reports.push({hero:WARRIORS[hero].model,...c,speed,maxSupportDrift,minimumKnee,maxFootPitch,minimumToeHipAlignment,hipYawRange:core.hips[1]-core.hips[0],relativeChestYawRange:core.relativeChest[1]-core.relativeChest[0],footLift:Math.min(...Object.values(ranges).map(([lo,hi])=>hi-lo)),movingClip,blockedClip,guardClip,resumeClip});
+   // A walking foot can still be airborne when guard is released. Let the
+   // real landing finish before requiring the running clip, with a fixed bound.
+   let resumeDelay=0;
+   do{const resumeSpeed=p.running?speed:2.3;p.root.position.z+=resumeSpeed*.02;p.update(2.2+resumeDelay,.02,{moving:true,moveSpeed:resumeSpeed,groundHeight:()=>0});resumeDelay+=.02;}while(!p.running&&resumeDelay<.6);
+   const resumeClip=p.current;
+   reports.push({hero:WARRIORS[hero].model,...c,speed,maxSupportDrift,minimumKnee,maxFootPitch,minimumToeHipAlignment,hipYawRange:core.hips[1]-core.hips[0],relativeChestYawRange:core.relativeChest[1]-core.relativeChest[0],footLift:Math.min(...Object.values(ranges).map(([lo,hi])=>hi-lo)),movingClip,blockedClip,guardClip,resumeClip,resumeDelay});
    if(hero===(onlyHero??0)&&cases.indexOf(c)<6)players.push({p,c});else p.dispose();
   }}
   const scene=new T.Scene();scene.background=new T.Color('#53616b');scene.add(new T.HemisphereLight(0xffffff,0x333943,2.4));const light=new T.DirectionalLight(0xfff1dc,3);light.position.set(2,5,4);scene.add(light);const floor=new T.Mesh(new T.PlaneGeometry(30,30),new T.MeshStandardMaterial({color:'#434e50'}));floor.rotation.x=-Math.PI/2;floor.position.y=-.01;scene.add(floor);const camera=new T.PerspectiveCamera(32,1600/900,.01,100);camera.position.set(0,3.1,11.5);camera.lookAt(0,1,0);const renderer=new T.WebGLRenderer({antialias:true});renderer.setSize(1600,900);document.body.append(renderer.domElement);

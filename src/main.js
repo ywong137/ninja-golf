@@ -16,6 +16,8 @@ import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
 import { attackDefinition, strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
 import {attackRootDelta} from './attack-root-motion.js';
 import {attackContinuation} from './attack-continuation.js';
+import {withMotionTiming} from './attack-timing.js';
+import {attackEntryVelocity} from './attack-braking.js';
 import {createSurvey,moveSurvey,surveyPosition} from './survey.js';
 import {readRoundSave} from './round.js';
 import { Projectiles } from './projectiles.js';
@@ -161,7 +163,7 @@ class Game {
       enemy.spawnSite=site.id;enemy.role=ENEMY_TYPES[enemy.type].role;enemy.slot=slot;enemy.hp=ENEMY_TYPES[enemy.type].hp;enemy.cooldown=1.4+Math.random()*1.8;enemy.readyAt=this.time+(Math.random()<.65?2+Math.random()*3:0);enemy.strike=0;enemy.speed=ENEMY_TYPES[enemy.type].speed;enemy.dead=0;enemy.knockback=new THREE.Vector3();enemy.lift=0;enemy.verticalSpeed=0;this.enemies.push(enemy);this.enemiesSpawned++;site.readyAt=this.time+8;
     }
   }
-  clearEnemies(){this.projectiles?.clear();this.pendingStrike=null;this.guardBufferedAttack=null;this.action=null;this.attackTimer=0;this.attackBuffer=null;this.lightChain=0;this.cinematic=0;document.body.classList.remove('musou-active');this.ui?.$ ('musou-cinema')?.classList.add('hidden');for(const e of this.enemies)this.scene?.remove(e.root);this.enemies=[];}
+  clearEnemies(){this.projectiles?.clear();this.pendingStrike=null;this.guardBufferedAttack=null;this.action=null;this.runAcceleration=null;this.attackTimer=0;this.attackBuffer=null;this.lightChain=0;this.cinematic=0;document.body.classList.remove('musou-active');this.ui?.$ ('musou-cinema')?.classList.add('hidden');for(const e of this.enemies)this.scene?.remove(e.root);this.enemies=[];}
   nearbyEnemies(){return this.enemies.filter(e=>!e.dead&&e.root.position.distanceTo(this.player.root.position)<8).length;}
   attack(kind='light'){
     if(this.phase!=='combat'||this.paused||this.cinematic>0)return;
@@ -180,12 +182,18 @@ class Game {
     this.startAttack(kind);
   }
   startAttack(kind,continuation=null){
+    const brakingEntry=this.runAcceleration?.brake||this.player.runAttackStep?.state?.reorientation?{...(this.playerVelocity??{x:0,z:0})}:null;
+    if(brakingEntry)this.player.runAttackStep?.restartBraking(brakingEntry);
+    this.runAcceleration=null;
     exitPlayerGuard(this.guard);
     if(this.time>(this.chainExpires||0))this.lightChain=0;
-    const step=continuation?.step??(kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1)),definition=attackDefinition(kind,step,this.warrior.combatStyle);
+    const step=continuation?.step??(kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1));
     const motionName=continuation?.clip??combatMotionName(this.warrior,kind,step),motion=motions[motionName];
-    if(continuation){definition.duration=motion.combatDuration;definition.hits=motion.impacts.map(time=>time/motion.duration*definition.duration);}
+    const definition=withMotionTiming(attackDefinition(kind,step,this.warrior.combatStyle),motion);
     this.action={...definition,motionName,syncMotion:!!(continuation||motion.continuations),impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
+    const movingEntry=this.player.running||this.player.startingRun||this.player.turningRun||this.player.recordedStopping;
+    const entry=brakingEntry??(movingEntry?(this.player.runAttackStep?.previous?.rootVelocity??this.playerVelocity):null);
+    if(entry&&!motion.planarRoot&&kind!=='musou')this.action.entryVelocity={x:entry.x,z:entry.z};
     if(kind==='musou')this.invincible=Math.max(this.invincible,definition.duration);
     this.attackTimer=definition.duration;this.attackYaw=this.player.root.rotation.y;this.comboTime=3;this.chainExpires=this.time+definition.duration+.75;
     this.lightChain=kind==='light'?step+1:0;this.player.wasAttack=false;this.audio.play(kind==='musou'?'special':'sword');
@@ -209,9 +217,94 @@ class Game {
     const m=input.move;this.camera.getWorldDirection(v1);const movementYaw=Math.atan2(v1.x,v1.z);let {x:dx,z:dz}=cameraRelativeMove(m.x,m.y,movementYaw);
     const pd=p.distanceTo(this.ball.position),moving=Math.hypot(dx,dz)>.1,sprinting=input.down('ShiftLeft','ShiftRight')||input.padSprint;
     updatePlayerGuard(this.guard,{time:this.time,dt,held:input.guarding,allowed:!this.action&&this.dodgeTimer===0});
+    // The captured braking step and root deceleration must start together.
+    // Starting the attack after movement inserts a stopped frame when the
+    // player releases W, then restores stale running velocity on the next.
+    const attackFromRun=!this.action&&this.dodgeTimer===0&&(this.player.running||this.player.startingRun||this.player.turningRun||this.player.recordedStopping||this.runAcceleration?.brake||this.player.runAttackStep?.state?.reorientation)&&!!this.player.runAttackStep;
+    if(attackFromRun){if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');}
     this.focused=input.focused||this.guard.active;const speed=(this.dodgeTimer>.18?11:this.time<this.guard.breakPoseUntil?2:this.guard.active?2.3:sprinting?8:this.focused?5.3:5.6)*this.warrior.speed*(this.action?.kind==='musou'?0:this.action?(this.action.movementScale??.45):1);
-    const norm=Math.max(1,Math.hypot(dx,dz));dx/=norm;dz/=norm;this.playerVelocity={x:dx*speed,z:dz*speed};
-    let mx=dx*speed,mz=dz*speed;
+    const previousVelocity={...(this.playerVelocity??{x:0,z:0})};
+    const norm=Math.max(1,Math.hypot(dx,dz));dx/=norm;dz/=norm;
+    const requestedVelocity={x:dx*speed,z:dz*speed};
+    const steadySourceRun=this.player.running&&this.player.sourceRun&&this.player.runAttackStep?.previous;
+    const reversing=this.focused&&moving&&steadySourceRun&&Math.hypot(previousVelocity.x,previousVelocity.z)>.5
+      &&previousVelocity.x*requestedVelocity.x+previousVelocity.z*requestedVelocity.z<-.25*Math.hypot(previousVelocity.x,previousVelocity.z)*Math.hypot(requestedVelocity.x,requestedVelocity.z);
+    const stopDecision=this.player.prepareRunStop(dt,{currentVelocity:previousVelocity,resumeVelocity:moving&&!this.action&&!this.guard.active&&this.dodgeTimer===0?requestedVelocity:null,enabled:!moving&&!this.action&&!this.guard.active&&this.dodgeTimer===0&&!this.runAcceleration});
+    const runStop=stopDecision?.frame??null;
+    if(stopDecision?.resume)this.runAcceleration={velocity:previousVelocity,age:0,pending:false};
+    const stopping=!stopDecision&&!moving&&(steadySourceRun||this.player.recordedStart?.active&&this.player.startingRun||this.player.recordedTurn?.active&&this.player.turningRun);
+    if(!this.action&&this.dodgeTimer===0&&!this.runAcceleration?.brake&&(!this.guard.active&&(stopping||reversing)||stopDecision?.brake)){
+      // Carry the outgoing contact into a braking step before reversing travel.
+      // Focus keeps the torso facing the camera heading while the feet load.
+      this.player.runAttackStep.begin({duration:.2,contactDriven:true});this.player.stoppingRun=true;
+      this.runAcceleration={velocity:previousVelocity,age:0,pending:false,brake:true};
+    }
+    if(moving&&!this.runAcceleration?.brake)this.player.stoppingRun=false;
+    if(!this.action&&moving&&this.dodgeTimer===0&&!this.guard.active&&(this.player.runAttackStep?.state||this.player.lastWalkingHandoff)&&!this.runAcceleration)this.runAcceleration={velocity:{...(this.playerVelocity??{x:0,z:0})},age:0,pending:true};
+    const outgoingStartVelocity=(this.player.recordedStart?.active&&this.player.startingRun||this.player.recordedTurn?.active&&this.player.turningRun)?{...previousVelocity}:null;
+    this.playerVelocity={...requestedVelocity};let runPrediction=null,startAfterTurn=null;
+    if(this.action?.entryVelocity){this.action.requestedVelocity={...this.playerVelocity};this.playerVelocity=attackEntryVelocity(this.action.entryVelocity,this.playerVelocity,this.action.time,dt);}
+    if(!this.action&&this.dodgeTimer===0&&this.runAcceleration){
+      const entry=this.runAcceleration;
+      const collecting=this.player.runFootwork?.turnPlanner?.collecting;
+      const brakeContact=entry.brake&&this.player.runAttackStep?.brakingComplete&&this.player.runAttackStep?.state?.reorientation?.complete
+        ?this.player.runAttackStep.handoffToRun(this.focused?{travel:requestedVelocity}:{}):null;
+      if(brakeContact){
+        if(moving&&!this.focused&&!this.guard.active&&this.player.recordedStart)startAfterTurn=this.player.runAttackStep.handoffToStart();
+        entry.brake=false;entry.age=0;entry.velocity={x:0,z:0};this.player.stoppingRun=false;
+        if(!moving)this.player.runAttackStep.finishStop();
+      }
+      if(entry.pending&&(this.player.running&&!collecting||!moving||Math.hypot(entry.velocity.x,entry.velocity.z)<=.05)){
+        entry.pending=false;entry.age=0;entry.velocity=entry.lastVelocity??entry.velocity;
+      }
+      if(entry.brake){
+        const braking=this.player.runAttackStep.advanceBraking(dt,this.groundHeight);
+        this.playerVelocity=braking.velocity;entry.age+=dt;
+        runPrediction={source:braking.endVelocity,wanted:braking.endVelocity,time:0,duration:.2};
+      }else if(entry.pending){
+        // Collect the trailing foot before accelerating into a longer stride.
+        // The gait owns this landing, even after the attack clock ends.
+        const requested=Math.hypot(this.playerVelocity.x,this.playerVelocity.z),limit=Math.hypot(entry.velocity.x,entry.velocity.z);
+        if(requested>limit){this.playerVelocity.x*=limit/requested;this.playerVelocity.z*=limit/requested;}
+        entry.lastVelocity={...this.playerVelocity};
+        runPrediction={source:entry.lastVelocity,wanted:requestedVelocity,time:0,duration:.2,pending:true};
+      }else{
+        // A held key can change before this acceleration finishes. Restart
+        // from the current velocity instead of reusing an obsolete endpoint.
+        if(entry.wanted&&Math.hypot(entry.wanted.x-requestedVelocity.x,entry.wanted.z-requestedVelocity.z)>1e-6){
+          entry.velocity={...previousVelocity};entry.age=0;
+        }
+        entry.wanted={...requestedVelocity};
+        this.playerVelocity=attackEntryVelocity(entry.velocity,this.playerVelocity,entry.age,dt,.2);entry.age+=dt;
+        runPrediction={source:entry.velocity,wanted:requestedVelocity,time:entry.age,duration:.2};
+        if(entry.age>=.2)this.runAcceleration=null;
+      }
+    }else if(this.action||this.dodgeTimer>0)this.runAcceleration=null;
+    runPrediction??={source:this.playerVelocity,wanted:this.playerVelocity,time:0,duration:.2};
+    const startDecision=this.player.prepareRunStart(dt,{velocity:requestedVelocity,sprinting,handoff:startAfterTurn,facingYaw:this.focused?this.cameraYaw:null,enabled:!stopDecision&&moving&&!this.action&&!this.guard.active&&this.dodgeTimer===0&&(!this.runAcceleration||!!startAfterTurn)&&!input.tap('LightAttack')&&!input.tap('HeavyAttack')&&!input.tap('Musou')});
+    const runStart=startDecision?.frame??null;
+    if(runStart&&startAfterTurn)this.runAcceleration=null;
+    const turnDecision=this.player.prepareRunTurn(dt,{velocity:requestedVelocity,currentVelocity:previousVelocity,enabled:!stopDecision&&!startDecision&&moving&&!this.action&&!this.focused&&!this.guard.active&&this.dodgeTimer===0&&!this.runAcceleration&&!input.tap('LightAttack')&&!input.tap('HeavyAttack')&&!input.tap('Musou')});
+    const runTurn=turnDecision?.frame??null;
+    if(turnDecision?.waiting||stopDecision?.waiting){this.playerVelocity=(turnDecision??stopDecision).waiting.velocity;runPrediction={source:this.playerVelocity,wanted:this.playerVelocity,time:0,duration:.2};}
+    if(startDecision?.brake||turnDecision?.brake){
+      this.player.runAttackStep.begin({duration:.2,contactDriven:true});this.player.stoppingRun=true;
+      const braking=this.player.runAttackStep.advanceBraking(dt,this.groundHeight);
+      this.playerVelocity=braking.velocity;
+      this.runAcceleration={velocity:previousVelocity,age:dt,pending:false,brake:true};
+      runPrediction={source:braking.endVelocity,wanted:braking.endVelocity,time:0,duration:.2};
+    }
+    const recordedFrame=runStart??runTurn??runStop;
+    if(recordedFrame){this.playerVelocity={x:recordedFrame.delta.x/dt,z:recordedFrame.delta.z/dt};runPrediction={source:this.playerVelocity,wanted:this.playerVelocity,time:0,duration:.2};}
+    else if(outgoingStartVelocity&&moving&&!this.action&&this.dodgeTimer===0&&!this.runAcceleration){
+      // Releasing the captured clock must not replace a slow preparation step
+      // with full-speed sideways travel in one frame.
+      this.playerVelocity=attackEntryVelocity(outgoingStartVelocity,requestedVelocity,0,dt,.2);
+      this.runAcceleration={velocity:outgoingStartVelocity,age:dt,pending:false};
+      runPrediction={source:outgoingStartVelocity,wanted:requestedVelocity,time:dt,duration:.2};
+    }
+    if(runTurn?.done)this.runAcceleration={velocity:runTurn.exitVelocity,age:0,pending:false};
+    let mx=this.playerVelocity.x,mz=this.playerVelocity.z;
     let rootX=0,rootZ=0;
     const pendingKind=input.tap('HeavyAttack')?'heavy':input.tap('LightAttack')?'light':null;
     const continuation=attackContinuation(this.action,pendingKind?{kind:pendingKind,expires:this.time}:this.attackBuffer,this.time,dt,motions);
@@ -219,27 +312,53 @@ class Game {
       if(a.planarRoot){const delta=attackRootDelta(a.planarRoot,previousTime,a.time,a.duration,this.attackYaw,this.player.root.scale.x);rootX=delta.x;rootZ=delta.z;}
       else{const lunge=Math.sin(Math.min(1,a.time/a.duration)*Math.PI)*a.rootAdvance*Math.PI/(2*a.duration);mx+=Math.sin(this.attackYaw)*lunge;mz+=Math.cos(this.attackYaw)*lunge;}
     }
-    const movementStartX=p.x,movementStartZ=p.z,movementStart={x:p.x,y:p.y,z:p.z};
-    const x=clamp(p.x+mx*dt+rootX,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+mz*dt+rootZ,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
+    let movementStartX=p.x,movementStartZ=p.z,movementStart={x:p.x,y:p.y,z:p.z},movementDt=dt,animationRecorded=recordedFrame;
+    if(recordedFrame?.remainingDt>1e-9){
+      // Evaluate the outgoing contacts at their exact world position before
+      // advancing the running cycle through the remainder of this frame.
+      const x=clamp(p.x+recordedFrame.delta.x,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+recordedFrame.delta.z,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
+      p.set(x,heightAt(this.course,x,z),z);this.player.root.rotation.y=recordedFrame.yaw;this.slideOnLand(p,movementStart);
+      this.player.update(this.time-recordedFrame.remainingDt,recordedFrame.duration,{groundHeight:this.groundHeight,moving:true,sprinting,focused:this.focused,runStart,runTurn,runStop});
+      movementDt=recordedFrame.remainingDt;animationRecorded=null;
+      if(runStop){this.runAcceleration={velocity:runStop.exitVelocity,age:0,pending:false,brake:true};this.player.stoppingRun=true;}
+      this.playerVelocity=runStop?this.player.runAttackStep.advanceBraking(movementDt,this.groundHeight).velocity:runTurn?attackEntryVelocity(runTurn.exitVelocity,requestedVelocity,0,movementDt,.2):{...requestedVelocity};
+      if(runTurn)this.runAcceleration.age=movementDt;
+      mx=this.playerVelocity.x;mz=this.playerVelocity.z;
+      runPrediction={source:this.playerVelocity,wanted:this.playerVelocity,time:0,duration:.2};
+      movementStartX=p.x;movementStartZ=p.z;movementStart={x:p.x,y:p.y,z:p.z};
+    }
+    const x=clamp(p.x+mx*movementDt+rootX,COURSE_BOUNDS.minX,COURSE_BOUNDS.maxX),z=clamp(p.z+mz*movementDt+rootZ,COURSE_BOUNDS.minZ,this.course.length+COURSE_BOUNDS.endMargin);
     p.set(x,heightAt(this.course,x,z),z);
-    if(this.action)this.player.root.rotation.y=this.attackYaw;
+    if(recordedFrame)this.player.root.rotation.y=recordedFrame.yaw;
+    else if(this.runAcceleration?.brake)this.player.root.rotation.y=this.player.runAttackStep.reorient(movementDt,this.focused?this.cameraYaw:moving?Math.atan2(dx,dz):this.player.root.rotation.y,this.groundHeight);
+    else if(this.action)this.player.root.rotation.y=this.attackYaw;
     else if(this.guard.active)this.player.root.rotation.y=this.cameraYaw;
     else if(this.focused)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,this.cameraYaw,dt*20);
-    else if(moving)this.player.root.rotation.y=turnToward(this.player.root.rotation.y,Math.atan2(dx,dz),dt*18,dt*3*Math.PI);
+    else if(moving){
+      const travelling=this.player.sourceRun||outgoingStartVelocity;
+      const yaw=travelling&&Math.hypot(mx,mz)>.1?Math.atan2(mx,mz):Math.atan2(dx,dz);
+      this.player.root.rotation.y=turnToward(this.player.root.rotation.y,yaw,dt*18,dt*3*Math.PI);
+    }
     this.slideOnLand(p,movementStart);
     // Resolve impacts from the collision-corrected position for this frame.
     if(this.action){const a=this.action;while(a.hitIndex<a.hits.length&&a.time>=a.hits[a.hitIndex]){this.strike(a);a.hitIndex++;}}
     if(moving){this.stepTime=(this.stepTime||0)+dt;if(this.stepTime>(sprinting?.26:.37)){this.audio.play('step',lieAt(this.course,p.x,p.z));this.stepTime=0;}}
-    if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');if(input.tap('Musou'))this.attack('musou');
+    if(!attackFromRun){if(input.tap('LightAttack'))this.attack('light');if(input.tap('HeavyAttack'))this.attack('heavy');}if(input.tap('Musou'))this.attack('musou');
     if(this.guardBufferedAttack&&!guardAttackRecovering(this.guard,this.time)){const queued=this.guardBufferedAttack;this.guardBufferedAttack=null;if(queued.expires>=this.time)this.attack(queued.kind);}
-    this.player.update(this.time,dt,{groundHeight:this.groundHeight,moving,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveSpeed:Math.hypot(p.x-movementStartX,p.z-movementStartZ)/Math.max(dt,.0001),blocking:this.guard.active,parry:Math.max(0,this.guard.parryPoseUntil-this.time),guardBreak:Math.max(0,this.guard.breakPoseUntil-this.time),guardHitToken:this.guard.hitToken,moveAngle:Math.atan2(p.x-movementStartX,p.z-movementStartZ)-this.player.root.rotation.y});
+    const actualMoveSpeed=Math.hypot(p.x-movementStartX,p.z-movementStartZ)/Math.max(movementDt,1e-9);
+    const coasting=!!this.player.runFootwork&&!this.player.stoppingRun&&!this.action&&this.dodgeTimer===0&&actualMoveSpeed>.05;
+    this.player.update(this.time,movementDt,{groundHeight:this.groundHeight,moving:(moving||coasting||!!stopDecision?.waiting)&&!this.runAcceleration?.brake,sprinting,dodge:this.dodgeTimer>.1,attack:this.attackTimer,action:this.action,focused:this.focused,moveSpeed:actualMoveSpeed,runPrediction,runStart:runStart?animationRecorded:null,runTurn:runTurn?animationRecorded:null,runStop:runStop?animationRecorded:null,blocking:this.guard.active,parry:Math.max(0,this.guard.parryPoseUntil-this.time),guardBreak:Math.max(0,this.guard.breakPoseUntil-this.time),guardHitToken:this.guard.hitToken,moveAngle:Math.atan2(p.x-movementStartX,p.z-movementStartZ)-this.player.root.rotation.y});
+    if(runStop?.done&&animationRecorded){this.runAcceleration={velocity:runStop.exitVelocity,age:0,pending:false,brake:true};this.player.stoppingRun=true;}
     if(this.action){
       for(const side of activeBladeTrailHands(this.action,Boolean(this.player.offhand))){
         const offhand=side==='l',[hilt,tip]=this.player.weaponPoints(offhand);
         this.effects.trail(hilt,tip,this.action.kind==='musou'?2:0,this.action.token,offhand?1:0);
       }
       if(continuation&&this.attackBuffer?.kind===continuation.kind&&this.attackBuffer.expires>=this.time){this.attackBuffer=null;this.startAttack(continuation.kind,continuation);}
-      else if(this.attackTimer<=0){this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);}
+      else if(this.attackTimer<=0){
+        if(this.player.runFootwork)this.runAcceleration={velocity:{...this.playerVelocity},age:0,pending:!!this.player.attackLocomotion?.contactTransfer||!!this.player.lastWalkingHandoff};
+        this.action=null;const queued=this.attackBuffer;this.attackBuffer=null;if(queued&&queued.expires>=this.time)this.startAttack(queued.kind);
+      }
     }
     if(this.spawnTime<=0&&pd>11){this.spawnWave(10+this.hole*2);this.spawnTime=3.5;}
     const ready=this.enemies.filter(e=>!e.dead&&!e.emerging&&!(e.stun>0)).sort((a,b)=>a.root.position.distanceToSquared(p)-b.root.position.distanceToSquared(p));

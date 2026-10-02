@@ -6,12 +6,12 @@ import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
 
 const {values}=parseArgs({options:{output:{type:'string'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/bake-showcase-bounds.mjs --output FILE.json\nRequires the local Vite server on port 5173. Measures complete visible preview geometry at 60 Hz. Audio stays muted.');process.exit(0);}
+if(values.help){console.log('node tools/bake-showcase-bounds.mjs --output FILE.json\nRequires a local Vite server; GAME_URL defaults to http://localhost:5173. Run from that server’s checkout so model hashes match. Measures complete visible preview geometry at 60 Hz. Audio stays muted.');process.exit(0);}
 if(!values.output)throw Error('Specify --output FILE.json. See --help.');
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
   const page=await browser.newPage();await disableHmr(page);
-  await page.goto('http://localhost:5173/tests/rig-stage.html');
+  await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
   const heroes=await page.evaluate(async()=>{
     const {Warrior,loadWarriorAssets}=await import('/src/actors.js');
     const {WARRIORS}=await import('/src/warriors.js');

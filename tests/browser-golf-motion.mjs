@@ -9,7 +9,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
  if(modelDir)for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])await page.route(`**/models/${hero}.glb?*`,r=>r.fulfill({path:path.resolve(modelDir,hero+'.glb')}));
- await page.goto('http://localhost:5173/tests/rig-stage.html');
+ await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const report=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');

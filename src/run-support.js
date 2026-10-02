@@ -1,5 +1,40 @@
 import {Vector3,Quaternion,MathUtils} from 'three';
 const UP=new Vector3(0,1,0);
+const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+
+// Walking and running share the same loaded-turn constraint. Turning the
+// root cannot twist the body freely while a shoe still supports its weight.
+export function turnPlantedSupports(feet,{turn,heading,dt,center,scale,phaseAt,normalAt,geometry}){
+ let allowed=1;
+ for(const side of ['r','l']){
+  const f=feet[side],p=phaseAt(side),sign=side==='r'?-1:1;
+  if(!f?.anchor||p>=f.support||p<f.phase)continue;
+  const pivoting=!!(f.roll&&f.contactAnchor);
+  if(pivoting){
+   const remaining=Math.max(0,25*Math.PI/180-Math.sign(turn)*(f.pivotTurn??0));
+   allowed=Math.min(allowed,Math.min(3*dt,remaining)/Math.max(1e-9,Math.abs(turn)));
+  }
+  const ankle=f.last??f.anchor,pivot=f.contactAnchor,normal=normalAt(ankle);
+  const lane=angle=>{
+   const p=ankle.clone();if(pivoting)p.sub(pivot).applyAxisAngle(normal,angle).add(pivot);
+   return sign*p.sub(center).dot(new Vector3(Math.cos(heading+angle),0,-Math.sin(heading+angle)));
+  };
+  const initial=lane(0),minimum=Math.min(initial,.08*scale);
+  if(lane(turn*allowed)<minimum){
+   let lo=0,hi=allowed;
+   for(let i=0;i<12;i++){const middle=(lo+hi)*.5;if(lane(turn*middle)>=minimum)lo=middle;else hi=middle;}
+   allowed=lo;
+  }
+  if(pivoting)continue;
+  const old=wrap(heading-f.heading),next=old+turn*allowed;
+  if(Math.abs(next)>8*Math.PI/180&&Math.abs(next)>Math.abs(old))allowed=Math.min(allowed,Math.max(0,(Math.sign(next)*Math.max(8*Math.PI/180,Math.abs(old))-old)/turn));
+ }
+ for(const side of ['r','l']){
+  const f=feet[side],p=phaseAt(side);
+  if(f?.anchor&&p<f.support&&p>=f.phase&&f.roll&&f.contactAnchor)pivotRunSupport(f,{...geometry[side],normal:normalAt(f.anchor)},turn*allowed);
+ }
+ return turn*allowed;
+}
 
 // Turn a loaded shoe around one real sole contact. Move its construction
 // together so the next support sample retains the same fixed ground point.

@@ -1,5 +1,4 @@
 import {LegJointBalance} from './leg-joint-balance.js';
-import {capturePoseWeights,applyPoseWeights} from './pose-crossfade.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
@@ -9,6 +8,18 @@ import { motions, sampleMotionInto, combatMotionName } from './motion.js';
 import {matchesContinuationBoundary} from './attack-continuation.js';
 import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
+import {sourceGaitBlend,sourceGaitContacts,sourceSupportIntervals,gaitSupportProgress} from './source-gait-clock.js';
+import {SourceTerrainFrame} from './source-terrain-frame.js';
+import {RunTurnBalance} from './run-turn-balance.js';
+import {SourceRunEntry} from './source-run-entry.js';
+import {SourceRunStart,runStartBrakingProfile,selectRunStartLoadingTime} from './source-run-start.js';
+import {capturePoseWeights,applyPoseWeights} from './pose-crossfade.js';
+import {SourceRunTurn,selectRunTurn,validateRunTurn} from './source-run-turn.js';
+import {SourceRunStop,selectRunStop,validateRunStop} from './source-run-stop.js';
+import {RecordedStopPose} from './recorded-stop-pose.js';
+import {RecordedStopLanding} from './recorded-stop-landing.js';
+import {captureLegPole} from './leg-pole.js';
+import {RunAttackStep} from './run-attack-step.js';
 import {FootPlacement,attackFootContacts,resolveFootSupport} from './foot-placement.js';
 import {TravelPose} from './travel-pose.js';
 import {pairedTravelGrip} from './travel-grip.js';
@@ -16,6 +27,7 @@ import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
+import {PairedGripClosure} from './paired-grip-closure.js';
 import {matchesAnimationEntry} from './animation-entry.js';
 import {ArmMotionContinuation} from './arm-motion-continuation.js';
 import {createGolfClub} from './golf-club.js';
@@ -25,6 +37,7 @@ import {golfShoulderSkinWeight} from './golf-shoulder-skin.js';
 import {installSkinnedBounds} from './skinned-bounds.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
+import {nativeRunSpec,nativeWalkSpec} from './native-stride.js';
 import { ENEMY_TYPES } from './combat.js';
 import {enemyStrideRate} from './enemy-locomotion.js';
 import {ENEMY_APPEARANCES,resolveEnemyAppearance,applyEnemyAppearance} from './enemy-appearances.js';
@@ -32,8 +45,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'golf-backswing-2']));
-MODEL_REVISIONS.kaede='golf-shoulder-release-1';
+const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'shared-posture-20261002']));
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -115,12 +127,26 @@ export class Warrior {
       }];
     }));
     this.footPlacement=!enemy&&this.nativeHuman?new FootPlacement(this.root,this.bones):null;
+    this.sourceTerrain=!enemy&&this.nativeHuman?new SourceTerrainFrame(this.root,this.model,this.bones):null;
+    this.pairedGripClosure=!enemy&&this.nativeHuman?new PairedGripClosure(this.bones):null;
     this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     this.footContactMotions=new Map(clipsFor(index).map(c=>[c.name,resolveFootSupport(c,motions[c.name])]));
     this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index),this.footPlacement.feet):null;
-    // Joint bounds use each native rig, independently of its weapon.
+    this.sourceRunEntry=this.runFootwork?new SourceRunEntry(this.root,this.model,this.bones,this.runFootwork.anatomy,this.footPlacement.feet,this.runFootwork.data):null;
+    this.runTurnBalance=this.runFootwork?new RunTurnBalance(this.root,this.bones,this.runFootwork.anatomy):null;
+    const startProfile=this.actions.get('Run_Start')?.getClip().userData?.sourceRunStart;
+    this.recordedStart=!enemy&&startProfile?new SourceRunStart(startProfile,this.root.scale.x):null;
+    this.recordedTurnClips=!enemy?[...this.actions.values()].filter(a=>a.getClip().userData?.sourceRunTurn).map(a=>({clip:a.getClip().name,profile:validateRunTurn(a.getClip().userData.sourceRunTurn)})):[];
+    this.recordedTurn=null;
+    this.recordedStopClips=!enemy?[...this.actions.values()].filter(a=>a.getClip().userData?.sourceRunStop).map(a=>({clip:a.getClip().name,profile:validateRunStop(a.getClip().userData.sourceRunStop)})):[];
+    this.recordedStop=null;
+    this.recordedStopLanding=this.recordedStopClips.length?new RecordedStopLanding(this.root,this.model,this.bones,this.footPlacement.feet,this.runFootwork.data[WARRIORS[type].readyClip]):null;
+    this.recordedStopPose=this.recordedStopClips.length?new RecordedStopPose(this.bones,this.actions.get(WARRIORS[type].readyClip).getClip(),this.golfRestPose):null;
+    this.runAttackStep=!enemy&&WARRIORS[type].pairedTravelGrip&&this.runFootwork?new RunAttackStep(this.root,this.bones,this.runFootwork.anatomy,this.footPlacement.feet):null;
+    // Anatomical limits belong to every native hero, independently of its
+    // weapon grip or participation in the recorded-running experiment.
     this.legJointBalance=this.runFootwork?new LegJointBalance(this.bones,this.runFootwork.anatomy,this.footPlacement.feet):null;
     this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].combatStyle],motions):null;
     const hand=this.bones.hand_r;
@@ -196,16 +222,23 @@ export class Warrior {
   play(name,fade=.16,once=false,speed=1){
     // A compatible native pair already authors both arms. Preserve it through
     // the fade instead of adding a second, independent elbow solve.
-    const travelGrip=this.running?pairedTravelGrip(WARRIORS[this.type],this.current):null;
+    const travelGrip=pairedTravelGrip(WARRIORS[this.type],this.current);
     const fromGrip=travelGrip??motions[this.current],toGrip=pairedTravelGrip(WARRIORS[this.type],name)??motions[name];
-    const settledPair=!this.offhand&&(!this.running||!!travelGrip)&&!(this.travelPose?.weight>0)
+    const compatiblePair=!this.offhand&&(!this.running||!!travelGrip)&&!(this.travelPose?.weight>0)
       &&!this.current.startsWith('Golf')&&!name.startsWith('Golf')&&this.handGrip?.secondaryWeight>.999
-      &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
       &&compatibleNativePair(fromGrip,toGrip,this.weapon.userData.defaultGrip);
+    const settledPair=compatiblePair&&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration);
     // The run leans and lowers the torso. Give that body change enough time
     // without delaying the authored arms or the attack's contact marker.
     if(fade>0&&travelGrip&&settledPair&&motions[name]?.athleticAttack)fade=Math.max(fade,.16);
+    // Foot ownership must survive attacks even while the hand blend is active.
+    if(fade>0&&travelGrip&&motions[name]?.athleticAttack&&!this.runAttackStep?.state)this.runAttackStep?.begin();
     const preservePair=settledPair&&!this.guardWalking&&!this.running;
+    // Interrupting a captured carry fade must keep its common handle closed.
+    // The arms do not become separate grips because the earlier fade is unfinished.
+    const continuingSourcePair=this.heldBlend?.sourcePair&&this.mixer.time<this.heldBlend.start+this.heldBlend.duration;
+    const sourcePair=compatiblePair&&(continuingSourcePair||settledPair&&(this.running&&!!this.sourceRun||this.current==='Run_Start'||name==='Run_Start'||this.current.startsWith('Run_Turn_')||name.startsWith('Run_Turn_')||this.current.startsWith('Run_Stop_')||name.startsWith('Run_Stop_')))&&fromGrip?.fixedGripFrame===true&&toGrip?.fixedGripFrame===true;
+    if(fade>0&&sourcePair&&continuingSourcePair)fade=Math.max(fade,this.heldBlend.start+this.heldBlend.duration-this.mixer.time);
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
     const sources=this.capturePose();
     this.running=false;this.guardWalking=false;this.runFadeSources=null;this.guardFadeSources=null;
@@ -231,13 +264,135 @@ export class Warrior {
       this.repeatActions.set(name,next);this.actions.set(name,alternate);next=alternate;
     }
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
-    this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
-      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms}:null;
-    if(once||!sources.has(next))next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
+    this.heldBlend=previous&&previous!==next&&fade>0&&toGrip&&!name.startsWith('Golf')&&this.weapon.parent===this.root
+      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms,sourcePair}:null;
+    if(once||!sources?.has(next))next.reset();
+    next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
     this.poseFade=fade>0&&sources.size?{sources,target:next,age:0,duration:fade}:null;
     applyPoseWeights(sources,new Map([[next,1]]),this.poseFade?0:1);
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
-    this.handGrip?.engage(!!motions[name]?.twoHanded,fade);
+    this.handGrip?.engage(!!toGrip?.twoHanded,fade);
+  }
+  captureRunHandoff(contactWeights={r:1,l:1},groundHeight=null,{previous=null,dt=0}={}){
+    this.root.updateMatrixWorld(true);
+    const feet=Object.fromEntries(['r','l'].map(side=>{
+      const [hip,knee,foot]=['thigh','calf','foot'].map(n=>this.bones[n+'_'+side]);
+      const p=foot.getWorldPosition(new THREE.Vector3()),q=foot.getWorldQuaternion(new THREE.Quaternion()).normalize();
+      const gap=groundHeight?Math.min(...this.footPlacement.feet[side].surface.points().map(v=>{const c=v.clone().applyQuaternion(q).add(p);return c.y-groundHeight(c.x,c.z);})):0;
+      const velocity=previous&&dt>0?p.clone().sub(previous.feet[side].p).divideScalar(dt):this.runAttackStep?.previous?.feet[side].velocity.clone();
+      return[side,{p,q,gap,ballQ:this.bones['ball_'+side].quaternion.clone(),velocity,pole:captureLegPole(hip,knee,foot,this.runFootwork.anatomy[side].hinge)}];
+    }));
+    const loaded=['r','l'].filter(side=>contactWeights[side]>.95&&Math.abs(feet[side].gap)<.015);
+    const support=loaded.sort((a,b)=>contactWeights[b]-contactWeights[a])[0]??(contactWeights.r>contactWeights.l?'r':'l');
+    let progress=null;
+    if(this.running){
+      if(this.sourceRun)progress=gaitSupportProgress(this.runPhase,sourceSupportIntervals(this.sourceRun)[support]);
+      else progress=gaitSupportProgress(this.runFootwork.turnPlanner?.animationPhase(support)??((this.runPhase+(support==='l'?.5:0))%1),[0,.28]);
+    }
+    // Directional and sprint clips use the legacy contact clock. Supply its
+    // support phase as well as the source interval progress used by captures.
+    const rootPosition=this.root.getWorldPosition(new THREE.Vector3());
+    const rootVelocity=previous&&dt>0?rootPosition.clone().sub(previous.rootPosition).divideScalar(dt):this.runAttackStep?.previous?.rootVelocity.clone();
+    return {support,grounded:loaded.length>0,contactWeights:{...contactWeights},phase:((support==='r'?0:.5)+(progress??0)*.28)%1,...(progress===null?{}:{supportProgress:progress}),rootPosition,rootRotation:this.root.getWorldQuaternion(new THREE.Quaternion()).normalize(),rootVelocity,feet};
+  }
+  prepareRunStart(dt,{velocity,enabled,facingYaw=null,sprinting=false,handoff=null}){
+    const clock=this.recordedStart;if(!clock)return null;
+    const speed=Math.hypot(velocity.x,velocity.z),yaw=Math.atan2(velocity.x,velocity.z);
+    const difference=a=>Math.abs(Math.atan2(Math.sin(yaw-a),Math.cos(yaw-a)));
+    const capturedSprint=this.actions.get('Sprint_Forward')?.getClip().userData?.sourceGaitClockVersion===1;
+    if(!enabled||speed<.1||sprinting&&!capturedSprint){clock.reset();return null;}
+    if(facingYaw!==null&&difference(facingYaw)>.04){const brake=clock.active;clock.reset();return brake?{brake:true}:null;}
+    if(clock.active&&difference(clock.state.yaw)>.25){clock.reset();return{brake:true};}
+    if(!clock.state&&!this.running&&this.current===WARRIORS[this.type].readyClip&&this.oneShot<=0&&(handoff||!this.runAttackStep?.state)&&difference(this.root.rotation.y)<.04){
+      this.startInitialHandoff=handoff??this.captureRunHandoff();
+      const time=handoff?selectRunStartLoadingTime(clock.profile,this.runFootwork.data.Run_Start,handoff.pelvisPosition.y):0;
+      clock.begin(speed,this.root.rotation.y,{time,fromRest:!!handoff});
+    }
+    if(clock.active)clock.setSpeed(speed);
+    const frame=clock.advance(dt);return frame?{frame}:null;
+  }
+  applyRecordedStart(frame,dt,groundHeight){
+    this.applyRecordedSequence(frame,dt,groundHeight);
+  }
+  prepareRunTurn(dt,{velocity,currentVelocity,enabled}){
+    const clock=this.recordedTurn,speed=Math.hypot(velocity.x,velocity.z),yaw=Math.atan2(velocity.x,velocity.z);
+    const difference=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
+    if(!enabled||speed<.5){clock?.reset();this.recordedTurn=null;return null;}
+    if(clock?.active){
+      if(Math.abs(difference(yaw,clock.requestedYaw))>.35){clock.reset();this.recordedTurn=null;return{brake:true};}
+      clock.setSpeed(speed);return{frame:{...clock.advance(dt),clip:clock.clip,entryTime:clock.state.entryTime}};
+    }
+    this.recordedTurn=null;
+    if(!this.running||!this.sourceRun||!this.runClockHandoff||!this.recordedTurnClips.length)return null;
+    const actualSpeed=Math.hypot(currentVelocity.x,currentVelocity.z);if(actualSpeed<1)return null;
+    const incoming=Math.atan2(currentVelocity.x,currentVelocity.z),angle=difference(yaw,incoming);
+    if(Math.abs(angle)<.4)return null;
+    const selected=selectRunTurn(this.recordedTurnClips,{angle,...this.runClockHandoff,grounded:true});if(!selected)return null;
+    // A change of travel direction needs a loaded foot. Continue the incoming
+    // stride through flight instead of imposing a new landing on an airborne leg.
+    if(!this.runClockHandoff.grounded)return{waiting:{velocity:{...currentVelocity},yaw:incoming}};
+    const turn=new SourceRunTurn(selected.profile,this.root.scale.x);turn.clip=selected.clip;turn.requestedYaw=yaw;turn.begin(actualSpeed,incoming,selected.entryTime);
+    this.recordedTurn=turn;this.turnInitialHandoff=this.runClockHandoff;this.runFootwork.captureEntry({includeBody:true});
+    return{frame:{...turn.advance(dt),clip:turn.clip,entryTime:selected.entryTime}};
+  }
+  prepareRunStop(dt,{currentVelocity,enabled,resumeVelocity=null}){
+    const clock=this.recordedStop;
+    if(!enabled){
+      const interrupted=clock?.active;
+      const speed=Math.hypot(currentVelocity.x,currentVelocity.z),wanted=resumeVelocity&&Math.hypot(resumeVelocity.x,resumeVelocity.z);
+      const resume=interrupted&&speed>.5&&wanted>.1&&(currentVelocity.x*resumeVelocity.x+currentVelocity.z*resumeVelocity.z)/(speed*wanted)>Math.cos(.25);
+      clock?.reset();this.recordedStop=null;return interrupted?(resume?{resume:true}:{brake:true}):null;
+    }
+    if(clock?.active)return{frame:{...clock.advance(dt),clip:clock.clip,entryTime:clock.state.entryTime}};
+    if(!this.running||!this.sourceRun||!this.runClockHandoff||!this.recordedStopClips.length||!this.runAttackStep)return null;
+    const speed=Math.hypot(currentVelocity.x,currentVelocity.z);if(speed<.1)return null;
+    const yaw=Math.atan2(currentVelocity.x,currentVelocity.z);
+    if(Math.abs(Math.atan2(Math.sin(yaw-this.root.rotation.y),Math.cos(yaw-this.root.rotation.y)))>.15)return null;
+    const handoff=this.runClockHandoff;
+    const choices=this.recordedStopClips.map(record=>({...record,entry:selectRunStop(record.profile,{speed,scale:this.root.scale.x,...handoff,grounded:true})})).filter(record=>record.entry);
+    choices.sort((a,b)=>a.entry.error-b.entry.error);const selected=choices[0];if(!selected)return null;
+    if(!handoff.grounded)return{waiting:{velocity:{...currentVelocity},yaw}};
+    const stop=new SourceRunStop(selected.profile,this.root.scale.x);stop.clip=selected.clip;stop.begin(speed,yaw,selected.entry.time);
+    this.recordedStop=stop;this.stopInitialHandoff=handoff;this.runFootwork.captureEntry({includeBody:true});
+    return{frame:{...stop.advance(dt),clip:stop.clip,entryTime:selected.entry.time}};
+  }
+  applyRecordedSequence(frame,dt,groundHeight){
+    this.runTurnBalance?.observe({x:frame.delta.x/dt,z:frame.delta.z/dt});
+    const stopping=frame.kind==='stop',turning=!!frame.clip&&!stopping,name=frame.clip??'Run_Start',profile=stopping?this.recordedStop.profile:turning?this.recordedTurn.profile:this.recordedStart.profile;
+    if(this.current!==name){
+      if(stopping){this.recordedStopLanding.begin(profile,this.runFootwork.data[name],frame.entryTime);this.sourceRunEntry.beginSequence(this.stopInitialHandoff,profile,frame.entryTime,frame.rate);this.stopInitialHandoff=null;}
+      else if(turning){this.sourceRunEntry.beginTurn(this.turnInitialHandoff,profile,frame.entryTime,frame.rate);this.turnInitialHandoff=null;}
+      else{this.sourceRunEntry.beginStart(this.startInitialHandoff,profile,frame.previousTime);this.startInitialHandoff=null;}
+      this.play(name,.16,true);this.startAge=0;
+    }
+    this.startingRun=!turning&&!stopping;this.turningRun=turning;this.recordedStopping=stopping;this.sourceRun=null;this.oneShot=0;this.startAge+=dt;
+    const playback=this.actions.get(name);playback.setEffectiveTimeScale(0);playback.time=frame.time;this.updateMixer(dt);
+    this.armContinuation?.apply(this.mixer.time);
+    const phase=frame.time/profile.duration;
+    if(this.startAge<.16)this.runFootwork.applyEntryBody([playback],phase,THREE.MathUtils.smootherstep(this.startAge,0,.16));
+    else this.runFootwork.resetEntry();
+    if(stopping)this.recordedStopPose.apply(profile,frame.time,this.runFootwork.data[name]);else this.recordedStopPose?.applyExit(dt);
+    const plane=this.sourceTerrain.apply(dt,groundHeight,{active:true});
+    const owner=this.sourceRunEntry.state,entry=this.sourceRunEntry.apply([playback],Math.min(phase,1-1e-9),dt,groundHeight);
+    const placed=stopping?this.recordedStopLanding.apply(frame.time,entry??{...frame,targets:this.sourceRunEntry.sample([playback],phase)},groundHeight):entry;
+    const {contactWeights,stance}=placed??frame;
+    this.footPlacement.apply(dt,groundHeight,{contactWeights,stance,referencePlane:plane,preserveAuthored:true,worldFootTargets:placed?.targets,preserveHinge:true,enforceClearance:true,kneeSolver:headingKnee});
+    if(placed)this.legJointBalance?.apply(stopping?this.recordedStopLanding.state:owner,contactWeights,groundHeight);
+    this.runAttackStep?.observe(true,phase,dt,groundHeight,contactWeights,this.footPlacement.saved.find(([bone])=>bone===this.bones.pelvis)?.[1]??this.bones.pelvis.position,runStartBrakingProfile(profile,frame.time));
+    this.startHandoff=this.captureRunHandoff(contactWeights,groundHeight);
+    const interval=profile.contacts[this.startHandoff.support].find(([a,b])=>frame.time>=a&&frame.time<=b);
+    if(interval){
+      this.startHandoff.supportProgress=(frame.time-interval[0])/(interval[1]-interval[0]);
+      this.startHandoff.phase=((this.startHandoff.support==='r'?0:.5)+this.startHandoff.supportProgress*.28)%1;
+      // This exit already matches a measured source contact interval. Retain
+      // its takeoff timing when the loop takes ownership of the feet.
+      this.startHandoff.preserveSupportSchedule=true;
+    }
+    if(stopping&&frame.done){
+      const support=['r','l'].sort((a,b)=>profile.contacts[b].at(-1)[0]-profile.contacts[a].at(-1)[0])[0];
+      this.runAttackStep.beginPlanted({velocity:frame.exitVelocity,support});this.sourceRunEntry.reset();
+    }
+    this.travelPose.reset();this.facialPose?.apply(dt,{exertion:.4});this.syncHeldObjects(null,false);
   }
   stepGuard(prefix,angle,speed,dt){
     if(!this.guardWalking)this.armContinuation?.release(this.mixer.time,.1);
@@ -245,7 +400,8 @@ export class Warrior {
     const direction=[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
     // Shorter side steps need proportionally more weight and a faster cadence.
     // This keeps the planted foot opposite the actual travel vector, including diagonals.
-    const raw=direction.map((amount,i)=>amount/motions[names[i]].walkSpeed),sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum);
+    const specs=names.map(name=>nativeWalkSpec(this.actions.get(name).getClip(),motions[name]));
+    const raw=direction.map((amount,i)=>amount/specs[i].walkSpeed),sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum);
     const clip=motions[names[0]],rate=speed*sum/this.root.scale.x;
     this.guardWalkPhase=((this.guardWalkPhase||0)+dt*rate/clip.duration)%1;
     if(!this.guardWalking){
@@ -263,43 +419,115 @@ export class Warrior {
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(!!motions[this.current]?.twoHanded,.1);
   }
-  stepRun(angle,speed,dt,sprint=false){
+  runProfile(angle,speed,sprint=false){
     const names=sprint?['Sprint_Forward']:['Run_Forward','Run_Right','Run_Backward','Run_Left'];
     const direction=sprint?[1]:[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
-    const raw=direction.map((amount,i)=>{const spec=locomotion[names[i]];return amount/(2*spec.amplitude/(spec.support*spec.duration));});
-    const sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum),duration=locomotion[names[0]].duration;
-    this.runPhase=((this.runPhase||0)+dt*speed*sum/(this.root.scale.x*duration))%1;
-    if(!this.running||this.runSprint!==sprint){
-      this.runFade=this.runFootwork?.entryBody?.length ? .24 : .12;
+    let source=sourceGaitBlend(names.map(name=>this.actions.get(name).getClip()),direction,speed,this.root.scale.x);
+    if(source&&this.running&&!this.sourceRun&&this.runClockHandoff?.grounded===false&&this.actions.get('Run_Forward').getClip().userData?.directionalFallback)source=null;
+    const fallback=!sprint&&!source?this.actions.get('Run_Forward').getClip().userData?.directionalFallback:null;
+    if(fallback){if(!this.actions.has(fallback))throw Error('Missing compatible directional forward clip: '+fallback);names[0]=fallback;}
+    return {names,direction,source};
+  }
+  stepRun(angle,speed,dt,sprint=false){
+    const {names,direction,source}=this.runProfile(angle,speed,sprint);this.sourceRun=source;
+    const specs=names.map(name=>nativeRunSpec(this.actions.get(name).getClip()));
+    const raw=direction.map((amount,i)=>{const spec=specs[i];return amount/(2*spec.amplitude/(spec.support*spec.duration));});
+    const sum=raw.reduce((a,b)=>a+b,0),weights=this.sourceRun?.weights??raw.map(value=>value/sum),duration=specs[0].duration;
+    const distanceRate=this.sourceRun?.phaseRate??speed*sum/(this.root.scale.x*duration);
+    // Short steps carry a slow attack exit into the normal running stride.
+    // Slowing the full stride instead leaves the free foot behind the body.
+    const phaseRate=this.sourceRun?distanceRate:this.runFootwork?.turnPlanner?.advanceCadence(distanceRate,dt)??distanceRate;
+    this.runStrideScale=phaseRate>0?distanceRate/phaseRate:1;
+    this.runPhase=((this.runPhase||0)+dt*phaseRate)%1;
+    if(!this.running||this.runSprint!==sprint||this.runActions?.some((action,i)=>action.getClip().name!==names[i])){
+      this.runClockBlend=null;
+      this.runFade=this.sourceRunEntry?.state||this.runFootwork?.entryBody?.length ? .24 : .12;
+      const targetGrip=pairedTravelGrip(WARRIORS[this.type],names[weights.indexOf(Math.max(...weights))]);
+      const fromGrip=pairedTravelGrip(WARRIORS[this.type],this.current)??motions[this.current];
+      if(this.sourceRun&&fromGrip?.fixedGripFrame&&targetGrip?.fixedGripFrame&&this.handGrip?.secondaryWeight>.999
+        &&compatibleNativePair(fromGrip,targetGrip,this.weapon.userData.defaultGrip))
+        this.heldBlend={start:this.mixer.time,duration:this.runFade,r:this.weapon.quaternion.clone(),station:this.weapon.userData.primaryGrip,sourcePair:true};
       this.armContinuation?.release(this.mixer.time,this.runFade);
+      // Every hero keeps the complete displayed mixture through interruptions.
       this.runFadeSources=this.capturePose();
       for(const action of this.runFadeSources.keys())action.stopFading();
-      this.poseFade=null;this.guardFadeSources=null;this.guardWalking=false;
+      this.poseFade=null;this.guardFadeSources=null;
+      this.guardWalking=false;
       this.runActions=names.map(name=>this.actions.get(name));
-      for(const action of this.runActions){if(!this.runFadeSources.has(action))action.reset();action.setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}
+      for(const action of this.runActions){if(!this.runFadeSources?.has(action))action.reset();action.setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}
       this.running=true;this.runSprint=sprint;this.runBlend=0;
     }
     this.runBlend=Math.min(1,this.runBlend+dt/this.runFade);
+    if(this.runClockBlend!==null&&this.runClockBlend!==undefined)this.runClockBlend=Math.min(1,this.runClockBlend+dt/.24);
     if(this.runFadeSources)applyPoseWeights(this.runFadeSources,new Map(this.runActions.map((action,i)=>[action,weights[i]])),this.runBlend);
     this.runActions.forEach((action,i)=>{
       const source=this.runFadeSources?.get(action);
-      action.time=source&&weights[i]<1e-8?source.time:this.runPhase*duration;
-      if(!this.runFadeSources)action.setEffectiveWeight(weights[i]);
+      action.time=source&&weights[i]<1e-8?source.time:this.runPhase*(this.sourceRun?action.getClip().duration:duration);
+      if(!this.runFadeSources)action.setEffectiveWeight(weights[i]*this.runBlend);
     });
     if(this.runBlend===1)this.runFadeSources=null;
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(!!pairedTravelGrip(WARRIORS[this.type],this.current),.12);
   }
-  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
+  update(time,dt,{moving=false,sprinting=false,attack=0,golf=false,swing=0,putting=false,dodge=false,action=null,emerging=null,focused=false,moveAngle=0,moveSpeed=null,runPrediction=null,runStart=null,runTurn=null,runStop=null,cinematic=false,expressionDt=dt,enemyAction=null,selection=false,blocking=false,parry=0,guardBreak=0,guardHitToken=0,groundHeight=null,gazeTarget=null,previewPose=null}={}){
+    this.poseFrame=(this.poseFrame??0)+1;
+    if(this.lastWalkingHandoff&&(this.lastWalkingHandoff.frame!==this.poseFrame-1||blocking&&this.lastWalkingHandoff.walkMode!=='guard'||golf||selection||dodge||cinematic||this.running))this.lastWalkingHandoff=null;
     this.handGrip?.restore();this.handGrip?.prepare(golf);
     this.armContinuation?.restore();
     // Capture the moving-attack pose before removing it, but undo terrain first:
     // the terrain layer applies support and shoe tilt again after the run blend.
     this.footPlacement?.restore();
-    if(!action&&moving&&!this.running&&(this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined))this.runFootwork?.captureEntry({includeBody:true});
+    this.runTurnBalance?.restore();
+    this.sourceTerrain?.restore();
+    this.recordedStopPose?.restore();
+    this.recordedStopLanding?.restore();
+    if(golf||selection||cinematic||dodge||this.dead)this.recordedStopPose?.reset();
+    if(this.running&&moving&&!action&&!golf&&!dodge&&!blocking&&!selection&&!cinematic&&this.runClockHandoff){
+      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85).source;
+      if(Boolean(nextSource)!==Boolean(this.sourceRun)){
+        // Captured and directional clips use different contact clocks. A
+        // numerical phase cannot pass directly between those clocks.
+        this.runFootwork.captureEntry({includeBody:true});
+        if(nextSource){this.runPhase=this.sourceRunEntry.begin(this.runClockHandoff,nextSource);this.runFootwork.resetDirection();}
+        else this.runPhase=this.runFootwork.seedContactEntry(this.runClockHandoff);
+        this.runClockBlend=0;
+      }
+    }
+    const guardHandoff=(action||blocking)?this.runAttackStep?.handoffToGuard({moving}):null;
+    if(guardHandoff){this.attackLocomotion.seedContactEntry(guardHandoff);this.runAttackStep.reset();}
+    if(!action&&!blocking&&moving&&!this.running&&!this.attackLocomotion?.contactTransfer&&!this.runAttackStep?.state&&this.lastWalkingHandoff){
+      // Finish the outgoing walking flight before adopting a running clock.
+      // Mapping a late walking phase directly to running can leave only one
+      // frame to move an airborne shoe to a different landing position.
+      this.attackLocomotion.seedContactEntry({...this.lastWalkingHandoff,contacts:this.footPlacement.feet,anatomy:this.runFootwork.anatomy});
+      this.lastWalkingHandoff=null;
+    }
+    const runHandoff=this.attackLocomotion?.contactTransfer?.handoff();
+    const stepHandoff=this.runAttackStep?.handoffToRun();
+    const waitForLanding=!action&&moving&&!runHandoff&&(this.attackLocomotion?.contactTransfer||this.runAttackStep?.state&&!stepHandoff);
+    if(!runStart&&!runTurn&&!runStop&&!action&&!blocking&&moving&&(moveSpeed??1)>.05&&(!this.sourceRun||this.oneShot<=dt)&&!this.running&&!waitForLanding&&(this.startHandoff||this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined||this.runAttackStep?.state)){
+      const handoff=runHandoff??stepHandoff??this.startHandoff;
+      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85).source;
+      if(handoff&&nextSource){this.runFootwork.captureEntry({includeBody:true});this.runPhase=this.sourceRunEntry.begin(handoff,nextSource);this.runFootwork.resetDirection();}
+      else{this.runFootwork?.captureEntry({includeBody:true});if(handoff)this.runPhase=this.runFootwork.seedContactEntry(handoff);}
+      if(handoff)this.runAttackStep?.reset();
+      this.startHandoff=null;
+      this.lastWalkingHandoff=null;
+    }
+    // Retain the actual outgoing body pose before restoring the step solver.
+    // Terrain has already been removed, so its pelvis offset is not applied twice.
+    if(runStart&&this.current!=='Run_Start')this.runFootwork.captureEntry({includeBody:true});
+    this.runAttackStep?.restore();
+    if(runStart)this.runAttackStep?.reset();
     this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
+    if((runStart||runTurn||runStop)&&!golf&&!action&&!dodge&&!blocking&&!selection&&!cinematic&&!this.dead){
+      if(runStart)this.applyRecordedStart(runStart,dt,groundHeight);else this.applyRecordedSequence(runTurn??runStop,dt,groundHeight);return;
+    }
+    this.startingRun=false;this.turningRun=false;this.recordedStopping=false;
+    if(golf||selection||cinematic||this.dead){this.recordedStart?.reset();this.recordedTurn?.reset();this.recordedStop?.reset();}
+    if(!moving||action||golf||selection)this.startHandoff=null;
     if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.updateMixer(dt);this.updateSkinDeformation();return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
@@ -323,8 +551,8 @@ export class Warrior {
       const speed=moveSpeed??(moving?2.3*WARRIORS[this.type].speed:0);
       if(moving&&speed>.05)this.stepGuard(guardPrefix,moveAngle,speed,dt);else this.play(`${guardPrefix}_Guard_Loop`,.12);
     }
-    else if(!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85);
-    else if(!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving&&(moveSpeed??1)>.05?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
+    else if(!waitForLanding&&!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85);
+    else if(!waitForLanding&&!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving&&(moveSpeed??1)>.05?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.wasParry=parry>0;this.wasGuardBreak=guardBreak>0;this.lastGuardHitToken=guardHitToken;
     if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current)){
       // Match the enemy's steps to slower formation movement and collision-limited travel.
@@ -336,6 +564,7 @@ export class Warrior {
     // An attack started by input this frame still has time zero.
     if((action?.planarRoot||action?.syncMotion)&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.updateMixer(0);}
     this.armContinuation?.apply(this.mixer.time);
+    this.recordedStopPose?.applyExit(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
     if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!motions[this.current]?.nativeAttackReady&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
@@ -345,7 +574,19 @@ export class Warrior {
       if(action){for(const name of ['spine_01','spine_02']){const bone=this.bones[name];this.coreScales.push([bone,bone.scale.clone()]);const squash=1-Math.sin(action.time/action.duration*Math.PI)*.012;bone.scale.multiply(new THREE.Vector3(1/Math.sqrt(squash),squash,1/Math.sqrt(squash)));}}
 
     }
-    if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,this.runBlend,{dt});
+    // Preserve the outgoing hips as well as the footprints. Removing the
+    // procedural guard pelvis before the source blend straightens both knees
+    // in one frame even when the shoes remain perfectly fixed.
+    const bodyEntryBlend=this.runClockBlend??this.runBlend;
+    if(this.running&&this.sourceRun){
+      this.runFootwork?.applyEntryBody(this.runActions,this.runPhase,THREE.MathUtils.smootherstep(bodyEntryBlend,0,1));
+      if(bodyEntryBlend===1)this.runFootwork?.resetEntry();
+    }
+    const sourcePlane=this.sourceTerrain?.apply(dt,groundHeight,{active:!!(this.running&&this.sourceRun),enabled:!golf&&!selection&&!dodge&&!emerging});
+    if(!this.running||!this.sourceRun||golf||selection||dodge||emerging)this.sourceRunEntry?.reset();
+    const runTerrainPlan=this.running&&!this.sourceRun&&this.runFootwork?.turnPlanner?.worldContacts&&groundHeight?this.footPlacement.planTerrainPelvis(dt,groundHeight,{enforceClearance:true}):null;
+    if(this.running&&this.sourceRun){this.runFootwork?.resetDirection();}
+    else if(this.running)this.runFootwork?.apply(this.runActions,this.runPhase,bodyEntryBlend,{dt,groundHeight,terrainPelvisOffset:runTerrainPlan?.offset??0,strideScale:this.runStrideScale,motionPrediction:runPrediction,movementHeading:moveAngle+this.root.rotation.y,focused});
     else{this.runFootwork?.resetEntry();this.runFootwork?.resetDirection();this.runFootwork?.applyExit(selection||previewPose?0:dt);}
     const motion=sampleMotionInto(this.current,this.actions.get(this.current)?.time||0,this.motionSample);
     let contactWeights=null,stance=null;
@@ -354,14 +595,45 @@ export class Warrior {
       for(const [side,offset]of running?[['r',0],['l',.5]]:[['r',.25],['l',.75]]){const p=(phase+offset)%1;stance[side]=p<support;contactWeights[side]=p<support?1:p<support+.10?1-THREE.MathUtils.smoothstep(p,support,support+.10):THREE.MathUtils.smoothstep(p,.90,1);}
     }
     if(this.running&&this.runFootwork.gaitContacts)({contactWeights,stance}=this.runFootwork.gaitContacts);
+    if(this.running&&this.sourceRun)({contactWeights,stance}=sourceGaitContacts(this.sourceRun,this.runPhase));
     const authoredAttack=!!action;
-    const authoredFeet=authoredAttack||!!motions[this.current]?.nativeKneeHinges;
+    const nativeGuard=this.nativeHuman&&this.current.startsWith(guardPrefix+'_Guard_');
+    const authoredFeet=authoredAttack||nativeGuard||!!motions[this.current]?.nativeKneeHinges;
     if(authoredFeet&&!this.guardWalking)({contactWeights,stance}=attackFootContacts(this.footContactMotions.get(this.current),this.actions.get(this.current)?.time||0,motion));
     if(golf||dodge||emerging||selection||cinematic||this.running||action?.kind==='musou')this.attackLocomotion?.reset();
-    const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
+    const attackSteps=this.attackLocomotion?.apply(dt,{groundHeight,active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0,
+      authoredPose:{key:action?.token??this.current,time:this.actions.get(this.current)?.time??0,motion:this.footContactMotions.get(this.current),contactWeights}});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
-    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredFeet||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
-    this.legJointBalance?.apply(this.running?this.runFootwork?.turnPlanner:null,contactWeights,groundHeight);
+    const braking=this.runAttackStep?.apply(dt,{groundHeight,travel:action?.requestedVelocity,active:!!action,enabled:!selection&&!dodge&&!golf,
+      readyFeet:groundHeight&&this.runAttackStep?.state?.recordedStop&&!this.runAttackStep.state.parked&&!this.runAttackStep.state.settle?this.recordedStopLanding.readyTargets(groundHeight):null,
+      authoredPose:{active:!!action||blocking,key:action?.token??this.current,time:this.actions.get(this.current)?.time??0,motion:this.footContactMotions.get(this.current),contactWeights}});
+    if(braking)({contactWeights,stance}=braking);
+    const sourceEntryOwner=this.sourceRunEntry?.state;
+    const sourceEntry=this.running&&this.sourceRun?this.sourceRunEntry?.apply(this.runActions,this.runPhase,dt,groundHeight):null;
+    if(sourceEntry)({contactWeights,stance}=sourceEntry);
+    const travelHeading=moveAngle+this.root.rotation.y;
+    const balanceTargets=this.runTurnBalance?.apply(dt,{velocity:{x:Math.sin(travelHeading)*(moveSpeed??0),z:Math.cos(travelHeading)*(moveSpeed??0)},active:!!(this.running&&this.sourceRun)&&!action&&!golf&&!selection&&!dodge&&!emerging,groundHeight,targets:sourceEntry?.targets,contactWeights});
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,pelvisPlan:runTerrainPlan,referencePlane:sourcePlane,preserveAuthored:this.running||authoredFeet||!!attackSteps||!!braking,worldFootTargets:balanceTargets??sourceEntry?.targets??braking?.targets??attackSteps?.worldFootTargets??(this.running&&!this.sourceRun?this.runFootwork.worldFootTargets:null),preserveHinge:this.running||nativeGuard||!!braking||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    // Both recorded and directional runs can hold a shoe while the hips turn.
+    // The directional planner has no terrain callback of its own; this actor
+    // still supplies the real terrain and must retain the same joint bounds.
+    // Walking and moving attacks combine independently authored hips and feet.
+    // They need the same joint limits even before a contact transfer starts.
+    const jointOwner=sourceEntry?sourceEntryOwner:braking?this.runAttackStep.state:this.attackLocomotion?.contactTransfer
+      ??(attackSteps?this.attackLocomotion:this.guardWalking?this.guardWalkActions:this.running?this.runFootwork?.turnPlanner:null);
+    this.legJointBalance?.apply(jointOwner,contactWeights,groundHeight);
+    if(this.running&&!this.sourceRun)this.runFootwork?.finalizeWorldContacts(dt);
+    if(braking)this.runAttackStep.finalize(dt,groundHeight);
+    else this.attackLocomotion?.finalizeContacts(groundHeight);
+    if(this.runFootwork&&!braking&&(this.guardWalking||authoredAttack&&attackSteps?.weight>.95)){
+      this.lastWalkingHandoff=this.captureRunHandoff(contactWeights,groundHeight,{previous:this.lastWalkingHandoff,dt});
+      this.lastWalkingHandoff.walkPhase=this.guardWalking?this.guardWalkPhase:this.attackLocomotion.phase;
+      this.lastWalkingHandoff.walkMode=this.guardWalking?'guard':'attack';
+      this.lastWalkingHandoff.frame=this.poseFrame;
+    }
+    else if(action||golf||selection||dodge||cinematic||!moving)this.lastWalkingHandoff=null;
+    this.runAttackStep?.observe(this.running,this.runPhase,dt,groundHeight,contactWeights,this.footPlacement?.saved.find(([bone])=>bone===this.bones.pelvis)?.[1]??this.bones.pelvis.position,this.running?this.sourceRun:null);
+    this.runClockHandoff=this.running&&this.runAttackStep?this.captureRunHandoff(contactWeights,groundHeight):null;
     const authoredTravel=this.running&&!!pairedTravelGrip(WARRIORS[this.type],this.current);
     if(golf||selection||authoredTravel)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});

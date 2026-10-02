@@ -6,6 +6,7 @@ import {FootPlacement} from '../src/foot-placement.js';
 import {calibrateLegAnatomy} from '../src/leg-anatomy.js';
 import {captureLegPole,solveLegWithPole} from '../src/leg-pole.js';
 import {balanceLegJoints} from '../src/leg-joint-balance.js';
+import {alignLegHinge} from '../src/leg-hinge.js';
 
 const point=b=>b.getWorldPosition(new Vector3());
 const rotation=b=>b.getWorldQuaternion(new Quaternion()).normalize();
@@ -110,9 +111,13 @@ test('the knee approaches the loaded pose before the shoe lands',async()=>{
 
 test('a small airborne ankle correction does not delay an otherwise acceptable knee',async()=>{
  const f=await fixture('ronin');f.pose(.1);const leg=f.leg('r'),{thigh,calf,foot,calibration}=leg;
- const target=point(foot),shoe=rotation(foot),pole=captureLegPole(thigh,calf,foot,calibration.hinge);
- pole.bend.applyAxisAngle(pole.axis,-24*Math.PI/180);
- solveLegWithPole(thigh,calf,foot,target,shoe,calibration.hinge,pole);
+ alignLegHinge(thigh,calf,foot,calibration.hinge);
+ // Construct the intended ankle-only error directly. A particular running
+ // knee pose can change when source motion improves; it is not the contract.
+ const axis=point(foot).sub(point(calf)).normalize();
+ const neutral=rotation(calf).multiply(calibration.footInCalf);
+ const shoe=new Quaternion().setFromAxisAngle(axis,20*Math.PI/180).multiply(neutral);
+ foot.quaternion.copy(rotation(foot.parent).invert().multiply(shoe)).normalize();foot.updateWorldMatrix(false,true);
  const previous=captureLegPole(thigh,calf,foot,calibration.hinge);
  previous.bend.applyAxisAngle(previous.axis,10*Math.PI/180);
  const result=balanceLegJoints({...leg,supported:false,groundHeight:()=>-5,state:{pole:previous}});

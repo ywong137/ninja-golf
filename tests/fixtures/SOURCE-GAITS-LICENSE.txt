@@ -1,0 +1,14 @@
+source-gaits.glb derives from the Quaternius Universal Animation Library 1.
+Original file: UAL1_Standard.glb
+Original SHA-256:
+69591853d817488edaa8fd9bf8fc1d821eaeaf789f8627b3cd23b41c4ed67997
+
+CC0 1.0 Universal Public Domain Dedication
+https://creativecommons.org/publicdomain/zero/1.0/
+https://quaternius.com/packs/universalanimationlibrary.html
+
+The fixture preserves the original bind skeleton and all original samples of
+Jog_Fwd_Loop and Sprint_Loop. It contains no meshes, textures, or other clips.
+It retains the original timing, including both endpoints. No poses changed.
+
+Rebuild with tools/extract-source-gait-fixture.mjs and the original GLB file.

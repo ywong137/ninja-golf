@@ -16,8 +16,14 @@ export function patchAnimationTransforms(input,entries){
   const a={bufferView:view,componentType:5126,count:values.length/width,type:width===1?'SCALAR':width===3?'VEC3':'VEC4'};
   if(width===1){a.min=[array[0]];a.max=[array.at(-1)];}doc.accessors.push(a);return doc.accessors.length-1;
  }
- for(const {clip,times,rotations={},newRotations={},translations={},extras={}}of entries){
+ for(const {clip,template,times,rotations={},newRotations={},translations={},extras={}}of entries){
   if(seen.has(clip))throw Error('Repeated animation: '+clip);seen.add(clip);
+  if(template){
+   if(doc.animations.some(a=>a.name===clip))throw Error('Appended animation already exists: '+clip);
+   const templates=doc.animations.filter(a=>a.name===template);
+   if(templates.length!==1)throw Error('Expected one animation template: '+template);
+   const copy=structuredClone(templates[0]);copy.name=clip;doc.animations.push(copy);
+  }
   const matches=doc.animations.filter(a=>a.name===clip);if(matches.length!==1)throw Error('Expected one animation: '+clip);const animation=matches[0];
   if(times.length<2||times[0]!==0||times.some((v,i)=>!Number.isFinite(v)||(i&&Math.fround(v)<=Math.fround(times[i-1]))))throw Error('Animation times must start at zero and increase in Float32: '+clip);
   const input=accessor(times,1);

@@ -1,0 +1,14 @@
+CMU Graphics Lab Motion Capture Database
+Subject 143, trial 02: Run to Stop, captured at 120 Hz.
+
+Source, retrieved 2026-10-02:
+https://mocap.cs.cmu.edu/subjects/143/143_02.amc
+Skeleton: ../cmu-running-start/143.asf
+https://mocap.cs.cmu.edu/subjects/143/143.asf
+
+CMU usage statement:
+"The motion capture data may be copied, modified, or redistributed without permission."
+https://mocap.cs.cmu.edu/faqs.php
+
+The database does not guarantee data quality. Joint endpoints do not establish
+shoe contact or ground reaction forces. Review the retargeted motion in full.

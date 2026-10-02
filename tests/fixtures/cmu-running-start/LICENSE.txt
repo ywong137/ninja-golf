@@ -1,0 +1,16 @@
+CMU Graphics Lab Motion Capture Database
+Subject 143, trial 03: Start to Run, captured at 120 Hz.
+
+Source files, retrieved 2026-10-01:
+https://mocap.cs.cmu.edu/subjects/143/143.asf
+https://mocap.cs.cmu.edu/subjects/143/143_03.amc
+
+The skeleton retains its original measurements and hierarchy.
+Text whitespace is normalized; the parsed skeleton is unchanged.
+
+CMU usage statement:
+"The motion capture data may be copied, modified, or redistributed without permission."
+https://mocap.cs.cmu.edu/faqs.php
+
+The database does not guarantee data quality. Joint endpoints do not establish
+shoe contact or ground reaction forces. Review the retargeted motion in full.

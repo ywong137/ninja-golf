@@ -1,11 +1,13 @@
 import {ShowcaseClock,showcaseStages} from './showcase-clock.js';
 import {attackDefinition} from './combat.js';
+import {withMotionTiming} from './attack-timing.js';
 import {combatMotionName,motions} from './motion.js';
 import {WARRIORS} from './warriors.js';
 
 export class CharacterShowcase{
  constructor(actor,{speed=1,paused=false}={}){
-  this.actor=actor;this.warrior=WARRIORS[actor.type];this.light=attackDefinition('light',0,this.warrior.combatStyle);this.heavy=attackDefinition('heavy',0,this.warrior.combatStyle);
+  this.actor=actor;this.warrior=WARRIORS[actor.type];
+  for(const kind of ['light','heavy'])this[kind]=withMotionTiming(attackDefinition(kind,0,this.warrior.combatStyle),motions[combatMotionName(this.warrior,kind,0)]);
   this.swingDuration=actor.actions.get('Golf_Swing').getClip().duration;
   this.clock=new ShowcaseClock(showcaseStages(this.swingDuration,this.light.duration,this.heavy.duration));this.clock.setSpeed(speed);
   this.originalMaterials=[];this.materials=new Map();
