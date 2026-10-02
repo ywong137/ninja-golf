@@ -94,3 +94,20 @@ test('Captured carry responds continuously to animation weight and rejects inval
  assert.ok(maxStep<.01,'Blending captured carry introduces a rotation jump');
  for(const weight of [NaN,-.01,1.01])assert.throws(()=>pose.apply(0,true,{bodyMotionWeight:weight}),/between zero and one/);
 });
+
+
+test('Carry entry eases from rest and preserves its displayed weight through interruptions',()=>{
+ for(const hz of [40,60,120,480]){
+  const actor=testActor(),pose=new TravelPose(actor,'naginata'),dt=1/hz;
+  pose.apply(dt,true);
+  assert.ok(pose.weight<dt/.12,'Entry immediately applies the full linear angular rate');
+  for(let i=1;i<Math.ceil(.12*hz);i++){pose.restore();pose.apply(dt,true);}
+  assert.equal(pose.weight,1,'Entry does not reach the carry pose on schedule');
+  pose.restore();pose.apply(.04,false,{exitDuration:.16});
+  const released=pose.weight;assert.ok(released>0&&released<1);
+  pose.restore();pose.apply(0,true);
+  assert.equal(pose.weight,released,'Interrupted release snaps back to its old entry clock');
+  pose.restore();pose.apply(.05,true);assert.equal(pose.weight,1);
+  pose.reset();assert.equal(pose.weight,0);pose.restore();pose.apply(0,true);assert.equal(pose.weight,0);
+ }
+});

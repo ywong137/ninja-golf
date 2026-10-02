@@ -5,7 +5,7 @@ import {disableHmr} from '../tools/disable-hmr.mjs';
 
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{
- const page=await browser.newPage();await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');
+ const page=await browser.newPage();await disableHmr(page);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const report=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');

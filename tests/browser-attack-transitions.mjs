@@ -8,7 +8,7 @@ const measure=process.argv.includes('--measure');
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{
  const page=await browser.newPage(),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:5173/tests/rig-stage.html');
+ await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const reports=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{attackDefinition}=await import('/src/combat.js'),{WARRIORS}=await import('/src/warriors.js'),{sampleMotion,combatMotionName,motions}=await import('/src/motion.js');await loadWarriorAssets();
   const reports=[];

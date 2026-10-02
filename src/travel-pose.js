@@ -73,13 +73,22 @@ function endpointTwist(fromRotation,fromAxis,toRotation,toAxis,localAxis,prior=0
  return prior+Math.atan2(Math.sin(angle-prior),Math.cos(angle-prior));
 }
 export class TravelPose {
- constructor(actor,kind){this.actor=actor;this.profile=TRAVEL_POSES[kind];this.weight=0;this.saved=[];this.carry={};this.shaftDirections={};actor.root.updateMatrixWorld(true);this.restChestInRoot=actor.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(actor.bones.spine_03.getWorldQuaternion(new THREE.Quaternion())).normalize();}
- reset(){this.weight=0;this.shaftDirections={};}
+ constructor(actor,kind){this.actor=actor;this.profile=TRAVEL_POSES[kind];this.weight=0;this.entry=null;this.saved=[];this.carry={};this.shaftDirections={};actor.root.updateMatrixWorld(true);this.restChestInRoot=actor.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(actor.bones.spine_03.getWorldQuaternion(new THREE.Quaternion())).normalize();}
+ reset(){this.weight=0;this.entry=null;this.shaftDirections={};}
  restore(){for(const [bone,q]of this.saved)bone.quaternion.copy(q);this.saved=[];}
  apply(dt,active,{motion=null,exitDuration=.16,nativeAttachment=false,bodyMotionWeight=0}={}){
   if(!Number.isFinite(bodyMotionWeight)||bodyMotionWeight<0||bodyMotionWeight>1)throw Error('Travel bodyMotionWeight must be between zero and one.');
   this.shaftDirections={};
-  this.weight=THREE.MathUtils.clamp(this.weight+(active?1:-1)*Math.min(dt,.05)/(active?.12:exitDuration),0,1);
+  // Ease the handover from the displayed pose. A linear carry blend adds
+  // its initial angular speed to the mixer's simultaneous source fade.
+  if(active&&this.weight<1){
+   this.entry??={from:this.weight,elapsed:0,duration:.12*(1-this.weight)};
+   this.entry.elapsed+=Math.min(dt,.05);
+   this.weight=THREE.MathUtils.lerp(this.entry.from,1,THREE.MathUtils.smootherstep(this.entry.elapsed,0,this.entry.duration));
+  }else if(!active){
+   this.entry=null;
+   this.weight=Math.max(0,this.weight-Math.min(dt,.05)/exitDuration);
+  }
   if(!this.weight)return;
   const {root,bones,palmGrips,shaftAxes,offhand,runPhase}=this.actor,p=this.profile;root.updateMatrixWorld(true);
   const rootQ=root.getWorldQuaternion(new THREE.Quaternion()),scale=root.getWorldScale(new THREE.Vector3()).x;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{
- const page=await browser.newPage();await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');
+ const page=await browser.newPage();await disableHmr(page);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const reports=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js');await loadWarriorAssets();const {ATTACKS}=await import('/src/combat.js');const reports=[];
   for(const rate of [60,120,240])for(let hero=0;hero<6;hero++)for(const mode of ['address','swing','guard','light','heavy']){
