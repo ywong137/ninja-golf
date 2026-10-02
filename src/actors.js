@@ -1,3 +1,4 @@
+import {capturePoseWeights,applyPoseWeights} from './pose-crossfade.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
@@ -173,6 +174,22 @@ export class Warrior {
   setGolfClubLength(length){
     this.clubShaft.scale.y=Math.max(.1,length-.14);this.clubShaft.position.y=.14+this.clubShaft.scale.y*.5;this.clubHead.position.y=length;
   }
+  capturePose(){
+    const actions=new Set([...this.actions.values(),...(this.repeatActions?.values()??[])]),sources=capturePoseWeights(actions);
+    // Zero-weight directions belong only to their active gait. Retire them
+    // at ownership transfer so they cannot block an exact combo continuation.
+    for(const action of actions)if(action.isScheduled()&&!sources.has(action))action.stop();
+    return sources;
+  }
+  updateMixer(dt){
+    const fade=this.poseFade;
+    if(fade){
+      fade.age=Math.min(fade.duration,fade.age+dt);
+      applyPoseWeights(fade.sources,new Map([[fade.target,1]]),fade.age/fade.duration);
+      if(fade.age===fade.duration)this.poseFade=null;
+    }
+    this.mixer.update(dt);
+  }
   play(name,fade=.16,once=false,speed=1){
     // A compatible native pair already authors both arms. Preserve it through
     // the fade instead of adding a second, independent elbow solve.
@@ -186,9 +203,9 @@ export class Warrior {
     // without delaying the authored arms or the attack's contact marker.
     if(fade>0&&travelGrip&&settledPair&&motions[name]?.athleticAttack)fade=Math.max(fade,.16);
     const preservePair=settledPair&&!this.guardWalking&&!this.running;
-    if(this.running){for(const run of this.runActions)run.fadeOut(fade);this.running=false;}
-    if(this.guardWalking&&!name.includes('_Guard_Walk_')){for(const walk of this.guardWalkActions)walk.fadeOut(fade);this.guardWalking=false;}
     let next=this.actions.get(name);if(!next)return;if(this.current===name&&!once)return;
+    const sources=this.capturePose();
+    this.running=false;this.guardWalking=false;this.runFadeSources=null;this.guardFadeSources=null;
     const previous=this.actions.get(this.current);
     this.armContinuation?.release(this.mixer.time,fade);
     const continueArms=fade>0&&settledPair&&(!!travelGrip||/_Guard_(Loop|Impact|Break|Walk_\w+)$/.test(this.current))
@@ -213,14 +230,14 @@ export class Warrior {
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
     this.heldBlend=previous&&previous!==next&&fade>0&&motions[name]&&!name.startsWith('Golf')&&this.weapon.parent===this.root
       ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms}:null;
-    next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
-    if(previous&&previous!==next){if(directEntry)previous.stop();else{previous.fadeOut(fade);next.fadeIn(fade);}}
+    if(once||!sources.has(next))next.reset();next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
+    this.poseFade=fade>0&&sources.size?{sources,target:next,age:0,duration:fade}:null;
+    applyPoseWeights(sources,new Map([[next,1]]),this.poseFade?0:1);
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
     this.handGrip?.engage(!!motions[name]?.twoHanded,fade);
   }
   stepGuard(prefix,angle,speed,dt){
     if(!this.guardWalking)this.armContinuation?.release(this.mixer.time,.1);
-    if(this.running){for(const action of this.runActions)action.fadeOut(.1);this.running=false;}
     const names=['Forward','Right','Backward','Left'].map(direction=>`${prefix}_Guard_Walk_${direction}`);
     const direction=[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
     // Shorter side steps need proportionally more weight and a faster cadence.
@@ -228,9 +245,18 @@ export class Warrior {
     const raw=direction.map((amount,i)=>amount/motions[names[i]].walkSpeed),sum=raw.reduce((a,b)=>a+b,0),weights=raw.map(value=>value/sum);
     const clip=motions[names[0]],rate=speed*sum/this.root.scale.x;
     this.guardWalkPhase=((this.guardWalkPhase||0)+dt*rate/clip.duration)%1;
-    if(!this.guardWalking){this.heldBlend={start:this.mixer.time,duration:.1,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip};this.actions.get(this.current)?.fadeOut(.1);this.guardWalkActions=names.map(name=>this.actions.get(name));for(const action of this.guardWalkActions){action.reset().setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}this.guardWalking=true;this.guardWalkBlend=0;}
+    if(!this.guardWalking){
+      this.guardFadeSources=this.capturePose();
+      this.poseFade=null;this.runFadeSources=null;this.running=false;
+      this.heldBlend={start:this.mixer.time,duration:.1,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip};
+      this.guardWalkActions=names.map(name=>this.actions.get(name));
+      for(const action of this.guardWalkActions){if(!this.guardFadeSources.has(action))action.reset();action.setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}
+      this.guardWalking=true;this.guardWalkBlend=0;
+    }
     this.guardWalkBlend=Math.min(1,this.guardWalkBlend+dt/.1);
-    this.guardWalkActions.forEach((action,i)=>{action.time=this.guardWalkPhase*clip.duration;action.setEffectiveWeight(weights[i]*this.guardWalkBlend);});
+    if(this.guardFadeSources)applyPoseWeights(this.guardFadeSources,new Map(this.guardWalkActions.map((action,i)=>[action,weights[i]])),this.guardWalkBlend);
+    this.guardWalkActions.forEach((action,i)=>{action.time=this.guardWalkPhase*clip.duration;if(!this.guardFadeSources)action.setEffectiveWeight(weights[i]);});
+    if(this.guardWalkBlend===1)this.guardFadeSources=null;
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(!!motions[this.current]?.twoHanded,.1);
   }
@@ -243,14 +269,21 @@ export class Warrior {
     if(!this.running||this.runSprint!==sprint){
       this.runFade=this.runFootwork?.entryBody?.length ? .24 : .12;
       this.armContinuation?.release(this.mixer.time,this.runFade);
-      if(this.guardWalking){for(const action of this.guardWalkActions)action.fadeOut(this.runFade);this.guardWalking=false;}
-      if(this.running)for(const action of this.runActions)action.fadeOut(this.runFade);else this.actions.get(this.current)?.fadeOut(this.runFade);
+      this.runFadeSources=this.capturePose();
+      for(const action of this.runFadeSources.keys())action.stopFading();
+      this.poseFade=null;this.guardFadeSources=null;this.guardWalking=false;
       this.runActions=names.map(name=>this.actions.get(name));
-      for(const action of this.runActions)action.reset().setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();
+      for(const action of this.runActions){if(!this.runFadeSources.has(action))action.reset();action.setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}
       this.running=true;this.runSprint=sprint;this.runBlend=0;
     }
     this.runBlend=Math.min(1,this.runBlend+dt/this.runFade);
-    this.runActions.forEach((action,i)=>{action.time=this.runPhase*duration;action.setEffectiveWeight(weights[i]*this.runBlend);});
+    if(this.runFadeSources)applyPoseWeights(this.runFadeSources,new Map(this.runActions.map((action,i)=>[action,weights[i]])),this.runBlend);
+    this.runActions.forEach((action,i)=>{
+      const source=this.runFadeSources?.get(action);
+      action.time=source&&weights[i]<1e-8?source.time:this.runPhase*duration;
+      if(!this.runFadeSources)action.setEffectiveWeight(weights[i]);
+    });
+    if(this.runBlend===1)this.runFadeSources=null;
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(!!pairedTravelGrip(WARRIORS[this.type],this.current),.12);
   }
@@ -264,7 +297,7 @@ export class Warrior {
     this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
     this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
-    if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.mixer.update(dt);this.updateSkinDeformation();return;}
+    if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.updateMixer(dt);this.updateSkinDeformation();return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
@@ -295,10 +328,10 @@ export class Warrior {
       const pace=this.enemy&&moveSpeed!==null?enemyStrideRate(this.current,moveSpeed,this.root.scale.x):sprinting?1.15:1;
       this.actions.get(this.current).setEffectiveTimeScale((focused&&Math.cos(moveAngle)<-.5?-1:1)*pace);
     }
-    this.mixer.update(dt);
+    this.updateMixer(dt);
     // Extracted root travel and the skeleton use the same action clock.
     // An attack started by input this frame still has time zero.
-    if((action?.planarRoot||action?.syncMotion)&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.mixer.update(0);}
+    if((action?.planarRoot||action?.syncMotion)&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.updateMixer(0);}
     this.armContinuation?.apply(this.mixer.time);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
