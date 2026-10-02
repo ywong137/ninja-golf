@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import{chromium}from'playwright';import{disableHmr}from'../tools/disable-hmr.mjs';
-const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});try{const page=await browser.newPage();await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');const rows=await page.evaluate(async()=>{
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});try{const page=await browser.newPage();await disableHmr(page);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');const rows=await page.evaluate(async()=>{
  const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js');await loadWarriorAssets();const rows=[];
  for(const [from,to,ramp] of [[135,135,0],[90,135,.5],[0,135,0],[90,-90,0]])for(const rate of [60,120,240,480]){
   const p=new Warrior(0),dt=1/rate,row={from,to,ramp,rate,ankle:0,toe:0,knee:0,pelvis:0,shoe:0,hip:0,minHeight:Infinity,maxDrop:0,worst:{}},previous={};

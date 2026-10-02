@@ -1,3 +1,4 @@
+import {LegJointBalance} from './leg-joint-balance.js';
 import {capturePoseWeights,applyPoseWeights} from './pose-crossfade.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -119,6 +120,8 @@ export class Warrior {
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     this.footContactMotions=new Map(clipsFor(index).map(c=>[c.name,resolveFootSupport(c,motions[c.name])]));
     this.runFootwork=!enemy&&this.nativeHuman?new RunFootwork(this.root,this.model,this.bones,templates[index].scene,clipsFor(index),this.footPlacement.feet):null;
+    // Joint bounds use each native rig, independently of its weapon.
+    this.legJointBalance=this.runFootwork?new LegJointBalance(this.bones,this.runFootwork.anatomy,this.footPlacement.feet):null;
     this.attackLocomotion=!enemy&&this.nativeHuman?new AttackLocomotion(this.root,this.model,this.bones,clipsFor(index),GUARD_PREFIX[WARRIORS[type].combatStyle],motions):null;
     const hand=this.bones.hand_r;
     this.weapon=createWeapon(enemy?ENEMY_TYPES[type].weapon:WARRIORS[type].weaponKind);this.weapon.position.set(0,.05,0);this.weapon.rotation.set(Math.PI/2,0,0);hand.add(this.weapon);
@@ -358,6 +361,7 @@ export class Warrior {
     const attackSteps=this.attackLocomotion?.apply(dt,{active:authoredAttack&&!action.planarRoot&&action.kind!=='musou'&&moving,speed:moveSpeed??0,angle:moveAngle,runPhase:this.runPhase??null,kneeSolver:motions[this.current]?.nativeKneeHeading?headingKnee:undefined,pelvisGaitWeight:motions[this.current]?.pelvisGaitWeight??0});
     if(attackSteps){const original=contactWeights||{r:0,l:0};contactWeights={};stance={};for(const side of ['r','l']){contactWeights[side]=THREE.MathUtils.lerp(original[side],attackSteps.contactWeights[side],attackSteps.weight);stance[side]=contactWeights[side]>.95;}}
     this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,preserveAuthored:this.running||authoredFeet||!!attackSteps,preserveHinge:this.running||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    this.legJointBalance?.apply(this.running?this.runFootwork?.turnPlanner:null,contactWeights,groundHeight);
     const authoredTravel=this.running&&!!pairedTravelGrip(WARRIORS[this.type],this.current);
     if(golf||selection||authoredTravel)this.travelPose?.reset();
     this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});

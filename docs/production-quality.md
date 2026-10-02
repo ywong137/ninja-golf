@@ -1,5 +1,17 @@
 # Production quality targets
 
+## Shared leg correction — October 2, 2026
+
+The game remains a playable alpha. Natural movement and AAA presentation remain incomplete.
+All six heroes now use calibrated joint balancing during running turns. Supporting feet use bounded pivots with preserved leg lanes.
+The release passes 631 unit and asset tests, plus two focused lane regressions.
+Browser checks pass 2,010 combat-transition cases, 108 running cases, 48 turns, 16 continuity cases, and 90 running exits.
+Golf, combat, and pause/resume pass the smoke test. The production build passes.
+Dense moving combat averages 52.6 FPS with 64 enemies at 1440×900 on this M1 Max.
+Opus 5.5 High confirmed the pivot corrections and identified existing support sliding during attack-to-run blending.
+That slide, backward stride shape, movement acceleration, and attack body mechanics remain open work.
+See [the shared leg record](reviews/shared-leg-rollout.md) for evidence and scope.
+
 Reference: Dan Greenheck's [prompt thread](https://x.com/dangreenheck/status/2102911556296052788), [demonstration](https://x.com/dangreenheck/status/2102878170089169235), and [Tidewater source](https://github.com/dgreenheck/tidewater).
 
 The reference asks for repeated, multi-view inspection, believable materials and motion, environmental life, coherent effects, and steady performance. Its ocean features are examples of that standard. Ninja Golf must apply that standard to golf and crowd combat.

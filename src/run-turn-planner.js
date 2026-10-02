@@ -1,5 +1,5 @@
 import {Vector3,MathUtils} from 'three';
-import {rollRunSupport} from './run-support.js';
+import {rollRunSupport,pivotRunSupport} from './run-support.js';
 
 const wrap=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
 const right=heading=>new Vector3(Math.cos(heading),0,-Math.sin(heading));
@@ -40,19 +40,37 @@ export class RunTurnPlanner{
   for(const side of ['r','l']){
    const f=this.feet[side],p=phaseAt(phase,side),sign=side==='r'?-1:1;
    if(!f?.anchor||p>=f.support||p<f.phase)continue;
-   const v=f.anchor.clone().sub(center),initial=sign*v.dot(right(this.heading));
+   const pivoting=!!(f.roll&&f.contactAnchor);
+   if(pivoting){
+    const remaining=Math.max(0,25*radians-Math.sign(turn)*(f.pivotTurn??0));
+    allowed=Math.min(allowed,Math.min(3*frameDt,remaining)/Math.max(1e-9,Math.abs(turn)));
+   }
+   const ankle=f.last??f.anchor,pivot=f.contactAnchor,normal=new Vector3(0,1,0);
+   const lane=angle=>{
+    const p=ankle.clone();
+    if(pivoting)p.sub(pivot).applyAxisAngle(normal,angle).add(pivot);
+    return sign*p.sub(center).dot(right(this.heading+angle));
+   };
+   const initial=lane(0);
    // The loaded foot must stay on its own side of the pelvis.
-   if(sign*v.dot(right(this.heading+turn*allowed))<Math.min(initial,.08*scale)){
+   if(lane(turn*allowed)<Math.min(initial,.08*scale)){
     let lo=0,hi=allowed;
     for(let i=0;i<12;i++){
      const middle=(lo+hi)*.5;
-     if(sign*v.dot(right(this.heading+turn*middle))>=Math.min(initial,.08*scale))lo=middle;else hi=middle;
+     if(lane(turn*middle)>=Math.min(initial,.08*scale))lo=middle;else hi=middle;
     }
     allowed=lo;
    }
    // Limit pelvic rotation against a loaded, non-swiveling shoe.
+   if(pivoting)continue;
    const old=wrap(this.heading-f.heading),next=old+turn*allowed;
    if(Math.abs(next)>8*radians&&Math.abs(next)>Math.abs(old))allowed=Math.min(allowed,Math.max(0,(Math.sign(next)*Math.max(8*radians,Math.abs(old))-old)/turn));
+  }
+  for(const side of ['r','l']){
+   const f=this.feet[side],p=phaseAt(phase,side);
+   if(f?.anchor&&p<f.support&&p>=f.phase&&f.roll&&f.contactAnchor){
+    pivotRunSupport(f,{...this.contactGeometry[side],normal:new Vector3(0,1,0)},turn*allowed);
+   }
   }
   this.heading+=turn*allowed;this.localHeading=this.heading-rootYaw;
   // The camera can turn faster than a planted body. Keep the torso's counter
@@ -66,7 +84,7 @@ export class RunTurnPlanner{
   this.dt=frameDt;this.center=center;this.scale=scale;this.phase=phase;this.amplitude=amplitude;this.across=across;
   for(const side of ['r','l']){
    const p=phaseAt(phase,side),f=this.feet[side]??={phase:p,support:this.support,offset:new Vector3()};
-   if(p<f.phase)f.support=this.support;
+   if(p<f.phase){f.support=this.support;f.pivotTurn=0;}
    else if(f.anchor&&Math.hypot(f.anchor.x-center.x,f.anchor.z-center.z)>.48*scale){
     // An abrupt input reversal can outrun the old support footprint. Release
     // that contact coherently instead of pulling the pelvis toward the floor.
@@ -98,7 +116,7 @@ export class RunTurnPlanner{
    target.copy(f.anchor);target.y+=this.center.y-f.floor;q.copy(f.supportQ);f.offset.set(0,0,0);f.rebase=false;
    if(this.contactGeometry&&hip){
     if(!f.roll)f.rollStart??=f.phase;
-    const support=rollRunSupport(f,this.contactGeometry[side],hip,p,this.center.y-f.floor);
+    const support=rollRunSupport(f,this.contactGeometry[side],hip,p,this.center.y-f.floor,this.dt);
     target.copy(support.position);q.copy(support.q);f.contact=support.index;f.contactAnchor=support.anchor;
     const distance=hip.distanceTo(target),approach=f.supportDistance===undefined||!this.dt?0:Math.max(0,(distance-f.supportDistance)/this.dt);
     f.supportDistance=distance;

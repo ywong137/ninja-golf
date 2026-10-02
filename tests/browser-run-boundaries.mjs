@@ -1,5 +1,5 @@
 import fs from 'node:fs';import assert from 'node:assert/strict';import {chromium}from'playwright';import{disableHmr}from'../tools/disable-hmr.mjs';
-const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});try{const page=await browser.newPage();await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');const rows=await page.evaluate(async()=>{
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});try{const page=await browser.newPage();await disableHmr(page);await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');const rows=await page.evaluate(async()=>{
 const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js'),{motions,combatMotionName}=await import('/src/motion.js'),{WARRIORS}=await import('/src/warriors.js');await loadWarriorAssets();const rows=[];
 for(const hero of [0,1,2,3,4,5])for(const kind of ['yaw','light','idle','spin-light','spin-idle'])for(const hz of [120,240,480]){
  const p=new Warrior(hero),dt=1/hz,speed=5.3*WARRIORS[hero].speed,previous={},row={hero,kind,hz,ankle:0,knee:0,hip:0,chest:0,head:0,headHipYaw:0,worst:{}};
