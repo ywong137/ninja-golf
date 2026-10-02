@@ -1,0 +1,19 @@
+{
+  "source": "CMU Graphics Lab Motion Capture Database",
+  "retrieved": "2026-10-01",
+  "subject": 9,
+  "trial": 1,
+  "description": "run",
+  "rateHz": 120,
+  "frameCount": 148,
+  "files": {
+    "09.asf": {
+      "url": "https://mocap.cs.cmu.edu/subjects/09/09.asf",
+      "sha256": "be10dbce393fd60a2d322410032d618757afcc5bb2f7a508d887c5b0213f1897"
+    },
+    "09_01.amc": {
+      "url": "https://mocap.cs.cmu.edu/subjects/09/09_01.amc",
+      "sha256": "02c94e8c2d4d2ff05f9a784f06403700c2c9d7caedd9bd92b50284d1a05f2bee"
+    }
+  }
+}

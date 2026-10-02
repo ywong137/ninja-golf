@@ -46,3 +46,10 @@ The resulting animation is an adaptation, not a direct motion capture replay.
 All six hero backswings also use pose references from CMU subject 64, trial
 64_01, frames 180 through 330. The source motion was mirrored, scaled, and
 refitted to each native skeleton with a shared two-hand club grip.
+
+All six heroes' forward running and sprinting adapt CMU subject 09, trial
+09_01, frames 2 through 90 at 120 Hz. The shared conversion fits each body's
+proportions, retains native hand motion, and adds shoe contacts and joint limits.
+Source skeleton: https://mocap.cs.cmu.edu/subjects/09/09.asf
+Source recording: https://mocap.cs.cmu.edu/subjects/09/09_01.amc
+Usage terms: https://mocap.cs.cmu.edu/faqs.php

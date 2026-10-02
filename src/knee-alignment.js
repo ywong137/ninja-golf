@@ -32,6 +32,16 @@ export function footForward(foot,rotation){
  return forward.normalize();
 }
 
+// A recovering shoe can pitch past vertical. Its toe then projects backward,
+// although its heading has not changed. The sole's transverse axis retains
+// that heading throughout a full pitch arc.
+export function soleForward(soleUp,toe,rotation){
+ const transverse=soleUp.clone().cross(toe).normalize().applyQuaternion(rotation);
+ const forward=transverse.cross(UP).setY(0);
+ if(forward.lengthSq()<1e-10)forward.copy(toe).applyQuaternion(rotation).setY(0);
+ return forward.normalize();
+}
+
 // During running, the hip can lie outside the shoe's vertical plane. Keep the
 // knee bend directed along the shoe instead of twisting the hip to reach that
 // plane. Both rigid segment lengths still define the same knee-circle radius.

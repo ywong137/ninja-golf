@@ -1,0 +1,16 @@
+CMU Graphics Lab Motion Capture Database
+Subject 09, trial 01: run, captured at 120 Hz.
+
+Source files, retrieved 2026-10-01:
+https://mocap.cs.cmu.edu/subjects/09/09.asf
+https://mocap.cs.cmu.edu/subjects/09/09_01.amc
+
+These files retain the complete original capture and skeleton.
+The prototype uses frames 2 through 90, inclusive.
+
+CMU usage statement:
+"The motion capture data may be copied, modified, or redistributed without permission."
+https://mocap.cs.cmu.edu/faqs.php
+
+The database does not guarantee data quality. Joint endpoints do not establish
+shoe contact or ground reaction forces. Review the retargeted motion in full.

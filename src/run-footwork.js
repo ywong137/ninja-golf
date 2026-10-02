@@ -5,6 +5,7 @@ import {RunTurnPlanner} from './run-turn-planner.js';
 import {recoveryWeight,solveRecoveryLeg} from './leg-recovery.js';
 import {captureLegPole,blendLegPole,solveLegWithPole} from './leg-pole.js';
 import {RUN_ENTRY_CADENCE} from './run-cadence.js';
+import {soleForward} from './knee-alignment.js';
 
 const caches=new WeakMap();
 const point=bone=>bone.getWorldPosition(new THREE.Vector3());
@@ -87,8 +88,11 @@ export class RunFootwork{
   this.root.updateMatrixWorld(true);
   if(blend===1){this.exitPose=null;this.exitAge=undefined;}
  }
- resetDirection(){this.turnPlanner=null;this.previousHeading=null;this.previousActualHeading=null;this.previousFeet=null;this.previousAngle=null;this.previousRootYaw=null;this.previousPelvis=null;this.previousBody=null;this.gaitContacts=null;}
+ resetDirection(){this.turnPlanner=null;this.recoveryPoleContinuity=null;this.previousPoles=null;this.previousHeading=null;this.previousActualHeading=null;this.previousFeet=null;this.previousAngle=null;this.previousRootYaw=null;this.previousPelvis=null;this.previousBody=null;this.gaitContacts=null;}
  finalizeWorldContacts(dt){
+  // Turn entry must start from the displayed knees after terrain and joint
+  // correction, just as it starts from the displayed shoe contacts.
+  if(this.previousPoles)this.previousPoles=Object.fromEntries(['r','l'].map(s=>[s,captureLegPole(this.bones['thigh_'+s],this.bones['calf_'+s],this.bones['foot_'+s],this.anatomy[s].hinge)]));
   if(!this.worldFootTargets||!this.turnPlanner)return;
   for(const side of ['r','l']){
    const f=this.turnPlanner.feet[side],actual=point(this.bones['foot_'+side]);
@@ -125,6 +129,8 @@ export class RunFootwork{
   const active=actions.map(action=>({name:action.getClip().name,weight:action.getEffectiveWeight()})).filter(a=>a.weight>1e-6);
   if(!active.length)return;
   const total=active.reduce((sum,a)=>sum+a.weight,0);
+  const capturedWeight=Math.min(1,actions.reduce((sum,a)=>sum+(a.getClip().userData?.capturedBodyVersion?a.getEffectiveWeight():0),0)/total);
+  const authoredShoeWeight=Math.min(1,actions.reduce((sum,a)=>sum+(a.getClip().userData?.capturedShoeRecoveryVersion?a.getEffectiveWeight():0),0)/total);
   this.applyEntryBody(actions,phase,blend);
   this.root.updateMatrixWorld(true);
   const modelQ=rotation(this.model),reports=[],planned=[];
@@ -139,8 +145,12 @@ export class RunFootwork{
   if(dt===0)this.resetDirection();
   const headingChange=!Number.isFinite(this.previousHeading)?0:Math.atan2(Math.sin(sourceHeading+rootYaw-this.previousHeading),Math.cos(sourceHeading+rootYaw-this.previousHeading));
   const angleChange=!Number.isFinite(this.previousAngle)?0:Math.atan2(Math.sin(angle-this.previousAngle),Math.cos(angle-this.previousAngle));
-  if((Math.abs(angle)>Math.PI/2+1e-6||Math.abs(headingChange)>1e-4||Math.abs(angleChange)>1e-4)&&!this.turnPlanner)this.turnPlanner=new RunTurnPlanner({heading:dt>0?this.previousActualHeading:undefined,feet:dt>0?this.previousFeet:null,center:point(this.model),toeAxes:{r:this.bones.ball_r.position,l:this.bones.ball_l.position},contactGeometry:this.contactGeometry});
+  // Captured and legacy clips have different rolling-sole paths. Their
+  // diagonal blend needs explicit footprints even before the heading changes.
+  const mixedCapturedDirection=capturedWeight>1e-6&&Math.abs(angle)>1e-4;
+  if((mixedCapturedDirection||Math.abs(angle)>Math.PI/2+1e-6||Math.abs(headingChange)>1e-4||Math.abs(angleChange)>1e-4)&&!this.turnPlanner)this.turnPlanner=new RunTurnPlanner({heading:dt>0?this.previousActualHeading:undefined,feet:dt>0?this.previousFeet:null,center:point(this.model),toeAxes:{r:this.bones.ball_r.position,l:this.bones.ball_l.position},contactGeometry:this.contactGeometry});
   const planner=this.turnPlanner;
+  if(planner&&!('kneeEntry' in planner)){planner.kneeEntry=this.previousPoles;planner.kneeEntryContinuity={r:{},l:{}};}
   let heading=sourceHeading;
   if(planner){
    if(!planner.yawOffsets){
@@ -204,8 +214,9 @@ export class RunFootwork{
     target.set(Math.sin(angle)*travel+sign*width*Math.cos(heading),source.y,Math.cos(angle)*travel-sign*width*Math.sin(heading));
     const Y=new THREE.Vector3(0,1,0),backQ=rows[i][side].q.clone().slerp(rows[i+1][side].q,t).premultiply(new THREE.Quaternion().setFromAxisAngle(Y,heading));
     q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y,heading-sourceHeading)).slerp(backQ,planner.backWeight);
-    const toe=this.bones['ball_'+side].position.clone().applyQuaternion(q);
-    q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y,heading+sign*8*Math.PI/180-Math.atan2(toe.x,toe.z)));
+    const toe=this.bones['ball_'+side].position,sole=this.contactGeometry?.[side];
+    const forward=sole?soleForward(sole.up,toe,q):toe.clone().applyQuaternion(q);
+    q.premultiply(new THREE.Quaternion().setFromAxisAngle(Y,heading+sign*8*Math.PI/180-Math.atan2(forward.x,forward.z)));
    }
    target.applyMatrix4(this.model.matrixWorld);q.premultiply(modelQ);
    // Blend the proposed flight before contact planning. A later Cartesian
@@ -245,9 +256,12 @@ export class RunFootwork{
    pelvis.position.copy(pelvis.parent.worldToLocal(point(pelvis).add(new THREE.Vector3(0,lower,0))));this.root.updateMatrixWorld(true);
   }
   for(const {side,thigh,calf,foot,target,q}of planned){
+   this.recoveryPoleContinuity??={r:{},l:{}};
    for(const bone of [thigh,calf,foot])this.saved.push([bone,bone.quaternion.clone()]);
-   const weight=recoveryWeight(planner?planner.recoveryPhase(side):phase+(side==='r'?0:.5),blend);
-   let error=solveRecoveryLeg(thigh,calf,foot,target,q,this.anatomy[side],weight);
+   const weight=recoveryWeight(planner?planner.recoveryPhase(side):phase+(side==='r'?0:.5),blend)*(planner?1:1-authoredShoeWeight);
+   const capturedPole=capturedWeight>0?captureLegPole(thigh,calf,foot,this.anatomy[side].hinge):null;
+   let error=solveRecoveryLeg(thigh,calf,foot,target,q,this.anatomy[side],weight,{sourcePole:capturedPole,sourceWeight:capturedWeight,sourceContinuity:this.recoveryPoleContinuity[side],
+    entryPole:planner?.kneeEntry?.[side],entryWeight:THREE.MathUtils.smootherstep(planner?.age??1,0,.16),entryContinuity:planner?.kneeEntryContinuity?.[side]});
    if(this.entryPoles){
     const source=this.entryPoles[side],hinge=this.anatomy[side].hinge,native=captureLegPole(thigh,calf,foot,hinge),shoe=rotation(foot),axis=target.clone().sub(point(thigh)).normalize();
     const bend=blendLegPole(source.pole,native,axis,THREE.MathUtils.smootherstep(blend,0,1),source.continuity);
@@ -278,6 +292,7 @@ export class RunFootwork{
    reports.push({side,error});
   }
   this.previousBody=Object.fromEntries(TURN_BODY.map(name=>[name,rotation(this.bones[name])]));
+  this.previousPoles=Object.fromEntries(['r','l'].map(s=>[s,captureLegPole(this.bones['thigh_'+s],this.bones['calf_'+s],this.bones['foot_'+s],this.anatomy[s].hinge)]));
   const actualDirection=new THREE.Vector3(0,0,1).applyQuaternion(this.previousBody.spine_01.clone().multiply(this.bodyFrames.spine_01.clone().invert()));
   this.previousActualHeading=Math.atan2(actualDirection.x,actualDirection.z);
   this.previousFeet=Object.fromEntries(['r','l'].map(side=>[side,{p:point(this.bones['foot_'+side]),q:planned.find(p=>p.side===side).q.clone(),phase:(phase+(side==='r'?0:.5))%1}]));

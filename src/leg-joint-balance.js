@@ -10,14 +10,15 @@ const excess=(value,limit)=>Math.max(0,Math.abs(value)-limit);
 // The ankle target fixes leg extension but leaves one knee-plane angle free.
 // Use that angle to share twist between both joints after terrain has moved the
 // pelvis. A supporting shoe remains an exact position-and-rotation constraint.
-export function balanceLegJoints({thigh,calf,foot,calibration,contacts,surface,groundHeight,supported,state={}}){
+export function balanceLegJoints({thigh,calf,foot,calibration,contacts,surface,groundHeight,supported,supportWeight=supported?1:0,state={}}){
+ if(!Number.isFinite(supportWeight)||supportWeight<0||supportWeight>1)throw Error('Leg support weight must be finite and between zero and one.');
  const original=measureLegAnatomy(calibration,thigh,calf,foot),target=point(foot),shoe=rotation(foot);
  const sole=surface?.points()??contacts;
  const gap=q=>Math.min(...sole.map(v=>{const p=v.clone().applyQuaternion(q).add(target);return p.y-groundHeight(p.x,p.z);}));
- const initialGap=gap(shoe),freedom=supported?0:MathUtils.smootherstep(initialGap,.025,.12);
+ const initialGap=gap(shoe),freedom=(1-supportWeight)*MathUtils.smootherstep(initialGap,.025,.12);
  // Converge to the supporting bound before touchdown. Switching bounds on
  // the landing frame alone produces an abrupt knee turn at high frame rates.
- const hipLimit=27.5+5*freedom,ankleLimit=17.5,shoeBudget=6*freedom;
+ const hipLimit=27.5+2*freedom,ankleLimit=17.5,shoeBudget=6*freedom;
  const saved=[thigh,calf,foot].map(b=>b.quaternion.clone()),pole=captureLegPole(thigh,calf,foot,calibration.hinge);
  const previous=state.pole?transportLegPole(state.pole,pole.axis):pole.bend;
  const previousDegrees=Math.atan2(pole.axis.dot(pole.bend.clone().cross(previous)),MathUtils.clamp(pole.bend.dot(previous),-1,1))/radians;
@@ -43,10 +44,19 @@ export function balanceLegJoints({thigh,calf,foot,calibration,contacts,surface,g
   // satisfying the scalar twist checks. Coarse samples bracket the local basin.
   const samples=[best,...[-24,-16,-8,8,16,24].map(evaluate)].sort((a,b)=>a.degrees-b.degrees);
   best=samples.reduce((a,b)=>a.cost<=b.cost?a:b);
+  // A held shoe after a downhill turn can require slightly more correction.
+  // Continue an improving local basin instead of leaving the ankle twisted at
+  // the arbitrary first bracket edge. Keep the search on the same knee branch.
+  if(best===samples[0])samples.unshift(evaluate(-32));
+  else if(best===samples.at(-1))samples.push(evaluate(32));
+  best=samples.reduce((a,b)=>a.cost<=b.cost?a:b);
   const index=samples.indexOf(best);let lo=samples[Math.max(0,index-1)].degrees,hi=samples[Math.min(samples.length-1,index+1)].degrees;
   const ratio=(Math.sqrt(5)-1)/2;
   let a=evaluate(hi-ratio*(hi-lo)),b=evaluate(lo+ratio*(hi-lo));
-  for(let i=0;i<8;i++){
+  // A fixed eight steps leaves roughly 0.3 degrees between candidates. That
+  // quantizes the knee correction and becomes visible as the frame rate rises.
+  // Resolve the angle itself, independent of the playback sampling rate.
+  for(let i=0;i<24&&hi-lo>.001;i++){
    if(a.cost<b.cost){hi=b.degrees;b=a;a=evaluate(hi-ratio*(hi-lo));}
    else{lo=a.degrees;a=b;b=evaluate(lo+ratio*(hi-lo));}
   }
@@ -76,6 +86,6 @@ export class LegJointBalance{
   if(!owner||!groundHeight){this.owner=null;this.states={};this.report=null;return;}
   if(owner!==this.owner){this.owner=owner;this.states={r:{},l:{}};}
   this.report=['r','l'].map(side=>({side,...balanceLegJoints({thigh:this.bones['thigh_'+side],calf:this.bones['calf_'+side],foot:this.bones['foot_'+side],
-   calibration:this.anatomy[side],contacts:this.contacts[side].contacts,surface:this.contacts[side].surface,groundHeight,supported:(contactWeights?.[side]??0)>.05,state:this.states[side]})}));
+   calibration:this.anatomy[side],contacts:this.contacts[side].contacts,surface:this.contacts[side].surface,groundHeight,supported:(contactWeights?.[side]??0)>.05,supportWeight:contactWeights?.[side]??0,state:this.states[side]})}));
  }
 }

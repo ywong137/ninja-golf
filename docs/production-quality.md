@@ -1,40 +1,179 @@
 # Production quality targets
 
-## Shared posture and contact correction — October 2, 2026
+## Current readiness — October 2, 2026
 
-The game remains a playable alpha. The core golf/combat loop, six heroes, four nine-hole courses, and sixteen music recordings exist.
-Natural full-body animation and AAA presentation remain unfinished.
+The game is a playable alpha. It does not yet meet the requested AAA presentation or animation standard.
+Feature coverage does not establish release quality. The historical checks below describe earlier builds.
 
-All six heroes now share the same posture fit and anatomical runtime corrections.
-The terrain solver preserves free-leg shape when it lowers the pelvis on a slope.
-Moving attacks limit residual pelvis rotation while preserving the chest, weapon, and paired grip.
-Turning steps predict reach only until their scheduled liftoff.
+The captured forward-running candidate now passes full integration across all six heroes.
+One shared transfer fits recorded pelvis and leg motion to each body's calibrated skeleton.
+It preserves native hands, weapon carry, mesh data, textures, and 35 unrelated animations per hero.
+The shared recovery correction also passes defect controls on all three enemy bodies.
 
-The integrated release passes 837 unit and asset tests, 2,130 combat cases, 108 running cases, and 48 turn cases.
-It also passes 42 controller interruptions, 90 running exits, golf checks, and six complete character-preview loops.
-The preview fits ten tested layouts and all four course backgrounds. Gameplay smoke passes without browser errors.
-Dense moving combat averages 51.18 FPS with 64 enemies at 1440×900 on this M1 Max, at a 1.0 rendering ratio.
-A separate ten-second polearm combat recording averages 54.47 FPS with 23–38 enemies and no browser errors.
-All 36 cup and scorecard regressions pass, along with course selection and survey controls.
-Those checks use controlled putts; complete fairway encounters still need a fresh full-round review.
-All automated playback remains muted.
+Candidate v22 passes all 870 unit and asset tests, 108 running cases, and 2,130 combat-transition cases.
+It also passes 16 turn-continuity cases, 48 turn-anatomy cases, 90 running exits, and 42 actual-controller interruption cases.
+Golf motion, golf leg frames, character selection, and the production build pass.
+The original regression limits remain unchanged. Six runtime sheets show consistent running without the former sustained crouch.
+Opus 5.5 High found no visible backward knee or new ankle error in the six runtime sheets.
+All six recorded sprint–attack–sprint sequences pass, averaging 57.81–59.46 FPS with 24–54 enemies.
+Dense moving combat averages 51.23 FPS with 64 enemies at 1440×900 on this M1 Max.
+The expanded arm-entry check still fails six Vice President cases already present in `81b07de`.
+A fresh comparison against that published code and its assets confirms no new arm-limit failures.
+The scoped running update is ready for publication with that existing arm-transition defect documented.
+See [the integrated running review](reviews/shared-posture.md#integrated-captured-running-v22) for scope and evidence.
 
-Opus 5.5 High found no backward knees in 72 sampled panels across the roster.
-The review still identifies weak push-off, limited forward arm drive, and an excessive sustained lean.
-Those movement issues and weapon-specific weight transfer remain open. Numerical checks do not establish finished animation quality.
-See [the shared posture review](reviews/shared-posture.md) for evidence and scope.
+| Area | Current state | Remaining acceptance work |
+| --- | --- | --- |
+| Core game and content | Golf/combat loop, six heroes, four nine-hole courses, and sixteen licensed music recordings exist. | Complete a fresh playthrough and regression pass after the animation changes. |
+| Shared human movement | The published posture and contact corrections pass the complete six-hero combat, running, turn, and interruption checks. Shared terrain tests also cover three enemy bodies. | Improve push-off, arm drive, and full-body weight transfer. |
+| Running controller | The published native controller passes 108 running cases, 48 turns, and 90 running exits. Experimental recorded starts and stops remain separate candidates. | Review continuous movement and contact transitions during complete encounters. |
+| Golf and combat animation | Individual improvements exist, but coordinated motion and transitions remain release blockers. | Accept complete swings and weapon families in motion, with stable grips and convincing weight transfer. |
+| Art and presentation | Textured humans and scanned scenery improve the baseline. AAA visual parity remains unmet. | Review characters, environments, effects, and menus together at gameplay distance. |
+| Performance and stability | The published release passes 837 unit/asset tests and public gameplay smoke. Dense moving combat averages 51.18 FPS with 64 enemies at 1440×900 on this M1 Max. All 36 controlled cup tests pass. | Review full rounds through fairway encounters and measure other devices. |
 
-## Previous shared leg correction — October 2, 2026
+The integrated shared posture candidate passes 54 native clip audits and 2,130 combat cases across six heroes.
+It also passes 837 unit and asset tests, 108 running cases, 48 turns, and 42 controller interruption cases.
+Shared corrections now limit pelvic twist, preserve airborne leg shape on slopes, and prevent premature foot release.
+Opus 5.5 High found no backward knees in 72 review panels across the roster.
+Continuous motion still needs better push-off and upper-body movement. Golf and preview checks pass.
+Dense moving combat averages 51.18 FPS with 64 enemies at 1440×900 on this M1 Max.
+All 36 controlled cup tests and four course scorecards pass.
+Commit `81b07de` is live. GitHub Pages deployment and the muted public golf/combat smoke test pass.
+The verified public bundle is `assets/index-ChkIYKyf.js`. The local preview uses the same six models.
+See [the current shared posture review](reviews/shared-posture.md) for results and remaining work.
+Numerical anatomy checks cannot establish natural motion by themselves.
+The subsequent sprint candidate uses one shared bake across six bodies. Candidate v7d passes all 108 running scenarios, including continuity checks.
+Its 2,130 ordinary-run combat cases also pass. A separate Ronin sprint–attack–sprint gameplay recording passes with muted audio.
+Opus 5.5 High confirms a shared lower-body improvement but still identifies crouching, excessive torso lean, and stiff weapon carry.
+The candidate remains unpublished. The [push-off study](reviews/shared-posture.md#unpublished-push-off-study) records the evidence and remaining work.
 
-The game remains a playable alpha. Natural movement and AAA presentation remain incomplete.
-All six heroes now use calibrated joint balancing during running turns. Supporting feet use bounded pivots with preserved leg lanes.
-The release passes 631 unit and asset tests, plus two focused lane regressions.
-Browser checks pass 2,010 combat-transition cases, 108 running cases, 48 turns, 16 continuity cases, and 90 running exits.
-Golf, combat, and pause/resume pass the smoke test. The production build passes.
-Dense moving combat averages 52.6 FPS with 64 enemies at 1440×900 on this M1 Max.
-Opus 5.5 High confirmed the pivot corrections and identified existing support sliding during attack-to-run blending.
-That slide, backward stride shape, movement acceleration, and attack body mechanics remain open work.
-See [the shared leg record](reviews/shared-leg-rollout.md) for evidence and scope.
+The next release requires continuous visual acceptance across all six heroes and three enemy bodies.
+That includes starts, stops, turns, slopes, complete golf swings, and attacks with each weapon family.
+After that, play every course through fairway encounters and scorecards. Controlled cup tests cannot replace those rounds.
+Presentation and performance acceptance must use the same integrated build. The existing feature list is not a completion percentage.
+The earlier shared pose-blending correction was published as `8297bd3` in a separate release checkout.
+It covers every hero's guard, running, and attack transitions without shipping the unfinished recorded-motion controller.
+That release passes 603 unit and asset tests, focused browser regressions, and gameplay smoke testing.
+GitHub Pages deployment succeeded. The public golf-and-combat smoke check also passed with no browser errors and muted audio.
+Its moving-combat benchmark averages 47.94 FPS with 64 enemies at 1440×900 on this M1 Max.
+See [the scoped release record](reviews/shared-pose-transitions.md) for evidence and limits.
+The current controller checks measure the actual skinned soles and retain separate measurements for the contact anchors.
+Neither result substitutes for continuous visual review or complete-game performance measurements.
+
+A separate recorded-motion experiment concerns candidate v144. Its backward cycle remains an unaccepted, reversed forward recording.
+Opus 5.5 High identified braking timing, interrupted acceleration, and toe-contact errors in the shared system.
+Interrupted input changes now preserve current velocity. Turns limit hip rotation when the supporting foot is too far behind.
+The pelvis recovery limit now also applies after running stops.
+These corrections pass shared rig checks, but the candidate still has failing turn criteria and lacks continuous visual acceptance.
+See [the current backward-motion review](reviews/backward-motion-study.md#october-2-shared-controller-review) for results and unresolved work.
+
+The latest contact follow-up tracks shoe bending through the actual skin weights on all nine body rigs.
+The local Ronin controller passes 52 focused cases and 24 starts; 11 of 32 turn cases still fail foot-speed criteria.
+Turn contact and pivot checks now pass, but the upper body and reversal timing remain visually unaccepted.
+Its muted moving-combat benchmark averages 50.76 FPS with 64 enemies at 1440×900 on this M1 Max.
+Five existing golf-arm review failures also remain in the broader unit selection.
+See [the articulated sole follow-up](reviews/backward-motion-study.md#october-2-articulated-sole-follow-up) for scope and evidence.
+
+The subsequent shared controller correction preserves horizontal momentum during flight and selects reversal support from the requested travel direction.
+It also fixes a toe-off interval wrapping into another stride and foot velocity amplification during acceleration.
+Current checks pass 94 shared unit tests, 52 focused scenarios, and 24 recorded-start scenarios.
+The broader stride-phase set has two touchdown failures; the recorded-turn set retains eleven source-entry speed failures.
+Its muted dense-combat benchmark averages 51.38 FPS under the same local configuration.
+Rigid upper-body motion, weak weight transfer, and the unaccepted backward source still prevent visual acceptance.
+See [contact-dependent braking and velocity continuity](reviews/backward-motion-study.md#contact-dependent-braking-and-velocity-continuity) for evidence and limits.
+
+The new forward-stop study transfers CMU 143_02 to all six heroes and three enemy bodies, including a mirrored lead-foot version.
+All eighteen fitted transfers pass sole-contact and joint checks with the same solver.
+Opus 5.5 High identified the source as a two-foot running stop, unsuitable for walking, backward travel, or reversals.
+The local Ronin controller now executes both stop variants and supports movement, attack, and guard interruptions.
+The body begins recovery during the landing, with a closed two-hand grip. The latest candidate retains its widened landing without extra stance steps.
+It preserves flat-foot contacts and separate toe pivots through later attacks. A canceled airborne pose completes its landing before gaining support.
+Shared transfer checks cover all nine body rigs. Gameplay coverage remains limited to the Ronin candidate.
+Its planted-combat benchmark averages 55.8 FPS with 64 enemies at 1440×900 on this M1 Max, using a 0.95 rendering ratio.
+Rigid upper-body carry, quiet idle motion, and abrupt attack recovery still prevent visual acceptance.
+Other bodies retain isolated transfer coverage; the new controller has not entered their gameplay or the public release.
+See [the recorded-stop study](reviews/recorded-running-stop.md) for evidence and scope.
+
+The subsequent heavy-attack pass extends preparation and recovery while preserving the fast cut and complete hand grip.
+Combat and character selection now share explicit motion timing. All six previews pass normal and slow playback checks.
+The local Ronin candidate passes 36 stop/attack/guard scenarios through complete recovery and the native arm/skin/grip check.
+Opus 5.5 High finds the timing clearer, but full-body visual acceptance remains incomplete.
+A separate hip-lead experiment passes technical checks without a clear visual improvement; it is not the active candidate.
+See [heavy attack timing](reviews/heavy-attack-timing.md) for the active candidate, results, and scope.
+
+The next shared-leg audit found an integration error: joint balancing depended on the experimental paired-weapon running setup.
+Ordinary directional runs also skipped balancing because their planner had no terrain callback.
+Every native hero now creates the same anatomical correction, independently of its weapon. The actor supplies terrain for both running paths.
+All 48 running-turn cases pass. Each case now checks that the correction actually runs during the turn.
+The full 1,650-case combat-transition matrix falls from 101 failures to 21, with no newly failing cases.
+Ten excessive ankle-twist cases and eleven abrupt foot-movement cases remain. The matrix therefore still fails overall.
+Twenty-seven focused joint and contact tests pass, including isolated contact transfers on all nine body rigs. The production build also passes.
+This correction remains local. Continuous visual acceptance, full gameplay integration, and a new performance check remain required.
+See [the shared leg rollout](reviews/shared-leg-rollout.md) for exact scope and evidence.
+
+The shared recovery follow-up now passes all 1,650 non-Ronin combat cases and 360 Ronin cases.
+The correction gives ordinary runs the same controlled sole pivot and calibrated joint bounds.
+An Opus 5.5 High review found a repeated floor offset and a skipped leg-lane constraint. Both defects now have corrections.
+The isolated release passes 631 unit and asset tests, 108 running cases, 48 turns, 16 continuity cases, and 90 running-exit cases.
+Golf, combat, and pause/resume pass the browser smoke test. The isolated release averages 52.6 FPS with 64 enemies at 1440×900.
+Opus confirmed the pivot corrections. Existing attack-to-run support sliding remains open.
+Commit `3ce0fe4` is published. The public bundle matches the tested release, and the muted public gameplay smoke test passes.
+Backward stride shape, abrupt movement-speed changes, and weak attack body mechanics remain open work.
+
+The subsequent local handoff correction preserves actual foot contacts through moving attacks, running, stops, and guard interruptions.
+It now passes one shared 2,130-case combat-transition matrix across all six heroes and 42 actual-controller interruption cases.
+The existing 108 running cases, 48 turning cases, and 87 focused unit and rig tests also pass.
+Its muted moving-combat benchmark averages 52.66 FPS with 64 enemies at 1440×900 on this M1 Max.
+Opus 5.5 High still identifies sustained crouching and weak torso coordination in sampled views.
+New measurements locate most of the crouch in the authored source poses, rather than additional runtime pelvis lowering.
+The candidate remains local pending source-posture work, continuous visual acceptance, and release integration.
+See [the shared foot handoff review](reviews/shared-foot-handoff.md) for evidence and the next correction.
+
+### Earlier movement experiments
+
+The latest shared step planner also passes half-turn checks on all six heroes and three enemy rigs.
+These checks do not enable that controller throughout the roster.
+Independent review finds better reversal contacts, but the three-step turn still looks upright and mechanical.
+Early attack interruptions now preserve movement velocity and both hand attachments through overlapping animation fades.
+The latest recovery correction reduces the largest unreachable airborne-foot target from about 223 mm to 71 mm.
+The tests report this distance but do not yet cap it. It remains a concern despite passing other anatomy and contact checks.
+Recovery now releases an overstretched support earlier and removes the outgoing foot displacement during the rising half of the swing.
+Recorded sequence exits retain their measured support timing. This prevents a frame-rate regression from the adaptive takeoff correction.
+The latest runtime passes 84 relevant unit and rig checks and the production build.
+
+The turn now continues into a recorded push from its existing bent-knee pose.
+It no longer stands up before repeating the source animation's preparation.
+The same clock accelerates both body movement and animation from rest.
+Late direction changes and aiming changes now use actual braking contacts before turning.
+Attacks retain those contacts even when the hand transition remains unfinished.
+A shared blend function preserves the complete animation mixture through interrupted transitions.
+The additional 72 late-interruption cases cover stopping, attacks, redirection, aiming, and sprinting during the recorded push.
+These corrections remain in the local candidate. They do not establish complete motion acceptance or production readiness.
+
+### Shared correction policy
+
+Apply common anatomical rules before weapon-specific motion design:
+
+1. Calibrate joint axes and limb lengths from each rig's native skeleton.
+2. Preserve knee and elbow bend direction independently of hand or foot orientation.
+3. Preserve foot contact and hand attachment through animation changes.
+4. Test the same correction across all affected rigs and intermediate frames.
+5. Inspect complete movements and gameplay interruptions before accepting the result.
+
+Different body proportions require calibration. They do not require unrelated anatomy solvers for each character.
+Weapon families still require distinct grips, reach, timing, and coordinated body movement.
+Recorded human motion supplies the running reference. Joint limits alone cannot supply convincing performance.
+
+The next release checks must cover complete movement, not more isolated character poses:
+
+1. Accept one complete reference sequence: start, run, turn, stop, attack, recover, and golf swing.
+2. Apply the shared corrections across the roster, then inspect complete sequences with each weapon family.
+3. Complete all 36 holes and repeat dense-combat performance, menu, audio, and save checks on that integrated build.
+
+These are acceptance steps, not a completion percentage or delivery estimate.
+The October 1 contact-timed turn experiment passed numerical checks but failed independent visual review. It does not enter the runtime.
+
+See [the current locomotion record](native-locomotion.md#recorded-start-controller-integration) for the candidate, checks, and unresolved failures.
 
 Reference: Dan Greenheck's [prompt thread](https://x.com/dangreenheck/status/2102911556296052788), [demonstration](https://x.com/dangreenheck/status/2102878170089169235), and [Tidewater source](https://github.com/dgreenheck/tidewater).
 

@@ -7,7 +7,7 @@ import {parseArgs} from 'node:util';
 import {spawnSync} from 'node:child_process';
 import {Vector3,Quaternion,LoopOnce} from 'three';
 import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
-import {solveLeg} from '../src/foot-placement.js';
+import {solveLeg,AUTHORED_LEG_REACH} from '../src/foot-placement.js';
 import {footForward,headingKnee} from '../src/knee-alignment.js';
 import {calibrateLegHinge,alignLegHinge} from '../src/leg-hinge.js';
 import {patchAnimationTransforms} from './patch-animation-rotations.mjs';
@@ -91,7 +91,7 @@ for(const selected of chosen){
  const ceilingAt=(row,scale,witness=null)=>{
   let ceiling=target+.02;
   for(const side of ['r','l']){
-   const f=row.feet[side],p=footAt(f,side,scale),leg=legs[side],reach=(leg.upper+leg.lower)*.985;
+   const f=row.feet[side],p=footAt(f,side,scale),leg=legs[side],reach=(leg.upper+leg.lower)*AUTHORED_LEG_REACH;
    const horizontal=f.hip.clone().sub(p).setY(0).lengthSq(),budget=p.y+Math.sqrt(Math.max(0,reach*reach-horizontal))-f.hip.y;
    if(f.weight>1e-6&&row.source+budget/f.weight<ceiling){
     ceiling=row.source+budget/f.weight;

@@ -5,7 +5,7 @@ import {loadNativeSkin} from './native-skin-helper.mjs';
 import {FootPlacement} from '../src/foot-placement.js';
 import {calibrateLegAnatomy} from '../src/leg-anatomy.js';
 import {captureLegPole,solveLegWithPole} from '../src/leg-pole.js';
-import {balanceLegJoints} from '../src/leg-joint-balance.js';
+import {balanceLegJoints,LegJointBalance} from '../src/leg-joint-balance.js';
 import {alignLegHinge} from '../src/leg-hinge.js';
 
 const point=b=>b.getWorldPosition(new Vector3());
@@ -21,7 +21,7 @@ async function fixture(model){
  const clip=g.animations.find(c=>c.name==='Run_Forward'),action=g.mixer.clipAction(clip).play();
  const pose=phase=>{action.time=phase*clip.duration;g.mixer.update(0);g.scene.updateMatrixWorld(true);};
  const leg=side=>({thigh:bones['thigh_'+side],calf:bones['calf_'+side],foot:bones['foot_'+side],calibration:calibrations[side],contacts:placement.feet[side].contacts});
- return{g,pose,leg};
+ return{g,pose,leg,bones,calibrations,placement};
 }
 
 for(const model of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${model}: twist correction retains supporting shoes and a forward knee hinge`,async()=>{
@@ -126,4 +126,63 @@ test('a small airborne ankle correction does not delay an otherwise acceptable k
  assert.equal(result.evaluations,0,'Free ankle motion already resolves the excess; a knee search adds unnecessary lag.');
  assert.equal(result.planeDegrees,0);
  assert.ok(Math.abs(result.after.ankleTwist)<17.501);
+});
+
+test('a fading landing contact cannot switch ankle freedom in one frame',async()=>{
+ const f=await fixture('ronin');f.pose(.1);const leg=f.leg('r'),{thigh,calf,foot,calibration}=leg;
+ alignLegHinge(thigh,calf,foot,calibration.hinge);
+ const axis=point(foot).sub(point(calf)).normalize(),neutral=rotation(calf).multiply(calibration.footInCalf);
+ const shoe=new Quaternion().setFromAxisAngle(axis,20*Math.PI/180).multiply(neutral);
+ foot.quaternion.copy(rotation(foot.parent).invert().multiply(shoe));foot.updateWorldMatrix(false,true);
+ const saved=Object.values(f.bones).map(b=>[b,b.quaternion.clone()]);
+ const balance=new LegJointBalance(f.bones,f.calibrations,f.placement.feet),owner={};
+ const samples=[];
+ for(const weight of [.049999,.050001]){
+  for(const [b,q]of saved)b.quaternion.copy(q);f.g.scene.updateMatrixWorld(true);
+  balance.apply(owner,{r:weight,l:weight},()=>-5);
+  samples.push({shoe:rotation(foot),knee:captureLegPole(thigh,calf,foot,calibration.hinge).bend});
+ }
+ assert.ok(samples[0].shoe.angleTo(samples[1].shoe)<.001,'Landing pressure caused an abrupt ankle correction');
+ assert.ok(samples[0].knee.angleTo(samples[1].knee)<.001,'Landing pressure caused an abrupt knee turn');
+ assert.throws(()=>balanceLegJoints({...leg,supported:false,supportWeight:NaN,groundHeight:()=>-5}),/support weight/);
+});
+
+test('a smooth leg trajectory retains smooth knee correction as sampling increases',async()=>{
+ const f=await fixture('ronin');f.pose(.7);
+ const leg=f.leg('r'),{thigh,calf,foot,calibration}=leg;
+ const saved=[thigh,calf,foot].map(b=>b.quaternion.clone()),target=point(foot),shoe=rotation(foot);
+ const source=captureLegPole(thigh,calf,foot,calibration.hinge),rootYaw=f.g.scene.rotation.y,peaks=[];
+ for(const samples of [240,960]){
+  let previous=null,peak=0,changed=0;
+  for(let i=0;i<=samples;i++){
+   [thigh,calf,foot].forEach((b,j)=>b.quaternion.copy(saved[j]));
+   // A small body turn keeps the corrected output moving while the shoe holds.
+   f.g.scene.rotation.y=rootYaw+.04*Math.sin(2*Math.PI*i/samples);f.g.scene.updateMatrixWorld(true);
+   const degrees=-32+10*Math.sin(2*Math.PI*i/samples);
+   solveLegWithPole(thigh,calf,foot,target,shoe,calibration.hinge,
+    {axis:source.axis,bend:source.bend.clone().applyAxisAngle(source.axis,degrees*Math.PI/180)});
+   const result=balanceLegJoints({...leg,supported:true,groundHeight:()=>-5});
+   changed+=Math.abs(result.planeDegrees)>.001?1:0;
+   const bend=captureLegPole(thigh,calf,foot,calibration.hinge).bend;
+   if(previous)peak=Math.max(peak,bend.angleTo(previous)*samples);
+   previous=bend;
+  }
+  assert.ok(changed>samples/2,'The trajectory must exercise knee correction.');peaks.push(peak);
+ }
+ assert.ok(peaks[1]<peaks[0]*1.15,`Knee correction gains speed at finer sampling: ${peaks}`);
+});
+
+test('a held shoe can resolve ankle twist beyond the first local search bracket',async()=>{
+ const f=await fixture('ronin');f.pose(.1);
+ const leg=f.leg('r'),{thigh,calf,foot,calibration}=leg;
+ alignLegHinge(thigh,calf,foot,calibration.hinge);
+ const axis=point(foot).sub(point(calf)).normalize(),neutral=rotation(calf).multiply(calibration.footInCalf);
+ const shoe=new Quaternion().setFromAxisAngle(axis,46*Math.PI/180).multiply(neutral);
+ foot.quaternion.copy(rotation(foot.parent).invert().multiply(shoe));foot.updateWorldMatrix(false,true);
+ const target=point(foot),result=balanceLegJoints({...leg,supported:true,groundHeight:()=>-5});
+ assert.ok(Math.abs(result.planeDegrees)>24,'This case must exceed the original search bracket.');
+ assert.ok(Math.abs(result.after.ankleTwist)<20,JSON.stringify(result));
+ assert.ok(Math.abs(result.after.hipTwist)<35,JSON.stringify(result));
+ assert.ok(result.after.kneeDeviation<.01&&result.after.kneeFlexion>=0,JSON.stringify(result));
+ assert.ok(point(foot).distanceTo(target)<5e-5&&rotation(foot).angleTo(shoe)<.0003,'The supporting shoe must remain fixed.');
 });

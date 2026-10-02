@@ -73,15 +73,20 @@ function endpointTwist(fromRotation,fromAxis,toRotation,toAxis,localAxis,prior=0
  return prior+Math.atan2(Math.sin(angle-prior),Math.cos(angle-prior));
 }
 export class TravelPose {
- constructor(actor,kind){this.actor=actor;this.profile=TRAVEL_POSES[kind];this.weight=0;this.saved=[];this.carry={};this.shaftDirections={};}
+ constructor(actor,kind){this.actor=actor;this.profile=TRAVEL_POSES[kind];this.weight=0;this.saved=[];this.carry={};this.shaftDirections={};actor.root.updateMatrixWorld(true);this.restChestInRoot=actor.root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(actor.bones.spine_03.getWorldQuaternion(new THREE.Quaternion())).normalize();}
  reset(){this.weight=0;this.shaftDirections={};}
  restore(){for(const [bone,q]of this.saved)bone.quaternion.copy(q);this.saved=[];}
- apply(dt,active,{motion=null,exitDuration=.16,nativeAttachment=false}={}){
+ apply(dt,active,{motion=null,exitDuration=.16,nativeAttachment=false,bodyMotionWeight=0}={}){
+  if(!Number.isFinite(bodyMotionWeight)||bodyMotionWeight<0||bodyMotionWeight>1)throw Error('Travel bodyMotionWeight must be between zero and one.');
   this.shaftDirections={};
   this.weight=THREE.MathUtils.clamp(this.weight+(active?1:-1)*Math.min(dt,.05)/(active?.12:exitDuration),0,1);
   if(!this.weight)return;
   const {root,bones,palmGrips,shaftAxes,offhand,runPhase}=this.actor,p=this.profile;root.updateMatrixWorld(true);
   const rootQ=root.getWorldQuaternion(new THREE.Quaternion()),scale=root.getWorldScale(new THREE.Vector3()).x;
+  // Captured torso clips already contain shoulder counter-rotation. Carry the
+  // weapon in that calibrated frame instead of pinning its axis to world-up.
+  // Blend with the clip weights so entering or leaving capture cannot pop it.
+  const carryFrame=rootQ.clone().slerp(bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).multiply(this.restChestInRoot.clone().invert()).normalize(),bodyMotionWeight);
   if(!offhand){
    // The free arm follows the source wrist and preferred elbow path. Correct
    // its segment frames so the elbow bends around the imported native hinge.
@@ -133,8 +138,11 @@ export class TravelPose {
    }
 
    const shoulder=upper.getWorldPosition(new THREE.Vector3()),length=shoulder.distanceTo(lower.getWorldPosition(new THREE.Vector3()))+lower.getWorldPosition(new THREE.Vector3()).distanceTo(hand.getWorldPosition(new THREE.Vector3()));
-   const swing=Math.sin((runPhase+(side==='r'?0:.5))*Math.PI*2)*p.swing;
-   const palm=vector([sign*p.out*length,-p.drop*length,(p.forward+swing)*length]).applyQuaternion(rootQ).add(shoulder),shaft=vector([p.shaft[0]*(side==='r'?1:-1),p.shaft[1],p.shaft[2]]).normalize().applyQuaternion(rootQ),pole=vector([sign*.35,-.75,-.35]).applyQuaternion(rootQ);
+   const phase=(runPhase+(side==='r'?0:.5))*Math.PI*2;
+   // Authored prop response: the right arm retreats at right-foot landing.
+   // A held blade moves less than the free arm. This is not source mocap.
+   const swing=THREE.MathUtils.lerp(Math.sin(phase),-Math.cos(phase)*4,bodyMotionWeight)*p.swing;
+   const palm=vector([sign*p.out*length,-p.drop*length,(p.forward+swing)*length]).applyQuaternion(carryFrame).add(shoulder),shaft=vector([p.shaft[0]*(side==='r'?1:-1),p.shaft[1],p.shaft[2]]).normalize().applyQuaternion(carryFrame),pole=vector([sign*.35,-.75,-.35]).applyQuaternion(carryFrame);
    let rotation=hand.getWorldQuaternion(new THREE.Quaternion());
    // Recompute wrist offset after orienting the palm; the handle stays in the finger cavity.
    for(let i=0;i<3;i++){

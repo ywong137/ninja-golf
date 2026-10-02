@@ -6,6 +6,18 @@ import {alignLegHinge} from './leg-hinge.js';
 const point=bone=>bone.getWorldPosition(new Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new Quaternion()).normalize();
 
+// Imported rigs can have small nonuniform bone scales. Correct decomposition
+// residuals so a requested world rotation also matches the displayed shoe.
+export function setFootWorldRotation(foot,shoe){
+ const parent=rotation(foot.parent),inverse=parent.clone().invert();
+ foot.quaternion.copy(inverse.clone().multiply(shoe)).normalize();foot.updateWorldMatrix(false,true);
+ for(let i=0;i<3;i++){
+  const actual=rotation(foot);if(actual.angleTo(shoe)<1e-7)break;
+  const delta=inverse.clone().multiply(shoe.clone().multiply(actual.invert())).multiply(parent);
+  foot.quaternion.premultiply(delta).normalize();foot.updateWorldMatrix(false,true);
+ }
+}
+
 // Store the geometric bend plane independently of the foot's orientation.
 // A folded recovery foot can face backward while its knee still bends forward.
 export function captureLegPole(thigh,calf,foot,hinge){

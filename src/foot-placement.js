@@ -3,6 +3,9 @@ import {alignedKnee,footForward,headingKnee} from './knee-alignment.js';
 import {calibrateLegHinge,alignLegHinge} from './leg-hinge.js';
 import {ArticulatedSole,captureFootSoles,sampleFootSole,soleSupportAnchors} from './foot-sole.js';
 const UP=new THREE.Vector3(0,1,0),clamp=THREE.MathUtils.clamp;
+// Native authoring and terrain correction must use the same extension reserve.
+// A mismatch can turn a microscopic sole correction into a visible knee snap.
+export const AUTHORED_LEG_REACH=.985;
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 function advancePelvisOffset(previous,wanted,limit,dt,enforceClearance){
  let step=(wanted-previous)*(1-Math.exp(-24*Math.min(dt,.05)));
@@ -43,7 +46,7 @@ function contactIntervals(clip,side){
 function worldRotation(bone,rotation){bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(rotation)).normalize();bone.updateWorldMatrix(false,true);}
 
 // Solve in world space so native proportions and arbitrary imported bone axes remain intact.
-export function solveLeg(thigh,calf,foot,target,footRotation,{maxReach=.985,kneeSolver=alignedKnee}={}){
+export function solveLeg(thigh,calf,foot,target,footRotation,{maxReach=AUTHORED_LEG_REACH,kneeSolver=alignedKnee}={}){
  const hip=thigh.getWorldPosition(new THREE.Vector3()),knee=calf.getWorldPosition(new THREE.Vector3()),ankle=foot.getWorldPosition(new THREE.Vector3());
  const upper=knee.distanceTo(hip),lower=ankle.distanceTo(knee),axis=target.clone().sub(hip),distance=clamp(axis.length(),Math.abs(upper-lower)+.015,(upper+lower)*maxReach);axis.normalize();
  const solvedAnkle=hip.clone().addScaledVector(axis,distance);
@@ -201,7 +204,7 @@ export class FootPlacement {
   const terrainChanged=samples.some(s=>s.changed);
   // Captured terrain already carries the legs onto the broad slope. Residual
   // corrections must not impose a fixed knee bend on nearly extended legs.
-  const maxReach=referencePlane?1:.985;
+  const maxReach=referencePlane?1:AUTHORED_LEG_REACH;
   if(!golf&&(terrainChanged||worldFootTargets))for(const s of samples){
    // A released shoe does not support the body. Its outgoing trajectory can
    // briefly exceed reach while the root accelerates into the next gait.

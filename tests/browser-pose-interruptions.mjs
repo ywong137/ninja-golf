@@ -11,7 +11,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));await disableHmr(page);
  if(candidate)await routeFixedGripCandidate(page,candidate,{withDiagonal:true,withGuards:true,withReturn:true});
- await page.goto('http://localhost:5173/tests/rig-stage.html');
+ await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const rows=await page.evaluate(async()=>{
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');
   const {WARRIORS}=await import('/src/warriors.js');

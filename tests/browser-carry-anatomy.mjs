@@ -1,27 +1,33 @@
 // Check the native elbow hinge on both arms, including the unarmed running arm.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
+import {routeModelDirectory} from '../tools/route-model-directory.mjs';
 
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--disable-gpu']});
 try{
  const page=await browser.newPage();await disableHmr(page);
- await page.goto('http://localhost:5173/tests/rig-stage.html');
+ await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);
+ await page.goto((process.env.GAME_URL??'http://localhost:5173').replace(/\/$/,'')+'/tests/rig-stage.html');
  const rows=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');
   const {calibrateArmAnatomy,captureArmPose,measureArmAnatomy}=await import('/tools/native-arm-anatomy.mjs');
   await loadWarriorAssets();
   const rows=[],rate=480,dt=1/rate;
-  for(let hero=0;hero<6;hero++)for(const direction of [0,Math.PI/2,Math.PI,-Math.PI/2,'turn']){
+  for(let hero=0;hero<6;hero++)for(const direction of [0,Math.PI/2,Math.PI,-Math.PI/2,'turn','sprint']){
    const actor=new Warrior(hero);
    actor.handGrip.restore();actor.mixer.stopAllAction();actor.current='';actor.root.updateMatrixWorld(true);
    const calibration=Object.fromEntries(['r','l'].map(side=>[side,calibrateArmAnatomy(captureArmPose(actor.bones,side))]));
+   // Gameplay enters travel from the ready pose. Calibration temporarily
+   // returns to the bind rig, whose hand rotation is not a gameplay pose.
+   for(let frame=0;frame<60;frame++)actor.update(frame/60,1/60,{});
    const row={hero,direction,hinge:0,shoulderRoll:0,forearmTwist:0,wrist:0,heldWrist:0,minFlex:Infinity,maxFlex:0,entryStep120:0,activeStep120:0};
    const previous={};
    for(let frame=0;frame<rate*2;frame++){
-    const time=frame*dt,angle=direction==='turn'?time*Math.PI:direction;
-    actor.update(time,dt,{moving:true,moveSpeed:5.6,moveAngle:angle});
+    const time=frame*dt,angle=direction==='turn'?time*Math.PI:direction==='sprint'?0:direction;
+    actor.update(1+time,dt,{moving:true,sprinting:direction==='sprint',moveSpeed:direction==='sprint'?8:5.6,moveAngle:angle});
     for(const side of ['r','l']){
      const measured=measureArmAnatomy(calibration[side],captureArmPose(actor.bones,side));
      row.hinge=Math.max(row.hinge,measured.hingeDeviationDegrees);
@@ -47,6 +53,7 @@ try{
   }
   return rows;
  });
+ if(process.env.NINJA_CARRY_REPORT)fs.writeFileSync(process.env.NINJA_CARRY_REPORT,JSON.stringify(rows,null,2));
  for(const row of rows){
   const context=JSON.stringify(row);
   assert.ok(Object.values(row).every(value=>typeof value!=='number'||Number.isFinite(value)),context);

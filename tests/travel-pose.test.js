@@ -65,3 +65,32 @@ test('Heavy hero blades retain their reach while Shinobi carries short, narrow b
 });
 
 test('Ordinary enemy blade dimensions stay unchanged',()=>{assert.deepEqual(['scout','guard','lancer','skirmisher'].map(kind=>BLADE_PROFILES[kind].width),[.035,.045,.05,.038]);});
+
+test('Captured carry follows torso rotation and preserves neutral wrists under actor turns',()=>{
+ for(const kind of Object.keys(TRAVEL_POSES)){
+  const results=[];
+  for(const yaw of [0,1.1]){
+   const actor=testActor(),pose=new TravelPose(actor,kind);pose.weight=1;
+   actor.root.rotation.y=yaw;actor.bones.spine_03.rotation.set(.08,.15,-.04);actor.root.updateMatrixWorld(true);
+   pose.apply(0,true,{bodyMotionWeight:1});
+   const hand=actor.bones.hand_r,rootQ=actor.root.getWorldQuaternion(new THREE.Quaternion());
+   results.push({p:actor.root.worldToLocal(hand.getWorldPosition(new THREE.Vector3())),q:rootQ.invert().multiply(hand.getWorldQuaternion(new THREE.Quaternion()))});
+   assert.ok(hand.quaternion.angleTo(actor.neutralHandRotations.r)<1e-6,kind+' bends the wrist');
+  }
+  assert.ok(results[0].p.distanceTo(results[1].p)<1e-6,kind+' carry depends on world heading');
+  assert.ok(results[0].q.angleTo(results[1].q)<1e-6,kind+' blade rotation depends on world heading');
+ }
+});
+
+test('Captured carry responds continuously to animation weight and rejects invalid weights',()=>{
+ const actor=testActor(),pose=new TravelPose(actor,'odachi');pose.weight=1;
+ actor.bones.spine_03.rotation.set(.08,.18,0);actor.root.updateMatrixWorld(true);
+ let previous,maxStep=0;
+ for(let i=0;i<=100;i++){
+  pose.restore();pose.apply(0,true,{bodyMotionWeight:i/100});
+  const q=actor.bones.hand_r.getWorldQuaternion(new THREE.Quaternion()).normalize();
+  if(previous)maxStep=Math.max(maxStep,previous.angleTo(q));previous=q;
+ }
+ assert.ok(maxStep<.01,'Blending captured carry introduces a rotation jump');
+ for(const weight of [NaN,-.01,1.01])assert.throws(()=>pose.apply(0,true,{bodyMotionWeight:weight}),/between zero and one/);
+});

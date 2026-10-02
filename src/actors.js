@@ -45,7 +45,7 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 export { Effects } from './effects.js';
 // Refresh revised rigs in browsers that cached the previous release's model URLs.
 const MODEL_REVISION='measured-ethan-native-arms-4';
-const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'shared-posture-20261002']));
+const MODEL_REVISIONS=Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'captured-running-20261002']));
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -620,7 +620,7 @@ export class Warrior {
     // Walking and moving attacks combine independently authored hips and feet.
     // They need the same joint limits even before a contact transfer starts.
     const jointOwner=sourceEntry?sourceEntryOwner:braking?this.runAttackStep.state:this.attackLocomotion?.contactTransfer
-      ??(attackSteps?this.attackLocomotion:this.guardWalking?this.guardWalkActions:this.running?this.runFootwork?.turnPlanner:null);
+      ??(attackSteps?this.attackLocomotion:this.guardWalking?this.guardWalkActions:this.running?this.runFootwork?.turnPlanner??this.runActions:null);
     this.legJointBalance?.apply(jointOwner,contactWeights,groundHeight);
     if(this.running&&!this.sourceRun)this.runFootwork?.finalizeWorldContacts(dt);
     if(braking)this.runAttackStep.finalize(dt,groundHeight);
@@ -636,7 +636,8 @@ export class Warrior {
     this.runClockHandoff=this.running&&this.runAttackStep?this.captureRunHandoff(contactWeights,groundHeight):null;
     const authoredTravel=this.running&&!!pairedTravelGrip(WARRIORS[this.type],this.current);
     if(golf||selection||authoredTravel)this.travelPose?.reset();
-    this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
+    const bodyMotionWeight=this.running?Math.min(1,(this.runActions??[]).reduce((sum,a)=>sum+(a.getClip().userData?.capturedTorsoVersion?a.getEffectiveWeight():0),0)):0;
+    this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,bodyMotionWeight,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){
       if(cinematic){
         const head=this.bones.Head,chin=new THREE.Quaternion().setFromAxisAngle(this.facialPose.right,2*Math.PI/180);
