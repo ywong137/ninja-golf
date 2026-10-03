@@ -22,7 +22,10 @@ test('Ethan refinement preserves the body, topology, UVs, and skin streams',()=>
  // Reverse only that exact approved patch; retain the original fingerprints.
  if(model.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(model);
  for(const [key,hash]of Object.entries(fixture.preservedStreamHashes)){
-  const [index,attr]=key.split(':'),p=model.doc.meshes[0].primitives[Number(index)];
+  const [index,attr]=key.split(':'),current=model.doc.meshes[0].primitives[Number(index)];
+  // The coat separates the original hand triangles into their own material.
+  // The wardrobe test verifies that both partitions retain every original face.
+  const p=model.doc.extras?.wardrobeDefault&&index==='0'&&attr==='indices'?JSON.parse(fs.readFileSync(new URL('./fixtures/ethan-before-wardrobe.json',import.meta.url))).meshes[0].primitives[0]:current;
   assert.equal(crypto.createHash('sha256').update(packedStream(model,attr==='indices'?p.indices:p.attributes[attr])).digest('hex'),hash,key);
  }
 });

@@ -19,7 +19,7 @@ g.mixer.stopAllAction();const clip=g.animations.find(c=>c.name===name),a=g.mixer
 for(let i=0;i<=Math.ceil(clip.duration*480);i++){const time=Math.min(i/480,clip.duration);a.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);const query={leftLeg:[]};for(const {mesh,triangles}of surfaces.l){mesh.skeleton.update();const cache=new Map();for(const ids of triangles)query.leftLeg.push(ids.map(i=>{if(!cache.has(i))cache.set(i,mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(mesh.matrixWorld));return cache.get(i)}));}const m=measureSurfaceClearance(surfaces.r,query,{distanceCap:.10});result.samples++;result.crossings+=m.crossings;if(m.minimumClearance<result.minimum){result.minimum=m.minimumClearance;result.closest={time,...m.closest}};}
 t.diagnostic(JSON.stringify(result));
 // Each native mesh has a different density. Check the complete selected region.
-const expected={ronin:{r:405,l:397},kaede:{r:621,l:590},ayame:{r:471,l:479},sora:{r:628,l:629},monk:{r:525,l:494},shinobi:{r:451,l:438},'enemy-hoodie':{r:558,l:557},'enemy-tshirt':{r:451,l:438},'enemy-cloth-ninja':{r:667,l:662}};
+const expected={ronin:{r:405,l:397},kaede:{r:621,l:590},ayame:{r:471,l:479},sora:{r:628,l:629},monk:{r:1563,l:1213},shinobi:{r:451,l:438},'enemy-hoodie':{r:558,l:557},'enemy-tshirt':{r:451,l:438},'enemy-cloth-ninja':{r:667,l:662}};
 assert.deepEqual(result.triangles,expected[model],'The central thigh, calf, or shoe surface selection changed');
 assert.equal(result.crossings,0,'The leg surfaces intersect');
 assert.ok(result.minimum>.003,'The recovery step must clear the other leg');

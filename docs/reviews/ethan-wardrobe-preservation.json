@@ -1,0 +1,15 @@
+{
+  "originalBinarySha256": "b088e3d0c979a38ed45ea53dad08c1dd573977f606bfceb0fd5866d77e6186a2",
+  "originalAnimationsSha256": "c31acc37a0a14a8dbb7657ea78332004632506155fc2c0b4b3e451ebeeb6c160",
+  "originalNodesSha256": "67805cee233c511fd65fe11471215a8fe5568a73e74836f61fe797e3326ab706",
+  "originalSkinsSha256": "4ec046154c81af9b84adc3e671e997409c3e368bbf161893dbe461cb6971f87b",
+  "baseSha256": "0685ce16f67c2ce75eeb8f03e3420ee92853805d0e5b32e4e99726f735e09801",
+  "outputSha256": "ae9b7e0079be42616eba928e27e3d435131213c308a36e37e56f2493c98ab92c",
+  "preservedBinaryBytes": 20807880,
+  "preservedAnimations": 40,
+  "addedParts": 20,
+  "addedTriangles": 8656,
+  "bindMatrixMaximumError": 1.3709068298339844e-06,
+  "handsTriangles": 1573,
+  "garmentTriangles": 2801
+}

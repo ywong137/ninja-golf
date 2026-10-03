@@ -45,7 +45,8 @@ try{
       const pair=paired(p)?palms(p):null;
       const correction=pair?Q().setFromUnitVectors(native,pair[0].clone().sub(pair[1]).normalize()):motions[p.current]?.nativeAttachment?Q():Q().setFromUnitVectors(native,authored);
       const w=held(p,side).getWorldQuaternion(Q()).normalize();
-      const relative=h.clone().invert().multiply(correction.clone().invert()).multiply(w).normalize();
+      const mountRoll=motions[p.current]?.weaponGripRoll??0;
+      const relative=h.clone().invert().multiply(correction.clone().invert()).multiply(w).multiply(Q().setFromAxisAngle(Y,-mountRoll)).normalize();
       const roll=side==='r'?pose.roll||0:pose.offRoll||0;
       const legacy=Q().setFromUnitVectors(Y,authored).multiply(Q().setFromAxisAngle(Y,roll));
       return{h,authored,correction,w,relative,legacyRelative:h.clone().invert().multiply(correction.clone().invert()).multiply(legacy)};
@@ -117,7 +118,7 @@ try{
               if(a.travelPose?.weight>0)continue;
               // The grip layer blends the HAND before attaching the weapon.
               // Applying heldBlend again would measure a second, obsolete fade.
-              const target=f.h.clone().multiply(reference[side]);
+              const target=f.h.clone().multiply(reference[side]).multiply(Q().setFromAxisAngle(Y,a.handGrip?.attachmentRoll??0));
               if(paired(a)){
                 const pair=palms(a),axis=pair[0].sub(pair[1]).normalize();
                 target.premultiply(Q().setFromUnitVectors(Y.clone().applyQuaternion(target).normalize(),axis));

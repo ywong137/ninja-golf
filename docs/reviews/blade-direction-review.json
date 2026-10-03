@@ -1,0 +1,226 @@
+{
+  "window": "90 ms around each gameplay strike, sampled in native animation time",
+  "correctedStrikeWindows": [
+    {
+      "hero": "ronin",
+      "clip": "Ronin_Low_Cut",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9370199643980707,
+      "flat": 0.3312256856222892,
+      "previousEdge": 0.589428171737087,
+      "previousFlat": 0.7273572307421967
+    },
+    {
+      "hero": "ronin",
+      "clip": "Cut_Rising",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9927855971830853,
+      "flat": 0.10940721508364121,
+      "previousEdge": 0.7518152846874055,
+      "previousFlat": 0.6483860949118778
+    },
+    {
+      "hero": "ronin",
+      "clip": "Heavy_Rising",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9892877038155656,
+      "flat": 0.1370081362533621,
+      "previousEdge": 0.5406004415966706,
+      "previousFlat": 0.8285784630607518
+    },
+    {
+      "hero": "ronin",
+      "clip": "Heavy_Slam",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9817215451748939,
+      "flat": 0.10989664080473227,
+      "previousEdge": 0.10883189092252915,
+      "previousFlat": 0.9757005553686634
+    },
+    {
+      "hero": "monk",
+      "clip": "Ethan_Naginata_Cut_Return",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9374663535501981,
+      "flat": 0.28578557877950356,
+      "previousEdge": 0.7064857797262131,
+      "previousFlat": 0.6236858387270261
+    },
+    {
+      "hero": "monk",
+      "clip": "Ethan_Naginata_Cut_Sweep",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9403176833294744,
+      "flat": 0.3176727742983094,
+      "previousEdge": -0.9536310275742513,
+      "previousFlat": 0.2773809957946274
+    },
+    {
+      "hero": "sora",
+      "clip": "Closer_Combo_Opening",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9051095341230654,
+      "flat": 0.36611137132633165,
+      "previousEdge": 0.5439796361408636,
+      "previousFlat": 0.750464151034282
+    },
+    {
+      "hero": "sora",
+      "clip": "Closer_Combo_Return",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.927204260452568,
+      "flat": 0.36496168997377787,
+      "previousEdge": 0.9448825481440146,
+      "previousFlat": 0.31652161753207775
+    },
+    {
+      "hero": "sora",
+      "clip": "Closer_Combo_Finish",
+      "impact": 0,
+      "hand": "right",
+      "edge": 0.9678379357192167,
+      "flat": 0.19511198153498907,
+      "previousEdge": 0.6087480305187838,
+      "previousFlat": 0.7756956731367046
+    }
+  ],
+  "bodyClearance": [
+    {
+      "clip": "Ronin_Low_Cut",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Cut_Rising",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Heavy_Rising",
+      "before": {
+        "crossings": 8,
+        "times": [
+          0.3333333333333333,
+          0.45,
+          0.4666666666666667,
+          0.48333333333333334,
+          0.5,
+          0.5166666666666667,
+          0.5333333333333333,
+          0.55
+        ]
+      },
+      "after": {
+        "crossings": 6,
+        "times": [
+          0.4666666666666667,
+          0.48333333333333334,
+          0.5,
+          0.5166666666666667,
+          0.5333333333333333,
+          0.55
+        ]
+      }
+    },
+    {
+      "clip": "Heavy_Slam",
+      "before": {
+        "crossings": 5,
+        "times": [
+          0.06666666666666667,
+          0.08333333333333333,
+          0.1,
+          0.11666666666666667,
+          0.43333333333333335
+        ]
+      },
+      "after": {
+        "crossings": 5,
+        "times": [
+          0.06666666666666667,
+          0.08333333333333333,
+          0.1,
+          0.11666666666666667,
+          0.43333333333333335
+        ]
+      }
+    },
+    {
+      "clip": "Ethan_Naginata_Cut_Return",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Ethan_Naginata_Cut_Sweep",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Closer_Combo_Opening",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Closer_Combo_Return",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    },
+    {
+      "clip": "Closer_Combo_Finish",
+      "before": {
+        "crossings": 0,
+        "times": []
+      },
+      "after": {
+        "crossings": 0,
+        "times": []
+      }
+    }
+  ],
+  "remaining": "The two legacy Ronin heavy attacks already have body crossings. The changed mounts do not increase crossing samples. Some multi-cut legacy motions still need new whole-body performances.",
+  "legacyFrameTest": "The existing browser-blade-frame test fails identically against the published baseline and this candidate: outdated Ready/Golf fixtures and existing native shaft/paired-center discrepancies. The focused cutting-direction check covers this change."
+}

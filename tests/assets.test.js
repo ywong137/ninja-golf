@@ -38,7 +38,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     assert.deepEqual([...clips].filter(clip=>clip.endsWith('_Selection_Idle')),[WARRIORS[index].selectionClip],`${name}: one separate selection pose`);
     assert.ok(clips.size<=(name==='sora'?44:name==='ronin'?42:name==='monk'?40:['ayame','kaede'].includes(name)?39:38),`${name}: own weapon family, guard steps, native locomotion, and selection pose only`);
     const eyewear=['Vice President graphite glasses','Vice President brushed silver temples'];
-    const sourceMaterials=g.materials.filter(m=>!eyewear.includes(m.name));
+    const sourceMaterials=g.materials.filter(m=>!eyewear.includes(m.name)&&!g.extras?.wardrobeDefault?.materials?.includes(m.name));
     assert.ok(sourceMaterials.length>=3&&sourceMaterials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);
     if(name==='monk')for(const material of eyewear){
       const m=g.materials.find(m=>m.name===material);

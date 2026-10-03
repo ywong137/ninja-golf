@@ -1,0 +1,59 @@
+[
+  {
+    "clip": "Ronin_Low_Cut",
+    "previousMountRadians": 3.835361031257539,
+    "mountRadians": 2.945243112740431,
+    "correctionDegrees": -51
+  },
+  {
+    "clip": "Cut_Rising",
+    "previousMountRadians": 0,
+    "mountRadians": 0.7155849933176751,
+    "correctionDegrees": 41
+  },
+  {
+    "clip": "Heavy_Rising",
+    "previousMountRadians": 0,
+    "mountRadians": 0.9948376736367679,
+    "correctionDegrees": 57
+  },
+  {
+    "clip": "Heavy_Slam",
+    "previousMountRadians": 0,
+    "mountRadians": -1.4660765716752369,
+    "correctionDegrees": -84
+  },
+  {
+    "clip": "Ethan_Naginata_Cut_Return",
+    "previousMountRadians": 0,
+    "mountRadians": 0.7155849933176751,
+    "correctionDegrees": 41
+  },
+  {
+    "clip": "Ethan_Naginata_Cut_Sweep",
+    "previousMountRadians": 0,
+    "mountRadians": 3.141592653589793,
+    "correctionDegrees": 180
+  },
+  {
+    "clip": "Closer_Combo_Opening",
+    "previousMountRadians": 0,
+    "mountRadians": 0.6981317007977318,
+    "correctionDegrees": 40,
+    "reason": "Keep one mount across the continuous three-cut combo."
+  },
+  {
+    "clip": "Closer_Combo_Return",
+    "previousMountRadians": 0,
+    "mountRadians": 0.6981317007977318,
+    "correctionDegrees": 40,
+    "reason": "Keep one mount across the continuous three-cut combo."
+  },
+  {
+    "clip": "Closer_Combo_Finish",
+    "previousMountRadians": 0,
+    "mountRadians": 0.6981317007977318,
+    "correctionDegrees": 40,
+    "reason": "Keep one mount across the continuous three-cut combo."
+  }
+]
