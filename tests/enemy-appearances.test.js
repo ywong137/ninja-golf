@@ -26,6 +26,9 @@ test('wardrobe preserves the licensed body, face, skin weights and UVs',()=>{
  const view=(asset,id)=>{const a=asset.doc.accessors[id],v=asset.doc.bufferViews[a.bufferView];return asset.bin.subarray(v.byteOffset||0,(v.byteOffset||0)+v.byteLength);};
  for(const [family,source]of[['hoodie','ninja'],['tshirt','shinobi'],['cloth-ninja','ninja']]){
   const a=read(new URL('../public/models/'+source+'.glb',import.meta.url)),b=read(path.join(directory,'enemy-'+family+'.glb'));
+  // Enemy bodies retain the pre-costume source topology.
+  const saved=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardrobe-preservation.json',import.meta.url)));
+  if(a.doc.extras?.wardrobeDefault)a.doc.meshes[0].primitives=saved[source].originalMeshPrimitives;
   for(let mesh=0;mesh<a.doc.meshes.length;mesh++)for(let p=0;p<a.doc.meshes[mesh].primitives.length;p++){
    const original=a.doc.meshes[mesh].primitives[p],actual=b.doc.meshes[mesh].primitives[p];
    for(const key of Object.keys(original.attributes))assert.ok(view(a,original.attributes[key]).equals(view(b,actual.attributes[key])),`${family} changed original ${key}`);

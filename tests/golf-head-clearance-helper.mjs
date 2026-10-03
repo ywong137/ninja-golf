@@ -101,7 +101,7 @@ export async function inspectGolfHeadClearance(model,{start=1.6,end=2.4,includeN
   });
   const headBefore=headSurfaceMetadata(gltf,{includeNeck});
   const originalGroups=armTriangles(scene,headBefore);
-  const helper=installLimbSkinning(scene,{upperArms:hero==='kaede'?['r']:[]});
+  const helper=installLimbSkinning(scene,{upperArms:hero==='kaede'?['r']:[],overflow:gltf.userData?.wardrobeDefault?.replacedBody?'nearest':'reject'});
   try {
     const head=headSurfaceMetadata(gltf,{includeNeck}),groups=armTriangles(scene,head);
     for (const limb of limbs) {

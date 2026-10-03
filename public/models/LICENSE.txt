@@ -4,7 +4,7 @@ The complete notice is in ROCKETBOX-LICENSE.txt in this directory.
 https://github.com/microsoft/Microsoft-Rocketbox
 Source commit: 0943055db6ec570bcef9f2c8b41c9e5467c808f9
 
-The six heroes and four source enemy roles preserve their licensed bodies,
+The six heroes and four source enemy roles derive from the licensed bodies,
 faces, clothing meshes, and textures. Three enemy wardrobes reuse these bodies.
 The cloth ninja adds original weighted wraps and generated cloth artwork.
 The runtime assigns four fixed palettes to each wardrobe, independently of role.
@@ -103,3 +103,14 @@ The Vice President's added coat, collar, and trim are project-authored geometry.
 The fabric atlas and crane artwork were generated for Ninja Golf from the approved outfit concept.
 The underlying Microsoft Rocketbox human mesh retains its existing MIT attribution.
 The wardrobe merge preserves the existing head, skeleton, skin data, and animation data.
+
+Selected default wardrobes (2026-10-03)
+Major Threat, Redline Ronin, House Advantage, Scratch Assassin, and Green Keeper
+add project-authored garment geometry. Their fabric atlases and pattern artwork
+were generated for Ninja Golf from the approved outfit concepts.
+Major Threat and Green Keeper adapt the licensed Rocketbox f008 clothing body
+through each character's original bind frames. Major Threat also adds knee and
+sock geometry. Both retain their original character faces, hair, skeletons,
+and animation clips. The original MIT attribution still applies to adapted bodies.
+The other defaults retain their original bodies and add fitted garments.
+See docs/art-direction/wardrobe/README.md for sources and rebuild instructions.

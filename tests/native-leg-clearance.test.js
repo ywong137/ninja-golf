@@ -1,4 +1,6 @@
 import test from 'node:test';
+import fs from 'node:fs';
+const wardrobeSurfaces=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardrobe-preservation.json',import.meta.url)));
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import {WARRIORS} from '../src/warriors.js';
@@ -20,7 +22,7 @@ for(let i=0;i<=Math.ceil(clip.duration*480);i++){const time=Math.min(i/480,clip.
 t.diagnostic(JSON.stringify(result));
 // Each native mesh has a different density. Check the complete selected region.
 const expected={ronin:{r:405,l:397},kaede:{r:621,l:590},ayame:{r:471,l:479},sora:{r:628,l:629},monk:{r:1563,l:1213},shinobi:{r:451,l:438},'enemy-hoodie':{r:558,l:557},'enemy-tshirt':{r:451,l:438},'enemy-cloth-ninja':{r:667,l:662}};
-assert.deepEqual(result.triangles,expected[model],'The central thigh, calf, or shoe surface selection changed');
+assert.deepEqual(result.triangles,(wardrobeSurfaces[model]?.legSurfaceTriangles??expected[model]),'The central thigh, calf, or shoe surface selection changed');
 assert.equal(result.crossings,0,'The leg surfaces intersect');
 assert.ok(result.minimum>.003,'The recovery step must clear the other leg');
 }

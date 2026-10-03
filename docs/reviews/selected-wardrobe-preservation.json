@@ -1,0 +1,477 @@
+{
+  "ronin": {
+    "originalBinarySha256": "62622308d33a2683203adc69a5cf2e4023bcb791393f7df64b158cfe6f62aac7",
+    "originalAnimationsSha256": "a04737365485466c6b6843905b4b115c2de223bd055b6e0ae7b15759b1f7e3de",
+    "originalNodesSha256": "618034f5a2dcd33be97ee37ab3fefe50542950546c85536abc7f6f8071f5bf30",
+    "originalSkinsSha256": "171b09361cdeda436afa256e736d810ec429a17c6d47a01f60ca114a3f20f18e",
+    "baseSha256": "597ffc3d6ee02e712bb0dbc6c00fc2da0f8a016e43e659ca04ce3848b53c6d2e",
+    "outputSha256": "aa94bd2479329b020d41a572d23c9113311c372f39cd63678f0d05524178f4da",
+    "preservedBinaryBytes": 12422248,
+    "preservedAnimations": 42,
+    "addedParts": 3,
+    "addedTriangles": 3888,
+    "bindMatrixMaximumError": 0.0000019669532775878906,
+    "handsTriangles": 1573,
+    "garmentTriangles": 1927,
+    "originalTargetBinaryBytes": 12422248,
+    "originalTargetBinarySha256": "62622308d33a2683203adc69a5cf2e4023bcb791393f7df64b158cfe6f62aac7",
+    "originalFacePrimitives": [
+      {
+        "attributes": {
+          "POSITION": 7,
+          "NORMAL": 8,
+          "TEXCOORD_0": 9,
+          "TEXCOORD_1": 10,
+          "JOINTS_0": 11,
+          "WEIGHTS_0": 12
+        },
+        "indices": 13,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 14,
+          "NORMAL": 15,
+          "TEXCOORD_0": 16,
+          "TEXCOORD_1": 17,
+          "JOINTS_0": 18,
+          "WEIGHTS_0": 19
+        },
+        "indices": 20,
+        "material": 2
+      }
+    ],
+    "originalRigHashes": {
+      "animations": "50bef48577610c5a7ce44502ce512a5ec31e2bf17bf76ba59f8f8ccb61048347",
+      "nodes": "5176a5f9852cfd0b98efa9afd2d3b933fcab879515285ce0d81a069d819491c1",
+      "skins": "171b09361cdeda436afa256e736d810ec429a17c6d47a01f60ca114a3f20f18e"
+    },
+    "drawGroups": 7,
+    "legSurfaceTriangles": {
+      "r": 405,
+      "l": 397
+    },
+    "originalMeshPrimitives": [
+      {
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1,
+          "TEXCOORD_0": 2,
+          "TEXCOORD_1": 3,
+          "JOINTS_0": 4,
+          "WEIGHTS_0": 5
+        },
+        "indices": 6,
+        "material": 0
+      },
+      {
+        "attributes": {
+          "POSITION": 7,
+          "NORMAL": 8,
+          "TEXCOORD_0": 9,
+          "TEXCOORD_1": 10,
+          "JOINTS_0": 11,
+          "WEIGHTS_0": 12
+        },
+        "indices": 13,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 14,
+          "NORMAL": 15,
+          "TEXCOORD_0": 16,
+          "TEXCOORD_1": 17,
+          "JOINTS_0": 18,
+          "WEIGHTS_0": 19
+        },
+        "indices": 20,
+        "material": 2
+      }
+    ]
+  },
+  "shinobi": {
+    "originalBinarySha256": "fef816a48064db5ac5a2cc47bef23b5f9bc4b4119eb5be725c9b0f6e65bfa2ef",
+    "originalAnimationsSha256": "9f6e711ebd0f50e2e0e928e9ea490dc83cd01e1b694b81a5e455210032417a4c",
+    "originalNodesSha256": "bdfecfaef4fb435cc177bf84e86563ead7b5729bfd6874531c6043e02e6fa0fc",
+    "originalSkinsSha256": "4ec046154c81af9b84adc3e671e997409c3e368bbf161893dbe461cb6971f87b",
+    "baseSha256": "86452890bcb52b7a10e35b632e07c106c2455f8e5d7f2f8170d16d467adb4655",
+    "outputSha256": "1ae694a03e6378d9a3191fc2a83064f5a18891b1d28fcc2c0cad8db8542dc479",
+    "preservedBinaryBytes": 15736904,
+    "preservedAnimations": 38,
+    "addedParts": 3,
+    "addedTriangles": 2028,
+    "bindMatrixMaximumError": 0.0000028014183044433594,
+    "handsTriangles": 1668,
+    "garmentTriangles": 2146,
+    "originalTargetBinaryBytes": 15736904,
+    "originalTargetBinarySha256": "fef816a48064db5ac5a2cc47bef23b5f9bc4b4119eb5be725c9b0f6e65bfa2ef",
+    "originalFacePrimitives": [
+      {
+        "attributes": {
+          "POSITION": 6,
+          "NORMAL": 7,
+          "TEXCOORD_0": 8,
+          "JOINTS_0": 9,
+          "WEIGHTS_0": 10
+        },
+        "indices": 11,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 12,
+          "NORMAL": 13,
+          "TEXCOORD_0": 14,
+          "JOINTS_0": 15,
+          "WEIGHTS_0": 16
+        },
+        "indices": 17,
+        "material": 2
+      }
+    ],
+    "originalRigHashes": {
+      "animations": "56ee8f5908b03f49b7c6b9ddcfe87d158e46aa00ef24cdec62b762d9310a27b2",
+      "nodes": "ce00062d32f6701edd0c9ed091da49dc89cd618283e2da5e601f0a86a60b856e",
+      "skins": "4ec046154c81af9b84adc3e671e997409c3e368bbf161893dbe461cb6971f87b"
+    },
+    "drawGroups": 6,
+    "legSurfaceTriangles": {
+      "r": 451,
+      "l": 438
+    },
+    "originalMeshPrimitives": [
+      {
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1,
+          "TEXCOORD_0": 2,
+          "JOINTS_0": 3,
+          "WEIGHTS_0": 4
+        },
+        "indices": 5,
+        "material": 0
+      },
+      {
+        "attributes": {
+          "POSITION": 6,
+          "NORMAL": 7,
+          "TEXCOORD_0": 8,
+          "JOINTS_0": 9,
+          "WEIGHTS_0": 10
+        },
+        "indices": 11,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 12,
+          "NORMAL": 13,
+          "TEXCOORD_0": 14,
+          "JOINTS_0": 15,
+          "WEIGHTS_0": 16
+        },
+        "indices": 17,
+        "material": 2
+      }
+    ]
+  },
+  "kaede": {
+    "originalBinarySha256": "47bceafa16535a853c0f09b476bbc9355090df49f1ce21ce1419de302300612a",
+    "originalAnimationsSha256": "32420e24c1705eb5107aba23593fe2669ef827492f34aeacbe355c99bb50b5e3",
+    "originalNodesSha256": "3d2b8d9b5bc79a06e869f3e76e04569817fd13bd791d2b04996e2d259d6079ee",
+    "originalSkinsSha256": "1aabc091bc4e71c040c8e500a3f05cdc7cab50ad27f79dc0817501b3f272a1f0",
+    "baseSha256": "18fb18fff4e6f1fefaba5dfb4a1b3bd225cff8f449856cde0efd2302e45e58de",
+    "outputSha256": "bd3db80b8a64b8fb5c44aafa5e87cd33e0f7050a80ae6aa74600b3259dd9cc19",
+    "preservedBinaryBytes": 18106616,
+    "preservedAnimations": 39,
+    "addedParts": 8,
+    "addedTriangles": 8154,
+    "bindMatrixMaximumError": 0.000012978911399841309,
+    "handsTriangles": 1708,
+    "garmentTriangles": 2546,
+    "originalTargetBinaryBytes": 16508964,
+    "originalTargetBinarySha256": "1f1388fa9f8b889a310bbdd1bbc7f0cb5057ced9bb7fea49f1c96f70f36b630c",
+    "originalFacePrimitives": [
+      {
+        "attributes": {
+          "POSITION": 10,
+          "NORMAL": 11,
+          "TEXCOORD_0": 12,
+          "TEXCOORD_1": 13,
+          "TEXCOORD_2": 14,
+          "COLOR_0": 15,
+          "COLOR_1": 16,
+          "JOINTS_0": 17,
+          "WEIGHTS_0": 18
+        },
+        "indices": 19,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 20,
+          "NORMAL": 21,
+          "TEXCOORD_0": 22,
+          "TEXCOORD_1": 23,
+          "TEXCOORD_2": 24,
+          "COLOR_0": 25,
+          "COLOR_1": 26,
+          "JOINTS_0": 27,
+          "WEIGHTS_0": 28
+        },
+        "indices": 29,
+        "material": 2
+      }
+    ],
+    "originalRigHashes": {
+      "animations": "fbe8d9851bb3ccd8af30a35c1ad9f0caad65495ed23bde30b203fefc8eae3f0f",
+      "nodes": "1e6cac5d3ba7cbf46dbe974b42ae78948e738c8456304aca200a170facf93b99",
+      "skins": "1aabc091bc4e71c040c8e500a3f05cdc7cab50ad27f79dc0817501b3f272a1f0"
+    },
+    "drawGroups": 8,
+    "legSurfaceTriangles": {
+      "r": 1632,
+      "l": 1613
+    },
+    "originalMeshPrimitives": [
+      {
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1,
+          "TEXCOORD_0": 2,
+          "TEXCOORD_1": 3,
+          "TEXCOORD_2": 4,
+          "COLOR_0": 5,
+          "COLOR_1": 6,
+          "JOINTS_0": 7,
+          "WEIGHTS_0": 8
+        },
+        "indices": 9,
+        "material": 0
+      },
+      {
+        "attributes": {
+          "POSITION": 10,
+          "NORMAL": 11,
+          "TEXCOORD_0": 12,
+          "TEXCOORD_1": 13,
+          "TEXCOORD_2": 14,
+          "COLOR_0": 15,
+          "COLOR_1": 16,
+          "JOINTS_0": 17,
+          "WEIGHTS_0": 18
+        },
+        "indices": 19,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 20,
+          "NORMAL": 21,
+          "TEXCOORD_0": 22,
+          "TEXCOORD_1": 23,
+          "TEXCOORD_2": 24,
+          "COLOR_0": 25,
+          "COLOR_1": 26,
+          "JOINTS_0": 27,
+          "WEIGHTS_0": 28
+        },
+        "indices": 29,
+        "material": 2
+      }
+    ]
+  },
+  "ayame": {
+    "originalBinarySha256": "4fa894be29c6470329cc48036937c7ac131020705b8bec2d620659cb4fd77a09",
+    "originalAnimationsSha256": "d134c8b30e3490e25d520cafe4fb9ea36880658681290c82ce28715489421537",
+    "originalNodesSha256": "3c8b4996bcc05156b6102d7e3cd996f79f2afba03f06e1698951ebff2067e140",
+    "originalSkinsSha256": "3a065a22b81e65fcf23c1c3cca1f8916ec8a83b59ade6718553e0a722adfb8d1",
+    "baseSha256": "baf49d9d18d95b8369f3a2b3a600b4b2ebbab8a59e204eb61cf52599aeb87d44",
+    "outputSha256": "6943c11c39c94f007c320dd64576955fcb358e914ef8ed889afd85328620868d",
+    "preservedBinaryBytes": 14329508,
+    "preservedAnimations": 39,
+    "addedParts": 6,
+    "addedTriangles": 5164,
+    "bindMatrixMaximumError": 0.00001290440559387207,
+    "handsTriangles": 1708,
+    "garmentTriangles": 2546,
+    "originalTargetBinaryBytes": 14329508,
+    "originalTargetBinarySha256": "4fa894be29c6470329cc48036937c7ac131020705b8bec2d620659cb4fd77a09",
+    "originalFacePrimitives": [
+      {
+        "attributes": {
+          "POSITION": 8,
+          "NORMAL": 9,
+          "TEXCOORD_0": 10,
+          "COLOR_0": 11,
+          "COLOR_1": 12,
+          "JOINTS_0": 13,
+          "WEIGHTS_0": 14
+        },
+        "indices": 15,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 16,
+          "NORMAL": 17,
+          "TEXCOORD_0": 18,
+          "COLOR_0": 19,
+          "COLOR_1": 20,
+          "JOINTS_0": 21,
+          "WEIGHTS_0": 22
+        },
+        "indices": 23,
+        "material": 2
+      }
+    ],
+    "originalRigHashes": {
+      "animations": "8440d65d3bdd5a73c63b01b0f93de8e046ce67e958d95821551eeb6a195d143c",
+      "nodes": "85c0d0b4874e4c0b3c5873257ed9076d1086c3fb8d2de957ca2de8f3f2dd4a87",
+      "skins": "3a065a22b81e65fcf23c1c3cca1f8916ec8a83b59ade6718553e0a722adfb8d1"
+    },
+    "drawGroups": 7,
+    "legSurfaceTriangles": {
+      "r": 471,
+      "l": 479
+    },
+    "originalMeshPrimitives": [
+      {
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1,
+          "TEXCOORD_0": 2,
+          "COLOR_0": 3,
+          "COLOR_1": 4,
+          "JOINTS_0": 5,
+          "WEIGHTS_0": 6
+        },
+        "indices": 7,
+        "material": 0
+      },
+      {
+        "attributes": {
+          "POSITION": 8,
+          "NORMAL": 9,
+          "TEXCOORD_0": 10,
+          "COLOR_0": 11,
+          "COLOR_1": 12,
+          "JOINTS_0": 13,
+          "WEIGHTS_0": 14
+        },
+        "indices": 15,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 16,
+          "NORMAL": 17,
+          "TEXCOORD_0": 18,
+          "COLOR_0": 19,
+          "COLOR_1": 20,
+          "JOINTS_0": 21,
+          "WEIGHTS_0": 22
+        },
+        "indices": 23,
+        "material": 2
+      }
+    ]
+  },
+  "sora": {
+    "originalBinarySha256": "4bdf085ef8777fa2a97294b61f37186987de684f296629bee157c1049ea49a8e",
+    "originalAnimationsSha256": "fdd3637e9172f214fafdef2c07703cb3c3c4900c4b8f6fed58a4d373f75edd4f",
+    "originalNodesSha256": "8bc91d921e0c4fbe545c4aab994c680156921d6f7666139941f12f927249d234",
+    "originalSkinsSha256": "3a065a22b81e65fcf23c1c3cca1f8916ec8a83b59ade6718553e0a722adfb8d1",
+    "baseSha256": "b2454da9993063f5ea1c2a470b1d7b600cddd87ccfb4db13410efb48fdcaff8c",
+    "outputSha256": "41913449a0a8a3a0289b9ee927efcfb0befa4d2175b4a893a5bebffa6e0d3a18",
+    "preservedBinaryBytes": 21609064,
+    "preservedAnimations": 44,
+    "addedParts": 6,
+    "addedTriangles": 8986,
+    "bindMatrixMaximumError": 0.000013217329978942871,
+    "handsTriangles": 1708,
+    "garmentTriangles": 2546,
+    "originalTargetBinaryBytes": 20054948,
+    "originalTargetBinarySha256": "3c7b65edf79f0f704d66b0afdd6d3d17a53138465c90c81fc424ba60c0e8d910",
+    "originalFacePrimitives": [
+      {
+        "attributes": {
+          "POSITION": 8,
+          "NORMAL": 9,
+          "TEXCOORD_0": 10,
+          "COLOR_0": 11,
+          "COLOR_1": 12,
+          "JOINTS_0": 13,
+          "WEIGHTS_0": 14
+        },
+        "indices": 15,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 16,
+          "NORMAL": 17,
+          "TEXCOORD_0": 18,
+          "COLOR_0": 19,
+          "COLOR_1": 20,
+          "JOINTS_0": 21,
+          "WEIGHTS_0": 22
+        },
+        "indices": 23,
+        "material": 2
+      }
+    ],
+    "originalRigHashes": {
+      "animations": "a63fe0f32e05acb2012296744cae1fa3939b82b60a14f9a6f0680b44517beccf",
+      "nodes": "181526ff63bc3a2c2c4d06f16f3b5d020416a62a779b6eea3a420b1c799bc331",
+      "skins": "3a065a22b81e65fcf23c1c3cca1f8916ec8a83b59ade6718553e0a722adfb8d1"
+    },
+    "drawGroups": 6,
+    "legSurfaceTriangles": {
+      "r": 470,
+      "l": 464
+    },
+    "originalMeshPrimitives": [
+      {
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1,
+          "TEXCOORD_0": 2,
+          "COLOR_0": 3,
+          "COLOR_1": 4,
+          "JOINTS_0": 5,
+          "WEIGHTS_0": 6
+        },
+        "indices": 7,
+        "material": 0
+      },
+      {
+        "attributes": {
+          "POSITION": 8,
+          "NORMAL": 9,
+          "TEXCOORD_0": 10,
+          "COLOR_0": 11,
+          "COLOR_1": 12,
+          "JOINTS_0": 13,
+          "WEIGHTS_0": 14
+        },
+        "indices": 15,
+        "material": 1
+      },
+      {
+        "attributes": {
+          "POSITION": 16,
+          "NORMAL": 17,
+          "TEXCOORD_0": 18,
+          "COLOR_0": 19,
+          "COLOR_1": 20,
+          "JOINTS_0": 21,
+          "WEIGHTS_0": 22
+        },
+        "indices": 23,
+        "material": 2
+      }
+    ]
+  }
+}

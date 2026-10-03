@@ -27,8 +27,9 @@ test('the shoulder correction has smooth, silent boundaries and follows action f
 test('disabled upper-arm skin matches the original surface through every Ace animation',async t=>{
  const before=await loadNativeSkin(file),after=await loadNativeSkin(file);
  const originalGroups=skinGroups(after).triangles;
- const original=installForearmTwistHelpers(before.scene),candidate=installLimbSkinning(after.scene,{upperArms:['r']});
- assert.equal(candidate.report.quantizedOverflowVertices,0);
+ const original=installForearmTwistHelpers(before.scene),candidate=installLimbSkinning(after.scene,{upperArms:['r'],overflow:'nearest'});
+ // Fitted clothing keeps four GPU weights; a small boundary set uses the nearest twist station.
+ assert.ok(candidate.report.quantizedOverflowVertices<100);
  assert.equal(candidate.report.maximumInfluences,4);
  assert.deepEqual(skinGroups(after).triangles,originalGroups,'Collision groups must retain the corrected shoulder skin.');
  let maximumError=0,samples=0;
@@ -47,7 +48,7 @@ test('disabled upper-arm skin matches the original surface through every Ace ani
 
 test('the active shoulder skin preserves all joints, survives seeks and restores native weights',async t=>{
  const g=await loadNativeSkin(file),source=[];g.scene.traverse(m=>{if(m.isSkinnedMesh)source.push([m,m.geometry,m.skeleton]);});
- const helper=installLimbSkinning(g.scene,{upperArms:['r']}),a=g.mixer.clipAction(g.animations.find(c=>c.name==='Golf_Swing')).setLoop(T.LoopOnce).play();
+ const helper=installLimbSkinning(g.scene,{upperArms:['r'],overflow:'nearest'}),a=g.mixer.clipAction(g.animations.find(c=>c.name==='Golf_Swing')).setLoop(T.LoopOnce).play();
  a.clampWhenFinished=true;let maxCorrection=0,maxStep=0,previous;
  for(let frame=0;frame<=1152;frame++){
   const time=frame/480;a.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);
@@ -69,7 +70,7 @@ test('the active shoulder skin preserves all joints, survives seeks and restores
 test('the optional shoulder correction falls back before a twist branch or singular swing',async()=>{
  const g=await loadNativeSkin(file),upper=g.scene.getObjectByName('upperarm_r'),lower=g.scene.getObjectByName('lowerarm_r');
  const rest=upper.quaternion.clone(),axis=lower.position.clone().normalize().applyQuaternion(rest);
- const helper=installLimbSkinning(g.scene,{upperArms:['r']});let previous,maxStep=0;
+ const helper=installLimbSkinning(g.scene,{upperArms:['r'],overflow:'nearest'});let previous,maxStep=0;
  for(let degrees=155;degrees<=205;degrees+=.25){
   upper.quaternion.setFromAxisAngle(axis,degrees*Math.PI/180).multiply(rest);helper.update({upperArmWeight:1});
   const q=helper.upperArmHelpers.r.base.quaternion;

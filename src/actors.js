@@ -47,11 +47,12 @@ export { Effects } from './effects.js';
 const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS={...Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'captured-running-20261002'])),ronin:'native-guards-20261002',monk:'native-guards-20261002'};
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-20261003';
-MODEL_REVISIONS.kaede='ace-source-power-20261003';
+MODEL_REVISIONS.kaede='selected-wardrobe-20261003';
+MODEL_REVISIONS.shinobi='selected-wardrobe-20261003';
 MODEL_REVISIONS.monk='hostile-takeover-20261003';
-MODEL_REVISIONS.ronin='ronin-low-source-20261003';
-MODEL_REVISIONS.ayame='hustler-source-cut-20261003';
-MODEL_REVISIONS.sora='closer-power-musou-20261003';
+MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
+MODEL_REVISIONS.ayame='selected-wardrobe-20261003';
+MODEL_REVISIONS.sora='selected-wardrobe-20261003';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -119,7 +120,7 @@ export class Warrior {
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
-    this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[]}):null;
+    this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[],overflow:templates[index].userData?.wardrobeDefault?.replacedBody?'nearest':'reject'}):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     this.armContinuation=!enemy&&this.nativeHuman?new ArmMotionContinuation(this.bones,this.golfRestPose):null;
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
