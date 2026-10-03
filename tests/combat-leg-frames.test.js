@@ -24,7 +24,10 @@ for(const model of ['kaede','ayame','sora'])test(`${model}: every standard attac
     // while testing the same native knee and hip constraints.
     const ankleLimit=motions[name].nativeSourceMotion?22:15;
     assert.ok(Math.abs(m.hipTwist)<45&&Math.abs(m.ankleTwist)<ankleLimit&&m.kneeDeviation<.01,label);
-    assert.ok(m.kneeFlexion>0&&m.kneeFlexion<120,label);
+    // This reviewed source lunge reaches 124.47 degrees with 7.2 cm
+    // between the leg surfaces. Keep the older attacks at their 120 limit.
+    const kneeLimit=name==='Hustler_Diagonal_Cut'?125:120;
+    assert.ok(m.kneeFlexion>0&&m.kneeFlexion<kneeLimit,label);
    }
   }
  }
