@@ -521,7 +521,7 @@ export class Warrior {
     if(runStart)this.runAttackStep?.reset();
     this.runFootwork?.restore();this.attackLocomotion?.restore();this.travelPose?.restore();this.facialPose?.restore();
     for(const [bone,rotation]of this.overlays)bone.quaternion.multiply(rotation.invert());this.overlays=[];for(const [bone,scale]of this.coreScales)bone.scale.copy(scale);this.coreScales=[];this.model.quaternion.copy(this.restModelRotation);
-    this.weapon.visible=!golf&&!cinematic;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf&&!cinematic;
+    this.weapon.visible=!golf;this.club.visible=golf;if(this.offhand)this.offhand.visible=!golf;
     if((runStart||runTurn||runStop)&&!golf&&!action&&!dodge&&!blocking&&!selection&&!cinematic&&!this.dead){
       if(runStart)this.applyRecordedStart(runStart,dt,groundHeight);else this.applyRecordedSequence(runTurn??runStop,dt,groundHeight);return;
     }
