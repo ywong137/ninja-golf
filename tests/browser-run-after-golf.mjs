@@ -27,19 +27,25 @@ try{
     // Retain the production golfer/camera poses and terrain. Remove enemies
     // only after landing, so damage cannot interrupt the gait under inspection.
     for(const e of g.enemies)g.scene.remove(e.root);g.enemies=[];g.spawnTime=999;g.invincible=999;
-    const row={hero,name:WARRIORS[hero].name,hz,amount,initialClip:g.player.current,clips:[],samples:0,legacy:0,maxStepsPerSecond:0,firstRun:null,dodges:0,focusReleaseSamples:0,finite:true};
+    const row={hero,name:WARRIORS[hero].name,hz,amount,initialClip:g.player.current,clips:[],samples:0,legacy:0,maxStepsPerSecond:0,firstRun:null,dodges:0,focusReleaseSamples:0,landingWaitFrames:0,airborneClockChanges:0,finite:true};
     if(amount<1){pad=makePad();pad.axes[1]=-amount;}else g.input.keys.add('KeyW');
     for(let i=0;i<5*hz;i++){
      const t=i/hz,focused=t>=3&&t<3.6;
      if(t>=.5&&t<2.5)g.input.lookX=.14*Math.sin(t*4); // Continuous small camera corrections must not restore short steps.
      if(t>=1.5&&t<2.5)g.input.keys.add('ShiftLeft');else g.input.keys.delete('ShiftLeft');
      if(focused){g.input.keys.add('KeyC');g.input.keys.add('KeyD');}else{g.input.keys.delete('KeyC');g.input.keys.delete('KeyD');}
+     const previous={running:g.player.running,source:!!g.player.sourceRun,grounded:g.player.runClockHandoff?.grounded};
      tick();const p=g.player;
+     if(previous.running&&!previous.source&&previous.grounded===false&&p.sourceRun)row.airborneClockChanges++;
      if(row.clips.at(-1)!==p.current)row.clips.push(p.current);
      if(p.current==='Roll'||g.dodgeTimer>0)row.dodges++;
      if(!focused&&p.running){
       row.samples++;row.firstRun??=t;if(t>=3.6)row.focusReleaseSamples++;
-      if(!p.sourceRun||!['Run_Forward','Sprint_Forward'].includes(p.current))row.legacy++;
+      if(!p.sourceRun||!['Run_Forward','Sprint_Forward'].includes(p.current)){
+       // Finish the existing airborne step before changing contact clocks.
+       // This bounded handoff is distinct from entering the wrong gait after golf.
+       if(t>=3.6&&t<4)row.landingWaitFrames++;else row.legacy++;
+      }
       if(p.sourceRun)row.maxStepsPerSecond=Math.max(row.maxStepsPerSecond,2*p.sourceRun.phaseRate);
      }
      for(const b of Object.values(p.bones))if(![...b.position,...b.quaternion].every(Number.isFinite))row.finite=false;
@@ -52,8 +58,8 @@ try{
  assert.deepEqual(errors,[]);assert.equal(rows.length,54);
  for(const r of rows){
   assert.ok(r.initialClip.startsWith('Golf_'),JSON.stringify(r));assert.ok(r.samples>r.hz*2.5,JSON.stringify(r));
-  assert.equal(r.legacy,0,JSON.stringify(r));assert.equal(r.dodges,0,JSON.stringify(r));assert.ok(r.finite,JSON.stringify(r));
+  assert.equal(r.legacy,0,JSON.stringify(r));assert.equal(r.dodges,0,JSON.stringify(r));assert.equal(r.airborneClockChanges,0,JSON.stringify(r));assert.ok(r.finite,JSON.stringify(r));
   assert.ok(r.firstRun<.1&&r.focusReleaseSamples>r.hz*.5,JSON.stringify(r));assert.ok(r.maxStepsPerSecond<4,JSON.stringify(r));
  }
- console.log(JSON.stringify({cases:rows.length,heroes:6,rates:[40,60,144],analogSpeeds:[.2,.5,1],legacyFreeRunFrames:rows.reduce((n,r)=>n+r.legacy,0),maxStepsPerSecond:Math.max(...rows.map(r=>r.maxStepsPerSecond)),errors}));
+ console.log(JSON.stringify({cases:rows.length,heroes:6,rates:[40,60,144],analogSpeeds:[.2,.5,1],legacyFreeRunFrames:rows.reduce((n,r)=>n+r.legacy,0),maxFocusLandingWait:Math.max(...rows.map(r=>r.landingWaitFrames/r.hz)),airborneClockChanges:rows.reduce((n,r)=>n+r.airborneClockChanges,0),maxStepsPerSecond:Math.max(...rows.map(r=>r.maxStepsPerSecond)),errors}));
 }finally{await browser.close();}

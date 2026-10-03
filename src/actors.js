@@ -437,7 +437,7 @@ export class Warrior {
     // Only a deliberately focused stance blends strafing and backpedaling.
     const direction=sprint?[1]:focused?[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))]:[1,0,0,0];
     let source=sourceGaitBlend(names.map(name=>this.actions.get(name).getClip()),direction,speed,this.root.scale.x);
-    if(focused&&source&&this.running&&!this.sourceRun&&this.runClockHandoff?.grounded===false&&this.actions.get('Run_Forward').getClip().userData?.directionalFallback)source=null;
+    if(source&&this.running&&!this.sourceRun&&this.runClockHandoff?.grounded===false&&this.actions.get('Run_Forward').getClip().userData?.directionalFallback)source=null;
     const fallback=!sprint&&!source?this.actions.get('Run_Forward').getClip().userData?.directionalFallback:null;
     if(fallback){if(!this.actions.has(fallback))throw Error('Missing compatible directional forward clip: '+fallback);names[0]=fallback;}
     return {names,direction,source};
