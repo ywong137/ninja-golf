@@ -49,6 +49,7 @@ const MODEL_REVISIONS={...Object.fromEntries(['ronin','shinobi','monk','kaede','
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-20261003';
 MODEL_REVISIONS.kaede='full-body-opening-20261003';
 MODEL_REVISIONS.ronin=MODEL_REVISIONS.monk='two-handed-cuts-20261003';
+MODEL_REVISIONS.ayame='hustler-source-cut-20261003';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];

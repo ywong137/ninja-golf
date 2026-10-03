@@ -33,9 +33,10 @@ for(const hero of WARRIORS)test(`${hero.name}: native recovery has no elbow tele
   rig.mixer.stopAllAction();const action=rig.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
   const rows={r:[],l:[]},count=Math.ceil(clip.duration*RATE);
   for(let frame=0;frame<=count;frame++){
-   // Include the actual final GLB sample, even when duration is not a multiple
-   // of 1/240. Otherwise the old forced final wrist rotation escapes the test.
-   const seconds=Math.min(clip.duration,frame/RATE);action.time=seconds;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);
+   // Include the exact endpoint at a uniform interval no larger than 1/240.
+   // Float32 duration may exceed a grid time by 40 ns; a separate final
+   // sample would amplify quaternion rounding into a false velocity spike.
+   const seconds=frame/count*clip.duration;action.time=seconds;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);
    for(const side of ['r','l']){
     const elbow=point('lowerarm_'+side).sub(point('upperarm_'+side));
     const wrist=rig.scene.getObjectByName('hand_'+side).getWorldQuaternion(new THREE.Quaternion()).normalize();
