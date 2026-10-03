@@ -837,7 +837,7 @@
       ],
       "samples": 506,
       "rate": 60,
-      "modelSha256": "23d3e9ee52437d4b9a5106c7c2e0c7f8ab23a8d9252ffa77cd7617190bc0b278"
+      "modelSha256": "48dfd97a58f0628460f7259c769e10bee2b4dc7f69bfe7544c0cc9f1e4df66b0"
     },
     "shinobi": {
       "min": [
@@ -3431,7 +3431,7 @@
       ],
       "samples": 527,
       "rate": 60,
-      "modelSha256": "0993528678d7fdb559417eeb0a0015654c99e46fb268bd786554c52a2765f86b"
+      "modelSha256": "c3af4025e6b7ed6c5db40a9525590af5081ee706c40094793ba559cb113e68f3"
     },
     "kaede": {
       "min": [
