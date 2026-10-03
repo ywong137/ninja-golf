@@ -14,7 +14,9 @@ for(const model of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${mod
  g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  g.scene.position.set(2,1,-3);g.scene.rotation.set(.05,.8,-.04);g.scene.scale.setScalar(1.1);g.scene.updateMatrixWorld(true);
  const calibrations=Object.fromEntries(['r','l'].map(side=>[side,calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side])]));
- const clip=g.animations.find(c=>c.name==='Sprint_Forward'),action=g.mixer.clipAction(clip).setLoop(T.LoopOnce);action.play();
+ // This solver serves the retained directional gait. Captured forward running
+ // preserves its own leg frames and does not call solveRecoveryLeg.
+ const clip=g.animations.find(c=>c.name==='Run_Directional_Forward')??g.animations.find(c=>c.name==='Sprint_Forward'),action=g.mixer.clipAction(clip).setLoop(T.LoopOnce);action.play();
  let sourcePitch=0;
  for(const sourceWeight of [0,1])for(const phase of [.44,.53,.60,.75,.82])for(const side of ['r','l']){
   action.time=((phase+(side==='r'?0:.5))%1)*clip.duration;g.mixer.update(0);g.scene.updateMatrixWorld(true);

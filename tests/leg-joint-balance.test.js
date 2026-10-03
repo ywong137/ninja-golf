@@ -12,13 +12,13 @@ const point=b=>b.getWorldPosition(new Vector3());
 const rotation=b=>b.getWorldQuaternion(new Quaternion()).normalize();
 const violation=a=>Math.max(0,Math.abs(a.hipTwist)-27.5)**2+Math.max(0,Math.abs(a.ankleTwist)-17.5)**2;
 
-async function fixture(model){
+async function fixture(model,clipName='Run_Forward'){
  const g=await loadNativeSkin(new URL(`../public/models/${model}.glb`,import.meta.url)),bones={};
  g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  g.scene.position.set(2,.4,-3);g.scene.rotation.y=.67;g.scene.scale.setScalar(1.1);g.scene.updateMatrixWorld(true);
  const placement=new FootPlacement(g.scene,bones);
  const calibrations=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s])]));
- const clip=g.animations.find(c=>c.name==='Run_Forward'),action=g.mixer.clipAction(clip).play();
+ const clip=g.animations.find(c=>c.name===clipName),action=g.mixer.clipAction(clip).play();
  const pose=phase=>{action.time=phase*clip.duration;g.mixer.update(0);g.scene.updateMatrixWorld(true);};
  const leg=side=>({thigh:bones['thigh_'+side],calf:bones['calf_'+side],foot:bones['foot_'+side],calibration:calibrations[side],contacts:placement.feet[side].contacts});
  return{g,pose,leg,bones,calibrations,placement};
@@ -173,7 +173,9 @@ test('a smooth leg trajectory retains smooth knee correction as sampling increas
 });
 
 test('a held shoe can resolve ankle twist beyond the first local search bracket',async()=>{
- const f=await fixture('ronin');f.pose(.1);
+ // Retain the original regression posture; the new forward capture has a
+ // different knee angle and cannot reproduce this injected-twist fixture.
+ const f=await fixture('ronin','Run_Directional_Forward');f.pose(.1);
  const leg=f.leg('r'),{thigh,calf,foot,calibration}=leg;
  alignLegHinge(thigh,calf,foot,calibration.hinge);
  const axis=point(foot).sub(point(calf)).normalize(),neutral=rotation(calf).multiply(calibration.footInCalf);

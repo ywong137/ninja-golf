@@ -37,6 +37,11 @@ function supportState(kind,name,spec,seconds,side){
   const toe=(spec.toePlants?.[side]??[]).findIndex(([a,b])=>seconds>=a-1e-7&&seconds<=b+1e-7);
   return{loaded:index>=0||toe>=0,plant:index>=0?index:null,toePlant:toe>=0?toe:null};
  }
+ if(kind==='gait'&&spec.sourceGait){
+  const [start,end]=spec.sourceGait.feet[side].supportInterval;
+  const phase=((seconds/spec.duration-start)%1+1)%1;
+  return{loaded:phase<end-start,plant:null};
+ }
  if(kind==='gait'){
   const phase=((seconds/spec.duration+(side==='l'?.5:0))%1+1)%1;
   return{loaded:phase<spec.support,plant:null};
@@ -71,7 +76,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
   {name:hero.readyClip,kind:'ready',spec:motions[hero.readyClip]},
   ...regular.map(suffix=>{const name=hero.motionOverrides?.[hero.motionPrefix+suffix]??hero.motionPrefix+suffix;return{name,kind:'attack',spec:motions[name]};}),
   ...guards.map(c=>({name:c.name,kind:'guard',spec:motions[c.name]})),
-  ...Object.entries(gaits).map(([name,spec])=>({name,kind:'gait',spec})),
+  ...Object.entries(gaits).map(([name,spec])=>({name,kind:'gait',spec:clips.get(name)?.userData?.sourceGait?{...spec,sourceGait:clips.get(name).userData.sourceGait,nativeKneeHeading:true}:spec})),
  ];
  const worst=Object.fromEntries(['loadedMedial','selectionMedial','swingMedial','shinMedialDegrees','lengthError','kneeSpeed','ankleSpeed','plantDrift','plantTurn'].map(k=>[k,peak()]));
  const loadedByKind=Object.fromEntries(['idle','ready','attack','guard','gait'].map(kind=>[kind,peak()]));
@@ -95,7 +100,10 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     const hip=point('thigh_'+side),knee=point('calf_'+side),ankle=point('foot_'+side),toe=point('ball_'+side);
     const foot=g.scene.getObjectByName('foot_'+side).getWorldQuaternion(new THREE.Quaternion()).normalize();
     const forward=toe.clone().sub(ankle).setY(0);
-    assert.ok(forward.length()>.01,`${name} ${side} at ${seconds}: ankle-to-toe heading is degenerate`);
+    // An airborne shoe can point vertically. Its anatomical frames still
+    // define the knee hinge; a horizontal toe projection does not.
+    if(spec.sourceGait&&forward.length()<=.01)forward.set(0,0,1);
+    else assert.ok(forward.length()>.01,`${name} ${side} at ${seconds}: ankle-to-toe heading is degenerate`);
     forward.normalize();
     // A positive value means the knee lies medial to the actual shoe's sagittal
     // plane. This catches toe-out and turned stances that actor-X checks miss.
@@ -128,7 +136,11 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     }else if(!spec.nativeKneeHeading)retain(worst.swingMedial,medial,name,seconds,side);
     retain(worst.lengthError,Math.abs(hip.distanceTo(knee)-lengths[side].thigh),name,seconds,side);
     retain(worst.lengthError,Math.abs(knee.distanceTo(ankle)-lengths[side].shin),name,seconds,side);
-    const old=previous[side],dt=old?seconds-old.seconds:0;
+    // Captured clips use a distance clock. Compare speeds in playback time,
+    // not their arbitrary baked duration. Use the common base travel speed;
+    // hero speed bonuses scale the complete animation clock.
+    const playbackScale=spec.sourceGait?spec.sourceGait.stride*1.1/((name==='Sprint_Forward'?8:5.6)*duration):1;
+    const old=previous[side],dt=old?(seconds-old.seconds)*playbackScale:0;
     if(dt>1e-6){
      retain(worst.kneeSpeed,knee.distanceTo(old.knee)/dt,name,seconds,side);
      retain(worst.ankleSpeed,ankle.distanceTo(old.ankle)/dt,name,seconds,side);

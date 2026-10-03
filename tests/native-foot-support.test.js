@@ -44,7 +44,8 @@ test('support baking preserves the body, arms, golf, and model data',async()=>{
  try{
   const input=modelPath('sora'),output=path.join(folder,'sora.glb'),name='Sickle_Cut_Diagonal';
   const report=await bakeNativeFootSupport({model:input,output,record,clips:[name]});
-  assert.equal(report.preservation.preservedAnimations,36);
+  const original=await loadNativeSkin(input);
+  assert.equal(report.preservation.preservedAnimations,original.animations.length-1);
   assert.ok(report.preservation.preservedChannels>200,'Preserve the non-leg channels inside the changed clip.');
   const before=await loadNativeSkin(input),after=await loadNativeSkin(output),sampleBefore=player(before,before.animations.find(c=>c.name===name)),sampleAfter=player(after,after.animations.find(c=>c.name===name));
   for(let frame=0;frame<=120;frame++){
