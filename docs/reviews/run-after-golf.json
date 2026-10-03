@@ -1,0 +1,37 @@
+{
+  "problem": "After a golf shot, temporary facing error selected a legacy directional gait during ordinary free running. Tiny camera corrections could keep selecting it. Dodge incidentally reset the selection.",
+  "fix": "Free running always uses the approved forward source gait while the actor turns toward travel. Focused strafing and backpedaling retain explicit directional selection.",
+  "before": [
+    {
+      "hero": "The Ace",
+      "firstApprovedRunSeconds": 2.4
+    },
+    {
+      "hero": "The Vice President",
+      "firstApprovedRunSeconds": 2.4
+    }
+  ],
+  "validation": {
+    "golfToRunCases": 54,
+    "heroes": 6,
+    "frameRates": [
+      40,
+      60,
+      144
+    ],
+    "analogInput": [
+      0.2,
+      0.5,
+      1
+    ],
+    "legacyFreeRunFrames": 0,
+    "requiredDodges": 0,
+    "maxStepsPerSecond": 3.3171176308296317,
+    "cameraCorrections": true,
+    "focusExit": true,
+    "runSprintAttackCases": 12,
+    "unitTests": 37,
+    "build": "passed"
+  },
+  "reproduce": "NINJA_BASE_URL=http://localhost:5174 node tests/browser-run-after-golf.mjs"
+}

@@ -430,17 +430,20 @@ export class Warrior {
     this.current=names[weights.indexOf(Math.max(...weights))];this.oneShot=0;
     this.handGrip?.engage(!!motions[this.current]?.twoHanded,.1);
   }
-  runProfile(angle,speed,sprint=false){
+  runProfile(angle,speed,sprint=false,focused=false){
     const names=sprint?['Sprint_Forward']:['Run_Forward','Run_Right','Run_Backward','Run_Left'];
-    const direction=sprint?[1]:[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))];
+    // Free movement turns the actor toward travel. Its temporary facing error
+    // must not select the old short directional stride while the turn settles.
+    // Only a deliberately focused stance blends strafing and backpedaling.
+    const direction=sprint?[1]:focused?[Math.max(0,Math.cos(angle)),Math.max(0,Math.sin(angle)),Math.max(0,-Math.cos(angle)),Math.max(0,-Math.sin(angle))]:[1,0,0,0];
     let source=sourceGaitBlend(names.map(name=>this.actions.get(name).getClip()),direction,speed,this.root.scale.x);
-    if(source&&this.running&&!this.sourceRun&&this.runClockHandoff?.grounded===false&&this.actions.get('Run_Forward').getClip().userData?.directionalFallback)source=null;
+    if(focused&&source&&this.running&&!this.sourceRun&&this.runClockHandoff?.grounded===false&&this.actions.get('Run_Forward').getClip().userData?.directionalFallback)source=null;
     const fallback=!sprint&&!source?this.actions.get('Run_Forward').getClip().userData?.directionalFallback:null;
     if(fallback){if(!this.actions.has(fallback))throw Error('Missing compatible directional forward clip: '+fallback);names[0]=fallback;}
     return {names,direction,source};
   }
-  stepRun(angle,speed,dt,sprint=false){
-    const {names,direction,source}=this.runProfile(angle,speed,sprint);this.sourceRun=source;
+  stepRun(angle,speed,dt,sprint=false,focused=false){
+    const {names,direction,source}=this.runProfile(angle,speed,sprint,focused);this.sourceRun=source;
     const specs=names.map(name=>nativeRunSpec(this.actions.get(name).getClip()));
     const raw=direction.map((amount,i)=>{const spec=specs[i];return amount/(2*spec.amplitude/(spec.support*spec.duration));});
     const sum=raw.reduce((a,b)=>a+b,0),weights=this.sourceRun?.weights??raw.map(value=>value/sum),duration=specs[0].duration;
@@ -494,7 +497,7 @@ export class Warrior {
     this.recordedStopLanding?.restore();
     if(golf||selection||cinematic||dodge||this.dead)this.recordedStopPose?.reset();
     if(this.running&&moving&&!action&&!golf&&!dodge&&!blocking&&!selection&&!cinematic&&this.runClockHandoff){
-      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85).source;
+      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85,focused).source;
       if(Boolean(nextSource)!==Boolean(this.sourceRun)){
         // Captured and directional clips use different contact clocks. A
         // numerical phase cannot pass directly between those clocks.
@@ -518,7 +521,7 @@ export class Warrior {
     const waitForLanding=!action&&moving&&!runHandoff&&(this.attackLocomotion?.contactTransfer||this.runAttackStep?.state&&!stepHandoff);
     if(!runStart&&!runTurn&&!runStop&&!action&&!blocking&&moving&&(moveSpeed??1)>.05&&(!this.sourceRun||this.oneShot<=dt)&&!this.running&&!waitForLanding&&(this.startHandoff||this.attackLocomotion?.weight>0||this.runFootwork?.exitAge!==undefined||this.runAttackStep?.state)){
       const handoff=runHandoff??stepHandoff??this.startHandoff;
-      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85).source;
+      const nextSource=this.runProfile(moveAngle,moveSpeed??5.6*WARRIORS[this.type].speed,sprinting&&!focused&&Math.cos(moveAngle)>.85,focused).source;
       if(handoff&&nextSource){this.runFootwork.captureEntry({includeBody:true});this.runPhase=this.sourceRunEntry.begin(handoff,nextSource);this.runFootwork.resetDirection();}
       else{this.runFootwork?.captureEntry({includeBody:true});if(handoff)this.runPhase=this.runFootwork.seedContactEntry(handoff);}
       if(handoff)this.runAttackStep?.reset();
@@ -562,7 +565,7 @@ export class Warrior {
       const speed=moveSpeed??(moving?2.3*WARRIORS[this.type].speed:0);
       if(moving&&speed>.05)this.stepGuard(guardPrefix,moveAngle,speed,dt);else this.play(`${guardPrefix}_Guard_Loop`,.12);
     }
-    else if(!waitForLanding&&!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85);
+    else if(!waitForLanding&&!action&&!enemyAction&&this.oneShot<=0&&!golf&&!this.enemy&&moving&&(moveSpeed??1)>.05)this.stepRun(moveAngle,moveSpeed??(sprinting?8:5.6)*WARRIORS[this.type].speed,dt,sprinting&&!focused&&Math.cos(moveAngle)>.85,focused);
     else if(!waitForLanding&&!action&&!enemyAction&&this.oneShot<=0)this.play(golf?'Golf_Address':moving&&(moveSpeed??1)>.05?(sprinting?'Sprint_Loop':'Jog_Fwd_Loop'):this.enemy?'Sword_Idle':WARRIORS[this.type].readyClip||'Idle_Loop',.18,false,moving?(sprinting?1.15:1):1);
     this.wasAttack=attack>0;this.wasSwing=swing>0;this.wasDodge=dodge;this.wasParry=parry>0;this.wasGuardBreak=guardBreak>0;this.lastGuardHitToken=guardHitToken;
     if(moving&&['Jog_Fwd_Loop','Sprint_Loop'].includes(this.current)){
