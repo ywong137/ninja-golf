@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "scope": "Ninja Golf and transferable guidance for future human-combat games",
+  "user_priority_order": [
+    "Convincing large limb movement, torso rotation, weight transfer, stance and overall posture.",
+    "No backwards joints or unnaturally twisted hands and feet.",
+    "Cutting edges lead blade travel during an active cut. The blade flat must not lead like a slap.",
+    "Refine precise hand and foot contacts after the full-body action reads correctly."
+  ],
+  "source_motion_lesson": "Retain a complete authored or captured body performance, including preparation, step, pelvis/chest turn, balance, impact and recovery. Adapt it to the target rig without replacing it with independent arm targets.",
+  "shared_human_constraints": "Calibrate anatomical hinge frames and mirrored limbs from the actual rig. Apply the same human movement principles across all characters. Weapon grip, reach and attack style remain specific.",
+  "review_method": "Review full-speed and slow-motion playback from front, side and three-quarter views. Use numerical tests as supporting evidence, not as a substitute for a convincing overall silhouette.",
+  "blade_alignment": "Measure cutting-edge and blade-normal alignment with world-space velocity through the meaningful strike interval, not only at one impact frame. Assess thrusts separately using tip travel.",
+  "budget_rule": "Do not spend long tuning millimetre-scale contacts while the full-body motion remains weak. Reject unsuitable source performances instead of accumulating per-frame corrections.",
+  "evidence": "Mixamo source performances substantially improved the attacks. A bounded coupled grip fit accepted the Ronin low cut but failed at Ethan's wider polearm grip; source suitability still matters."
+}

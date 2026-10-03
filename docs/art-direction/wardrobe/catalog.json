@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "source": "AI-generated wardrobe concept art approved by the user on 2026-10-03",
+  "intent": "Remodel the characters to match these silhouettes and materials. Preserve every option for future unlockable outfits.",
+  "outfits": [
+    {
+      "character": "THE VICE PRESIDENT",
+      "image": "01-vice-president.png",
+      "options": [
+        {
+          "number": 1,
+          "name": "Hostile Takeover",
+          "role": "approved default"
+        },
+        {
+          "number": 2,
+          "name": "Chairman of the Green",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 3,
+          "name": "Executive Order",
+          "role": "preserved future unlockable"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 1,
+      "model": "monk",
+      "sha256": "4019076e0e2afd8f2a3d9c957b099156400d7f3a50c14513c47f9521918a1fe1"
+    },
+    {
+      "character": "THE ACE",
+      "image": "02-ace.png",
+      "options": [
+        {
+          "number": 4,
+          "name": "Tour de Force",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 5,
+          "name": "Major Threat",
+          "role": "approved default"
+        },
+        {
+          "number": 6,
+          "name": "Crane Captain",
+          "role": "preserved future unlockable"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 5,
+      "model": "kaede",
+      "sha256": "faee0d07eed0a60436db5ce483203203f4d1e20b854cf4624412c76b55434c19"
+    },
+    {
+      "character": "THE RONIN",
+      "image": "03-ronin.png",
+      "options": [
+        {
+          "number": 7,
+          "name": "Redline Ronin",
+          "role": "approved default"
+        },
+        {
+          "number": 8,
+          "name": "Club Champion",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 9,
+          "name": "Last Tee",
+          "role": "preserved future unlockable"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 7,
+      "model": "ronin",
+      "sha256": "5d5fb95acaa43675ae7222866569ea7cdf713f026da5421d2d14291f0ee465d4"
+    },
+    {
+      "character": "THE HUSTLER",
+      "image": "04-hustler.png",
+      "options": [
+        {
+          "number": 10,
+          "name": "House Advantage",
+          "role": "approved default"
+        },
+        {
+          "number": 11,
+          "name": "Sand Trap Socialite",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 12,
+          "name": "Match Fixer",
+          "role": "preserved future unlockable"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 10,
+      "model": "ayame",
+      "sha256": "000b166aaedde1cde93259ac2ebee7e2f221cd374af9c61d1569704ffc7a7a71"
+    },
+    {
+      "character": "THE SHINOBI",
+      "image": "05-shinobi.png",
+      "options": [
+        {
+          "number": 13,
+          "name": "Quiet Professional",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 14,
+          "name": "Scratch Assassin",
+          "role": "approved default"
+        },
+        {
+          "number": 15,
+          "name": "Night Round",
+          "role": "preserved future unlockable"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 14,
+      "model": "shinobi",
+      "sha256": "1424bbbe5f8b9cff75d8c607d1a7a9775fd75e5814c07d0b2e1b09a3e16faa76"
+    },
+    {
+      "character": "THE CLOSER",
+      "image": "06-closer.png",
+      "options": [
+        {
+          "number": 16,
+          "name": "Final Notice",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 17,
+          "name": "Sudden Death",
+          "role": "preserved future unlockable"
+        },
+        {
+          "number": 18,
+          "name": "Green Keeper",
+          "role": "approved default"
+        }
+      ],
+      "status": "default outfit approved; modeling pending",
+      "selected": 18,
+      "model": "sora",
+      "sha256": "8ebc628cac3ae52245ca076120635cee688d3c9e65ae2cf3409e940e4c43115d"
+    }
+  ]
+}
