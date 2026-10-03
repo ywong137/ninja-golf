@@ -95,3 +95,5 @@ The Ronin advancing musou adapts Adobe Mixamo Great Sword Combo Slash.
 The complete three-cut performance retains its body motion and recovery.
 The native transfer fits a 17 cm two-handed grip and extracts horizontal travel.
 The fixed blade mount, timing, and game integration are Ninja Golf modifications.
+
+2026-10-03: Ace_Turning_Double_Cut derives from Adobe Mixamo Great Sword Power Slash. The game uses fitted motion on the existing licensed character; the standalone source file remains private.

@@ -1,0 +1,102 @@
+{
+  "hero": "The Ace",
+  "model": "kaede",
+  "clip": "Ace_Turning_Double_Cut",
+  "replacesActiveOverride": "Ace_Heavy_Cleave",
+  "baseline": "9fb02c47c6ae22f432830bf0e64f3543cc44a40a",
+  "source": "Adobe Mixamo Great Sword Power Slash",
+  "sourceSha256": "c0994ceba90c78a606e8b7a197e832c0a959de3a6a92b1a1f8850f279a5dfd8b",
+  "modelSha256": "1cad07f7c6afa93709730d71c097c189f9a5d2266f3e4bffc64f982c6d8e3b87",
+  "preservedClips": 38,
+  "preservedBinaryBytes": 16145172,
+  "meshAndOtherClipsUnchanged": true,
+  "behavior": "A turning cut, overhead cut, and recovery. Both hands stay on the straight sword.",
+  "fit": {
+    "pairedSpacing": 0.13,
+    "pairElbowPoles": [
+      0,
+      16
+    ],
+    "maxWristDegrees": 39.85401965267729,
+    "wristDegrees": {
+      "r": 33.87654460529746,
+      "l": 39.85401965267729
+    },
+    "maxKneeDeviation": 0.0006340457986650821,
+    "minKneeFlex": 20.00947976353539,
+    "maxKneeFlex": 100.81386800408711,
+    "arms": {
+      "r": {
+        "minFlex": 50.835463873838265,
+        "maxDeviation": 3.0396860517707633e-05,
+        "maxTwist": 70.00002572541439
+      },
+      "l": {
+        "minFlex": 35.70497720812828,
+        "maxDeviation": 4.075697071406757e-05,
+        "maxTwist": 70.00001079321073
+      }
+    }
+  },
+  "timing": {
+    "nativeSeconds": 1.8833333253860474,
+    "combatSeconds": 1.4487179426046517,
+    "nativeImpacts": [
+      0.7,
+      1.55
+    ],
+    "damageScale": 0.5,
+    "entryBlend": 0.16
+  },
+  "clearance": {
+    "armTorsoSamples240Hz": 453,
+    "armTorsoCrossingSamples": 0,
+    "armHead": {
+      "clip": "Ace_Turning_Double_Cut",
+      "samples": 227,
+      "crossings": 0,
+      "minGap": 0.026178717125138282,
+      "closest": {
+        "time": 1.0416666666666667,
+        "source": "arms",
+        "headMesh": "Mesh_2"
+      }
+    },
+    "weapon": {
+      "minimumClearance": 0.03,
+      "crossingSamples": 0,
+      "surfaceTriangles": 7036
+    },
+    "weaponDistanceSearchCapMetres": 0.03
+  },
+  "gameplay": {
+    "cases": 9,
+    "rates": [
+      40,
+      60,
+      144
+    ],
+    "entries": [
+      "standing",
+      "moving",
+      "queued-light"
+    ],
+    "maxPalmGapMetres": 0.0002434272706639894,
+    "errors": []
+  },
+  "review": {
+    "model": "Claude Opus 5.5 High",
+    "scope": "Four stills before the final elbow clearance adjustment. Final arm clearance also has geometric checks.",
+    "findings": "No clear grip or limb fault. The side view suggested an unsupported overhead step. Sole measurements confirmed planted right-foot support."
+  },
+  "reproduction": "node tools/build-ace-power.mjs --source LICENSED_MIXAMO.fbx --output REVIEW_DIRECTORY",
+  "validation": {
+    "selectionLayouts": 10,
+    "selectionFullLoops": 6,
+    "courses": 4,
+    "build": "passed",
+    "tests": 931,
+    "pass": 931,
+    "fail": 0
+  }
+}

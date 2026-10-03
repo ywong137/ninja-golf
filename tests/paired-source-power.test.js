@@ -12,15 +12,15 @@ import {attackFootContacts} from '../src/foot-placement.js';
 import {createWeapon} from '../src/weapons.js';
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const grips=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
-for(const model of ['ronin','monk'])for(const kind of ['light','heavy'])test(model+' '+kind+' source cut retains whole-body movement, native hinges, and two fitted fists',async t=>{
+for(const [model,kind] of [...['ronin','monk'].flatMap(model=>['light','heavy'].map(kind=>[model,kind])),['kaede','heavy']])test(model+' '+kind+' source cut retains whole-body movement, native hinges, and two fitted fists',async t=>{
  const hero=WARRIORS.find(h=>h.model===model),name=hero.motionOverrides[(hero.motionPrefix||'')+(kind==='light'?'Cut_Diagonal':'Heavy_Cleave')],record=motions[name];
  assert.ok(record.nativeSourceMotion&&record.nativeAttachment&&record.fixedGripFrame&&record.pairedGrip);
  // The wider polearm grip has separately reviewed rotation bounds.
  // Hinge tolerance covers quaternion interpolation, not a reverse elbow.
  const polearmLight=model==='monk'&&kind==='light';
- const limits={hinge:polearmLight?.15:.1,humeral:polearmLight?80:kind==='light'?75:70,wrist:polearmLight?42:40,step:kind==='light'?.25:.4};
+ const limits={hinge:polearmLight?.15:.1,humeral:model==='kaede'?86:polearmLight?80:kind==='light'?75:70,wrist:polearmLight?42:40,step:kind==='light'?.25:.4};
  const attack=withMotionTiming(attackDefinition(kind,0,hero.combatStyle),record);
- assert.equal(attack.hits.length,kind==='light'?1:2);assert.equal(attack.damage*attack.hits.length,kind==='light'?31:90);
+ assert.equal(attack.hits.length,kind==='light'?1:2);assert.equal(attack.damage*attack.hits.length,attackDefinition(kind,0,hero.combatStyle).damage);
  const rig=await loadNativeSkin(new URL('../public/models/'+model+'.glb',import.meta.url)),b={};rig.scene.traverse(o=>{if(o.isBone)b[o.name]=o;});rig.scene.updateMatrixWorld(true);
  const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(b,s))]));
  const wrists=Object.fromEntries(['r','l'].map(s=>[s,b['hand_'+s].quaternion.clone().normalize()]));
@@ -60,7 +60,7 @@ for(const model of ['ronin','monk'])for(const kind of ['light','heavy'])test(mod
  const bladePoint=time=>{sample(time);return b.hand_r.localToWorld(new Vector3().fromArray(profile.r.center)).addScaledVector(up.clone().applyQuaternion(q('hand_r').multiply(mount)),model==='monk'?1.4:.8);};
  for(const impact of record.impacts){
   const velocity=bladePoint(impact+1/480).sub(bladePoint(impact-1/480)).normalize();sample(impact);
-  const edge=new Vector3(1,0,0).applyQuaternion(q('hand_r').multiply(mount));assert.ok(velocity.dot(edge)>.6,'The curved blade strikes with its back edge: '+velocity.dot(edge));
+  const edge=new Vector3(1,0,0).applyQuaternion(q('hand_r').multiply(mount));assert.ok((hero.weaponKind==='jian'?Math.abs(velocity.dot(edge)):velocity.dot(edge))>.6,'The blade hits flat or with its blunt edge: '+velocity.dot(edge));
   const contacts=attackFootContacts(record,impact,{footR:[0,0,1],footL:[0,0,1]});assert.ok(contacts.stance.r||contacts.stance.l,'Both feet lose support at contact.');
  }
  t.diagnostic(JSON.stringify({maxGap,maxWrist,maxStep,maxTurn,hipTravel:maxHip-minHip}));

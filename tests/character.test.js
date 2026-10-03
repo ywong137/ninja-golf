@@ -50,7 +50,7 @@ test('The three single-sword heroes have complete independent animation families
  const names=['Ready','Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'];
  for(const prefix of ['Fan_','Ring_','Sickle_'])for(const name of names){
   const hero=WARRIORS.find(hero=>hero.motionPrefix===prefix);
-  const clip=motions[hero.motionOverrides?.[prefix+name]??prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,false);
+  const clip=motions[hero.motionOverrides?.[prefix+name]??prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,hero.model==='kaede'&&name==='Heavy_Cleave','The Ace braces her heavy cut with both hands.');
   for(const p of clip.poses){
    assert.ok(Number.isFinite(p.roll));
    // Native clips animate the free arm directly; freeHand drives procedural poses.

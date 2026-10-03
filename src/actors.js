@@ -47,7 +47,7 @@ export { Effects } from './effects.js';
 const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS={...Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'captured-running-20261002'])),ronin:'native-guards-20261002',monk:'native-guards-20261002'};
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-20261003';
-MODEL_REVISIONS.kaede='full-body-opening-20261003';
+MODEL_REVISIONS.kaede='ace-source-power-20261003';
 MODEL_REVISIONS.monk='two-handed-cuts-20261003';
 MODEL_REVISIONS.ronin='ronin-musou-source-20261003';
 MODEL_REVISIONS.ayame='hustler-source-cut-20261003';

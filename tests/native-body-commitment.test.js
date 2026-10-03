@@ -4,7 +4,6 @@ import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {WARRIORS} from '../src/warriors.js';
 
 globalThis.ProgressEvent??=class{};
 const asset=process.env.NINJA_NATIVE_BODY_DIR
@@ -13,13 +12,13 @@ const asset=process.env.NINJA_NATIVE_BODY_DIR
 
 // This test reads the exported skeleton and animation. It does not import the
 // authoring curves or derive its expected motion from their formulas.
-test('Kaede cleave loads the rear support and commits her torso through the planted strike',async t=>{
+test('Legacy Kaede cleave loads the rear support and commits her torso through the planted strike',async t=>{
  const raw=readFileSync(asset),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size));
  doc.buffers[0].uri='data:application/octet-stream;base64,'+raw.subarray(28+size).toString('base64');
  for(const key of ['meshes','skins','materials','textures','images'])delete doc[key];
  for(const node of doc.nodes){delete node.mesh;delete node.skin;}
  const gltf=await new GLTFLoader().parseAsync(JSON.stringify(doc),'');
- const name=WARRIORS.find(w=>w.model==='kaede').motionOverrides?.Fan_Heavy_Cleave??'Fan_Heavy_Cleave';
+ const name='Ace_Heavy_Cleave'; // Retained one-handed fallback; source attacks have separate native tests.
  const clip=gltf.animations.find(c=>c.name===name);assert.ok(clip,`Missing native ${name}`);
  const mixer=new THREE.AnimationMixer(gltf.scene),action=mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();
  const point=name=>gltf.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());

@@ -66,7 +66,7 @@ test('Ayame cleave windup keeps the forearm outside its upper arm and torso',asy
  assert.equal(failures.length,0,`Deformed windup skin or elbow continuity failed at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
 });
 
-for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam','Fan_Musou_Flow'])test(`${name}: Kaede keeps the free arm clear and its elbow continuous`,async t=>{
+for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam','Fan_Musou_Flow'])test(`${name}: Kaede keeps the left arm clear and its elbow continuous`,async t=>{
  const file=process.env.NINJA_NATIVE_ARM_DIR
   ?path.join(process.env.NINJA_NATIVE_ARM_DIR,'kaede.glb')
   :new URL('../public/models/kaede.glb',import.meta.url);
@@ -99,7 +99,7 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
  // speed ceiling as a separate guard against discontinuous body motion.
  const failures=rows.filter(r=>r.inset>.003||r.forearmTorsoPairs>0||r.upperarmTorsoPairs>0||
   (sourceMotion ? r.bodyElbowSpeed>8||r.elbowSpeed>15 : r.elbowSpeed>8)||r.reach>reachLimit);
- assert.equal(failures.length,0,`Free arm intersects the body, flips, or locks straight at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
+ assert.equal(failures.length,0,`Left arm intersects the body, flips, or locks straight at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
 });
 
 for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut_Sweep','Fan_Heavy_Cleave','Fan_Heavy_Rising','Fan_Heavy_Sweep','Fan_Heavy_Slam'])test(`${name}: the fan forearm clears the torso during the cut`,async t=>{
