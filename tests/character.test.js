@@ -56,7 +56,13 @@ test('The three single-sword heroes have complete independent animation families
    // Native clips animate the free arm directly; freeHand drives procedural poses.
    if(!clip.nativeAttachment)assert.ok(p.freeHand>0,'The free hand uses a distinct open guard');
   }
-  if(name==='Musou_Flow'){assert.equal(clip.headings.length,6);assert.ok(Math.abs(clip.poses.at(-1).hip-clip.headings.at(-1))<1e-6,'Recovery preserves the final authored heading');}
+  if(name==='Musou_Flow'){
+   assert.equal(clip.headings.length,clip.impacts.length,'Each strike has an explicit heading');
+   assert.ok(clip.headings.every(Number.isFinite),'Strike headings remain finite');
+   // Source clips retain their recorded recovery; their native skeleton tests
+   // check body continuity instead of a procedural hip-heading constraint.
+   if(!clip.nativeSourceMotion)assert.ok(Math.abs(clip.poses.at(-1).hip-clip.headings.at(-1))<1e-6,'Recovery preserves the final authored heading');
+  }
   if(name==='Ready')assert.ok(Math.hypot(...clip.poses[0].grip.map((x,i)=>x-clip.poses.at(-1).grip[i]))<1e-6,'Stance loop closes without a hand jump');
   else {
    const index=names.indexOf(name)-1;

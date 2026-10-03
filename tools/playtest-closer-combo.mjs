@@ -56,7 +56,7 @@ try{
   if(r.mode==='none'||r.mode==='dodge')assert.equal(names.length,1,JSON.stringify(r));
   if(['pair','late'].includes(r.mode))assert.deepEqual(names,['Closer_Combo_Opening','Closer_Combo_Return']);
   if(['chain','moving','terrain'].includes(r.mode))assert.deepEqual(names,['Closer_Combo_Opening','Closer_Combo_Return','Closer_Combo_Finish']);
-  if(['heavy','replace'].includes(r.mode))assert.deepEqual(names,['Closer_Combo_Opening','Sickle_Heavy_Cleave']);
+  if(['heavy','replace'].includes(r.mode))assert.deepEqual(names,['Closer_Combo_Opening','Closer_Power_Finish']);
   if(r.mode==='repeat')assert.equal(names[3],'Closer_Combo_Opening');
   if(r.mode==='moving')assert.ok(r.running);
  }

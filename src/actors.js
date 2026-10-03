@@ -50,7 +50,7 @@ for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-2026100
 MODEL_REVISIONS.kaede='full-body-opening-20261003';
 MODEL_REVISIONS.ronin=MODEL_REVISIONS.monk='two-handed-cuts-20261003';
 MODEL_REVISIONS.ayame='hustler-source-cut-20261003';
-MODEL_REVISIONS.sora='closer-connected-combo-20261003';
+MODEL_REVISIONS.sora='closer-power-musou-20261003';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -553,7 +553,7 @@ export class Warrior {
     else if(guardEnabled&&guardBreak>0&&!this.wasGuardBreak&&!action&&!dodge)this.play(`${guardPrefix}_Guard_Break`,.045,true);
     else if(emerging){this.play(emerging.progress<.68?'Jump_Loop':'Jump_Land',.10,false,1.8);}
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
-    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,.07,true,motions[name].duration/action.duration);}
+    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,motions[name].entryBlend??.07,true,motions[name].duration/action.duration);}
     else if(guardImpact&&guardBreak<=0)this.play(`${guardPrefix}_Guard_Impact`,.035,true,parry>0?1.15:1);
     else if(swing>0&&!this.wasSwing)this.play(putting?'Golf_Putt':'Golf_Swing',.10,true,1);
     else if(!action&&!enemyAction&&attack>0&&!this.wasAttack)this.play('Sword_Attack',.07,true,2.2);

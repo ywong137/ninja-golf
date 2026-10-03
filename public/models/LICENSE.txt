@@ -84,3 +84,9 @@ cuts use the matching A_Rec and B_Rec recoveries when no input is queued.
 Source steps and torso turns remain connected at shared source frames.
 Horizontal pelvis travel moves the gameplay actor; native bone scales stay
 constant across the extracted clips. The original character mesh is unchanged.
+
+The Closer heavy finish and four-cut musou adapt Sword_Heavy_Combo from
+Quaternius Universal Animation Library 2 (CC0). The native transfer retains
+the source torso turns, steps, and recovery. A continuous elbow plane avoids
+the near-straight arm flip; a short landing phase plays more slowly. The
+weapon remains attached to the closed hand throughout the performance.

@@ -43,13 +43,13 @@ export class Effects {
     const center=position.clone().add(new THREE.Vector3(0,.8,0));this.burst(center,Math.round(48*scale),12*scale,0);this.burst(center,Math.round(24*scale),9*scale,2);
     const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.6*scale,1),new THREE.MeshBasicMaterial({color:'#fff2c2',transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending}));m.position.copy(center);this.scene.add(m);this.items.push({m,life:.22,max:.22,peak:.6,growth:8});
   }
-  flourish(position,beat,color,style){
+  flourish(position,beat,color,style,{final=false}={}){
     for(let i=0;i<3;i++){
       const radius=2.4+i*1.3,m=new THREE.Mesh(new THREE.RingGeometry(radius,radius+.12,64,1,-2.1,4.2),new THREE.MeshBasicMaterial({color:i===1?'#fff1b2':color,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
       m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.5,max:.5,peak:.48,growth:style==='ring'?3:2.1});
     }
     for(let i=0;i<100;i++){const angle=i*2.39996+beat,r=1+Math.random()*4,p=position.clone().add(new THREE.Vector3(Math.sin(angle)*r,.5+Math.random()*2,Math.cos(angle)*r));this.particle(p,new THREE.Vector3(Math.sin(angle)*9,2+Math.random()*7,Math.cos(angle)*9),.5+Math.random()*.45,.10+Math.random()*.15,i%3===0?2:0);}
-    if(beat===5)this.explosion(position,2);
+    if(final)this.explosion(position,2);
   }
   trail(a,b,kind=0,token=0,channel=0){
     if(token!==this.trailToken){this.ribbonTracks.clear();this.trailToken=token;}
