@@ -53,3 +53,8 @@ proportions, retains native hand motion, and adds shoe contacts and joint limits
 Source skeleton: https://mocap.cs.cmu.edu/subjects/09/09.asf
 Source recording: https://mocap.cs.cmu.edu/subjects/09/09_01.amc
 Usage terms: https://mocap.cs.cmu.edu/faqs.php
+
+The Ace opening cut adapts the complete Sword_Attack clip from Quaternius
+Universal Animation Library 1, CC0. It retains the source preparation, step,
+body turn, balancing arm, and recovery. Native joint frames and the sword
+grip fit the Rocketbox skeleton. Gameplay scales the complete source clock.

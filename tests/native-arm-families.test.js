@@ -5,6 +5,7 @@ import {inspectNativeAceFamily} from '../tools/check-native-ace-family.mjs';
 import {inspectNativeHustler} from '../tools/check-native-hustler.mjs';
 import {inspectNativeCloser} from '../tools/check-native-closer.mjs';
 import {attackDefinition} from '../src/combat.js';
+import {withMotionTiming} from '../src/attack-timing.js';
 import {WARRIORS} from '../src/warriors.js';
 
 const record=new URL('../src/motion-data.json',import.meta.url);
@@ -22,11 +23,11 @@ for(const [model,inspect]of [['kaede',inspectNativeAceFamily],['ayame',inspectNa
  test(`${model}: all gameplay contacts match authored attack timing`,()=>{
   const hero=WARRIORS.find(h=>h.model===model);
   for(const kind of ['light','heavy','musou'])for(let step=0;step<(kind==='musou'?1:4);step++){
-   const name=combatMotionName(hero,kind,step),spec=motions[name],attack=attackDefinition(kind,step,hero.combatStyle);
+   const name=combatMotionName(hero,kind,step),spec=motions[name],attack=withMotionTiming(attackDefinition(kind,step,hero.combatStyle),spec);
    assert.ok(spec.nativeAttachment,`${name}: runtime must retain the authored wrist.`);
-   assert.ok(Math.abs(spec.duration-attack.duration)<1e-7,`${name}: duration mismatch.`);
+   assert.ok(Math.abs((spec.combatDuration??spec.duration)-attack.duration)<1e-7,`${name}: duration mismatch.`);
    assert.equal(spec.impacts.length,attack.hits.length);
-   for(let i=0;i<attack.hits.length;i++)assert.ok(Math.abs(spec.impacts[i]-attack.hits[i])<1e-7,`${name}: damage timing mismatch.`);
+   for(let i=0;i<attack.hits.length;i++)assert.ok(Math.abs(spec.impacts[i]/spec.duration*attack.duration-attack.hits[i])<1e-7,`${name}: damage timing mismatch.`);
   }
  });
 }

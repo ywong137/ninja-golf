@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {WARRIORS} from '../src/warriors.js';
+import {withMotionTiming} from '../src/attack-timing.js';
 import {attackDefinition} from '../src/combat.js';
 import {samplePlanarRoot} from '../src/attack-root-motion.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
@@ -38,12 +39,12 @@ test('Every hero uses a complete distinct family of full-body attacks',()=>{
  assert.equal(new Set(WARRIORS.map(w=>w.motionPrefix)).size,WARRIORS.length);
  for(const hero of WARRIORS)for(const name of names){
   const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];assert.ok(clip?.athleticAttack,hero.model+'/'+name);
-  const index=names.indexOf(name),kind=index<4?'light':index<8?'heavy':'musou',definition=attackDefinition(kind,index%4,hero.combatStyle);
-  assert.ok(Math.abs(clip.duration-definition.duration)<1e-8,hero.model+'/'+name);
+  const index=names.indexOf(name),kind=index<4?'light':index<8?'heavy':'musou',definition=withMotionTiming(attackDefinition(kind,index%4,hero.combatStyle),clip);
+  assert.ok(Math.abs((clip.combatDuration??clip.duration)-definition.duration)<1e-8,hero.model+'/'+name);
   assert.equal(clip.impacts.length,definition.hits.length,hero.model+'/'+name);
-  clip.impacts.forEach((hit,i)=>assert.ok(Math.abs(hit-definition.hits[i])<1e-8,hero.model+'/'+name));
+  clip.impacts.forEach((hit,i)=>assert.ok(Math.abs(hit/clip.duration*definition.duration-definition.hits[i])<1e-8,hero.model+'/'+name));
   assert.ok(['footR','footL'].some(key=>Math.max(...clip.poses.map(p=>p[key][2]))>.04),`${hero.model}/${name}: no authored step`);
-  for(const hit of clip.impacts)assert.ok(['r','l'].some(side=>clip.footPlants[side].some(([a,b])=>hit>=a&&hit<=b)),`${hero.model}/${name}: unsupported impact`);
+  for(const hit of clip.impacts)assert.ok(['r','l'].some(side=>[...clip.footPlants[side],...(clip.toePlants?.[side]??[]),...(clip.supportWindows?.[side]??[])].some(([a,b])=>hit>=a&&hit<=b)),`${hero.model}/${name}: unsupported impact`);
  }
 });
 test('New weapon-ready stances keep each male hero at the attack hand and foot positions',()=>{

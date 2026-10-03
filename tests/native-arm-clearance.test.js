@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {loadNativeSkin,skinGroups,measureArmSkin} from './native-skin-helper.mjs';
 import {WARRIORS} from '../src/warriors.js';
 
+const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const ace=WARRIORS.find(hero=>hero.model==='kaede');
 const aceClip=name=>ace.motionOverrides?.[name]||name;
 
@@ -81,13 +83,22 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
   const seconds=Math.min(clip.duration,frame/240);action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);
   const shoulder=point('upperarm_l'),elbow=point('lowerarm_l').sub(shoulder),wrist=point('hand_l').sub(shoulder);
   const dt=previous?seconds-previous.seconds:0,skin=measureArmSkin(g,metadata,'l');
+  const bodyElbow=elbow.clone().applyQuaternion(g.scene.getObjectByName('upperarm_l').parent.getWorldQuaternion(new THREE.Quaternion()).invert());
   rows.push({seconds,inset:skin.fold_l.maxRadialPenetration,forearmTorsoPairs:skin.forearmTorso_l.pairs,upperarmTorsoPairs:skin.upperarmTorso_l.pairs,
-   elbowSpeed:dt>1e-7?elbow.distanceTo(previous.elbow)/dt:0,reach:wrist.length()/(elbow.length()+wrist.clone().sub(elbow).length())});
-  previous={seconds,elbow};
+   elbowSpeed:dt>1e-7?elbow.distanceTo(previous.elbow)/dt:0,bodyElbowSpeed:dt>1e-7?bodyElbow.distanceTo(previous.bodyElbow)/dt:0,reach:wrist.length()/(elbow.length()+wrist.clone().sub(elbow).length())});
+  previous={seconds,elbow,bodyElbow};
  }
  const worst=key=>rows.reduce((a,b)=>b[key]>a[key]?b:a);
- t.diagnostic(JSON.stringify({samples:rows.length,maxInset:worst('inset'),maxElbowSpeed:worst('elbowSpeed'),maxReach:worst('reach')}));
- const failures=rows.filter(r=>r.inset>.003||r.forearmTorsoPairs>0||r.upperarmTorsoPairs>0||r.elbowSpeed>8||r.reach>.95);
+ t.diagnostic(JSON.stringify({samples:rows.length,maxInset:worst('inset'),maxElbowSpeed:worst('elbowSpeed'),maxBodyElbowSpeed:worst('bodyElbowSpeed'),maxReach:worst('reach')}));
+ // The source balancing arm extends farther while retaining positive elbow
+ // flexion. Keep skin and velocity checks; reject a nearly locked arm.
+ const sourceMotion=motions[clip.name]?.nativeSourceMotion;
+ const reachLimit=sourceMotion ? .985 : .95;
+ // A full body turn moves the elbow even with a steady shoulder joint.
+ // Measure that joint in its parent frame; retain the weapon-arm world
+ // speed ceiling as a separate guard against discontinuous body motion.
+ const failures=rows.filter(r=>r.inset>.003||r.forearmTorsoPairs>0||r.upperarmTorsoPairs>0||
+  (sourceMotion ? r.bodyElbowSpeed>8||r.elbowSpeed>15 : r.elbowSpeed>8)||r.reach>reachLimit);
  assert.equal(failures.length,0,`Free arm intersects the body, flips, or locks straight at ${failures.length} samples: ${JSON.stringify(failures.slice(0,8))}`);
 });
 
@@ -100,8 +111,9 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
  for(let frame=0;frame<=Math.ceil(clip.duration*240);frame++){
   const seconds=Math.min(clip.duration,frame/240);action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);
   const elbow=point('lowerarm_r').sub(point('upperarm_r')),dt=previous?seconds-previous.seconds:0,skin=measureArmSkin(g,metadata,'r');
-  rows.push({seconds,inset:skin.fold_r.maxRadialPenetration,forearmTorsoPairs:skin.forearmTorso_r.pairs,elbowSpeed:dt>1e-7?elbow.distanceTo(previous.elbow)/dt:0});
-  previous={seconds,elbow};
+  const bodyElbow=elbow.clone().applyQuaternion(g.scene.getObjectByName('upperarm_r').parent.getWorldQuaternion(new THREE.Quaternion()).invert());
+  rows.push({seconds,inset:skin.fold_r.maxRadialPenetration,forearmTorsoPairs:skin.forearmTorso_r.pairs,elbowSpeed:dt>1e-7?elbow.distanceTo(previous.elbow)/dt:0,bodyElbowSpeed:dt>1e-7?bodyElbow.distanceTo(previous.bodyElbow)/dt:0});
+  previous={seconds,elbow,bodyElbow};
  }
  // The existing Ready pose compresses this mesh at the elbow. Test active
  // strokes separately from the initial 60 ms and final 100 ms of returning
@@ -115,5 +127,6 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
  assert.ok(rows.every(r=>r.forearmTorsoPairs===0),'Forearm crosses the torso');
  // Fast cross-body cuts may exceed the free-arm speed. This bound rejects
  // the former 20–46 m/s bend-plane jumps. Recovery has a separate 8 m/s test.
- assert.ok(maxSpeed.elbowSpeed<15,`Elbow plane jumps: ${JSON.stringify(maxSpeed)}`);
+ const sourceMotion=motions[clip.name]?.nativeSourceMotion;
+ assert.ok(sourceMotion?rows.every(r=>r.bodyElbowSpeed<15&&r.elbowSpeed<20):maxSpeed.elbowSpeed<15,`Elbow plane jumps: ${JSON.stringify(maxSpeed)}`);
 });

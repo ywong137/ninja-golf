@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-03",
+  "scope": "The Ace, first light attack only",
+  "clip": "Ace_Cut_Diagonal",
+  "source": {
+    "library": "Quaternius Universal Animation Library 1",
+    "clip": "Sword_Attack",
+    "license": "CC0",
+    "sha256": "69591853d817488edaa8fd9bf8fc1d821eaeaf789f8627b3cd23b41c4ed67997"
+  },
+  "modelSha256": "1378a312d962d2672fec953d83a12e7ccc89141ef8279bedeae8d7c09243597e",
+  "nativeDuration": 1.5333333015441895,
+  "gameplayDuration": 1.2,
+  "nativeImpact": 0.47,
+  "adaptation": [
+    "Full source preparation, step, body turn, balancing arm, and recovery",
+    "Native knee and elbow hinge fitting",
+    "Continuous elbow plane near extension and bounded shoulder rotation",
+    "Neutral wrist fitting and forearm pronation for cutting-edge contact",
+    "Measured sole support windows through heel and toe roll"
+  ],
+  "preservation": {
+    "preservedOriginalBytes": 15988284,
+    "preservedAnimations": 37,
+    "replacements": [
+      "Ace_Cut_Diagonal"
+    ]
+  },
+  "gameplay": [
+    {
+      "hz": 40,
+      "standingHits": [
+        {
+          "clip": "Ace_Cut_Diagonal",
+          "time": 0.37500000000000006,
+          "hit": 0
+        }
+      ],
+      "movingHits": [
+        {
+          "clip": "Ace_Cut_Diagonal",
+          "time": 0.37500000000000006,
+          "hit": 0
+        }
+      ],
+      "cancelHits": [],
+      "bufferClips": [
+        "Ace_Cut_Diagonal",
+        "Ace_Heavy_Cleave"
+      ],
+      "minBladeClearance": 0.4797681794785733,
+      "weaponFrames": 148,
+      "runRecovered": true,
+      "finite": true,
+      "enemyDamage": 31.360000000000014,
+      "standingRecovered": true,
+      "cancelled": true,
+      "bufferRecovered": true
+    },
+    {
+      "hz": 60,
+      "standingHits": [
+        {
+          "clip": "Ace_Cut_Diagonal",
+          "time": 0.3833333333333333,
+          "hit": 0
+        }
+      ],
+      "movingHits": [
+        {
+          "clip": "Ace_Cut_Diagonal",
+          "time": 0.3833333333333333,
+          "hit": 0
+        }
+      ],
+      "cancelHits": [],
+      "bufferClips": [
+        "Ace_Cut_Diagonal",
+        "Ace_Heavy_Cleave"
+      ],
+      "minBladeClearance": 0.4797681794785751,
+      "weaponFrames": 219,
+      "runRecovered": true,
+      "finite": true,
+      "enemyDamage": 31.360000000000014,
+      "standingRecovered": true,
+      "cancelled": true,
+      "bufferRecovered": true
+    }
+  ],
+  "limitations": [
+    "Other light attacks, heavy attacks, and two-handed weapons retain their existing motion.",
+    "Numerical checks do not replace human review of the movement."
+  ]
+}

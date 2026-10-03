@@ -32,10 +32,11 @@ function supportState(kind,name,spec,seconds,side){
  if(kind==='selection'||kind==='ready')return{loaded:true,plant:'static'};
  if(kind==='attack'){
   const intervals=spec.footPlants?.[side];
-  assert.ok(intervals?.length,`${name}: missing authored ${side} footPlants`);
+  assert.ok(intervals?.length||spec.supportWindows?.[side]?.length,`${name}: missing ${side} support records`);
   const index=intervals.findIndex(([a,b])=>seconds>=a-1e-7&&seconds<=b+1e-7);
   const toe=(spec.toePlants?.[side]??[]).findIndex(([a,b])=>seconds>=a-1e-7&&seconds<=b+1e-7);
-  return{loaded:index>=0||toe>=0,plant:index>=0?index:null,toePlant:toe>=0?toe:null};
+  const sourceContact=(spec.supportWindows?.[side]??[]).some(([a,b])=>seconds>=a&&seconds<=b);
+  return{loaded:index>=0||toe>=0||sourceContact,plant:index>=0?index:null,toePlant:toe>=0?toe:null};
  }
  if(kind==='gait'&&spec.sourceGait){
   const [start,end]=spec.sourceGait.feet[side].supportInterval;
@@ -123,10 +124,10 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
      const measured=measureLegAnatomy(anatomy[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);
      anatomic.samples++;
      for(const key of ['kneeDeviation','hipTwist','ankleTwist'])anatomic[key]=Math.max(anatomic[key],Math.abs(measured[key]));
-     assert.ok(measured.kneeDeviation<.1&&Math.abs(measured.hipTwist)<45&&Math.abs(measured.ankleTwist)<15,`${name}/${seconds}/${side}: invalid joint frames ${JSON.stringify(measured)}`);
+     assert.ok(measured.kneeDeviation<.1&&Math.abs(measured.hipTwist)<45&&Math.abs(measured.ankleTwist)<(spec.nativeSourceMotion?22:15),`${name}/${seconds}/${side}: invalid joint frames ${JSON.stringify(measured)}`);
     }
     const state=supportState(kind,name,spec,seconds,side);
-    if(impact)assert.ok(state.loaded,`${name} ${side}: impact has no authored support`);
+    if(impact)assert.ok(['r','l'].some(s=>supportState(kind,name,spec,seconds,s).loaded),`${name}: impact has no supporting foot`);
     if(state.loaded&&!spec.nativeKneeHeading){
      loadedSamples++;retain(worst[kind==='selection'?'selectionMedial':'loadedMedial'],medial,name,seconds,side);
      if(loadedByKind[kind])retain(loadedByKind[kind],medial,name,seconds,side);

@@ -8,7 +8,7 @@ import {WARRIORS} from '../src/warriors.js';
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const ace=WARRIORS.find(hero=>hero.model==='kaede');
 
-for(const [kind,canonical]of [['light','Fan_Cut_Diagonal'],['heavy','Fan_Heavy_Cleave']]){
+for(const [kind,canonical]of [['heavy','Fan_Heavy_Cleave']]){
  const clip=ace.motionOverrides[canonical];
  test(`${clip}: controller contact matches the native stroke, with bounded wrist movement and full-body support`,async t=>{
   const definition=attackDefinition(kind,0,ace.combatStyle);

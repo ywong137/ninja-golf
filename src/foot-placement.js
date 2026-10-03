@@ -37,7 +37,7 @@ function contactIntervals(clip,side){
  if(!clip?.footPlants?.[side])return null;
  let schedule=contactSchedules.get(clip);if(!schedule){schedule={};contactSchedules.set(clip,schedule);}
  if(!schedule[side]){
-  const ranges=[...clip.footPlants[side],...(clip.toePlants?.[side]??[])].map(range=>[...range]).sort((a,b)=>a[0]-b[0]),merged=[];
+  const ranges=[...clip.footPlants[side],...(clip.toePlants?.[side]??[]),...(clip.supportWindows?.[side]??[])].map(range=>[...range]).sort((a,b)=>a[0]-b[0]),merged=[];
   for(const range of ranges){const previous=merged.at(-1);if(previous&&range[0]<=previous[1]+1e-7)previous[1]=Math.max(previous[1],range[1]);else merged.push(range);}
   schedule[side]=merged;
  }

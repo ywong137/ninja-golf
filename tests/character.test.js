@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {BLADE_PROFILES,bladeGeometry} from '../src/weapons.js';
 import {ENEMY_TYPES,enemyTypeForSlot,enemyIntent,guardDamageMultiplier,attackDefinition} from '../src/combat.js';
 import {WARRIORS} from '../src/warriors.js';
+import {withMotionTiming} from '../src/attack-timing.js';
 import {Projectiles} from '../src/projectiles.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 test('Blades have broad flat faces, distinct profiles, and bounded draw groups',()=>{
@@ -28,7 +29,9 @@ test('Combat choreography keeps the torso coupled and both weapon paths explicit
  for(const [name,clip] of Object.entries(motions)){
   if(name.startsWith('Golf'))continue;
   for(const pose of clip.poses){
-   assert.ok(Math.abs(pose.chest-pose.hip)<.9,`${name}: excessive torso twist`);
+   // Imported records contain measured Euler headings, not procedural twist controls.
+   // Their native joint frames receive the full-body skeleton tests.
+   if(!clip.nativeSourceMotion)assert.ok(Math.abs(pose.chest-pose.hip)<.9,`${name}: excessive torso twist`);
    const paths=clip.nativeAttachment?(clip.twoHanded?['secondaryGrip']:[]):['offGrip','offTip'];
    for(const key of [...paths,'elbowR','elbowL','footR','footL'])assert.equal(pose[key].length,3,`${name}: ${key}`);
    // Native clips validate reach against the moving shoulder in their rig audit.
@@ -57,8 +60,8 @@ test('The three single-sword heroes have complete independent animation families
   if(name==='Ready')assert.ok(Math.hypot(...clip.poses[0].grip.map((x,i)=>x-clip.poses.at(-1).grip[i]))<1e-6,'Stance loop closes without a hand jump');
   else {
    const index=names.indexOf(name)-1;
-   const definition=attackDefinition(index<4?'light':index<8?'heavy':'musou',index%4,hero.combatStyle);
-   assert.ok(Math.abs(clip.duration-definition.duration)<1e-8,`${prefix}${name}: duration must match gameplay`);
+   const definition=withMotionTiming(attackDefinition(index<4?'light':index<8?'heavy':'musou',index%4,hero.combatStyle),clip);
+   assert.ok(Math.abs((clip.combatDuration??clip.duration)-definition.duration)<1e-8,`${prefix}${name}: duration must match gameplay`);
    assert.notDeepEqual(clip.poses.map(p=>p.grip),motions[name].poses.map(p=>p.grip),'A new weapon needs its own trajectory');
   }
  }
