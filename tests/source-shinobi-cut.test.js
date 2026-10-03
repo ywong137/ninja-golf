@@ -58,7 +58,10 @@ test('source record export retains an explicit single-handed blade mount',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ninja-source-mount-'));
  try{
   const output=path.join(dir,'record.json');
-  execFileSync(process.execPath,['tools/sample-source-cut-record.mjs','--input','public/models/shinobi.glb','--grips','src/grip-data.json','--hero','shinobi','--clip',name,'--combat-duration',String(record.combatDuration),'--impact',String(record.impacts[0]),'--grip-roll',String(record.weaponGripRoll),'--output',output],{stdio:'pipe'});
+  execFileSync(process.execPath,['tools/sample-source-cut-record.mjs','--input','public/models/shinobi.glb','--grips','src/grip-data.json','--hero','shinobi','--dual-wield','--clip',name,'--combat-duration',String(record.combatDuration),'--impact',String(record.impacts[0]),'--grip-roll',String(record.weaponGripRoll),'--output',output],{stdio:'pipe'});
   const result=JSON.parse(fs.readFileSync(output))[name];assert.equal(result.twoHanded,false);assert.equal(result.weaponGripRoll,record.weaponGripRoll);
+  for(const pose of result.poses){assert.equal(pose.offGrip.length,3);assert.equal(pose.offTip.length,3);assert.ok(Number.isFinite(pose.offRoll));}
+  assert.deepEqual(result.poses.map(p=>p.offGrip),record.poses.map(p=>p.offGrip),'Preserve the exported left-hand path.');
+  assert.deepEqual(result.poses.map(p=>p.offTip),record.poses.map(p=>p.offTip),'Preserve the exported left-blade direction.');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });

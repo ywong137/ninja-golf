@@ -35,10 +35,14 @@ Supply the input model, grip data, and a separate review output. Then run `tools
 
 ```text
 --source-clip Shinobi_Stepping_Cut --template Twin_Cut_Diagonal
---name Shinobi_Stepping_Cut --hero shinobi
+--name Shinobi_Stepping_Cut --hero shinobi --dual-wield
 --impact .425 --speed 1.35 --grip-roll 1.054489544526125
 ```
 
 Set `impactHands` to `["r"]` and `entryBlend` to `0.14` in the motion record. Rebuild the Shinobi selection bounds after integration.
 
 Local evidence lives in `artifacts/reviews/shinobi-stepping-cut` in the primary checkout. This includes the source transfer, candidate, clearance results, Opus review, gameplay cases, and silent recordings.
+
+The source exporter requires `--dual-wield` to retain both independent blade paths.
+The first deployment failed because the offhand path was absent.
+The corrected record passes the unchanged wrist interpolation test for all six characters.
