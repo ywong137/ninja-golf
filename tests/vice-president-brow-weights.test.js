@@ -108,7 +108,7 @@ test('All facial brow channels remain static, and neutral skin stays unchanged a
    }
   }
  }
- assert.equal(a.animations.length,38,'Review the brow channels when the native roster gains clips.');
+ assert.equal(a.animations.length,39,'Review the brow channels when the native roster gains clips.');
 });
 
 test('The local weights preserve eyes and valid expressions, including the full former movement',async()=>{

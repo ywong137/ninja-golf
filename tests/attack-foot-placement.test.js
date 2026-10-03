@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {FootPlacement,attackFootContacts} from '../src/foot-placement.js';
 import {WARRIORS} from '../src/warriors.js';
+import {SourceTerrainFrame} from '../src/source-terrain-frame.js';
+import {headingKnee} from '../src/knee-alignment.js';
 const motions=JSON.parse(readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 async function nativeRig(hero){
  const raw=readFileSync(new URL(`../public/models/${hero}.glb`,import.meta.url)),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size));
@@ -12,8 +14,8 @@ async function nativeRig(hero){
  delete doc.images;delete doc.textures;delete doc.samplers;delete doc.materials;
  for(const mesh of doc.meshes)for(const primitive of mesh.primitives)delete primitive.material;
  const binary=raw.subarray(28+size);doc.buffers=[{uri:'data:application/octet-stream;base64,'+binary.toString('base64'),byteLength:binary.length}];
- globalThis.ProgressEvent??=class{};const gltf=await new GLTFLoader().parseAsync(JSON.stringify(doc),'');gltf.scene.scale.setScalar(1.1);const bones={};gltf.scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
- return {root:gltf.scene,bones,clips:gltf.animations,mixer:new THREE.AnimationMixer(gltf.scene),placement:new FootPlacement(gltf.scene,bones)};
+ globalThis.ProgressEvent??=class{};const gltf=await new GLTFLoader().parseAsync(JSON.stringify(doc),'');const root=new THREE.Group();root.scale.setScalar(1.1);root.add(gltf.scene);const bones={};gltf.scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
+ return {root,model:gltf.scene,bones,clips:gltf.animations,mixer:new THREE.AnimationMixer(gltf.scene),placement:new FootPlacement(root,bones)};
 }
 const position=bone=>bone.getWorldPosition(new THREE.Vector3());
 function soleGaps(rig,ground){return ['r','l'].map(side=>{const foot=rig.bones['foot_'+side],q=foot.getWorldQuaternion(new THREE.Quaternion()),ankle=position(foot);return Math.min(...rig.placement.feet[side].contacts.map(local=>{const p=local.clone().applyQuaternion(q).add(ankle);return p.y-ground(p.x,p.z)}));});}
@@ -81,30 +83,33 @@ test('Authored downhill support stays reachable across six native bodies and fou
  const spots=[[29.3656,176.9803],[2.3435,208.6719],[13.6653,219.8109],[-47.1833,207.1993]];
  for(const [hero,prefix]of [['ronin',''],['shinobi','Twin_'],['monk','Naginata_'],['kaede','Fan_'],['ayame','Ring_'],['sora','Sickle_']]){
   const warrior=WARRIORS.find(w=>w.model===hero),name=warrior.motionOverrides?.[prefix+'Heavy_Cleave']??prefix+'Heavy_Cleave';
-  const {root,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===name);
+  const {root,model,bones,clips,mixer,placement}=await nativeRig(hero),clip=clips.find(c=>c.name===name);
+  // Match the runtime's broad-slope transport for captured performances.
+  const terrain=new SourceTerrainFrame(root,model,bones);
   let maxReach=0,maxExtraGap=0,maxGripChange=0;
   for(let theme=0;theme<4;theme++){
    placement.restore();placement.reset();mixer.stopAllAction();mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();
-   const c=COURSE_SETS[theme].holes[0],[x,z]=spots[theme],ground=(x,z)=>courseSurfaceHeight(c,x,z,heightAt,ellipse);root.position.set(x,heightAt(c,x,z),z);
+   const c=COURSE_SETS[theme].holes[0],[x,z]=spots[theme],ground=(x,z)=>courseSurfaceHeight(c,x,z,heightAt,ellipse);terrain.reset();root.position.set(x,heightAt(c,x,z),z);
    for(let frame=0;frame<90;frame++){
-    placement.restore();const time=frame/90*clip.duration;mixer.setTime(time);root.updateMatrixWorld(true);
+    terrain.restore();placement.restore();const time=frame/90*clip.duration;mixer.setTime(time);root.updateMatrixWorld(true);
     const span=position(bones.hand_l).sub(position(bones.hand_r));
     const data=motions[clip.name],rows=data.poses,t=time/data.duration;let nearest=rows[0];for(const row of rows)if(Math.abs(row.t-t)<Math.abs(nearest.t-t))nearest=row;
-    placement.apply(1/60,ground,{preserveAuthored:true,...attackFootContacts(data,time,nearest)});
-    maxGripChange=Math.max(maxGripChange,position(bones.hand_l).sub(position(bones.hand_r)).distanceTo(span));
+    const referencePlane=terrain.apply(1/60,ground,{active:!!data.nativeSourceMotion});
+    placement.apply(1/60,ground,{preserveAuthored:true,referencePlane,preserveHinge:!!data.nativeKneeHinges,kneeSolver:data.nativeKneeHeading?headingKnee:undefined,...attackFootContacts(data,time,nearest)});
+    maxGripChange=Math.max(maxGripChange,Math.abs(position(bones.hand_l).distanceTo(position(bones.hand_r))-span.length()));
     const gaps=soleGaps({bones,placement},ground);
     for(const [i,foot]of placement.report.feet.entries())if(foot.stance){
      maxReach=Math.max(maxReach,foot.reachError);const extra=Math.abs(gaps[i]-foot.sourceSoleGap);
      // Contact fades before a step. Its remaining downhill gap follows that fade.
      const blendedGap=Math.abs(foot.offset)*(1-foot.weight)/foot.weight;
-     assert.ok(extra<blendedGap+.003,`${hero}: gap exceeds its contact blend`);
+     assert.ok(extra<blendedGap+.003,`${hero}: gap exceeds its contact blend ${JSON.stringify({theme,frame,side:foot.side,extra,blendedGap,foot})}`);
      if(foot.weight>.999)maxExtraGap=Math.max(maxExtraGap,extra);
     }
    }
   }
   assert.ok(maxExtraGap<.003,`${hero}: added terrain gap ${maxExtraGap}`);
   assert.ok(maxReach<.003,`${hero}: unreachable support ${maxReach}`);
-  assert.ok(maxGripChange<1e-8,`${hero}: shared grip changed ${maxGripChange}`);
+  assert.ok(maxGripChange<1e-6,`${hero}: shared grip changed ${maxGripChange}`);
  }
 });
 

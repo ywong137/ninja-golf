@@ -56,3 +56,12 @@ test('GLB retiming preserves every pose value, mesh byte, and unrelated animatio
   }
  }
 });
+
+test('a two-contact source attack can split its damage without changing the shared definition',()=>{
+ const definition={duration:.76,hits:[.36],damage:90,reach:7};
+ const motion={duration:1.78,combatDuration:1.45,impacts:[.7,1.45],damageScale:.5};
+ const actual=withMotionTiming(definition,motion);
+ assert.equal(actual.damage*actual.hits.length,90);
+ assert.equal(definition.damage,90);assert.deepEqual(definition.hits,[.36]);
+ for(const damageScale of [NaN,Infinity,0,-1])assert.throws(()=>withMotionTiming(definition,{...motion,damageScale}),/damageScale/);
+});

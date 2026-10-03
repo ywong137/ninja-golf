@@ -51,7 +51,7 @@ export function applyFingerGrip(profile,weight=1){
 // This module never fits a mesh during play. The offline profiles contain the fit.
 export class HandGrip {
  constructor(actor,data){
-  this.actor=actor;this.profiles={};this.saved=new Map();this.weight=0;this.goal=0;this.transition=null;
+  this.actor=actor;this.profiles={};this.saved=new Map();this.weight=0;this.goal=0;this.transition=null;this.attachmentRoll=0;
   actor.root.updateMatrixWorld(true);
   for(const [kind,sides]of Object.entries(data)){
    this.profiles[kind]={};
@@ -139,6 +139,7 @@ export class HandGrip {
   const {root,bones}=this.actor,hand=bones['hand_'+side],profile=this.active[side];
   if(held.parent!==root)root.add(held);
   const world=rotation(hand).multiply(profile.frame);
+  if(this.kind==='sword')world.multiply(new Quaternion().setFromAxisAngle(Y,this.attachmentRoll??0));
   const center=hand.localToWorld(profile.center.clone());
   const scale=root.getWorldScale(new Vector3()).x;
   held.position.copy(root.worldToLocal(center.addScaledVector(Y.clone().applyQuaternion(world),-station*scale)));
@@ -163,6 +164,7 @@ export class HandGrip {
   // toward the head; polearms place it toward the butt.
   axis.normalize().multiplyScalar(Math.sign(spacing));
   const world=rotation(bones.hand_r).multiply(this.active.r.frame);
+  world.multiply(new Quaternion().setFromAxisAngle(Y,this.attachmentRoll??0));
   alignWeaponShaft(world,axis);
   const center=palms[0].clone().add(palms[1]).multiplyScalar(.5);
   if(held.parent!==root)root.add(held);
@@ -203,6 +205,15 @@ export class HandGrip {
  }
  apply(motion,golf,clip){
   const {actor}=this;this.prepare(golf);actor.root.updateMatrixWorld(true);
+  // Imported motions can use a different axial mount on the cylindrical grip.
+  // Keep that mount fixed through the performance and blend only at its boundary.
+  this.attachmentRoll=golf?0:(clip?.weaponGripRoll??0);
+  if(!Number.isFinite(this.attachmentRoll))throw Error('weaponGripRoll must be a finite angle in radians.');
+  const mountBlend=actor.heldBlend;
+  if(!golf&&mountBlend&&actor.mixer.time<mountBlend.start+mountBlend.duration){
+   const from=mountBlend.weaponGripRoll??0,t=MathUtils.smoothstep((actor.mixer.time-mountBlend.start)/mountBlend.duration,0,1);
+   this.attachmentRoll=MathUtils.lerp(from,this.attachmentRoll,t);
+  }
   if(this.transition){const t=MathUtils.clamp((actor.mixer.time-this.transition.start)/this.transition.duration,0,1);this.weight=MathUtils.lerp(this.transition.from,this.goal,t*t*(3-2*t));if(t===1)this.transition=null;}
   // The free hand closes after the carry arm approaches its authored pose.
   // An early full-strength grab can pull both elbows across the torso.

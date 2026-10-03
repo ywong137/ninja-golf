@@ -54,6 +54,9 @@ test('New weapon-ready stances keep each male hero at the attack hand and foot p
   const legacyReady=motions[hero.motionPrefix+'Ready'];
   for(const name of ['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam']){
    const clip=motions[hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name];
+   // Imported performances retain their source endpoints; runtime crossfades
+   // bridge to Ready. Their full-body/grip checks live in paired-source-power.
+   if(clip.nativeSourceMotion){assert.ok(clip.nativeAttachment&&clip.nativeStanceFeet);continue;}
    const pose=(clip.nativeAttachment?ready:legacyReady).poses[0];
    for(const endpoint of [clip.poses[0],clip.poses.at(-1)]){
     // Native transforms retain micrometre-scale solve/decomposition error.

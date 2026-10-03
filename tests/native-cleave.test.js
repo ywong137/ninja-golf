@@ -11,9 +11,9 @@ const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
 const motions=readJSON('../src/motion-data.json'),grips=readJSON('../src/grip-data.json').ronin.sword;
 const UP=new T.Vector3(0,1,0),degrees=180/Math.PI;
 
-test('Ronin native ready and cleave preserve anatomical wrists, real blade clearance, and planted support',async t=>{
+test('Ronin retained ready and legacy cleave preserve anatomical wrists, real blade clearance, and planted support',async t=>{
  const hero=WARRIORS.find(w=>w.model==='ronin');
- assert.equal(hero.readyClip,'Ronin_Ready');assert.equal(hero.motionOverrides.Heavy_Cleave,'Ronin_Heavy_Cleave');
+ assert.equal(hero.readyClip,'Ronin_Ready');assert.equal(hero.motionOverrides.Heavy_Cleave,'Ronin_Power_Cut');
  const rig=await loadNativeSkin(new URL('../public/models/ronin.glb',import.meta.url)),bones={};
  rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
  const position=name=>bones[name].getWorldPosition(new T.Vector3());
@@ -38,7 +38,7 @@ test('Ronin native ready and cleave preserve anatomical wrists, real blade clear
  const weapon=createWeapon(hero.weaponKind),blade=weapon.getObjectByName('Flat steel blade');assert.ok(blade?.isMesh);
  const bladePoints=blade.geometry.getAttribute('position'),vertex=new T.Vector3();assert.ok(bladePoints.count>100,'Test the complete curved blade mesh.');
  const metrics={samples:0,maxWristDegrees:0,maxPalmGap:0,minBladeHeight:Infinity,maxPlantDrift:0,maxPlantTurn:0,maxArmStepAt120Hz:0,maxMedialKnee:0};
- for(const name of [hero.readyClip,hero.motionOverrides.Heavy_Cleave]){
+ for(const name of [hero.readyClip,'Ronin_Heavy_Cleave']){
   const spec=motions[name],clip=clips.get(name),sample=play(name);assert.equal(spec.nativeAttachment,true);assert.ok(Math.abs(clip.duration-spec.duration)<1e-6);
   const times=new Set([0,spec.duration,...(spec.impacts??[])]);
   // Test 240 Hz keys and 480 Hz midpoints to catch gaps hidden at solved keys.

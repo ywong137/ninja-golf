@@ -58,3 +58,10 @@ The Ace opening cut adapts the complete Sword_Attack clip from Quaternius
 Universal Animation Library 1, CC0. It retains the source preparation, step,
 body turn, balancing arm, and recovery. Native joint frames and the sword
 grip fit the Rocketbox skeleton. Gameplay scales the complete source clock.
+
+Ronin_Power_Cut and Ethan_Naginata_Power_Cut adapt Adobe Mixamo's
+Great Sword Power Slash, downloaded through the owner's Adobe account.
+The retarget preserves the full body performance and fits the two hands,
+weapon mount, native elbow/knee frames, and foot contacts to these heroes.
+Only the adapted game animations ship. The source FBX files remain local.
+Adobe Mixamo FAQ: https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html

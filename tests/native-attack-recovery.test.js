@@ -24,7 +24,8 @@ async function loadRig(hero){
 const RATE=240,DEGREES=180/Math.PI;
 for(const hero of WARRIORS)test(`${hero.name}: native recovery has no elbow teleport or terminal wrist snap`,async t=>{
  const rig=await loadRig(hero.model),point=name=>rig.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
- const clips=rig.animations.filter(c=>motions[c.name]?.athleticAttack);
+ const activeNames=new Set(['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'].map(s=>{const key=(hero.motionPrefix||'')+s;return hero.motionOverrides?.[key]??key;}));
+ const clips=rig.animations.filter(c=>activeNames.has(c.name));
  assert.equal(clips.length,9,`${hero.model}: incomplete attack family`);
  const failures=[],reports=[];
  for(const clip of clips){

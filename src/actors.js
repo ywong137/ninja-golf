@@ -48,6 +48,7 @@ const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS={...Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'captured-running-20261002'])),ronin:'native-guards-20261002',monk:'native-guards-20261002'};
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-20261003';
 MODEL_REVISIONS.kaede='full-body-opening-20261003';
+MODEL_REVISIONS.ronin=MODEL_REVISIONS.monk='two-handed-power-20261003';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -267,7 +268,7 @@ export class Warrior {
     }
     // Blade directions must crossfade with the hands instead of jumping to the new clip.
     this.heldBlend=previous&&previous!==next&&fade>0&&toGrip&&!name.startsWith('Golf')&&this.weapon.parent===this.root
-      ?{start:this.mixer.time,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms,sourcePair}:null;
+      ?{start:this.mixer.time,weaponGripRoll:this.handGrip?.attachmentRoll??0,duration:fade,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip,preservePair:preservePair||continueArms,sourcePair}:null;
     if(once||!sources?.has(next))next.reset();
     next.enabled=true;next.setEffectiveWeight(1);next.setEffectiveTimeScale(speed);next.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.play();
     this.poseFade=fade>0&&sources.size?{sources,target:next,age:0,duration:fade}:null;
@@ -409,7 +410,7 @@ export class Warrior {
     if(!this.guardWalking){
       this.guardFadeSources=this.capturePose();
       this.poseFade=null;this.runFadeSources=null;this.running=false;
-      this.heldBlend={start:this.mixer.time,duration:.1,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip};
+      this.heldBlend={start:this.mixer.time,weaponGripRoll:this.handGrip?.attachmentRoll??0,duration:.1,r:this.weapon.quaternion.clone(),l:this.offhand?.quaternion.clone(),station:this.weapon.userData.primaryGrip};
       this.guardWalkActions=names.map(name=>this.actions.get(name));
       for(const action of this.guardWalkActions){if(!this.guardFadeSources.has(action))action.reset();action.setLoop(THREE.LoopRepeat,Infinity).setEffectiveTimeScale(0).play();}
       this.guardWalking=true;this.guardWalkBlend=0;
@@ -448,7 +449,7 @@ export class Warrior {
       const fromGrip=pairedTravelGrip(WARRIORS[this.type],this.current)??motions[this.current];
       if(this.sourceRun&&fromGrip?.fixedGripFrame&&targetGrip?.fixedGripFrame&&this.handGrip?.secondaryWeight>.999
         &&compatibleNativePair(fromGrip,targetGrip,this.weapon.userData.defaultGrip))
-        this.heldBlend={start:this.mixer.time,duration:this.runFade,r:this.weapon.quaternion.clone(),station:this.weapon.userData.primaryGrip,sourcePair:true};
+        this.heldBlend={start:this.mixer.time,weaponGripRoll:this.handGrip?.attachmentRoll??0,duration:this.runFade,r:this.weapon.quaternion.clone(),station:this.weapon.userData.primaryGrip,sourcePair:true};
       this.armContinuation?.release(this.mixer.time,this.runFade);
       // Every hero keeps the complete displayed mixture through interruptions.
       this.runFadeSources=this.capturePose();
@@ -584,7 +585,7 @@ export class Warrior {
       this.runFootwork?.applyEntryBody(this.runActions,this.runPhase,THREE.MathUtils.smootherstep(bodyEntryBlend,0,1));
       if(bodyEntryBlend===1)this.runFootwork?.resetEntry();
     }
-    const sourcePlane=this.sourceTerrain?.apply(dt,groundHeight,{active:!!(this.running&&this.sourceRun),enabled:!golf&&!selection&&!dodge&&!emerging});
+    const sourcePlane=this.sourceTerrain?.apply(dt,groundHeight,{active:!!(this.running&&this.sourceRun||motions[this.current]?.nativeSourceMotion&&action),enabled:!golf&&!selection&&!dodge&&!emerging});
     if(!this.running||!this.sourceRun||golf||selection||dodge||emerging)this.sourceRunEntry?.reset();
     const runTerrainPlan=this.running&&!this.sourceRun&&this.runFootwork?.turnPlanner?.worldContacts&&groundHeight?this.footPlacement.planTerrainPelvis(dt,groundHeight,{enforceClearance:true}):null;
     if(this.running&&this.sourceRun){this.runFootwork?.resetDirection();}
