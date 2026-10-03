@@ -1,6 +1,36 @@
 import {MathUtils,Quaternion,Vector3} from 'three';
 import {captureArmPose,measureArmAnatomy} from '../src/arm-anatomy.js';
 import {captureWristPose,measureWristAnatomy,wristRotationFromAngles} from '../src/wrist-anatomy.js';
+import {capturePalmPronation} from './source-arm-pronation.mjs';
+
+/** Adapt an over-rotated source palm within the native forearm's authoring range.
+ * Preserve the elbow path. Discard excess axial rotation instead of leaving it
+ * in the wrist. This intentionally changes the sword path and needs visual QA.
+ */
+export function fitSourceSwordPalm({bones,arm,wrist,state}){
+ if(!state)throw Error('Supply a fresh persistent palm-fit state for each sequential bake.');
+ const desiredPalm=capturePalmPronation(bones,'r',arm);
+ const angle=measureWristAnatomy(wrist,captureWristPose(bones,'r'));
+ const lower=bones.lowerarm_r,hand=bones.hand_r;
+ hand.quaternion.copy(wristRotationFromAngles(wrist,{flexionDegrees:12*Math.tanh(angle.flexionDegrees/12),ulnarDeviationDegrees:25*Math.tanh(angle.ulnarDeviationDegrees/25),axialTwistDegrees:0}));
+ hand.updateWorldMatrix(false,true);
+ const neutralPalm=capturePalmPronation(bones,'r',arm);
+ const required=MathUtils.euclideanModulo(desiredPalm-neutralPalm+180,360)-180;
+ const current=measureArmAnatomy(arm,captureArmPose(bones,'r')).forearmTwistDegrees;
+ let raw=current+required;
+ if(state.palmRequest!==undefined)raw+=360*Math.round((state.palmRequest-raw)/360);
+ state.palmRequest=raw;
+ // Smooth saturation avoids a velocity discontinuity at the range limit.
+ const desired=70*Math.tanh(raw/70);
+ const axis=hand.getWorldPosition(new Vector3()).sub(lower.getWorldPosition(new Vector3())).normalize();
+ const world=lower.getWorldQuaternion(new Quaternion()).premultiply(new Quaternion().setFromAxisAngle(axis,MathUtils.degToRad(desired-current)));
+ lower.quaternion.copy(lower.parent.getWorldQuaternion(new Quaternion()).invert().multiply(world));lower.updateWorldMatrix(false,true);
+ const actualPalm=capturePalmPronation(bones,'r',arm);
+ const discarded=raw-desired;
+ const error=MathUtils.euclideanModulo(desiredPalm-actualPalm-discarded+180,360)-180;
+ if(Math.abs(error)>.001)throw Error('Palm fitting changed the requested twist direction: '+error+' degrees.');
+ return {desiredPalm,actualPalm,requestedForearm:raw,forearmTwist:desired,discardedDegrees:discarded};
+}
 
 /** Fit a single sword hand without changing the source elbow or shoulder path.
  * Use one persistent state per sequential 120 Hz bake. Bounds are authoring

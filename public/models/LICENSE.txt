@@ -72,3 +72,8 @@ The Hustler opening cut adapts Sword_Regular_B and Sword_Regular_B_Rec from
 Quaternius Universal Animation Library 2, CC0. The full-body attack retains
 its matching authored recovery. Native joint frames, the closed sword hand,
 and target-directed head motion fit the existing character mesh.
+
+The Closer opening light cut (Closer_Rising_Cut) adapts Sword_Regular_A and
+Sword_Regular_A_Rec from Quaternius Universal Animation Library 2 (CC0).
+The full-body movement retains the source step, turn, and authored recovery.
+The native rig uses bounded forearm rotation and a neutral sword wrist.
