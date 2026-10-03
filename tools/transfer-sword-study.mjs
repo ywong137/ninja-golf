@@ -20,8 +20,8 @@ import {fitSourceSwordWrist,fitSourceSwordPalm} from './fit-source-sword-wrist.m
 import {gripFrame,solveGripArm} from '../src/hand-grip.js';
 import {captureFootSoles,sampleFootSole} from '../src/foot-sole.js';
 
-const {values}=parseArgs({options:{input:{type:'string'},source:{type:'string'},'source-clip':{type:'string'},recovery:{type:'string'},output:{type:'string'},grips:{type:'string'},'sample-rate':{type:'string',default:'120'},hero:{type:'string',default:'kaede'},clip:{type:'string',default:'Ace_Reference_Cut'},template:{type:'string',default:'Ace_Cut_Diagonal'},'paired-spacing':{type:'string'},'fit-pair-reach':{type:'boolean'},grounded:{type:'boolean'},'wrist-fit':{type:'boolean'},'palm-pronation-fit':{type:'boolean'},'palm-frame':{type:'boolean'},'look-ahead':{type:'boolean'},'edge-turn':{type:'string'},'edge-window':{type:'string'},'neutral-source':{type:'boolean'},'overhead-lift':{type:'string'},'step-clearance':{type:'string'},'step-window':{type:'string'},'stance-width':{type:'string'},'right-arm-clearance':{type:'string'},'stable-arm-pole':{type:'boolean'},'right-arm-window':{type:'string'},'knee-clearance':{type:'string'},'joint-fit':{type:'boolean'},'shaft-reference':{type:'string',default:'fists'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/transfer-sword-study.mjs --input RELEASE/kaede.glb --source UAL1_Standard.glb --grips RELEASE/src/grip-data.json --output REVIEW/kaede.glb [--wrist-fit]\nAppend one full-body motion study. Preserve existing animations and geometry. Output must remain outside public/. For Mixamo FBX, select --hero, --clip and --template; optional --paired-spacing sets a signed grip distance. For a named library clip, use --source-clip; --recovery joins its matching authored recovery. The paired fit rejects invalid arm frames. --wrist-fit is for single-hand studies only. --palm-pronation-fit bounds the forearm and removes residual wrist roll; it changes the sword path and requires review. --edge-window start,full,release,end sets the four native seconds for --edge-turn. --right-arm-clearance DEGREES opens the right shoulder within --right-arm-window start,full,release,end. --sample-rate controls native bake samples per second (120 to 480). --stable-arm-pole prevents near-straight elbow flips. --palm-frame transfers both palm axes. --look-ahead shares a bounded upward gaze correction between neck and head.');process.exit(0);}
+const {values}=parseArgs({options:{input:{type:'string'},source:{type:'string'},'source-clip':{type:'string'},recovery:{type:'string'},output:{type:'string'},grips:{type:'string'},'sample-rate':{type:'string',default:'120'},hero:{type:'string',default:'kaede'},clip:{type:'string',default:'Ace_Reference_Cut'},template:{type:'string',default:'Ace_Cut_Diagonal'},'paired-spacing':{type:'string'},'fit-pair-reach':{type:'boolean'},'paired-elbow-poles':{type:'string'},grounded:{type:'boolean'},'wrist-fit':{type:'boolean'},'dual-wield':{type:'boolean'},'arm-space':{type:'string'},'palm-pronation-fit':{type:'boolean'},'palm-frame':{type:'boolean'},'look-ahead':{type:'boolean'},'edge-turn':{type:'string'},'edge-window':{type:'string'},'neutral-source':{type:'boolean'},'overhead-lift':{type:'string'},'step-clearance':{type:'string'},'step-window':{type:'string'},'stance-width':{type:'string'},'right-arm-clearance':{type:'string'},'stable-arm-pole':{type:'boolean'},'right-arm-window':{type:'string'},'knee-clearance':{type:'string'},'joint-fit':{type:'boolean'},'shaft-reference':{type:'string',default:'fists'},help:{type:'boolean'}}});
+if(values.help){console.log('node tools/transfer-sword-study.mjs --input RELEASE/kaede.glb --source UAL1_Standard.glb --grips RELEASE/src/grip-data.json --output REVIEW/kaede.glb [--wrist-fit]\nAppend one full-body motion study. Preserve existing animations and geometry. Output must remain outside public/. For Mixamo FBX, select --hero, --clip and --template; optional --paired-spacing sets a signed grip distance. For a named library clip, use --source-clip; --recovery joins its matching authored recovery. The paired fit rejects invalid arm frames. --wrist-fit is for single-hand studies only. --palm-pronation-fit bounds the forearm and removes residual wrist roll; it changes the sword path and requires review. --edge-window start,full,release,end sets the four native seconds for --edge-turn. --right-arm-clearance DEGREES opens the right shoulder within --right-arm-window start,full,release,end. --sample-rate controls native bake samples per second (120 to 480). --paired-elbow-poles RIGHT,LEFT rotates the elbow planes around the fixed shoulder-to-hand axes (degrees, at most 20 each). --stable-arm-pole prevents near-straight elbow flips. --dual-wield closes and fits both independent sword hands. --palm-frame transfers both palm axes. --look-ahead shares a bounded upward gaze correction between neck and head.');process.exit(0);}
 for(const key of ['input','source','output','grips'])if(!values[key])throw Error(`Supply --${key}. See --help.`);
 if(!values.output.endsWith('.glb')||path.resolve(values.output)===path.resolve(values.input)||path.resolve(values.output).split(path.sep).includes('public'))throw Error('Choose a separate review GLB outside public/.');
 const edgeWindow=(values['edge-window']??'.20,.38,.62,.90').split(',').map(Number);
@@ -47,6 +47,10 @@ const pairedSpacing=values['paired-spacing']===undefined?null:Number(values['pai
 if(values['wrist-fit']&&values['palm-pronation-fit'])throw Error('Choose one wrist fitting method.');
 if(pairedSpacing!==null&&(values['wrist-fit']||values['palm-pronation-fit']))throw Error('--wrist-fit cannot be combined with --paired-spacing.');
 if(pairedSpacing!==null&&(!Number.isFinite(pairedSpacing)||pairedSpacing===0))throw Error('--paired-spacing must be a nonzero signed distance in native model metres.');
+if(values['dual-wield']&&pairedSpacing!==null)throw Error('--dual-wield requires two independent weapons, not --paired-spacing.');
+const pairElbowPoles=(values['paired-elbow-poles']??'0,0').split(',').map(Number);
+if(pairElbowPoles.length!==2||pairElbowPoles.some(x=>!Number.isFinite(x)||Math.abs(x)>20)||values['paired-elbow-poles']&&pairedSpacing===null)throw Error('--paired-elbow-poles requires a paired grip and two angles between -20 and 20 degrees.');
+const weaponSides=values['dual-wield']?['r','l']:['r'];
 const profiles=Object.fromEntries(['r','l'].map(s=>[s,gripFrame(bones,gripData[s],s)]));
 const neutralWrists=Object.fromEntries(['r','l'].map(s=>[s,bones['hand_'+s].quaternion.clone()]));
 const names=retarget.names;
@@ -57,11 +61,11 @@ const rotations={},newRotations={},translations={pelvis:[]};
 for(const n of names)(existing.has(n)?rotations:newRotations)[n]=[];
 const anatomy=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s])]));
 const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
-const wrists=Object.fromEntries(['r','l'].map(s=>[s,calibrateWristAnatomy(captureWristPose(bones,s))])),wrist=wrists.r;
+const wrists=Object.fromEntries(['r','l'].map(s=>[s,calibrateWristAnatomy(captureWristPose(bones,s))]));
 const soles=values.grounded?captureFootSoles(target.scene):null;
 const legStates={r:{},l:{}};
 const previousGripRoll={r:0,l:0},previousElbowPole={r:0,l:0},previousForearmTwist={r:null,l:null};
-const swordWristState={},sourceArmPole={};
+const swordWristStates={r:{},l:{}},sourceArmPoles={r:{},l:{}};
 let pairSample=0,previousAxis=null;
 function fitPair(time){
  const palms=['r','l'].map(s=>bones['hand_'+s].localToWorld(profiles[s].center.clone()));
@@ -153,7 +157,7 @@ function alignArmHinge(side){
  upper.quaternion.copy(rotation(upper.parent).invert().multiply(q));upper.updateWorldMatrix(false,true);
  lower.quaternion.copy(rotation(lower.parent).invert().multiply(lowerQ));lower.updateWorldMatrix(false,true);
 }
-const report={source:isMixamo?'Adobe Mixamo; local motion study':'Quaternius Universal Animation Library, CC0',sourceClip:clip.name,sourceFile:values.source,hero:values.hero,clip:name,pairedSpacing,handFrame:handRetarget?'complete palm frame':'segment direction',weaponAxis:pairedSpacing!==null?values['shaft-reference']:null,neutralSource:!!values['neutral-source'],overheadLift:Number(values['overhead-lift']??0),duration:clip.duration,lookAhead:!!values['look-ahead'],rightArmClearance:armClearance,rightArmWindow:armWindow,wristFit:!!values['wrist-fit'],palmPronationFit:!!values['palm-pronation-fit'],edgeTurn:Number(values['edge-turn']??0),edgeWindow,grounded:!!values.grounded,maxFloorCorrection:0,maxPalmGap:0,maxWristDegrees:0,wristDegrees:{r:0,l:0},maxKneeDeviation:0,minKneeFlex:180,maxKneeFlex:0,arms:{r:{minFlex:180,maxDeviation:0,maxTwist:0},l:{minFlex:180,maxDeviation:0,maxTwist:0}},points:[]};
+const report={source:isMixamo?'Adobe Mixamo; local motion study':'Quaternius Universal Animation Library, CC0',sourceClip:clip.name,sourceFile:values.source,hero:values.hero,clip:name,pairedSpacing,pairElbowPoles,dualWield:!!values['dual-wield'],handFrame:handRetarget?'complete palm frame':'segment direction',weaponAxis:pairedSpacing!==null?values['shaft-reference']:null,neutralSource:!!values['neutral-source'],overheadLift:Number(values['overhead-lift']??0),duration:clip.duration,lookAhead:!!values['look-ahead'],rightArmClearance:armClearance,rightArmWindow:armWindow,wristFit:!!values['wrist-fit'],palmPronationFit:!!values['palm-pronation-fit'],edgeTurn:Number(values['edge-turn']??0),edgeWindow,grounded:!!values.grounded,maxFloorCorrection:0,maxPalmGap:0,maxWristDegrees:0,wristDegrees:{r:0,l:0},maxKneeDeviation:0,minKneeFlex:180,maxKneeFlex:0,arms:{r:{minFlex:180,maxDeviation:0,maxTwist:0},l:{minFlex:180,maxDeviation:0,maxTwist:0}},points:[]};
 const action=source.mixer.clipAction(clip).reset().setLoop(T.LoopOnce);action.clampWhenFinished=true;action.play();
 const sampleRate=Number(values['sample-rate']);if(!Number.isInteger(sampleRate)||sampleRate<120||sampleRate>480)throw Error('--sample-rate must be an integer from 120 to 480.');
 const count=Math.ceil(clip.duration*sampleRate),times=Array.from({length:count+1},(_,i)=>i/count*clip.duration);
@@ -237,7 +241,19 @@ for(let i=0;i<times.length;i++){
   neck.quaternion.copy(neck.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(neckWorld));neck.updateWorldMatrix(false,true);
   head.quaternion.copy(head.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(target));head.updateWorldMatrix(false,true);
  }
- if(pairedSpacing!==null)fitPair(times[i]);
+ if(pairedSpacing!==null){
+  fitPair(times[i]);
+  // Body proportions can require a different elbow plane from the source.
+  // Rotate the entire arm around its reach axis; retain the hand position,
+  // hand orientation, joint lengths, and both grips on the rigid handle.
+  for(const [j,s]of ['r','l'].entries())if(pairElbowPoles[j]){
+   const upper=bones['upperarm_'+s],hand=bones['hand_'+s],handWorld=hand.getWorldQuaternion(new T.Quaternion());
+   const axis=hand.getWorldPosition(new T.Vector3()).sub(upper.getWorldPosition(new T.Vector3())).normalize();
+   const world=upper.getWorldQuaternion(new T.Quaternion()).premultiply(new T.Quaternion().setFromAxisAngle(axis,T.MathUtils.degToRad(pairElbowPoles[j])));
+   upper.quaternion.copy(upper.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(world));upper.updateWorldMatrix(false,true);
+   hand.quaternion.copy(hand.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(handWorld));hand.updateWorldMatrix(false,true);
+  }
+ }
  if(armClearance){
   // Open the entire arm from the shoulder. The wrist and fingers retain their
   // source frame; no handle rotation or extra limb length hides the collision.
@@ -247,10 +263,17 @@ for(let i=0;i<times.length;i++){
   const q=upper.getWorldQuaternion(new T.Quaternion()).premultiply(new T.Quaternion().setFromAxisAngle(down.cross(outward).normalize(),T.MathUtils.degToRad(armClearance)*weight));
   upper.quaternion.copy(upper.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));upper.updateWorldMatrix(false,true);
  }
- if(values['stable-arm-pole']){const corrected=stabilizeSourceArmPole({upper:bones.upperarm_r,lower:bones.lowerarm_r,hand:bones.hand_r,state:sourceArmPole,dt:clip.duration/count,hinge:arms.r.hingeAxisLocal});report.maxArmPoleElbowCorrection=Math.max(report.maxArmPoleElbowCorrection??0,corrected.elbowCorrection);report.maxArmPoleWristCorrection=Math.max(report.maxArmPoleWristCorrection??0,corrected.wristCorrection);}
+ if(values['arm-space'])for(const s of weaponSides){
+  const degrees=Number(values['arm-space']);if(!Number.isFinite(degrees)||degrees<0||degrees>25)throw Error('--arm-space must be 0 to 25 degrees.');
+  const upper=bones['upperarm_'+s],other=bones['upperarm_'+(s==='r'?'l':'r')];
+  const shoulder=upper.getWorldPosition(new T.Vector3()),outward=shoulder.clone().sub(other.getWorldPosition(new T.Vector3())).normalize();
+  const direction=bones['lowerarm_'+s].getWorldPosition(new T.Vector3()).sub(shoulder).normalize(),axis=direction.clone().cross(outward);
+  if(axis.lengthSq()>1e-8){const angle=Math.min(T.MathUtils.degToRad(degrees),direction.angleTo(outward)),q=upper.getWorldQuaternion(new T.Quaternion()).premultiply(new T.Quaternion().setFromAxisAngle(axis.normalize(),angle));upper.quaternion.copy(upper.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(q));upper.updateWorldMatrix(false,true);}
+ }
+ if(values['stable-arm-pole'])for(const s of weaponSides){const corrected=stabilizeSourceArmPole({upper:bones['upperarm_'+s],lower:bones['lowerarm_'+s],hand:bones['hand_'+s],state:sourceArmPoles[s],dt:clip.duration/count,hinge:arms[s].hingeAxisLocal});report.maxArmPoleElbowCorrection=Math.max(report.maxArmPoleElbowCorrection??0,corrected.elbowCorrection);report.maxArmPoleWristCorrection=Math.max(report.maxArmPoleWristCorrection??0,corrected.wristCorrection);}
  for(const s of ['r','l'])alignArmHinge(s);
- if(values['wrist-fit'])fitSourceSwordWrist({bones,arm:arms.r,wrist,state:swordWristState});
- if(values['palm-pronation-fit']){const fit=fitSourceSwordPalm({bones,arm:arms.r,wrist,state:swordWristState});report.maxDiscardedPalmDegrees=Math.max(report.maxDiscardedPalmDegrees??0,Math.abs(fit.discardedDegrees));}
+ if(values['wrist-fit'])for(const side of weaponSides)fitSourceSwordWrist({bones,arm:arms[side],wrist:wrists[side],state:swordWristStates[side],side});
+ if(values['palm-pronation-fit'])for(const side of weaponSides){const fit=fitSourceSwordPalm({bones,arm:arms[side],wrist:wrists[side],state:swordWristStates[side],side,...(values['dual-wield']?{dt:clip.duration/count,maxTurnRate:600}:{})});report.maxDiscardedPalmDegrees=Math.max(report.maxDiscardedPalmDegrees??0,Math.abs(fit.discardedDegrees));}
  if(values['edge-turn']!==undefined){
   const degrees=Number(values['edge-turn']);if(!Number.isFinite(degrees)||pairedSpacing!==null)throw Error('--edge-turn needs a finite single-hand forearm correction.');
   // Pronation turns the whole fist and sword together. Do not spin a blade
@@ -263,10 +286,10 @@ for(let i=0;i<times.length;i++){
   lower.quaternion.copy(lower.parent.getWorldQuaternion(new T.Quaternion()).invert().multiply(world));lower.updateWorldMatrix(false,true);
  }
  for(const [n,q]of Object.entries(grip.rotations))bones[n].quaternion.fromArray(q);
- if(pairedSpacing!==null)for(const [n,q]of Object.entries(gripData.l.rotations))bones[n].quaternion.fromArray(q);
+ if(pairedSpacing!==null||values['dual-wield'])for(const [n,q]of Object.entries(gripData.l.rotations))bones[n].quaternion.fromArray(q);
  target.scene.updateMatrixWorld(true);
  if(pairedSpacing!==null){const palms=['r','l'].map(s=>bones['hand_'+s].localToWorld(profiles[s].center.clone()));report.maxPalmGap=Math.max(report.maxPalmGap,Math.abs(palms[0].distanceTo(palms[1])-Math.abs(pairedSpacing)));}
- for(const s of pairedSpacing===null?['r']:['r','l']){
+ for(const s of pairedSpacing===null?weaponSides:['r','l']){
   const degrees=measureWristAnatomy(wrists[s],captureWristPose(bones,s)).totalDegrees;
   report.wristDegrees[s]=Math.max(report.wristDegrees[s],degrees);report.maxWristDegrees=Math.max(report.maxWristDegrees,degrees);
  }
