@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {parseArgs} from 'node:util';
+import {fileURLToPath} from 'node:url';
+const {values:v}=parseArgs({options:{source:{type:'string'},output:{type:'string'},help:{type:'boolean'}}});
+if(v.help){console.log('node tools/build-ronin-low-cut.mjs --source LICENSED_LOW_SLASH.fbx --output REVIEW_DIRECTORY\nRebuild the complete Ronin low cut and recovery from Mixamo Great Sword Low Slash. Fit both hands to one rigid weapon. Preserve the accepted baseline. Write review assets outside public/.');process.exit(0);}
+if(!v.source||!v.output)throw Error('Supply --source and --output. See --help.');
+const source=path.resolve(v.source),output=path.resolve(v.output),root=fileURLToPath(new URL('../',import.meta.url));
+if(!fs.existsSync(source)||!source.endsWith('.fbx'))throw Error('Supply the licensed Great Sword Low Slash FBX.');
+if(output.split(path.sep).includes('public'))throw Error('Choose a review directory outside public/.');
+fs.mkdirSync(output,{recursive:true});
+const baseline=path.join(output,'ronin-base.glb'),study=path.join(output,'ronin-study.glb'),candidate=path.join(output,'ronin.glb');
+for(const p of [baseline,study,candidate])if(p===source)throw Error('Keep the source separate from outputs.');
+fs.writeFileSync(baseline,execFileSync('git',['show','a00a500f7201b50bf343c36aea8bb71559779cd7:public/models/ronin.glb'],{cwd:root,maxBuffer:32*1024*1024}));
+const run=(name,args)=>execFileSync(process.execPath,[path.join(root,'tools',name),...args],{cwd:root,stdio:'inherit'}),grips=path.join(root,'src/grip-data.json');
+run('transfer-sword-study.mjs',['--input',baseline,'--source',source,'--output',study,'--grips',grips,'--hero','ronin','--clip','Ronin_Low_Source','--template','Ronin_Driving_Cut','--paired-spacing','.17','--coupled-grip','--neutral-source','--grounded','--joint-fit','--sample-rate','240','--stance-width','.12']);
+run('assemble-source-attack.mjs',['--base',baseline,'--source',study,'--source-clip','Ronin_Low_Source','--template','Ronin_Driving_Cut','--name','Ronin_Low_Cut','--output',candidate,'--grips',grips,'--hero','ronin','--paired-spacing','.17','--grip-roll',String(219.75*Math.PI/180),'--speed',String(1.8166667222976685/.98),'--impact','.89','--credit','Adobe Mixamo Great Sword Low Slash; full cut and recovery with a shared weapon frame']);
+const record=path.join(output,'ronin-motion.json'),data=JSON.parse(fs.readFileSync(record));
+Object.assign(data.Ronin_Low_Cut,{combatDuration:.98,headings:[1.01],entryBlend:.18});fs.writeFileSync(record,JSON.stringify(data)+'\n');
+console.log(JSON.stringify({candidate,record,baseline:'a00a500',source}));

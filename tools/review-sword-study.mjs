@@ -61,7 +61,7 @@ try{
     const {skinIndex,skinWeight}=mesh.geometry.attributes,index=mesh.geometry.index;
     // A paired weapon must touch its holding hand. Keep the forearm, body,
     // and legs in the collision check; omit only the fitted holding fingers.
-    const limbNames=dualWield?/^(upperarm_[rl]|lowerarm_[rl]|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/:twoHanded?/^(upperarm_l|lowerarm_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/:/^(upperarm_l|lowerarm_l|hand_l|\w+_0[123]_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/;
+    const limbNames=dualWield?/^(upperarm_[rl]|lowerarm_[rl]|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/:twoHanded?/^(upperarm_[rl]|lowerarm_[rl]|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/:/^(upperarm_l|lowerarm_l|hand_l|\w+_0[123]_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/;
     const weights=Array.from({length:skinIndex.count},(_,i)=>{let sum=0;for(let k=0;k<4;k++){const bone=mesh.skeleton.bones[skinIndex.getComponent(i,k)].name;if((body&&/^(pelvis|spine_\d+|neck_\d+)$/.test(bone))||(limbs&&limbNames.test(bone)))sum+=skinWeight.getComponent(i,k);}return sum;});
     const triangles=[];for(let i=0;i<(index?index.count:skinIndex.count);i+=3){const ids=[0,1,2].map(k=>index?index.getX(i+k):i+k);if(ids.some(v=>weights[v]>.5))triangles.push(ids);}
     if(triangles.length)surfaces.push({mesh,triangles});

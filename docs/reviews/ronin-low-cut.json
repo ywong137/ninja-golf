@@ -1,0 +1,99 @@
+{
+  "hero": "The Ronin",
+  "model": "ronin",
+  "clip": "Ronin_Low_Cut",
+  "replaces": "Cut_Return, the second light attack",
+  "baseline": "a00a500f7201b50bf343c36aea8bb71559779cd7",
+  "source": "Adobe Mixamo Great Sword Low Slash",
+  "sourceSha256": "8bf9bee757b0f9df72be7faa988f766139ecad26b9e237011227ca3c608f809a",
+  "modelSha256": "597ffc3d6ee02e712bb0dbc6c00fc2da0f8a016e43e659ca04ce3848b53c6d2e",
+  "preservedClips": 41,
+  "preservedBinaryBytes": 12050824,
+  "meshAndOtherClipsUnchanged": true,
+  "behavior": "A complete low returning cut and recovery. The torso and legs drive the sweep while both hands share a rigid sword frame.",
+  "fit": {
+    "pairedSpacing": 0.17,
+    "maxWristDegrees": 38.28790702156479,
+    "wristDegrees": {
+      "r": 38.13899509627091,
+      "l": 38.28790702156479
+    },
+    "maxKneeDeviation": 8.422626975664681e-06,
+    "minKneeFlex": 17.05068808764121,
+    "maxKneeFlex": 89.89924677074018,
+    "arms": {
+      "r": {
+        "minFlex": 22.30350445606787,
+        "maxDeviation": 4.5851543940480025e-05,
+        "maxTwist": 70.00000236475317
+      },
+      "l": {
+        "minFlex": 16.84336320612462,
+        "maxDeviation": 2.2270007818839646e-05,
+        "maxTwist": 69.77438436387463
+      }
+    }
+  },
+  "timing": {
+    "nativeSeconds": 1.8166667222976685,
+    "combatSeconds": 0.98,
+    "nativeImpacts": [
+      0.89
+    ],
+    "impactHeadingsRadians": [
+      1.01
+    ],
+    "entryBlend": 0.18,
+    "note": "Combat duration scales the entire source clip. It does not cut off the recovery."
+  },
+  "clearance": {
+    "scope": "Head, torso, both arms and legs; fitted holding fingers excluded.",
+    "surfaceTriangles": 5063,
+    "samples": 220,
+    "minimumClearance": 0.03,
+    "crossingSamples": 0,
+    "distanceSearchCapMetres": 0.03
+  },
+  "gameplay": {
+    "cases": 18,
+    "rates": [
+      40,
+      60,
+      144
+    ],
+    "modes": [
+      "single",
+      "pair",
+      "repeat",
+      "moving",
+      "resume-run",
+      "terrain"
+    ],
+    "maxPalmGapMetres": 0.0004827839917712747,
+    "supportHandMeasurement": "After the authored approach from the one-handed running pose. Primary hand checked throughout active rendered frames.",
+    "errors": []
+  },
+  "sharedMusouCheck": {
+    "heroes": [
+      "The Ronin",
+      "The Closer"
+    ],
+    "cases": 18,
+    "errors": []
+  },
+  "review": {
+    "model": "Claude Opus 5.5 High",
+    "scope": "Five source-motion stills and the coupled fitting code. Separate local playback and controller checks followed.",
+    "result": "No blocking grip or stance fault. The full source recovery also plays in the real controller."
+  },
+  "reproduction": "node tools/build-ronin-low-cut.mjs --source LICENSED_LOW_SLASH.fbx --output REVIEW_DIRECTORY",
+  "controllerRegression": "node tests/browser-ronin-low-cut.mjs --url http://localhost:5174 --output REVIEW_DIRECTORY",
+  "scopeLimit": "Other unconverted legacy attacks still need full-body motion work.",
+  "validation": {
+    "unitTests": 933,
+    "pass": 933,
+    "fail": 0,
+    "build": "passed",
+    "browserControllerCases": 36
+  }
+}

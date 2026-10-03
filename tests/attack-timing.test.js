@@ -68,3 +68,9 @@ test('a two-contact source attack can split its damage without changing the shar
  assert.equal(definition.damage,90);assert.deepEqual(definition.hits,[.36]);
  for(const damageScale of [NaN,Infinity,0,-1])assert.throws(()=>withMotionTiming(definition,{...motion,damageScale}),/damageScale/);
 });
+
+test('authored strike headings follow the timed impacts without changing the source arrays',()=>{
+ const definition={duration:.4,hits:[.15],damage:35},motion={duration:1.8,combatDuration:.98,impacts:[.89],headings:[1.01]};
+ const result=withMotionTiming(definition,motion);assert.deepEqual(result.headings,[1.01]);result.headings[0]=0;assert.equal(motion.headings[0],1.01);assert.equal(definition.headings,undefined);
+ for(const headings of [[],[1,2],[NaN],[Infinity],1])assert.throws(()=>withMotionTiming(definition,{...motion,headings}),/one finite angle per impact/);
+});
