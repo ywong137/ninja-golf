@@ -18,7 +18,16 @@ export class CharacterShowcase{
  }
  update(dt){
   if(this.clock.paused)return this.state;
-  const step=this.clock.advance(dt),stage=this.clock.stage,elapsed=this.clock.elapsed,golf=!!stage.golf;
+  return this.render(this.clock.advance(dt));
+ }
+ seek(stageId,seconds=0){
+  this.clock.seek(stageId,seconds);
+  // A scrub is an exact pose request. Do not leave an outgoing clip fading in.
+  this.actor.mixer.stopAllAction();this.actor.current='';this.actor.oneShot=0;
+  return this.render(0);
+ }
+ render(step){
+  const stage=this.clock.stage,elapsed=this.clock.elapsed,golf=!!stage.golf;
   let clip=golf?'Golf_Address':this.warrior.readyClip,time=elapsed,action=null;
   if(['swing','follow','golf-out'].includes(stage.id)){clip='Golf_Swing';time=stage.id==='swing'?elapsed:this.swingDuration-1e-5;}
   if(stage.id==='light'||stage.id==='heavy'){

@@ -23,6 +23,21 @@ try{
  await page.click('#showcase-pause');const paused=await page.evaluate(()=>window.__golfTest.showcase.state);await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>window.__golfTest.showcase.state),paused);
  await page.click('[data-warrior="2"]');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.clock.speed),.1);assert.equal(await page.locator('#showcase-pause').textContent(),'Go');
  await page.click('#showcase-pause');await page.waitForFunction(()=>window.__golfTest.showcase.state.time>0);await page.click('#showcase-pause');
+ // Direct selection and scrubbing must change the pose even while paused.
+ await page.selectOption('#showcase-stage','heavy');
+ assert.equal(await page.locator('#showcase-pause').textContent(),'Go');
+ await page.locator('#showcase-position').fill('0.4');
+ assert.ok(Math.abs((await page.evaluate(()=>window.__golfTest.showcase.state.time))-.4)<1e-8);
+ const pose=()=>page.evaluate(()=>{const a=window.__golfTest.player;return ['pelvis','spine_03','upperarm_r','lowerarm_r','hand_r'].flatMap(name=>a.bones[name].quaternion.toArray());});
+ const first=await pose();
+ await page.selectOption('#showcase-stage','swing');await page.locator('#showcase-position').fill('0.7');
+ assert.notDeepEqual(await pose(),first);
+ await page.selectOption('#showcase-stage','heavy');await page.locator('#showcase-position').fill('0.4');
+ const repeated=await pose();assert.ok(first.every((v,i)=>Math.abs(v-repeated[i])<1e-5),'Seeking the same pose must not depend on the previous clip.');
+ await page.click('#showcase-forward');assert.ok(Math.abs((await page.evaluate(()=>window.__golfTest.showcase.state.time))-(.4+1/60))<1e-8);
+ await page.click('#showcase-back');assert.ok(Math.abs((await page.evaluate(()=>window.__golfTest.showcase.state.time))-.4)<1e-8);
+ await page.selectOption('#showcase-stage','light');await page.click('#showcase-back');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.time),0);
+ await page.click('#showcase-pause');await page.waitForFunction(()=>window.__golfTest.showcase.state.time>0);await page.click('#showcase-pause');
  const results=await page.evaluate(async()=>{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.pause();await g.world.waitForAssets();const rows=[];
   for(let hero=0;hero<6;hero++){
@@ -38,9 +53,9 @@ try{
   function assertFinite(values){if(!values.every(Number.isFinite))throw Error('Non-finite showcase skeleton');}
   return rows;
  });
- await page.screenshot({path:'/tmp/ninja-showcase-selection.png'});
+ await page.screenshot({path:process.env.SHOWCASE_SCREENSHOT??'/tmp/ninja-showcase-selection.png'});
  for(const row of results)for(const stage of ['address','swing','follow','ready','light','heavy'])assert.ok(row.stages.includes(stage),`${row.hero} missing ${stage}`);
  await page.click('#begin');assert.equal(await page.evaluate(()=>window.__golfTest.showcase),null);assert.equal(await page.locator('#selection').isVisible(),false);
  await page.click('#back-warriors');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.stage),'address');
- assert.deepEqual(errors,[]);console.log(JSON.stringify({characters:results,controls:'C, speed, pause, resume, retained settings and cleanup pass'}));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({characters:results,controls:'C, speed, pause, resume, direct motion selection, exact scrubbing, frame stepping, retained settings and cleanup pass'}));
 }finally{await browser.close();}

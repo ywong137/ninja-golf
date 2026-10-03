@@ -20,6 +20,15 @@ export class ShowcaseClock{
  get stage(){return this.stages[this.index];}
  get opacity(){const p=this.elapsed/this.stage.duration;return this.stage.fade==='out'?1-p:this.stage.fade==='in'?p:1;}
  setSpeed(speed){if(!Number.isFinite(speed)||speed<.1||speed>1)throw Error('Animation speed must be between 0.1 and 1.0.');this.speed=speed;}
+ // Seeking pauses the preview. Resuming continues from the selected time.
+ seek(stageId,seconds=0){
+  const index=this.stages.findIndex(stage=>stage.id===stageId);
+  if(index<0)throw Error('Unknown showcase stage: '+stageId);
+  if(!Number.isFinite(seconds)||seconds<0||seconds>this.stages[index].duration)throw Error('Preview time must be within the selected stage.');
+  this.index=index;this.elapsed=seconds;this.paused=true;
+  const cycleDuration=this.stages.reduce((sum,stage)=>sum+stage.duration,0);
+  this.time=this.cycle*cycleDuration+this.stages.slice(0,index).reduce((sum,stage)=>sum+stage.duration,0)+seconds;
+ }
  advance(dt){
   if(this.paused)return 0;
   const scaled=Math.max(0,dt)*this.speed;this.time+=scaled;this.elapsed+=scaled;

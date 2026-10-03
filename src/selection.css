@@ -24,9 +24,10 @@
 #selection .showcase-heading .text-button{font-size:9px;padding:3px 0;white-space:nowrap}
 #showcase-console{padding-top:12px;border-top:1px solid #e0dfbd30;margin-top:10px}
 #showcase-console label{display:flex;justify-content:space-between;font-size:11px}
-#showcase-speed{width:100%;margin:10px 0;accent-color:#dfc17c}
-.showcase-transport{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-variant-numeric:tabular-nums}
-#selection .showcase-transport .secondary{padding:7px 22px;font-size:11px;min-width:80px}
+#showcase-speed,#showcase-position{width:100%;margin:10px 0;accent-color:#dfc17c}
+#showcase-stage{width:100%;margin:6px 0 12px;padding:6px;color:#ede5c9;background:#122b25;border:1px solid #e0dfbd50;border-radius:3px;font:inherit;font-size:12px}
+.showcase-transport{display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between;align-items:center;font-size:10px;font-variant-numeric:tabular-nums}
+#selection .showcase-transport .secondary{padding:7px 10px;font-size:11px;min-width:65px}
 #selection .selection-bottom{position:static;grid-column:1/-1;display:flex;align-items:center;gap:24px}
 #selection .selection-bottom .primary{margin-left:auto}
 #selection .round-info{margin-left:auto}
