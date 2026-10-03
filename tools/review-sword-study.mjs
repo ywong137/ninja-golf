@@ -5,7 +5,7 @@ import {disableHmr} from './disable-hmr.mjs';
 import {routeModelDirectory} from './route-model-directory.mjs';
 import {parseArgs} from 'node:util';
 
-const {values}=parseArgs({options:{output:{type:'string',default:'artifacts/reviews/full-body-cut'},candidate:{type:'string',default:'artifacts/reviews/full-body-cut/candidate'},model:{type:'string',default:'kaede'},index:{type:'string',default:'3'},'still-only':{type:'boolean'},times:{type:'string'},detail:{type:'boolean'},wide:{type:'boolean'},audit:{type:'boolean'},body:{type:'boolean'},limbs:{type:'boolean'},'right-side':{type:'boolean'},'grip-roll':{type:'string',default:'0'}}});
+const {values}=parseArgs({options:{output:{type:'string',default:'artifacts/reviews/full-body-cut'},candidate:{type:'string',default:'artifacts/reviews/full-body-cut/candidate'},model:{type:'string',default:'kaede'},index:{type:'string',default:'3'},'still-only':{type:'boolean'},'follow-root':{type:'boolean'},times:{type:'string'},detail:{type:'boolean'},wide:{type:'boolean'},audit:{type:'boolean'},body:{type:'boolean'},limbs:{type:'boolean'},'right-side':{type:'boolean'},'grip-roll':{type:'string',default:'0'}}});
 const output=values.output,release='/Users/yishan/.codex/worktrees/shared-pose-transitions/ninja-golf';fs.mkdirSync(output,{recursive:true});
 const report=JSON.parse(fs.readFileSync(`${values.candidate}/${values.model}.glb.json`)),name=report.clip??'Ace_Reference_Cut';
 const motions=JSON.parse(fs.readFileSync(release+'/src/motion-data.json'));
@@ -18,7 +18,7 @@ try{
  await disableHmr(page);await routeModelDirectory(page,path.resolve(values.candidate));
  await page.route('**/src/motion.js*',r=>r.fulfill({contentType:'application/javascript',body:source}));
  await page.goto('http://localhost:5174/tests/rig-stage.html');
- await page.evaluate(async({name,duration,index,detail,wide,gripRoll,body,limbs,rightSide})=>{
+ await page.evaluate(async({name,duration,index,detail,wide,gripRoll,body,limbs,rightSide,followRoot,twoHanded})=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');await loadWarriorAssets();
   const actors=[new Warrior(index),new Warrior(index)],scene=new T.Scene();
@@ -36,7 +36,7 @@ try{
     const a=actors[i];
     a.update(time,1/60,{previewPose:{clip:name,time:t}});
     for(const other of actors)scene.remove(other.root);scene.add(a.root);
-    const center=new T.Vector3(0,detail?1.65:1.10,0);camera.position.copy(center).add(detail?(i===1?new T.Vector3(0,3,.6):new T.Vector3(.2,.05,3.3)):(i===1?new T.Vector3((wide?8:5.1)*(rightSide?-1:1),.65,.4):new T.Vector3(wide?3.7:2.4,.55,wide?7.3:4.7)));camera.lookAt(center);
+    const center=new T.Vector3(0,detail?1.65:1.10,0);if(followRoot){const p=a.bones.pelvis.getWorldPosition(new T.Vector3());center.x=p.x;center.z=p.z;}camera.position.copy(center).add(detail?(i===1?new T.Vector3(0,3,.6):new T.Vector3(.2,.05,3.3)):(i===1?new T.Vector3((wide?8:5.1)*(rightSide?-1:1),.65,.4):new T.Vector3(wide?3.7:2.4,.55,wide?7.3:4.7)));camera.lookAt(center);
     renderer.setViewport(i*750,0,750,820);renderer.setScissor(i*750,0,750,820);renderer.render(scene,camera);
    }
    clock.textContent=`${t.toFixed(2)} s / ${duration.toFixed(2)} s  ${speedLabel}   ·   Motion study; not published`;
@@ -58,7 +58,10 @@ try{
    if(body||limbs)a.model.traverse(mesh=>{
     if(!mesh.isSkinnedMesh)return;
     const {skinIndex,skinWeight}=mesh.geometry.attributes,index=mesh.geometry.index;
-    const weights=Array.from({length:skinIndex.count},(_,i)=>{let sum=0;for(let k=0;k<4;k++)if((body&&/^(pelvis|spine_\d+|neck_\d+)$/.test(mesh.skeleton.bones[skinIndex.getComponent(i,k)].name))||(limbs&&/^(upperarm_l|lowerarm_l|hand_l|\w+_0[123]_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/.test(mesh.skeleton.bones[skinIndex.getComponent(i,k)].name)))sum+=skinWeight.getComponent(i,k);return sum;});
+    // A paired weapon must touch its holding hand. Keep the forearm, body,
+    // and legs in the collision check; omit only the fitted holding fingers.
+    const limbNames=twoHanded?/^(upperarm_l|lowerarm_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/:/^(upperarm_l|lowerarm_l|hand_l|\w+_0[123]_l|thigh_[rl]|calf_[rl]|foot_[rl]|ball_[rl])$/;
+    const weights=Array.from({length:skinIndex.count},(_,i)=>{let sum=0;for(let k=0;k<4;k++){const bone=mesh.skeleton.bones[skinIndex.getComponent(i,k)].name;if((body&&/^(pelvis|spine_\d+|neck_\d+)$/.test(bone))||(limbs&&limbNames.test(bone)))sum+=skinWeight.getComponent(i,k);}return sum;});
     const triangles=[];for(let i=0;i<(index?index.count:skinIndex.count);i+=3){const ids=[0,1,2].map(k=>index?index.getX(i+k):i+k);if(ids.some(v=>weights[v]>.5))triangles.push(ids);}
     if(triangles.length)surfaces.push({mesh,triangles});
    });
@@ -74,7 +77,7 @@ try{
    return report;
   };
   window.drawStudy(0);
- },{name,duration:report.duration,index:Number(values.index),detail:!!values.detail,wide:!!values.wide,gripRoll:Number(values['grip-roll']),body:!!values.body,limbs:!!values.limbs,rightSide:!!values['right-side']});
+ },{name,duration:report.duration,index:Number(values.index),detail:!!values.detail,wide:!!values.wide,gripRoll:Number(values['grip-roll']),body:!!values.body,limbs:!!values.limbs,rightSide:!!values['right-side'],followRoot:!!values['follow-root'],twoHanded:motions[name].twoHanded});
  for(const time of (values.times?values.times.split(',').map(Number):[0,.13,.21,.28,.36,.55,.72,.98].map(t=>t*report.duration))){await page.evaluate(t=>window.drawStudy(t),time);await page.screenshot({path:`${output}/study-${time.toFixed(2)}.png`});}
  if(!values['still-only']){const video=await page.evaluate(()=>window.captureStudy());fs.writeFileSync(`${output}/study.webm`,Buffer.from(video,'base64'));}
  if(values.audit){const audit=await page.evaluate(()=>window.auditStudy());fs.writeFileSync(output+'/clearance.json',JSON.stringify(audit,null,2));console.log(JSON.stringify({...audit,path:undefined}));}

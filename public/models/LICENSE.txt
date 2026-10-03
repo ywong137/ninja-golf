@@ -90,3 +90,8 @@ Quaternius Universal Animation Library 2 (CC0). The native transfer retains
 the source torso turns, steps, and recovery. A continuous elbow plane avoids
 the near-straight arm flip; a short landing phase plays more slowly. The
 weapon remains attached to the closed hand throughout the performance.
+
+The Ronin advancing musou adapts Adobe Mixamo Great Sword Combo Slash.
+The complete three-cut performance retains its body motion and recovery.
+The native transfer fits a 17 cm two-handed grip and extracts horizontal travel.
+The fixed blade mount, timing, and game integration are Ninja Golf modifications.

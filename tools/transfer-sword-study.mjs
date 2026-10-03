@@ -163,15 +163,28 @@ for(let i=0;i<times.length;i++){
  // complete source path and shoe rotation; do not author a replacement step.
  for(const s of ['r','l'])alignLegHinge(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s],anatomy[s].hinge);
  if(values['stance-width']){
- const targets=Object.fromEntries(['r','l'].map(s=>[s,bones['foot_'+s].getWorldPosition(new T.Vector3())]));
- const pelvis=bones.pelvis.getWorldPosition(new T.Vector3());pelvis.y-=.05;bones.pelvis.position.copy(bones.pelvis.parent.worldToLocal(pelvis));bones.pelvis.updateWorldMatrix(false,true);
- for(const s of ['r','l']){
-  const thigh=bones['thigh_'+s],calf=bones['calf_'+s],foot=bones['foot_'+s];
-  const outward=bones.thigh_l.getWorldPosition(new T.Vector3()).sub(bones.thigh_r.getWorldPosition(new T.Vector3())).setY(0).normalize().multiplyScalar(s==='l'?1:-1);
-  const pole=captureLegPole(thigh,calf,foot,anatomy[s].hinge),target=targets[s].addScaledVector(outward,Number(values['stance-width'])),q=foot.getWorldQuaternion(new T.Quaternion());
-  solveLegWithPole(thigh,calf,foot,target,q,anatomy[s].hinge,pole);
-  if(foot.getWorldPosition(new T.Vector3()).distanceTo(target)>.001)throw Error('Wider stance exceeds native leg reach at '+times[i]+' '+s+'.');
- }
+  const width=Number(values['stance-width']);
+  if(!Number.isFinite(width)||width<=0||width>.2)throw Error('--stance-width must be between 0 and .2 metres.');
+  const lateral=bones.thigh_l.getWorldPosition(new T.Vector3()).sub(bones.thigh_r.getWorldPosition(new T.Vector3())).setY(0).normalize();
+  const targets=Object.fromEntries(['r','l'].map(s=>[s,bones['foot_'+s].getWorldPosition(new T.Vector3()).addScaledVector(lateral,s==='l'?width:-width)]));
+  // Widen the support without stretching the legs. Lower the pelvis only as
+  // far as the two native leg lengths require, with a small extension margin.
+  let drop=.05;
+  for(const s of ['r','l']){
+   const hip=bones['thigh_'+s].getWorldPosition(new T.Vector3()),knee=bones['calf_'+s].getWorldPosition(new T.Vector3()),ankle=bones['foot_'+s].getWorldPosition(new T.Vector3());
+   const reach=(hip.distanceTo(knee)+knee.distanceTo(ankle))*.995,target=targets[s],horizontal=(hip.x-target.x)**2+(hip.z-target.z)**2;
+   if(horizontal>=reach*reach)throw Error('Wider stance exceeds horizontal leg reach at '+times[i]+' '+s+'.');
+   drop=Math.max(drop,hip.y-target.y-Math.sqrt(reach*reach-horizontal));
+  }
+  if(drop>.15)throw Error('Wider stance needs more than 15 cm of pelvis correction.');
+  report.maxStanceDrop=Math.max(report.maxStanceDrop??0,drop);
+  const pelvis=bones.pelvis.getWorldPosition(new T.Vector3());pelvis.y-=drop;bones.pelvis.position.copy(bones.pelvis.parent.worldToLocal(pelvis));bones.pelvis.updateWorldMatrix(false,true);
+  for(const s of ['r','l']){
+   const thigh=bones['thigh_'+s],calf=bones['calf_'+s],foot=bones['foot_'+s];
+   const pole=captureLegPole(thigh,calf,foot,anatomy[s].hinge),target=targets[s],q=foot.getWorldQuaternion(new T.Quaternion());
+   solveLegWithPole(thigh,calf,foot,target,q,anatomy[s].hinge,pole);
+   if(foot.getWorldPosition(new T.Vector3()).distanceTo(target)>.001)throw Error('Wider stance exceeds native leg reach at '+times[i]+' '+s+'.');
+  }
  }
  if(values['step-clearance']){
   const side='l',thigh=bones.thigh_l,calf=bones.calf_l,foot=bones.foot_l;

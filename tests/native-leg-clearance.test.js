@@ -5,7 +5,7 @@ import {WARRIORS} from '../src/warriors.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {measureTriangleHeadClearance as measureSurfaceClearance} from '../tools/blade-head-surface.mjs';
 import {SHINOBI_CLIPS} from '../tools/native-shinobi-profile.mjs';
-const namesFor=hero=>[hero.readyClip,...['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'].map(n=>hero.motionOverrides?.[hero.motionPrefix+n]??hero.motionPrefix+n),...(hero.model==='sora'?[hero.motionOverrides.Sickle_Musou_Flow]:[]),...(hero.model==='monk'?['Ethan_Naginata_Musou_Flow','Naginata_Guard_Loop','Naginata_Guard_Impact','Naginata_Guard_Break']:[])];
+const namesFor=hero=>[hero.readyClip,...['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam'].map(n=>hero.motionOverrides?.[hero.motionPrefix+n]??hero.motionPrefix+n),...(['sora','ronin'].includes(hero.model)?[hero.motionOverrides[hero.motionPrefix+'Musou_Flow']]:[]),...(hero.model==='monk'?['Ethan_Naginata_Musou_Flow','Naginata_Guard_Loop','Naginata_Guard_Impact','Naginata_Guard_Break']:[])];
 const enemyClips=['Idle_Loop','Sword_Idle','Jog_Fwd_Loop','Sprint_Loop','Jump_Start','Jump_Loop','Jump_Land'];
 for(const [model,names]of ['ronin','kaede','ayame','sora','monk','shinobi','enemy-hoodie','enemy-tshirt','enemy-cloth-ninja'].map(model=>[model,model.startsWith('enemy-')?enemyClips:model==='shinobi'?SHINOBI_CLIPS:namesFor(WARRIORS.find(w=>w.model===model))]))test(`${model}: corrected motions keep the two leg surfaces apart`,async t=>{
 // The shared triangle checker accepts arbitrary skinned surface regions.

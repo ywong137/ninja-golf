@@ -13,12 +13,13 @@ import {samplePlanarRoot,validatePlanarRoot} from '../src/attack-root-motion.js'
 import {gripFrame} from '../src/hand-grip.js';
 
 const records=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
-const hero=WARRIORS.find(w=>w.model==='sora'),grip=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).sora.sword.r;
-for(const [kind,name,count] of [['heavy','Closer_Power_Finish',1],['musou','Closer_Musou_Pursuit',4]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
- const rig=await loadNativeSkin(new URL('../public/models/sora.glb',import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
+const gripData=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
+for(const [model,kind,name,count,wristLimit] of [['sora','heavy','Closer_Power_Finish',1,28],['sora','musou','Closer_Musou_Pursuit',4,28],['ronin','musou','Ronin_Musou_Advance',3,43]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
+ const hero=WARRIORS.find(w=>w.model===model),grip=gripData[model].sword.r;
+ const rig=await loadNativeSkin(new URL(`../public/models/${model}.glb`,import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
  const legs=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s])]));
- const wrist=calibrateWristAnatomy(captureWristPose(bones,'r'));
+ const wrists=Object.fromEntries(['r','l'].map(s=>[s,calibrateWristAnatomy(captureWristPose(bones,s))]));
  // Match the runtime's fixed palm frame from the native Ready presentation.
  const ready=rig.mixer.clipAction(rig.animations.find(c=>c.name===hero.readyClip)).play();rig.mixer.update(0);rig.scene.updateMatrixWorld(true);
  const p=records[hero.readyClip].poses[0],up=new Vector3(0,1,0),shaft=new Vector3(p.tip[0]-p.grip[0],p.tip[2]-p.grip[2],p.grip[1]-p.tip[1]).normalize();
@@ -41,12 +42,17 @@ for(const [kind,name,count] of [['heavy','Closer_Power_Finish',1],['musou','Clos
    assert.ok(leg.kneeFlexion>0&&leg.kneeFlexion<125&&leg.kneeDeviation<.1&&Math.abs(leg.hipTwist)<45&&Math.abs(leg.ankleTwist)<22,JSON.stringify({time,leg}));
    for(const part of ['upperarm','lowerarm','hand']){const key=part+'_'+s;current[key]=bones[key].quaternion.clone().normalize();if(previous)maxJointStep=Math.max(maxJointStep,current[key].angleTo(previous[key])*180/Math.PI);}
   }
-  previous=current;maxWrist=Math.max(maxWrist,measureWristAnatomy(wrist,captureWristPose(bones,'r')).totalDegrees);
-  for(const [finger,q] of Object.entries(grip.rotations))assert.ok(bones[finger].quaternion.clone().normalize().angleTo(new Quaternion().fromArray(q).normalize())<.001,'The sword grip opened.');
+  previous=current;maxWrist=Math.max(maxWrist,...(record.twoHanded?['r','l']:['r']).map(s=>measureWristAnatomy(wrists[s],captureWristPose(bones,s)).totalDegrees));
+  for(const side of record.twoHanded?['r','l']:['r'])for(const [finger,q] of Object.entries(gripData[model].sword[side].rotations))assert.ok(bones[finger].quaternion.clone().normalize().angleTo(new Quaternion().fromArray(q).normalize())<.001,'The sword grip opened.');
+  if(record.twoHanded){
+   const right=bones.hand_r.localToWorld(new Vector3().fromArray(grip.center)),left=bones.hand_l.localToWorld(new Vector3().fromArray(gripData[model].sword.l.center));
+   const shaft=new Vector3(0,1,0).applyQuaternion(bones.hand_r.getWorldQuaternion(new Quaternion()).multiply(profile.frame));
+   assert.ok(right.addScaledVector(shaft,-record.gripSpacing).distanceTo(left)<.001,'The hands separate from the shared handle.');
+  }
  }
- assert.ok(maxWrist<28,'The wrist exceeds the fitted limit.');assert.ok(maxJointStep<8,'The arm snaps between samples.');
+ assert.ok(maxWrist<wristLimit,'The wrist exceeds the reviewed fitted range: '+maxWrist);assert.ok(maxJointStep<8,'The arm snaps between samples.');
  assert.ok(turn>1&&maxHip-minHip>.15&&samplePlanarRoot(record.planarRoot,record.duration).z>1.2,'The cut lost its full-body turn, level change, or step.');
- const blade=time=>{sample(time);const q=bones.hand_r.getWorldQuaternion(new Quaternion()).multiply(profile.frame);return {point:bones.hand_r.localToWorld(profile.center.clone()).addScaledVector(new Vector3(0,1,0).applyQuaternion(q),.5),edge:new Vector3(1,0,0).applyQuaternion(q)};};
+ const blade=time=>{sample(time);const q=bones.hand_r.getWorldQuaternion(new Quaternion()).multiply(profile.frame).multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll??0));return {point:bones.hand_r.localToWorld(profile.center.clone()).addScaledVector(new Vector3(0,1,0).applyQuaternion(q),.5),edge:new Vector3(1,0,0).applyQuaternion(q)};};
  const edges=record.impacts.map(time=>{const velocity=blade(time+1/480).point.sub(blade(time-1/480).point).normalize();return blade(time).edge.dot(velocity);});
  assert.ok(edges.every(edge=>edge>.6),'The striking edge trails or hits flat: '+edges);
  t.diagnostic(JSON.stringify({maxWrist,maxJointStep,turnDegrees:turn*180/Math.PI,hipTravel:maxHip-minHip,edges}));
