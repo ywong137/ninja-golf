@@ -39,16 +39,19 @@ test('Retiming retains gameplay speed ratios and root travel on the body clock',
  assert.equal(retimeMotionRecord(source,map,{combatDuration:1.1}).combatDuration,1.1);
  assert.throws(()=>retimeMotionRecord({...source,planarRoot:{...source.planarRoot,duration:2}},map));
 });
-test('GLB retiming preserves every pose value, mesh byte, and unrelated animation',()=>{
- const raw=fs.readFileSync(new URL('../public/models/ronin.glb',import.meta.url)),before=parseGlb(raw),map=extendMotionPhases(.76,phases);
- const after=parseGlb(retimeAnimation(raw,'Ronin_Heavy_Cleave',map));
+for(const clipName of ['Ronin_Heavy_Cleave','Ronin_Driving_Cut'])test(clipName+' retiming preserves poses, unused samplers, and unrelated animations',()=>{
+ const raw=fs.readFileSync(new URL('../public/models/ronin.glb',import.meta.url)),before=parseGlb(raw),duration=clipName==='Ronin_Heavy_Cleave'?.76:1.2666666507720947,map=extendMotionPhases(duration,phases);
+ const after=parseGlb(retimeAnimation(raw,clipName,map));
  assert.deepEqual(after.bin.subarray(0,before.bin.length),before.bin);
  assert.deepEqual(after.doc.meshes,before.doc.meshes);assert.deepEqual(after.doc.nodes,before.doc.nodes);
  for(let i=0;i<before.doc.animations.length;i++){
   const a=before.doc.animations[i],b=after.doc.animations[i];
-  if(a.name!=='Ronin_Heavy_Cleave'){assert.deepEqual(b,a);continue;}
+  if(a.name!==clipName){assert.deepEqual(b,a);continue;}
   assert.deepEqual(b.channels,a.channels);
+  const used=new Set(a.channels.map(c=>c.sampler));
+  if(clipName==='Ronin_Driving_Cut')assert.ok(used.size<a.samplers.length,'The fixture must exercise unused samplers.');
   for(let s=0;s<a.samplers.length;s++){
+   if(!used.has(s)){assert.deepEqual(b.samplers[s],a.samplers[s]);continue;}
    assert.equal(b.samplers[s].output,a.samplers[s].output);assert.equal(b.samplers[s].interpolation,a.samplers[s].interpolation);
    const values=(doc,bin,index)=>{const accessor=doc.accessors[index],view=doc.bufferViews[accessor.bufferView];return Array.from({length:accessor.count},(_,i)=>bin.readFloatLE((view.byteOffset??0)+(accessor.byteOffset??0)+i*4));};
    const source=values(before.doc,before.bin,a.samplers[s].input),result=values(after.doc,after.bin,b.samplers[s].input);

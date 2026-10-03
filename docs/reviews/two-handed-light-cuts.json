@@ -1,0 +1,514 @@
+{
+  "source": "Adobe Mixamo Great Sword Downward Slash",
+  "sourceSha256": "0f2b4899a48f422e23019129655f20323a8dfe922dbc4b44a1b3295f95a74e7a",
+  "scope": "Opening light attacks only. Existing meshes, golf, running and 39 earlier clips remain byte-identical.",
+  "fitting": "Ethan uses 40 cm hand spacing. Shared grip-centre reach fitting moves the source centre by at most 6.96 cm without lengthening arms. Both cuts retain the source body step and turn.",
+  "bounds": "These are reviewed motion-specific regression bounds, not human anatomical limits. The wider polearm grip uses 80 degrees of humeral roll and 42 degrees of wrist rotation. Interpolated elbow hinge tolerance is 0.15 degrees. Heavy-cut bounds remain unchanged.",
+  "notes": [
+    {
+      "model": "ronin",
+      "clip": "Ronin_Driving_Cut",
+      "sha256": "0c46b4f8f61ad0b803577eb49385fcb6c856325d044460b9eb63e602f95bba2e",
+      "preservedAnimations": 39,
+      "meshAndOtherClipsUnchanged": true,
+      "fit": {
+        "source": "Adobe Mixamo; local motion study",
+        "sourceClip": "mixamo.com",
+        "hero": "ronin",
+        "clip": "Ronin_Driving_Cut",
+        "pairedSpacing": 0.12,
+        "handFrame": "complete palm frame",
+        "weaponAxis": "fists",
+        "neutralSource": true,
+        "overheadLift": 0,
+        "duration": 1.2666666507720947,
+        "wristFit": false,
+        "grounded": true,
+        "maxFloorCorrection": 0.0351879685722683,
+        "maxPalmGap": 4.469441384352679e-7,
+        "maxWristDegrees": 35.61537039273499,
+        "wristDegrees": {
+          "r": 35.61537039273499,
+          "l": 32.16515397043726
+        },
+        "maxKneeDeviation": 0.000010468511205591113,
+        "minKneeFlex": 21.75627128510629,
+        "maxKneeFlex": 90.9560147861398,
+        "arms": {
+          "r": {
+            "minFlex": 30.38487668232872,
+            "maxDeviation": 0.000036495445727876905,
+            "maxTwist": 70.00001214701796
+          },
+          "l": {
+            "minFlex": 42.82776530691237,
+            "maxDeviation": 0.000023908243127593374,
+            "maxTwist": 70.00003587851222
+          }
+        },
+        "preservation": {
+          "preservedOriginalBytes": 11203900,
+          "preservedAnimations": 39,
+          "replacements": [
+            "Ronin_Driving_Cut"
+          ]
+        },
+        "recoveryEase": {
+          "start": 1.1466666507720946,
+          "duration": 0.12,
+          "posesUnchanged": true
+        }
+      },
+      "anatomy": {
+        "clip": "Ronin_Driving_Cut",
+        "samples": 305,
+        "worst": {
+          "humeral": {
+            "value": 71.8267088565293,
+            "time": 0.2833333333333333,
+            "side": "l"
+          },
+          "forearm": {
+            "value": 70.00003007079873,
+            "time": 0.7,
+            "side": "l"
+          },
+          "hinge": {
+            "value": 0.06700690340951393,
+            "time": 0.5541666666666667,
+            "side": "r"
+          },
+          "jointStep120": {
+            "value": 9.34394385838558,
+            "time": 0.6916666666666667,
+            "side": "upperarm_r"
+          },
+          "elbowSpeed": {
+            "value": 4.834193792787905,
+            "time": 0.625,
+            "side": "l"
+          }
+        }
+      },
+      "legs": {
+        "clip": "Ronin_Driving_Cut",
+        "samples": 609,
+        "triangles": {
+          "r": 405,
+          "l": 397
+        },
+        "minimum": 0.026202167422932632,
+        "crossings": 0,
+        "closest": {
+          "time": 0.7666666666666667,
+          "source": "leftLeg",
+          "headMesh": "Mesh"
+        },
+        "peak": {
+          "hip": 40.477000501567694,
+          "ankle": 17.078043401300363,
+          "hinge": 0.00001650672326485192
+        },
+        "flex": {
+          "min": 21.756284331159968,
+          "max": 90.95602146697843
+        },
+        "passed": true
+      },
+      "clearance": {
+        "region": "head and torso",
+        "surfaceTriangles": 3980,
+        "minimumClearance": 0.03,
+        "crossingSamples": 0,
+        "closest": null,
+        "parts": [
+          "Wrapped hand grip",
+          "Weapon fittings",
+          "Woven handle binding",
+          "Flat steel blade"
+        ]
+      }
+    },
+    {
+      "model": "monk",
+      "clip": "Ethan_Naginata_Driving_Cut",
+      "sha256": "0685ce16f67c2ce75eeb8f03e3420ee92853805d0e5b32e4e99726f735e09801",
+      "preservedAnimations": 39,
+      "meshAndOtherClipsUnchanged": true,
+      "fit": {
+        "source": "Adobe Mixamo; local motion study",
+        "sourceClip": "mixamo.com",
+        "hero": "monk",
+        "clip": "Ethan_Naginata_Driving_Cut",
+        "pairedSpacing": 0.4,
+        "handFrame": "complete palm frame",
+        "weaponAxis": "fists",
+        "neutralSource": true,
+        "overheadLift": 0,
+        "duration": 1.2666666507720947,
+        "wristFit": false,
+        "grounded": true,
+        "maxFloorCorrection": 0.029012174793060938,
+        "maxPalmGap": 2.662481838333619e-7,
+        "maxWristDegrees": 41.00320523970229,
+        "wristDegrees": {
+          "r": 28.807607077021704,
+          "l": 41.00320523970229
+        },
+        "maxKneeDeviation": 0.000010104408328321901,
+        "minKneeFlex": 21.756281489786442,
+        "maxKneeFlex": 90.95600555179159,
+        "arms": {
+          "r": {
+            "minFlex": 41.55256216849673,
+            "maxDeviation": 0.000028507218588275908,
+            "maxTwist": 70.0000148901328
+          },
+          "l": {
+            "minFlex": 34.06151844931296,
+            "maxDeviation": 0.00002998514215583674,
+            "maxTwist": 65.51219082423022
+          }
+        },
+        "maxPairCenterCorrection": 0.06960856549807015,
+        "preservation": {
+          "preservedOriginalBytes": 20677524,
+          "preservedAnimations": 39,
+          "replacements": [
+            "Ethan_Naginata_Driving_Cut"
+          ]
+        },
+        "recoveryEase": {
+          "start": 1.1466666507720946,
+          "duration": 0.12,
+          "posesUnchanged": true
+        }
+      },
+      "anatomy": {
+        "clip": "Ethan_Naginata_Driving_Cut",
+        "samples": 305,
+        "worst": {
+          "humeral": {
+            "value": 79.10082008323826,
+            "time": 0.45,
+            "side": "r"
+          },
+          "forearm": {
+            "value": 70.0000113443844,
+            "time": 0.2833333333333333,
+            "side": "r"
+          },
+          "hinge": {
+            "value": 0.10229121937203887,
+            "time": 0.6208333333333333,
+            "side": "l"
+          },
+          "jointStep120": {
+            "value": 12.161331097206823,
+            "time": 0.49166666666666664,
+            "side": "hand_r"
+          },
+          "elbowSpeed": {
+            "value": 5.48579236087118,
+            "time": 0.625,
+            "side": "l"
+          }
+        }
+      },
+      "legs": {
+        "clip": "Ethan_Naginata_Driving_Cut",
+        "samples": 609,
+        "triangles": {
+          "r": 525,
+          "l": 494
+        },
+        "minimum": 0.06016697876512281,
+        "crossings": 0,
+        "closest": {
+          "time": 0.7833333333333333,
+          "source": "leftLeg",
+          "headMesh": "Mesh"
+        },
+        "peak": {
+          "hip": 40.47705862768144,
+          "ankle": 17.07806491325786,
+          "hinge": 0.00001023778141095253
+        },
+        "flex": {
+          "min": 21.756281305026086,
+          "max": 90.95600193386612
+        },
+        "passed": true
+      },
+      "clearance": {
+        "region": "head and torso",
+        "surfaceTriangles": 10642,
+        "minimumClearance": 0.02982277391156859,
+        "crossingSamples": 0,
+        "closest": {
+          "time": 0.11666666666666667,
+          "source": "Wrapped hand grip 0",
+          "headMesh": "Mesh"
+        },
+        "parts": [
+          "Wrapped hand grip",
+          "Weapon fittings",
+          "Woven handle binding",
+          "Flat steel blade"
+        ]
+      }
+    }
+  ],
+  "heavyGripCorrection": {
+    "clip": "Ethan_Naginata_Power_Cut",
+    "before": -0.7,
+    "after": -0.65,
+    "reason": "Keep all four rear-hand fingers on the shaft, with a 1 cm finger pad.",
+    "skeletalAnimationUnchanged": true,
+    "clearance": {
+      "region": "head and torso",
+      "surfaceTriangles": 10642,
+      "minimumClearance": 0.03,
+      "crossingSamples": 0,
+      "closest": null,
+      "parts": [
+        "Wrapped hand grip",
+        "Weapon fittings",
+        "Woven handle binding",
+        "Flat steel blade"
+      ]
+    },
+    "gameplay": [
+      {
+        "hz": 40,
+        "standingHits": [
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 0.6500000000000002,
+            "hit": 0
+          },
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 1.3249999999999993,
+            "hit": 1
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 0.6500000000000002,
+            "hit": 0
+          },
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 1.3249999999999993,
+            "hit": 1
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut"
+        ],
+        "maxPalmGap": 0.0005963148874026802,
+        "minBladeClearance": 1.3195401702044567,
+        "weaponFrames": 261,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 126,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      },
+      {
+        "hz": 60,
+        "standingHits": [
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 0.6333333333333336,
+            "hit": 0
+          },
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 1.3166666666666669,
+            "hit": 1
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 0.6333333333333336,
+            "hit": 0
+          },
+          {
+            "clip": "Ethan_Naginata_Power_Cut",
+            "time": 1.3166666666666669,
+            "hit": 1
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut",
+          "Ethan_Naginata_Power_Cut"
+        ],
+        "maxPalmGap": 0.0007658843534540919,
+        "minBladeClearance": 1.3214918167992602,
+        "weaponFrames": 391,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 126,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      }
+    ]
+  },
+  "opusReview": {
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "outcome": "Independent visual review requested wider polearm hand spacing and exposed a hand beyond the shaft end. Both grip defects were corrected. Clothing deformation at a raised shoulder remains a separate art issue."
+  },
+  "gameplay": {
+    "ronin": [
+      {
+        "hz": 40,
+        "standingHits": [
+          {
+            "clip": "Ronin_Driving_Cut",
+            "time": 0.4000000000000001,
+            "hit": 0
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ronin_Driving_Cut",
+            "time": 0.4000000000000001,
+            "hit": 0
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ronin_Driving_Cut",
+          "Cut_Return"
+        ],
+        "maxPalmGap": 0.0007189380722423238,
+        "minBladeClearance": 0.7339921197620667,
+        "weaponFrames": 88,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 37.200000000000045,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      },
+      {
+        "hz": 60,
+        "standingHits": [
+          {
+            "clip": "Ronin_Driving_Cut",
+            "time": 0.39999999999999997,
+            "hit": 0
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ronin_Driving_Cut",
+            "time": 0.39999999999999997,
+            "hit": 0
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ronin_Driving_Cut",
+          "Cut_Return"
+        ],
+        "maxPalmGap": 0.0004010375758996726,
+        "minBladeClearance": 0.7308324007389224,
+        "weaponFrames": 135,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 37.200000000000045,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      }
+    ],
+    "ethan": [
+      {
+        "hz": 40,
+        "standingHits": [
+          {
+            "clip": "Ethan_Naginata_Driving_Cut",
+            "time": 0.4500000000000001,
+            "hit": 0
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ethan_Naginata_Driving_Cut",
+            "time": 0.4500000000000001,
+            "hit": 0
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ethan_Naginata_Driving_Cut",
+          "Ethan_Naginata_Cut_Return"
+        ],
+        "maxPalmGap": 0.0007044134789361082,
+        "minBladeClearance": 0.6915008257162194,
+        "weaponFrames": 97,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 43.39999999999998,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      },
+      {
+        "hz": 60,
+        "standingHits": [
+          {
+            "clip": "Ethan_Naginata_Driving_Cut",
+            "time": 0.44999999999999996,
+            "hit": 0
+          }
+        ],
+        "movingHits": [
+          {
+            "clip": "Ethan_Naginata_Driving_Cut",
+            "time": 0.44999999999999996,
+            "hit": 0
+          }
+        ],
+        "cancelHits": [],
+        "bufferClips": [
+          "Ethan_Naginata_Driving_Cut",
+          "Ethan_Naginata_Cut_Return"
+        ],
+        "maxPalmGap": 0.0006827771513884535,
+        "minBladeClearance": 0.6841929366265171,
+        "weaponFrames": 147,
+        "runRecovered": true,
+        "finite": true,
+        "enemyDamage": 43.39999999999998,
+        "standingRecovered": true,
+        "cancelled": true,
+        "bufferRecovered": true
+      }
+    ]
+  },
+  "verification": {
+    "focusedTests": 33,
+    "finalGripAndTimingTests": 11,
+    "selectionLayouts": 10,
+    "selectionLoops": 6,
+    "courses": 4,
+    "build": "passed",
+    "audio": "muted for every browser check"
+  }
+}

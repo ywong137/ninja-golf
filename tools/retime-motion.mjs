@@ -37,7 +37,10 @@ export function retimeAnimation(input,clipName,map){
  const {doc,bin,chunks}=parseGlb(input),clips=doc.animations.filter(a=>a.name===clipName);
  if(clips.length!==1)throw Error('Expected exactly one animation: '+clipName);
  const parts=[bin],mapped=new Map();let length=bin.length;
- for(const sampler of clips[0].samplers){
+ // Replaced tracks can leave unused samplers with an unrelated old clock.
+ // Retiming affects the channels that the selected animation actually plays.
+ for(const samplerIndex of new Set(clips[0].channels.map(channel=>channel.sampler))){
+  const sampler=clips[0].samplers[samplerIndex];
   if(![undefined,'LINEAR','STEP'].includes(sampler.interpolation))throw Error('Retiming supports LINEAR and STEP tracks only; cubic tangents require resampling.');
   if(mapped.has(sampler.input)){sampler.input=mapped.get(sampler.input);continue;}
   const accessor=doc.accessors[sampler.input],view=doc.bufferViews[accessor.bufferView];

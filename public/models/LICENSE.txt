@@ -65,3 +65,5 @@ The retarget preserves the full body performance and fits the two hands,
 weapon mount, native elbow/knee frames, and foot contacts to these heroes.
 Only the adapted game animations ship. The source FBX files remain local.
 Adobe Mixamo FAQ: https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html
+
+2026-10-03: Ronin_Driving_Cut and Ethan_Naginata_Driving_Cut derive from Adobe Mixamo Great Sword Downward Slash. Source files remain private; game assets contain fitted motion on the existing character rigs.
