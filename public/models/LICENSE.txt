@@ -114,3 +114,7 @@ sock geometry. Both retain their original character faces, hair, skeletons,
 and animation clips. The original MIT attribution still applies to adapted bodies.
 The other defaults retain their original bodies and add fitted garments.
 See docs/art-direction/wardrobe/README.md for sources and rebuild instructions.
+
+The Shinobi opening light attack adapts the complete Sword_Attack performance
+from Quaternius Universal Animation Library 1, CC0. It retains the source step,
+body turn, and recovery. Both hands use native fitted sword grips.

@@ -6,9 +6,9 @@ import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
 
 const {values}=parseArgs({options:{output:{type:'string'},record:{type:'boolean'},kind:{type:'string',default:'musou'},hero:{type:'string',multiple:true},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/playtest-source-attack.mjs --kind heavy|musou [--hero INDEX] [--output DIRECTORY] [--record]\nExercise source attacks from standing, running, and queued-light states at 40, 60, and 144 Hz. All audio is muted. Repeat --hero for more characters.');process.exit(0);}
-if(!['heavy','musou'].includes(values.kind))throw Error('Use --kind heavy or --kind musou.');
-const heroes=values.hero?.map(Number)??(values.kind==='heavy'?[3]:[0,5]);if(heroes.some(x=>!Number.isInteger(x)||x<0||x>5))throw Error('--hero must be a roster index from 0 to 5.');
+if(values.help){console.log('node tools/playtest-source-attack.mjs --kind light|heavy|musou [--hero INDEX] [--output DIRECTORY] [--record]\nExercise source attacks from standing, running, and queued-light states at 40, 60, and 144 Hz. All audio is muted. Repeat --hero for more characters.');process.exit(0);}
+if(!['light','heavy','musou'].includes(values.kind))throw Error('Use --kind light, heavy, or musou.');
+const heroes=values.hero?.map(Number)??(values.kind==='light'?[1]:values.kind==='heavy'?[3]:[0,5]);if(heroes.some(x=>!Number.isInteger(x)||x<0||x>5))throw Error('--hero must be a roster index from 0 to 5.');
 const output=path.resolve(values.output??'artifacts/reviews/source-'+values.kind+'/gameplay');fs.mkdirSync(output,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
@@ -45,14 +45,15 @@ try{
    const tick=()=>{
     g.time+=1/rate;g.updateCombat(1/rate);g.effects.update(1/rate);g.input.end();
     if(g.action&&row.clips.at(-1)!==g.action.motionName)row.clips.push(g.action.motionName);
-    if(g.action||g.cinematic>0)for(let o=g.player.weapon;o;o=o.parent)if(!o.visible)row.hidden++;
+    if(g.action||g.cinematic>0)for(const held of [g.player.weapon,...(g.player.offhand?[g.player.offhand]:[])])for(let o=held;o;o=o.parent)if(!o.visible)row.hidden++;
     for(const b of Object.values(g.player.bones))if(![...b.position,...b.quaternion].every(Number.isFinite))row.finite=false;
     if(g.action?.kind===kind&&g.action.time>.3){
      const a=g.player;a.root.updateMatrixWorld(true);
-     for(const side of motion.twoHanded?['r','l']:['r']){
+     for(const side of motion.twoHanded||a.offhand?['r','l']:['r']){
       const palm=a.bones['hand_'+side].localToWorld(a.handGrip.profiles.sword[side].center.clone());
-      const station=a.weapon.userData.primaryGrip-(side==='l'?motion.gripSpacing:0);
-      row.maxPalmGap=Math.max(row.maxPalmGap,palm.distanceTo(a.weapon.localToWorld(new T.Vector3(0,station,0))));
+      const held=side==='l'&&a.offhand?a.offhand:a.weapon;
+      const station=held.userData.primaryGrip-(side==='l'&&!a.offhand?motion.gripSpacing:0);
+      row.maxPalmGap=Math.max(row.maxPalmGap,palm.distanceTo(held.localToWorld(new T.Vector3(0,station,0))));
      }
     }
    };

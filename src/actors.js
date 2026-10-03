@@ -48,7 +48,7 @@ const MODEL_REVISION='measured-ethan-native-arms-4';
 const MODEL_REVISIONS={...Object.fromEntries(['ronin','shinobi','monk','kaede','ayame','sora'].map(name=>[name,'captured-running-20261002'])),ronin:'native-guards-20261002',monk:'native-guards-20261002'};
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-20261003';
 MODEL_REVISIONS.kaede='selected-wardrobe-20261003';
-MODEL_REVISIONS.shinobi='selected-wardrobe-20261003';
+MODEL_REVISIONS.shinobi='stepping-cut-20261003';
 MODEL_REVISIONS.monk='hostile-takeover-20261003';
 MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
 MODEL_REVISIONS.ayame='selected-wardrobe-20261003';
