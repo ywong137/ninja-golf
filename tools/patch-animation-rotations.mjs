@@ -2,7 +2,7 @@
 import {parseGlb} from './bake-native-golf.mjs';
 
 export function patchAnimationRotations(input,entries){
- if(entries.some(e=>e.translations))throw Error('Use patchAnimationTransforms for translation tracks.');
+ if(entries.some(e=>e.translations||e.scales))throw Error('Use patchAnimationTransforms for translation or scale tracks.');
  return patchAnimationTransforms(input,entries);
 }
 
@@ -16,7 +16,7 @@ export function patchAnimationTransforms(input,entries){
   const a={bufferView:view,componentType:5126,count:values.length/width,type:width===1?'SCALAR':width===3?'VEC3':'VEC4'};
   if(width===1){a.min=[array[0]];a.max=[array.at(-1)];}doc.accessors.push(a);return doc.accessors.length-1;
  }
- for(const {clip,template,times,rotations={},newRotations={},translations={},extras={}}of entries){
+ for(const {clip,template,times,rotations={},newRotations={},translations={},scales={},extras={}}of entries){
   if(seen.has(clip))throw Error('Repeated animation: '+clip);seen.add(clip);
   if(template){
    if(doc.animations.some(a=>a.name===clip))throw Error('Appended animation already exists: '+clip);
@@ -44,10 +44,11 @@ export function patchAnimationTransforms(input,entries){
    animation.channels.push({target:{node:nodes[0],path:'rotation'},sampler:animation.samplers.length});
    animation.samplers.push({input,output:accessor(values,4),interpolation:'LINEAR'});
   }
-  for(const [name,values]of Object.entries(translations)){
-   if(values.length!==times.length*3)throw Error('Wrong translation sample count: '+name);
-   const channels=animation.channels.filter(c=>doc.nodes[c.target.node].name===name&&c.target.path==='translation');
-   if(channels.length!==1)throw Error('Expected one existing translation channel: '+clip+'/'+name);
+  for(const [property,tracks]of [['translation',translations],['scale',scales]])for(const [name,values]of Object.entries(tracks)){
+   if(values.length!==times.length*3)throw Error('Wrong '+property+' sample count: '+name);
+   if(property==='scale'&&values.some(v=>!Number.isFinite(v)||v<=0))throw Error('Bone scales must be positive and finite: '+name);
+   const channels=animation.channels.filter(c=>doc.nodes[c.target.node].name===name&&c.target.path===property);
+   if(channels.length!==1)throw Error('Expected one existing '+property+' channel: '+clip+'/'+name);
    channels[0].sampler=animation.samplers.length;animation.samplers.push({input,output:accessor(values,3),interpolation:'LINEAR'});
   }
   animation.extras={...animation.extras,...extras};

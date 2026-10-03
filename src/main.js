@@ -187,7 +187,7 @@ class Game {
     this.runAcceleration=null;
     exitPlayerGuard(this.guard);
     if(this.time>(this.chainExpires||0))this.lightChain=0;
-    const step=continuation?.step??(kind==='light'?(this.lightChain||0)%4:Math.max(0,(this.lightChain||0)-1));
+    const step=continuation?.step??(kind==='light'?(this.lightChain||0)%(this.warrior.lightComboLength??4):Math.max(0,(this.lightChain||0)-1));
     const motionName=continuation?.clip??combatMotionName(this.warrior,kind,step),motion=motions[motionName];
     const definition=withMotionTiming(attackDefinition(kind,step,this.warrior.combatStyle),motion);
     this.action={...definition,motionName,syncMotion:!!(continuation||motion.continuations),impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,headings:kind==='musou'?musouHeadings(this.warrior):null,time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};

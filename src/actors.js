@@ -50,7 +50,7 @@ for(const {model}of WARRIORS)MODEL_REVISIONS[model]='enemy-gait-transfer-2026100
 MODEL_REVISIONS.kaede='full-body-opening-20261003';
 MODEL_REVISIONS.ronin=MODEL_REVISIONS.monk='two-handed-cuts-20261003';
 MODEL_REVISIONS.ayame='hustler-source-cut-20261003';
-MODEL_REVISIONS.sora='closer-source-cut-20261003';
+MODEL_REVISIONS.sora='closer-connected-combo-20261003';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -239,6 +239,11 @@ export class Warrior {
     // Foot ownership must survive attacks even while the hand blend is active.
     if(fade>0&&travelGrip&&motions[name]?.athleticAttack&&!this.runAttackStep?.state)this.runAttackStep?.begin();
     const preservePair=settledPair&&!this.guardWalking&&!this.running;
+    const preserveSingle=!this.offhand&&!this.running&&!this.guardWalking&&!(this.travelPose?.weight>0)
+      &&this.handGrip?.secondaryWeight<.001&&fromGrip?.nativeAttachment&&toGrip?.nativeAttachment&&!fromGrip.twoHanded&&!toGrip.twoHanded
+      &&(!this.heldBlend||this.mixer.time>=this.heldBlend.start+this.heldBlend.duration)
+      &&(fromGrip.primaryGrip??this.weapon.userData.defaultGrip)===(toGrip.primaryGrip??this.weapon.userData.defaultGrip)
+      &&(fromGrip.weaponGripRoll??0)===(toGrip.weaponGripRoll??0);
     // Interrupting a captured carry fade must keep its common handle closed.
     // The arms do not become separate grips because the earlier fade is unfinished.
     const continuingSourcePair=this.heldBlend?.sourcePair&&this.mixer.time<this.heldBlend.start+this.heldBlend.duration;
@@ -259,7 +264,7 @@ export class Warrior {
       &&motions[this.current]?.athleticAttack;
     const connectedAttack=previous?.loop===THREE.LoopOnce&&motions[this.current]?.athleticAttack
       &&matchesContinuationBoundary(motions[this.current],name,previous.time);
-    const directEntry=fade>0&&preservePair&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack||connectedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
+    const directEntry=fade>0&&(preservePair||preserveSingle&&connectedAttack)&&(this.current===WARRIORS[this.type]?.readyClip||finishedAttack||connectedAttack)&&previous?.enabled&&previous.getEffectiveWeight()===1
       &&![...this.actions.values(),...(this.repeatActions?.values()??[])].some(action=>action!==previous&&action.isScheduled()&&action.enabled)
       &&matchesAnimationEntry(this.bones,previous.getClip(),next.getClip(),{restPose:this.golfRestPose,overriddenTracks:new Set(['r','l'].flatMap(side=>this.handGrip.active[side].fingers.map(([bone])=>bone.name+'.quaternion')))});
     if(directEntry)fade=0;

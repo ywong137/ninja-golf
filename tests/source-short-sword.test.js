@@ -26,7 +26,7 @@ function play(rig,clipName){
 }
 
 test('the Closer opening cut connects during its supported rising sweep and retains recovery',()=>{
- assert.equal(name,'Closer_Rising_Cut');assert.ok(record.nativeSourceMotion&&record.nativeAttachment);
+ assert.equal(name,'Closer_Combo_Opening');assert.ok(record.nativeSourceMotion&&record.nativeAttachment);
  const attack=withMotionTiming(attackDefinition('light',0,hero.combatStyle),record);
  assert.equal(attack.hits.length,1);assert.ok(attack.hits[0]>.2&&attack.hits[0]<.24);
  assert.equal(attack.duration,record.combatDuration);assert.ok(record.duration-record.impacts[0]>1);

@@ -3,10 +3,11 @@ import {attackDefinition} from './combat.js';
 import {withMotionTiming} from './attack-timing.js';
 import {combatMotionName,motions} from './motion.js';
 import {WARRIORS} from './warriors.js';
+import {attackRootDelta} from './attack-root-motion.js';
 
 export class CharacterShowcase{
  constructor(actor,{speed=1,paused=false}={}){
-  this.actor=actor;this.warrior=WARRIORS[actor.type];
+  this.actor=actor;this.warrior=WARRIORS[actor.type];this.origin=actor.root.position.clone();
   for(const kind of ['light','heavy'])this[kind]=withMotionTiming(attackDefinition(kind,0,this.warrior.combatStyle),motions[combatMotionName(this.warrior,kind,0)]);
   this.swingDuration=actor.actions.get('Golf_Swing').getClip().duration;
   this.clock=new ShowcaseClock(showcaseStages(this.swingDuration,this.light.duration,this.heavy.duration));this.clock.setSpeed(speed);
@@ -35,11 +36,22 @@ export class CharacterShowcase{
    time=elapsed/definition.duration*motions[clip].duration;
    action={...definition,kind:stage.id,step:0,time:elapsed,token:this.clock.cycle*2+(stage.id==='light'?1:2)};
   }
+  // Keep extracted travel visible in the preview. Retain completed attack
+  // travel until the combat fade hides the return to the golf origin.
+  this.actor.root.position.copy(this.origin);
+  for(const kind of ['light','heavy']){
+   const index=this.clock.stages.findIndex(s=>s.id===kind),record=motions[combatMotionName(this.warrior,kind,0)];
+   if(!golf&&this.clock.index>=index&&record.planarRoot){
+    const duration=this[kind].duration,t=this.clock.index===index?elapsed:duration;
+    const delta=attackRootDelta(record.planarRoot,0,t,duration,this.actor.root.rotation.y,this.actor.root.scale.x);
+    this.actor.root.position.x+=delta.x;this.actor.root.position.z+=delta.z;
+   }
+  }
   const duration=this.actor.actions.get(clip).getClip().duration;
   this.actor.update(this.clock.time,step,{golf,action,previewPose:{clip,time:Math.min(time,duration-1e-5)}});
   for(const [original,material]of this.materials)material.opacity=original.opacity*this.clock.opacity;
   return this.state;
  }
  get state(){return{label:this.clock.stage.label,stage:this.clock.stage.id,time:this.clock.elapsed,duration:this.clock.stage.duration,speed:this.clock.speed,paused:this.clock.paused};}
- dispose(){for(const [mesh,material]of this.originalMaterials)mesh.material=material;for(const material of this.materials.values())material.dispose();this.originalMaterials=[];this.materials.clear();}
+ dispose(){this.actor.root.position.copy(this.origin);for(const [mesh,material]of this.originalMaterials)mesh.material=material;for(const material of this.materials.values())material.dispose();this.originalMaterials=[];this.materials.clear();}
 }

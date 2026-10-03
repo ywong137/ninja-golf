@@ -19,13 +19,16 @@ import {fitSourceSwordWrist,fitSourceSwordPalm} from './fit-source-sword-wrist.m
 import {gripFrame,solveGripArm} from '../src/hand-grip.js';
 import {captureFootSoles,sampleFootSole} from '../src/foot-sole.js';
 
-const {values}=parseArgs({options:{input:{type:'string'},source:{type:'string'},'source-clip':{type:'string'},recovery:{type:'string'},output:{type:'string'},grips:{type:'string'},hero:{type:'string',default:'kaede'},clip:{type:'string',default:'Ace_Reference_Cut'},template:{type:'string',default:'Ace_Cut_Diagonal'},'paired-spacing':{type:'string'},'fit-pair-reach':{type:'boolean'},grounded:{type:'boolean'},'wrist-fit':{type:'boolean'},'palm-pronation-fit':{type:'boolean'},'palm-frame':{type:'boolean'},'look-ahead':{type:'boolean'},'edge-turn':{type:'string'},'edge-window':{type:'string'},'neutral-source':{type:'boolean'},'overhead-lift':{type:'string'},'step-clearance':{type:'string'},'stance-width':{type:'string'},'knee-clearance':{type:'string'},'joint-fit':{type:'boolean'},'shaft-reference':{type:'string',default:'fists'},help:{type:'boolean'}}});
+const {values}=parseArgs({options:{input:{type:'string'},source:{type:'string'},'source-clip':{type:'string'},recovery:{type:'string'},output:{type:'string'},grips:{type:'string'},hero:{type:'string',default:'kaede'},clip:{type:'string',default:'Ace_Reference_Cut'},template:{type:'string',default:'Ace_Cut_Diagonal'},'paired-spacing':{type:'string'},'fit-pair-reach':{type:'boolean'},grounded:{type:'boolean'},'wrist-fit':{type:'boolean'},'palm-pronation-fit':{type:'boolean'},'palm-frame':{type:'boolean'},'look-ahead':{type:'boolean'},'edge-turn':{type:'string'},'edge-window':{type:'string'},'neutral-source':{type:'boolean'},'overhead-lift':{type:'string'},'step-clearance':{type:'string'},'step-window':{type:'string'},'stance-width':{type:'string'},'knee-clearance':{type:'string'},'joint-fit':{type:'boolean'},'shaft-reference':{type:'string',default:'fists'},help:{type:'boolean'}}});
 if(values.help){console.log('node tools/transfer-sword-study.mjs --input RELEASE/kaede.glb --source UAL1_Standard.glb --grips RELEASE/src/grip-data.json --output REVIEW/kaede.glb [--wrist-fit]\nAppend one full-body motion study. Preserve existing animations and geometry. Output must remain outside public/. For Mixamo FBX, select --hero, --clip and --template; optional --paired-spacing sets a signed grip distance. For a named library clip, use --source-clip; --recovery joins its matching authored recovery. The paired fit rejects invalid arm frames. --wrist-fit is for single-hand studies only. --palm-pronation-fit bounds the forearm and removes residual wrist roll; it changes the sword path and requires review. --edge-window start,full,release,end sets the four native seconds for --edge-turn. --palm-frame transfers both palm axes. --look-ahead shares a bounded upward gaze correction between neck and head.');process.exit(0);}
 for(const key of ['input','source','output','grips'])if(!values[key])throw Error(`Supply --${key}. See --help.`);
 if(!values.output.endsWith('.glb')||path.resolve(values.output)===path.resolve(values.input)||path.resolve(values.output).split(path.sep).includes('public'))throw Error('Choose a separate review GLB outside public/.');
 const edgeWindow=(values['edge-window']??'.20,.38,.62,.90').split(',').map(Number);
 if(edgeWindow.length!==4||edgeWindow.some((v,i)=>!Number.isFinite(v)||v<0||(i&&v<edgeWindow[i-1]))||edgeWindow[0]===edgeWindow[1]||edgeWindow[2]===edgeWindow[3])throw Error('--edge-window needs four ordered seconds: start,full,release,end.');
 if(values['edge-window']&&values['edge-turn']===undefined)throw Error('--edge-window requires --edge-turn.');
+const stepWindow=(values['step-window']??'.10,.27,.40,.58').split(',').map(Number);
+if(stepWindow.length!==4||stepWindow.some((v,i)=>!Number.isFinite(v)||v<0||(i&&v<=stepWindow[i-1])))throw Error('--step-window needs four increasing native seconds.');
+if(values['step-window']&&!values['step-clearance'])throw Error('--step-window requires --step-clearance.');
 const isMixamo=values.source.endsWith('.fbx');
 const source=isMixamo?loadMixamoMotion(values.source):await loadNativeSkin(values.source),target=await loadNativeSkin(values.input);
 const retarget=createSourceGaitRetarget(source.scene,target.scene,{footRotation:isMixamo?'segment-frame':'bind-delta'}),bones=retarget.bones;
@@ -166,7 +169,7 @@ for(let i=0;i<times.length;i++){
  }
  if(values['step-clearance']){
   const side='l',thigh=bones.thigh_l,calf=bones.calf_l,foot=bones.foot_l;
-  const weight=T.MathUtils.smoothstep(times[i],.10,.27)*(1-T.MathUtils.smoothstep(times[i],.40,.58));
+  const weight=T.MathUtils.smoothstep(times[i],stepWindow[0],stepWindow[1])*(1-T.MathUtils.smoothstep(times[i],stepWindow[2],stepWindow[3]));
   const outward=bones.thigh_l.getWorldPosition(new T.Vector3()).sub(bones.thigh_r.getWorldPosition(new T.Vector3())).setY(0).normalize();
   const pole=captureLegPole(thigh,calf,foot,anatomy.l.hinge),target=foot.getWorldPosition(new T.Vector3()).addScaledVector(outward,Number(values['step-clearance'])*weight),q=foot.getWorldQuaternion(new T.Quaternion());
   solveLegWithPole(thigh,calf,foot,target,q,anatomy.l.hinge,pole);
