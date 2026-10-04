@@ -132,4 +132,5 @@ The Ace three-cut light combo adapts Sword_Regular_Combo and the matching
 A/B recoveries from Quaternius Universal Animation Library 2 (CC0).
 The full-body source controls the steps, turns, balancing arm and recovery.
 The native transfer fits the joints, extracts actor travel, and adjusts the
-head direction and one recovery shoulder angle. The original mesh is unchanged.
+head direction and shoulder clearance for the fitted clothing and handle.
+The original mesh is unchanged.

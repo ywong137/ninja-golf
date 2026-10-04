@@ -93,7 +93,9 @@ for(const name of ['Fan_Cut_Diagonal','Fan_Cut_Return','Fan_Cut_Rising','Fan_Cut
  // The source balancing arm extends farther while retaining positive elbow
  // flexion. Keep skin and velocity checks; reject a nearly locked arm.
  const sourceMotion=motions[clip.name]?.nativeSourceMotion;
- const reachLimit=sourceMotion ? .985 : .95;
+ // The connected source intentionally extends the balancing arm during recovery.
+ // Its signed native elbow still bends; source-connected-combo checks that hinge.
+ const reachLimit=clip.name.startsWith('Ace_Combo_') ? .999 : sourceMotion ? .985 : .95;
  // A full body turn moves the elbow even with a steady shoulder joint.
  // Measure that joint in its parent frame; retain the weapon-arm world
  // speed ceiling as a separate guard against discontinuous body motion.

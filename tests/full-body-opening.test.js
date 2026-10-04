@@ -12,9 +12,11 @@ import {attackFootContacts} from '../src/foot-placement.js';
 import {createWeapon} from '../src/weapons.js';
 
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
-const hero=WARRIORS.find(h=>h.model==='kaede'),name=hero.motionOverrides.Fan_Cut_Diagonal,record=motions[name];
+// These timing, support, and grip fixtures describe the retained UAL1 cut.
+// Active UAL2 combos use source-connected-combo and runtime blade checks.
+const hero=WARRIORS.find(h=>h.model==='kaede'),name='Ace_Cut_Diagonal',record=motions[name];
 
-test('the complete opening cut has one damage contact on its gameplay clock',()=>{
+test('the retained UAL1 opening cut has one damage contact on its gameplay clock',()=>{
  const attack=withMotionTiming(attackDefinition('light',0,hero.combatStyle),record);
  assert.equal(attack.hits.length,1);
  assert.ok(attack.hits[0]>.25&&attack.hits[0]<.5);
@@ -23,7 +25,7 @@ test('the complete opening cut has one damage contact on its gameplay clock',()=
  assert.equal(attack.hits[0]/attack.duration,record.impacts[0]/record.duration);
 });
 
-test('the opening cut steps, turns, and keeps native hinges and a fitted sword hand',async t=>{
+test('the retained UAL1 opening cut steps, turns, and keeps native hinges and a fitted sword hand',async t=>{
  const rig=await loadNativeSkin(new URL('../public/models/kaede.glb',import.meta.url)),bones={};
  rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
  const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
@@ -76,7 +78,7 @@ test('the opening cut steps, turns, and keeps native hinges and a fitted sword h
  t.diagnostic(JSON.stringify({samples:count+1,stepMetres:step,chestTurnDegrees:turn*180/Math.PI,hipTravel:maxHip-minHip,maxWrist,maxJointStep}));
 });
 
-test('source support windows retain contact through heel and toe roll',()=>{
+test('retained UAL1 source support windows retain contact through heel and toe roll',()=>{
  const raisedAnkles={footR:[0,0,1],footL:[0,0,1]};
  const impact=attackFootContacts(record,record.impacts[0],raisedAnkles);
  assert.equal(impact.stance.l,true);assert.equal(impact.stance.r,false);
@@ -85,7 +87,7 @@ test('source support windows retain contact through heel and toe roll',()=>{
 });
 
 
-test('the opening cut leads with the cutting edge at the damage contact',async t=>{
+test('the retained UAL1 opening cut leads with the cutting edge at the damage contact',async t=>{
  const rig=await loadNativeSkin(new URL('../public/models/kaede.glb',import.meta.url)),bones={};
  rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  const rotation=name=>bones[name].getWorldQuaternion(new Quaternion());

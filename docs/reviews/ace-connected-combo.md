@@ -9,27 +9,30 @@ The complete early-input chain takes about 2.55 seconds.
 
 The transfer retains the existing character mesh, face, wardrobe, rig, and all 39 previous animations.
 Three appended clips add 1,086,664 bytes to the model.
-The final model SHA256 is `85561f63b3cde7da5a7fa4569f0e479280797a9313c4644e3b07b6de3314098b`.
+The final model SHA256 is `afb44ffd4757d2932acb3ae414ecd2e53e0c075d793b32822e1cf2c762d4f6eb`.
 
 ## Fitting and review
 
 The transfer uses stable elbow planes, native joint limits, and a bounded head/neck lift.
-The jian retains its 78 cm blade. Its one-handed handle is now 18 cm, down from 32 cm.
+The jian retains its 78 cm blade. Its handle is now 26 cm, down from 32 cm.
+That length fits the closed fingers of both hands during the existing heavy attack.
 A fixed 34-degree axial grip rotation aligns the cutting edge with the main strike intervals.
-A four-degree forward shoulder correction clears the handle during the finishing recovery.
+A twelve-degree forward shoulder correction clears the handle during the finishing recovery.
 That correction acts only within native seconds 2.02, 2.15, 2.24, and 2.42 of the continuous source.
 It rotates the whole arm without changing its length or bending the wrist to hide an intersection.
+The unarmed shoulder opens by up to 30 degrees to clear the Ace's wider clothing.
+The source elbow extension remains intact, with positive native flexion.
 The finishing landing phase adds 60 ms, as in the existing Closer assembly.
 
 Opus 5.5 reviewed seven candidate stills through a CLI session configured with high effort.
 It found no blocking backward joint, hyperextension, reversed torso, or collapsed pelvis.
 It requested the bounded head lift and review of the recovery and moving foot contacts.
-The final head lift and shoulder correction came after that review.
+The final head lift, shoulder corrections, and handle fitting came after that review.
 The still review does not establish final motion quality or perfect foot contact.
 
 ## Verification
 
-- Forty-five focused tests passed, covering assets, original-data preservation, anatomy, timing, source boundaries, playback, weapons, and preview bounds.
+- Sixty focused tests passed, covering assets, original-data preservation, anatomy, timing, source boundaries, playback, weapons, and preview bounds.
 - Thirty muted gameplay cases passed for the Ace at 40, 60, and 144 Hz.
 - Thirty matching Closer cases passed after sharing the gameplay checker.
 - Cases cover partial, complete, late, heavy, interrupted, repeated, moving, and terrain attacks.
@@ -62,8 +65,8 @@ Bake three studies with `tools/transfer-sword-study.mjs`:
 - Opening: `Sword_Regular_A` plus `Sword_Regular_A_Rec` into `Ace_Opening_Source`.
 - Return: `Sword_Regular_B` plus `Sword_Regular_B_Rec` into `Ace_Return_Source`.
 
-Use `--hero kaede --template Ace_Cut_Diagonal --palm-frame --palm-pronation-fit --grounded --joint-fit --stable-arm-pole --sample-rate 240 --look-ahead`.
-Add `--right-arm-forward 4 --right-arm-window 2.02,2.15,2.24,2.42` to the full study only.
+Use `--hero kaede --template Ace_Cut_Diagonal --palm-frame --palm-pronation-fit --grounded --joint-fit --stable-arm-pole --sample-rate 240 --look-ahead --free-arm-space 30`.
+Add `--right-arm-forward 12 --right-arm-window 2.02,2.15,2.24,2.42` to the full study only.
 Keep all outputs outside `public/` until review passes.
 
 Assemble with the shared tool:
@@ -78,6 +81,19 @@ node tools/playtest-connected-combo.mjs --hero kaede --output REVIEW
 
 The old Closer commands remain compatibility wrappers for the shared tools.
 Local evidence lives in `artifacts/reviews/ace-connected-combo/` in the primary checkout.
-The final real-damage reports are `integrated-damage/report.json` and `closer-regression/report.json`.
-Final surface reports are in `review-opening`, `review-return`, and `review-finish`.
-Earlier candidate directories contain known failures and do not represent the released motion.
+The final Ace real-damage report is `body-fit/gameplay/report.json`.
+The shared Closer regression report is `closer-regression/report.json`.
+Final surface reports are in `body-fit/final-Opening`, `body-fit/final-Return`, and `body-fit/final-Finish`.
+Their minimum clearances are 3.98 mm, 25.28 mm, and above the 30 mm reporting cap.
+Earlier candidate directories contain known failures and do not represent the final motion.
+
+## Integration corrections
+
+The first CI run found eight failures and did not deploy.
+Four fixtures described the retained UAL1 cut but accidentally selected the new UAL2 attack.
+Those fixtures now name their source explicitly. Active combo checks remain separate.
+The shared return-lunge check now includes the Ace, using the same reviewed limit as The Closer.
+Body checks exposed free-arm contact against the clothing. The shoulder correction removes those crossings.
+The heavy-grip check rejected an 18 cm handle. The final 26 cm handle preserves both fitted fists.
+The source intentionally extends the balancing elbow during recovery.
+The reach check permits that extension while retaining signed hinge, collision, and continuity checks.

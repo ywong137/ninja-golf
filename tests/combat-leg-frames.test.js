@@ -24,9 +24,9 @@ for(const model of ['kaede','ayame','sora'])test(`${model}: every standard attac
     // while testing the same native knee and hip constraints.
     const ankleLimit=motions[name].nativeSourceMotion?22:15;
     assert.ok(Math.abs(m.hipTwist)<45&&Math.abs(m.ankleTwist)<ankleLimit&&m.kneeDeviation<.01,label);
-    // Both characters use the same reviewed UAL2 return lunge. It reaches
+    // These characters use the same reviewed UAL2 return lunge. It reaches
     // 124.47 degrees. Keep unrelated attacks at their existing 120 limit.
-    const kneeLimit=['Hustler_Diagonal_Cut','Closer_Combo_Return','Closer_Combo_Finish'].includes(name)?125:120;
+    const kneeLimit=['Hustler_Diagonal_Cut','Closer_Combo_Return','Closer_Combo_Finish','Ace_Combo_Return','Ace_Combo_Finish'].includes(name)?125:120;
     assert.ok(m.kneeFlexion>0&&m.kneeFlexion<kneeLimit,label);
    }
   }

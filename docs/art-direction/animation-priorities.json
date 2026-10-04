@@ -12,5 +12,6 @@
   "review_method": "Review full-speed and slow-motion playback from front, side and three-quarter views. Use numerical tests as supporting evidence, not as a substitute for a convincing overall silhouette.",
   "blade_alignment": "Measure cutting-edge and blade-normal alignment with world-space velocity through the meaningful strike interval, not only at one impact frame. Assess thrusts separately using tip travel.",
   "budget_rule": "Do not spend long tuning millimetre-scale contacts while the full-body motion remains weak. Reject unsuitable source performances instead of accumulating per-frame corrections.",
-  "evidence": "Mixamo source performances substantially improved the attacks. A bounded coupled grip fit accepted the Ronin low cut but failed at Ethan's wider polearm grip; source suitability still matters."
+  "evidence": "Mixamo source performances substantially improved the attacks. A bounded coupled grip fit accepted the Ronin low cut but failed at Ethan's wider polearm grip; source suitability still matters.",
+  "integration_rule": "Check every affected action when changing a shared weapon or model. A shorter handle must still fit any existing two-handed heavy or special attack. Run the model-specific deformation checks before publishing."
 }
