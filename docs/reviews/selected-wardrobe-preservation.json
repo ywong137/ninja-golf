@@ -292,14 +292,15 @@
       }
     ],
     "motionExtension": {
-      "outputSha256": "afb44ffd4757d2932acb3ae414ecd2e53e0c075d793b32822e1cf2c762d4f6eb",
+      "outputSha256": "fef890686f54ffad44b25ac9c12c145c4368c8be935e32808cb266211c0ab432",
       "baseBinaryBytes": 21723748,
       "baseBinarySha256": "270e74647ed3aff0fe016cebcc447b4c79b015b4e02c85c6ee861d59eeb3acba",
       "baseMeshesSha256": "56733f4038288b86a2d730de5411e754c7745ed76230aba66313da6ff631d236",
       "addedClips": [
         "Ace_Combo_Opening",
         "Ace_Combo_Return",
-        "Ace_Combo_Finish"
+        "Ace_Combo_Finish",
+        "Ace_Musou_Tempest"
       ]
     }
   },
