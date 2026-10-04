@@ -14,7 +14,7 @@ import {createWeapon} from '../src/weapons.js';
 import {headSurfaceMetadata,measureTriangleHeadClearance} from '../tools/blade-head-surface.mjs';
 
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
-const hero=WARRIORS.find(h=>h.model==='ayame'),name=hero.motionOverrides.Ring_Cut_Diagonal,record=motions[name];
+const hero=WARRIORS.find(h=>h.model==='ayame'),name='Hustler_Diagonal_Cut',record=motions[name];
 const grip=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).ayame.sword.r;
 async function load(){
  const rig=await loadNativeSkin(new URL('../public/models/ayame.glb',import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
@@ -26,7 +26,8 @@ function play(rig,name){
  return time=>{action.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);};
 }
 
-test('the Hustler opening cut has one supported damage contact and a complete recovery',()=>{
+// Retained standalone UAL2 cut. Connected UAL2 cuts use source-connected-combo.test.js.
+test('the retained Hustler opening cut has one supported damage contact and a complete recovery',()=>{
  assert.equal(name,'Hustler_Diagonal_Cut');assert.ok(record.nativeSourceMotion&&record.nativeAttachment);
  const attack=withMotionTiming(attackDefinition('light',0,hero.combatStyle),record);
  assert.equal(attack.hits.length,1);assert.ok(attack.hits[0]>.18&&attack.hits[0]<.3);

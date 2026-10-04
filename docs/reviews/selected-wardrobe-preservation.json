@@ -404,7 +404,11 @@
       "baseBinarySha256": "c338527f663f3872eb5f0cb6bcbfbc5c2f38b3b512e69fcc6d9c1e19634654ed",
       "baseMeshesSha256": "e2f9b5aedc6148e4356235d6eba6c774545b7b7cad6a69c213ded40d6a4cfc58",
       "addedClips": [
-        "Hustler_Power_Finish"
+        "Hustler_Power_Finish",
+        "Hustler_Musou_Advance",
+        "Hustler_Combo_Opening",
+        "Hustler_Combo_Return",
+        "Hustler_Combo_Finish"
       ]
     },
     "garmentRevision": {
@@ -434,6 +438,19 @@
         "material": 5,
         "mode": 4
       }
+    },
+    "motionAppend": {
+      "baseSha256": "bf9b06d21d0abe5485d8decae6a80ad31d95e9549f72b61053df034957771b5e",
+      "baseBinaryBytes": 18145888,
+      "baseAnimations": 40,
+      "baseAnimationsSha256": "907f399b550e41a322a11acfc5c18fe4a934d91e13a154e1b2768bc13a60b308",
+      "outputSha256": "23b7543e3d23b6581f14fd19cdea7f6e5f5985a7482eb783dfc9644e003e347a",
+      "addedClips": [
+        "Hustler_Musou_Advance",
+        "Hustler_Combo_Opening",
+        "Hustler_Combo_Return",
+        "Hustler_Combo_Finish"
+      ]
     }
   },
   "sora": {

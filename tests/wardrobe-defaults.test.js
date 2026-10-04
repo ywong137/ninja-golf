@@ -7,11 +7,11 @@ const reports=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardr
 const hash=x=>createHash('sha256').update(x).digest('hex');
 for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfit preserves the face, rig and motion data`,()=>{
  const raw=fs.readFileSync(new URL('../public/models/'+model+'.glb',import.meta.url)),{doc,bin}=parseGlb(raw);
- assert.equal(hash(raw),saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
+ assert.equal(hash(raw),saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
  for(const key of ['animations','nodes','skins'])assert.equal(hash(JSON.stringify(key==='animations'?doc.animations.slice(0,saved.preservedAnimations):doc[key])),saved.originalRigHashes[key],key);
  if(saved.motionExtension){
   const ext=saved.motionExtension;assert.equal(hash(bin.subarray(0,ext.baseBinaryBytes)),ext.baseBinarySha256);const meshes=structuredClone(doc.meshes);
-  if(saved.garmentRevision){const revision=saved.garmentRevision;assert.equal(hash(bin),revision.binarySha256);assert.equal(hash(JSON.stringify(meshes)),revision.finalMeshesSha256);meshes[0].primitives.splice(revision.removedPrimitive,0,revision.removedPrimitiveDefinition);}
+  if(saved.garmentRevision){const revision=saved.garmentRevision;assert.equal(hash(bin.subarray(0,saved.motionAppend?.baseBinaryBytes??bin.length)),revision.binarySha256);assert.equal(hash(JSON.stringify(meshes)),revision.finalMeshesSha256);meshes[0].primitives.splice(revision.removedPrimitive,0,revision.removedPrimitiveDefinition);}
   assert.equal(hash(JSON.stringify(meshes)),ext.baseMeshesSha256);
   assert.deepEqual(doc.animations.slice(saved.preservedAnimations).map(a=>a.name),ext.addedClips);
  }else assert.equal(doc.animations.length,saved.preservedAnimations);
@@ -19,6 +19,12 @@ for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfi
  assert.ok(doc.meshes[0].primitives.length<=8,'Keep the wardrobe within eight skinned draw groups.');
  assert.ok(saved.addedTriangles<10000,'Keep new cloth below ten thousand triangles.');
  assert.ok(doc.extras.wardrobeDefault.newGarmentParts.length>=3);
+ if(saved.motionAppend){
+  const ext=saved.motionAppend;
+  assert.equal(ext.baseSha256,saved.garmentRevision.outputSha256);
+  assert.equal(hash(JSON.stringify(doc.animations.slice(0,ext.baseAnimations))),ext.baseAnimationsSha256);
+  assert.deepEqual(doc.animations.slice(ext.baseAnimations).map(a=>a.name),ext.addedClips);
+ }
  const joints=doc.skins[0].joints.length;
  for(const p of doc.meshes[0].primitives){
   const wa=doc.accessors[p.attributes.WEIGHTS_0],ja=doc.accessors[p.attributes.JOINTS_0],wv=doc.bufferViews[wa.bufferView],jv=doc.bufferViews[ja.bufferView],js=ja.componentType===5121?1:2,jr=js===1?'readUInt8':'readUInt16LE';

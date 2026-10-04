@@ -6,7 +6,7 @@ import {parseArgs} from 'node:util';
 import {WARRIORS} from '../src/warriors.js';
 import {disableHmr} from './disable-hmr.mjs';
 const {values}=parseArgs({options:{hero:{type:'string',default:'sora'},output:{type:'string'},record:{type:'boolean'},help:{type:'boolean'}}});
-if(values.help){console.log('node tools/playtest-connected-combo.mjs [--hero sora|kaede] [--output DIRECTORY] [--record]\nCheck complete, partial, late, interrupted, moving, and terrain combos at 40, 60, and 144 Hz. All audio stays muted.');process.exit(0);}
+if(values.help){console.log('node tools/playtest-connected-combo.mjs [--hero MODEL] [--output DIRECTORY] [--record]\nCheck complete, partial, late, interrupted, moving, and terrain combos at 40, 60, and 144 Hz. All audio stays muted.');process.exit(0);}
 const hero=WARRIORS.findIndex(w=>w.model===values.hero);
 if(hero<0||WARRIORS[hero].lightComboLength!==3)throw Error('--hero requires an existing three-cut character.');
 const output=path.resolve(values.output??'artifacts/reviews/connected-sword-combo/gameplay');fs.mkdirSync(output,{recursive:true});

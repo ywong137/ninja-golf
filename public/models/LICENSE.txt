@@ -134,3 +134,8 @@ The full-body source controls the steps, turns, balancing arm and recovery.
 The native transfer fits the joints, extracts actor travel, and adjusts the
 head direction and shoulder clearance for the fitted clothing and handle.
 The original mesh is unchanged.
+
+The Hustler three-cut light chain adapts Sword_Regular_Combo and matching A/B
+recoveries from Quaternius Universal Animation Library 2 (CC0).
+Hustler_Musou_Advance adapts Sword_Heavy_Combo from the same library.
+Both preserve the original human mesh, likeness, clothing, rig, and previous clips.
