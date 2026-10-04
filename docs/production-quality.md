@@ -19,6 +19,13 @@ Its 64-enemy moving forest test averaged 52.90 FPS at 1440×900, Balanced, on th
 This is one local stress measurement. It does not predict performance on other devices.
 See [the combat presentation review](reviews/combat-presentation-2026-10-04.md) for evidence and limits.
 
+The follow-up fixes two defects missed by the earlier checks: the Closer’s merged tunic was excluded from collision,
+and production CSS resolved the musou portraits beneath the wrong directory.
+The new production test decodes the displayed background after a normal-input musou trigger.
+Larger contact bursts and fourfold spark counts now accompany recorded flesh impacts.
+The Closer’s 64-enemy moving forest test averages 58.88 FPS on the same local hardware.
+See [the correction review](reviews/combat-corrections-2026-10-04.md) for scope and limits.
+
 Complete normal-input rounds exist for Crane Coast and Copper Saguaro on earlier builds.
 Heather and Neo-Tokyo retain partial round coverage.
 The resumed Neo-Tokyo review completed hole 3 through encounters and scoring, then stopped during hole 4.

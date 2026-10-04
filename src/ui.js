@@ -114,7 +114,8 @@ export class UI {
   musou(w){
     let el=this.$('musou-cinema');if(!el){el=document.createElement('div');el.id='musou-cinema';document.body.append(el);}
     const index=['ronin','shinobi','monk','kaede','ayame','sora'].indexOf(w.model),atlas=index<3?'men':'women';
-    el.style.setProperty('--musou-color',w.color);el.style.setProperty('--musou-face',`url("${import.meta.env.BASE_URL}textures/musou/${atlas}.webp")`);
+    const portraitUrl=new URL(`${import.meta.env.BASE_URL}textures/musou/${atlas}.webp`,document.baseURI).href;
+    el.style.setProperty('--musou-color',w.color);el.style.setProperty('--musou-face',`url("${portraitUrl}")`);
     el.style.setProperty('--musou-face-x',`${index%3*50}%`);
     el.innerHTML=`<div class="cinema-cut"></div><div class="cinema-flash"></div><div class="cinema-ink"></div><div class="cinema-lines"></div><div class="cinema-portrait" role="img" aria-label="${w.name}, fierce attack expression"></div><div class="cinema-eye-strip"></div><div class="cinema-slash slash-a"></div><div class="cinema-slash slash-b"></div><div class="cinema-title"><span>一球入魂 · ONE SHOT. ALL SOUL.</span><strong>${w.name}</strong><em>${w.special}</em></div><div class="musou-kanji">無双</div>`;
     el.classList.remove('hidden');document.body.classList.add('musou-active');

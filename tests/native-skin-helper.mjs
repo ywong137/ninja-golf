@@ -7,10 +7,11 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 globalThis.ProgressEvent??=class{};
 const point=(g,name)=>g.scene.getObjectByName(name).getWorldPosition(new T.Vector3());
 
-export async function loadNativeSkin(file){
+export async function loadNativeSkin(file,{materialNames=false}={}){
  const raw=fs.readFileSync(file),size=raw.readUInt32LE(12),doc=JSON.parse(raw.subarray(20,20+size));
- for(const key of ['images','textures','samplers','materials'])delete doc[key];
- for(const mesh of doc.meshes)for(const primitive of mesh.primitives)delete primitive.material;
+ for(const key of ['images','textures','samplers'])delete doc[key];
+ if(materialNames)doc.materials=doc.materials.map(m=>({name:m.name}));
+ else{delete doc.materials;for(const mesh of doc.meshes)for(const primitive of mesh.primitives)delete primitive.material;}
  const bin=raw.subarray(28+size);
  doc.buffers=[{uri:'data:application/octet-stream;base64,'+bin.toString('base64'),byteLength:bin.length}];
  const g=await new GLTFLoader().parseAsync(JSON.stringify(doc),'');

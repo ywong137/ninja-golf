@@ -4,6 +4,18 @@ const point=new T.Vector3(),delta=new T.Vector3(),axis=new T.Vector3(),closest=n
 const originalPoint=new T.Vector3(),outwardPoint=new T.Vector3();
 const inverse=new T.Matrix4(),worldScale=new T.Vector3();
 const garmentMaterials=/coat|lining|piping|linen|jade woven|Lilac woven/i;
+// Some outfits merge the tunic and trousers into one material. Connected
+// surface pieces distinguish hanging hems from the legs below them.
+export function hangingBodyVertices(mesh,hipHeight,kneeHeight){
+ const count=mesh.geometry.attributes.position.count,parent=Int32Array.from({length:count},(_,i)=>i),index=mesh.geometry.index;
+ const find=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i];}return i;};
+ const join=(a,b)=>{parent[find(a)]=find(b);};
+ for(let i=0;i<(index?.count??count);i+=3){const a=index?index.getX(i):i,b=index?index.getX(i+1):i+1,c=index?index.getX(i+2):i+2;join(a,b);join(b,c);}
+ const bounds=new Map(),vertices=[];mesh.skeleton.update();
+ for(let i=0;i<count;i++){mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);const key=find(i),range=bounds.get(key)??{min:Infinity,max:-Infinity};range.min=Math.min(range.min,point.y);range.max=Math.max(range.max,point.y);bounds.set(key,range);vertices.push(key);}
+ return new Set(vertices.flatMap((key,i)=>{const r=bounds.get(key);return r.min>kneeHeight+.025&&r.min<hipHeight&&r.max>hipHeight?[i]:[];}));
+}
+
 // A unilateral cloth constraint: a front panel cannot cross to the back of
 // its thigh. The collision direction follows that thigh through a raised knee.
 export function projectGarmentPoint(p,a,b,r0,r1,outward,clearance=.012){
@@ -31,29 +43,32 @@ export class GarmentCollision{
   model.updateWorldMatrix(true,true);this.baseScale=model.getWorldScale(new T.Vector3()).x;
   const hips=['r','l'].map(s=>bones['thigh_'+s].getWorldPosition(new T.Vector3()));
   const hipHeight=(hips[0].y+hips[1].y)*.5;
-  const candidates=[];let ordinal=0;
-  model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;const i=ordinal++;
-   if(i<4||!(garmentMaterials.test(mesh.material.name)||/body fabric/i.test(mesh.material.name)))return;
+  const candidates=[],kneeHeight=(bones.calf_r.getWorldPosition(new T.Vector3()).y+bones.calf_l.getWorldPosition(new T.Vector3()).y)*.5;
+  model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;
+   const bodyFabric=/body fabric/i.test(mesh.material.name);
+   if(!bodyFabric&&!garmentMaterials.test(mesh.material.name))return;
+   const hanging=bodyFabric?hangingBodyVertices(mesh,hipHeight,kneeHeight):null;
    const entries=[];mesh.skeleton.update();
    for(let v=0;v<mesh.geometry.attributes.position.count;v++){
+    if(hanging&&!hanging.has(v))continue;
     mesh.getVertexPosition(v,point).applyMatrix4(mesh.matrixWorld);
-    if(point.y>hipHeight+.02*this.baseScale)continue;
+    if(point.y>hipHeight+.08*this.baseScale)continue;
     const side=point.distanceToSquared(hips[0])<point.distanceToSquared(hips[1])?'r':'l';
     const bone=bones['thigh_'+side],a=bone.getWorldPosition(new T.Vector3()),b=bones['calf_'+side].getWorldPosition(new T.Vector3());
     axis.subVectors(b,a);const t=T.MathUtils.clamp(delta.subVectors(point,a).dot(axis)/axis.lengthSq(),0,1);
     const radial=point.clone().sub(a).addScaledVector(axis,-t);
     if(radial.length()<.025*this.baseScale)continue;
     radial.normalize().applyQuaternion(bone.getWorldQuaternion(new T.Quaternion()).invert());
-    entries.push({id:v,side,outward:radial,clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?.022:.016,weight:T.MathUtils.smoothstep(hipHeight+.02*this.baseScale-point.y,0,.09*this.baseScale)});
+    entries.push({id:v,side,outward:radial,clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?.022:.016,weight:T.MathUtils.smoothstep(hipHeight+.08*this.baseScale-point.y,0,.12*this.baseScale)});
    }
-   if(entries.length)candidates.push({mesh,entries});
+   if(entries.length)candidates.push({mesh,entries,ids:new Set(entries.map(e=>e.id))});
   });
   for(const side of ['r','l']){
    const bone=bones['thigh_'+side],a=bone.getWorldPosition(new T.Vector3()),b=bones['calf_'+side].getWorldPosition(new T.Vector3());
    const radii=[[],[]];axis.subVectors(b,a);
-   model.traverse(mesh=>{if(!mesh.isSkinnedMesh||candidates.some(p=>p.mesh===mesh))return;
+   model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;const garment=candidates.find(p=>p.mesh===mesh)?.ids;
     const {skinIndex,skinWeight}=mesh.geometry.attributes,index=mesh.geometry.index,used=new Set(index?index.array:[]);mesh.skeleton.update();
-    for(const v of used){let weight=0;for(let k=0;k<4;k++)if(mesh.skeleton.bones[skinIndex.getComponent(v,k)].name==='thigh_'+side)weight+=skinWeight.getComponent(v,k);if(weight<.6)continue;
+    for(const v of used){if(garment?.has(v))continue;let weight=0;for(let k=0;k<4;k++)if(mesh.skeleton.bones[skinIndex.getComponent(v,k)].name==='thigh_'+side)weight+=skinWeight.getComponent(v,k);if(weight<.6)continue;
      mesh.getVertexPosition(v,point).applyMatrix4(mesh.matrixWorld);delta.subVectors(point,a);const t=delta.dot(axis)/axis.lengthSq();if(t<.06||t>.85)continue;
      const distance=delta.addScaledVector(axis,-t).length();radii[t<.45?0:1].push(distance);
     }

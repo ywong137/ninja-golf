@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as T from 'three';
-import {projectGarmentPoint} from '../src/garment-collision.js';
+import {GarmentCollision,projectGarmentPoint} from '../src/garment-collision.js';
 import {ImpactParticles} from '../src/impact-particles.js';
 import {ENEMY_TYPES} from '../src/combat.js';
 import {validatePlanarRoot,attackRootDelta} from '../src/attack-root-motion.js';
@@ -30,9 +30,9 @@ test('garment collision stays outside a raised thigh and preserves separated fab
 test('impact effects have bounded pools, distinguish guards, and clear when returning to golf',()=>{
  const scene=new T.Scene(),effects=new ImpactParticles(scene),p=new T.Vector3(),direction=new T.Vector3(0,0,1);
  effects.emit(p,direction,{guarded:true});assert.equal(effects.pools[1].particles.filter(p=>p.life>0).length,0);
- effects.emit(p,direction,{heavy:true});assert.equal(effects.pools[1].particles.filter(p=>p.life>0).length,22);
+ effects.emit(p,direction,{heavy:true});assert.equal(effects.pools[1].particles.filter(p=>p.life>0).length,66);
  for(let i=0;i<100;i++)effects.emit(p,direction,{special:true});
- assert.equal(scene.children.length,2);assert.deepEqual(effects.pools.map(p=>p.particles.length),[1024,384]);
+ assert.equal(scene.children.length,2);assert.deepEqual(effects.pools.map(p=>p.particles.length),[4096,768]);
  effects.update(.03);assert.ok(effects.pools[0].attributes.opacity.array.some(v=>v>0));
  effects.update(1,true);assert.ok(effects.pools.every(p=>p.attributes.opacity.array.every(v=>v===0)));
  effects.emit(p,direction);effects.update(.01);effects.clear();
@@ -62,4 +62,29 @@ test('all ninja attacks preserve knee hinges and move their root consistently at
    }
   }
  }
+});
+
+test('the Closer merged tunic receives collision correction through her attacks and golf swing',async()=>{
+ const g=await loadNativeSkin(new URL('../public/models/sora.glb',import.meta.url),{materialNames:true}),bones={};
+ g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
+ const cloth=new GarmentCollision(g.scene,bones);
+ assert.ok(cloth.report.vertices>1000,'The merged tunic was silently excluded from cloth correction');
+ const body=cloth.plans.find(p=>/body fabric/i.test(p.mesh.material.name));assert.ok(body,'Missing body-fabric tunic');
+ const knee=Math.max(...['r','l'].map(s=>bones['calf_'+s].getWorldPosition(new T.Vector3()).y));
+ for(const entry of body.entries){const p=body.mesh.getVertexPosition(entry.id,new T.Vector3()).applyMatrix4(body.mesh.matrixWorld);assert.ok(p.y>knee+.025,'Trousers must not become hanging cloth');}
+ let corrected=0,examined=0;
+ for(const name of ['Sickle_Ready','Closer_Combo_Opening','Closer_Combo_Return','Closer_Combo_Finish','Closer_Power_Finish','Golf_Swing']){
+  const clip=g.animations.find(c=>c.name===name);assert.ok(clip,name);g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
+  for(let sample=0;sample<=30;sample++){
+   action.time=clip.duration*sample/30;g.mixer.update(0);cloth.update();corrected+=cloth.report.corrected;
+   for(const {mesh,entries}of cloth.plans)for(const entry of entries){
+    if(entry.weight<.9999)continue;
+    const p=mesh.getVertexPosition(entry.id,new T.Vector3()).add(new T.Vector3().fromBufferAttribute(mesh.geometry.attributes.garmentOffset,entry.id)).applyMatrix4(mesh.matrixWorld);
+    const proxy=cloth.proxies[entry.side==='r'?0:1],direction=entry.outward.clone().applyQuaternion(proxy.q);
+    const remaining=projectGarmentPoint(p,proxy.a,proxy.b,proxy.r0,proxy.r1,direction,entry.clearance*cloth.baseScale);
+    assert.ok(remaining<1e-4,`${name} ${sample}: panel remains ${remaining} units inside thigh`);examined++;
+   }
+  }
+ }
+ assert.ok(corrected>0);assert.ok(examined>100000);cloth.dispose();
 });

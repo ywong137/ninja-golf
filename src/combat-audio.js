@@ -2,7 +2,7 @@
 export const COMBAT_SAMPLES=Object.freeze({
  sword:['sword-1','sword-2','sword-3'],
  clash:['clash-1','clash-2','clash-3'],
- hit:['punch-1','punch-2','punch-3'],
+ hit:['flesh-1','flesh-2'],
  crunch:['crunch-1','crunch-2'],
 });
 export class CombatAudio{
@@ -33,9 +33,10 @@ export class CombatAudio{
   if(kind==='sword')return this.sample('sword',.65,rate);
   if(kind==='clash')return this.sample('clash',.72,rate);
   if(kind==='hit'||kind==='heavy-hit'){
-   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?.95:.72,heavy?.85:rate);
-   this.sample('sword',heavy?.32:.2,1.15);
-   if(heavy)this.sample('crunch',.28,.88);
+   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?1.35:1.12,heavy?.88:rate);
+   this.sample('crunch',heavy?.95:.72,heavy?.86:1.05);
+   this.sample('clash',heavy?.3:.21,1.25);
+   this.sample('sword',heavy?.5:.35,1.1);
    return played;
   }
   return false;
