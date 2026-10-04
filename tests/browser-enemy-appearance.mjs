@@ -9,7 +9,7 @@ try{
   const actors=[],rows=[];
   for(let slot=0;slot<16;slot++)for(let role=0;role<4;role++){
    const appearance=enemyAppearanceForSlot(slot),p=new Warrior(role,true,appearance);actors.push(p);
-   for(const name of ['Jog_Fwd_Loop','Sprint_Loop','Jump_Loop',ENEMY_TYPES[role].clip]){if(!p.actions.has(name))throw Error(`Missing ${name}`);p.play(name,0);p.actions.get(name).time=.2;p.mixer.update(0);p.syncHeldObjects();}
+   for(const name of ['Jog_Fwd_Loop','Sprint_Loop','Ninja_Emerge_Start','Ninja_Emerge_Flight','Ninja_Emerge_Land',ENEMY_TYPES[role].clip]){if(!p.actions.has(name))throw Error(`Missing ${name}`);p.play(name,0);p.actions.get(name).time=.2;p.mixer.update(0);p.syncHeldObjects();}
    const materials=[];p.model.traverse(o=>{if(o.isMesh)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m.userData.enemyPalette)materials.push(m);});
    if(!materials.length)throw Error('No wardrobe materials');
    if(materials.some(m=>m.userData.enemyPalette!==ENEMY_APPEARANCES[appearance.family].palettes[appearance.palette].id))throw Error('Wrong palette');

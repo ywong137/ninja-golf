@@ -60,7 +60,7 @@ MODEL_REVISIONS.monk='hostile-takeover-20261003';
 MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
 MODEL_REVISIONS.ayame='connected-combo-20261004';
 MODEL_REVISIONS.sora='selected-wardrobe-20261003';
-for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-body-attacks-20261004';
+for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-emergence-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -590,7 +590,13 @@ export class Warrior {
     else if(selection){this.oneShot=0;this.play(WARRIORS[this.type].selectionClip,0);}
     else if(dodge&&!this.wasDodge)this.play('Roll',.06,true,1.4);
     else if(guardEnabled&&guardBreak>0&&!this.wasGuardBreak&&!action&&!dodge)this.play(`${guardPrefix}_Guard_Break`,.045,true);
-    else if(emerging){this.play(emerging.progress<.68?'Jump_Loop':'Jump_Land',.10,false,1.8);}
+    else if(emerging){
+      if(!emerging.clip||!Number.isFinite(emerging.clipTime))throw Error('Supply the explicit enemy emergence animation clock.');
+      if(this.current!==emerging.clip)this.play(emerging.clip,this.current.startsWith('Ninja_Emerge_')?.035:0,true);
+      const playback=this.actions.get(emerging.clip);
+      if(!playback)throw Error('Missing enemy emergence animation: '+emerging.clip);
+      playback.setEffectiveTimeScale(0);playback.time=Math.min(playback.getClip().duration,emerging.clipTime);
+    }
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
     else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,motions[name].entryBlend??.07,true,motions[name].duration/action.duration);}
     else if(guardImpact&&guardBreak<=0)this.play(`${guardPrefix}_Guard_Impact`,.035,true,parry>0?1.15:1);

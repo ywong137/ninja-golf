@@ -153,3 +153,8 @@ It preserves the original model and all prior animations.
 Shinobi_Left_Stepping_Cut mirrors the complete Quaternius UAL1 Sword_Attack
 (CC0) performance for the left-hand return cut. It preserves the character
 mesh, selected outfit, likeness, rig, and all previous animation clips.
+
+Ninja_Emerge_Start, Ninja_Emerge_Flight, and Ninja_Emerge_Land adapt the complete
+NinjaJump_Start, NinjaJump_Idle_Loop, and NinjaJump_Land performances from
+Quaternius Universal Animation Library 2 (CC0). The transfer fits the native
+joint frames and ankle twist. The original mesh and previous clips remain intact.

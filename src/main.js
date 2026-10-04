@@ -1,4 +1,5 @@
 import enemyMotions from './enemy-motion.json';
+import {enemyEmergenceFrame} from './enemy-emergence.js';
 import {findWaterEmergence,waterEmergencePosition} from './water-emergence.js';
 import './style.css';
 import './selection.css';
@@ -394,11 +395,19 @@ class Game {
     const engaged=new Set([...melee.filter(e=>e.enemyAction),...ranged.filter(e=>e.enemyAction)]);
     for(const pool of [melee,ranged]){let count=pool.filter(e=>engaged.has(e)).length;for(const e of pool){if(count>=(pool===melee?3:1))break;if(!engaged.has(e)&&enemyReadyToAttack(e,this.time)){engaged.add(e);count++;}}}
     for(let i=this.enemies.length-1;i>=0;i--){const e=this.enemies[i];
-      if(e.emerging){const a=e.emerging;a.delay-=dt;if(a.delay>0)continue;
-        if(a.time===0){e.root.visible=true;this.effects.burst(e.root.position, a.site.kind==='tree'?14:45,6,a.site.kind==='water'?3:a.site.kind==='sand'?4:1);}
-        a.time+=dt;const t=clamp(a.time/a.duration,0,1),startY=a.site.y+(a.site.kind==='tree'?a.site.height: a.site.kind==='water'||a.site.kind==='sand'?-.8:.1);
-        if(a.site.kind==='water')e.root.position.copy(waterEmergencePosition(a.site,a.landing,a.arcHeight,t,a.startY));else e.root.position.set(THREE.MathUtils.lerp(a.site.x,a.landing.x,t),THREE.MathUtils.lerp(startY,a.landing.y,t)+Math.sin(t*Math.PI)*(a.site.kind==='tree'?.3:1.8),THREE.MathUtils.lerp(a.site.z,a.landing.z,t));e.root.rotation.y=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.update(this.time,dt,{emerging:{progress:t}});
-        if(t>=1){e.emerging=null;e.oneShot=0;this.effects.burst(e.root.position,12,3,a.site.kind==='sand'?4:1);}continue;
+      if(e.emerging){
+        const a=e.emerging,waiting=Math.max(0,a.delay),step=Math.max(0,dt-waiting);a.delay=Math.max(0,a.delay-dt);if(!step)continue;
+        if(a.time===0){
+          e.root.visible=true;a.yaw=Math.atan2(a.landing.x-a.site.x,a.landing.z-a.site.z);
+          this.effects.burst(e.root.position,a.site.kind==='tree'?14:45,6,a.site.kind==='water'?3:a.site.kind==='sand'?4:1);
+        }
+        a.time+=step;const motion=enemyEmergenceFrame(a.time,{duration:a.duration,kind:a.site.kind}),t=motion.progress;
+        const startY=a.site.y+(a.site.kind==='tree'?a.site.height:a.site.kind==='sand'?-.8:.1);
+        if(a.site.kind==='water')e.root.position.copy(waterEmergencePosition(a.site,a.landing,a.arcHeight,t,a.startY));
+        else e.root.position.set(THREE.MathUtils.lerp(a.site.x,a.landing.x,t),THREE.MathUtils.lerp(startY,a.landing.y,t)+Math.sin(t*Math.PI)*(a.site.kind==='tree'?.3:1.8),THREE.MathUtils.lerp(a.site.z,a.landing.z,t));
+        e.root.rotation.y=a.yaw;e.update(this.time,step,{emerging:motion});
+        if(motion.landed&&!a.landed){a.landed=true;this.effects.burst(e.root.position,12,3,a.site.kind==='sand'?4:1);}
+        if(motion.done){e.emerging=null;e.oneShot=0;}continue;
       }
       const enemyStart={x:e.root.position.x,y:e.root.position.y,z:e.root.position.z};
       e.lift=Math.max(0,(e.lift||0)+(e.verticalSpeed||0)*dt);e.verticalSpeed=(e.verticalSpeed||0)-15*dt;if(e.lift===0)e.verticalSpeed=0;
