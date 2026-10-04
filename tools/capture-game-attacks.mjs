@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 // Run the real combat controller, then freeze evaluated poses for a close study.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,7 +32,7 @@ try{
   const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8').replace("import motions from './motion-data.json';",'const motions='+fs.readFileSync(path.join(baseline,'motion-data.json'),'utf8')+';');
   await page.route('**/src/motion.js*',route=>route.fulfill({contentType:'application/javascript',body:source}));
  }
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||document.body.innerText.includes('The course could not load.'),null,{timeout:120000});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||document.body.innerText.includes('The course could not load.'),null,{timeout:120000});await preloadWarriorFixtures(page);
  if(!await page.evaluate(()=>!!window.__golfTest))throw Error('Game boot failed; see browser errors above.');
  await page.evaluate(async hero=>{
   const g=window.__golfTest,T=await import('/node_modules/three/build/three.module.js'),{clone}=await import('/node_modules/three/examples/jsm/utils/SkeletonUtils.js');g.frame=()=>{};g.begin(hero,0);g.paused=true;g.audio.pause();g.clearEnemies();g.groundHeight=()=>0;g.slideOnLand=p=>{p.y=0;};

@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
@@ -5,7 +6,7 @@ if(process.argv.includes('--help')){console.log('Usage: GAME_URL=http://localhos
 const output=process.argv[2]??'/tmp/ninja-skeleton-benchmark';fs.mkdirSync(output,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}});await disableHmr(page);await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.locator('#asset-curtain').waitFor({state:'detached'});
+ const page=await browser.newPage({viewport:{width:1440,height:900}});await disableHmr(page);await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  await page.evaluate(async()=>{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.enabled=false;g.audio.pause();g.begin(4,0);await g.world.waitForAssets();g.audio.pause();g.phase='combat';g.clearEnemies();g.enemyBudget=1000;g.enemiesSpawned=0;g.spawnWave(64);g.crowd.update(g.enemies);
   const {heightAt}=await import('/src/course.js');g.player.root.position.set(0,heightAt(g.course,0,90),90);

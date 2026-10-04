@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 // Verify the rendered pixels in the same frame that changes resolution.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -13,7 +14,7 @@ try{
  const page=await browser.newPage({viewport:{width:960,height:640}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await disableHmr(page);await page.goto(url);
- await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const rows=await page.evaluate(async()=>{
   const g=window.__golfTest;
   g.audio.enabled=false;g.audio.pause();g.renderer.setAnimationLoop(null);

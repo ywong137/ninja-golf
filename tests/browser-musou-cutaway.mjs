@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -7,7 +8,7 @@ const output=process.env.REVIEW_OUTPUT??'artifacts/reviews/musou-cutaway';fs.mkd
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:960,height:640}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5174');await page.waitForFunction(()=>window.__golfTest);await page.waitForSelector('#asset-curtain',{state:'detached',timeout:120000});
+ await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5174');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);await page.waitForSelector('#asset-curtain',{state:'detached',timeout:120000});
  await page.evaluate(()=>{const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.enabled=false;g.audio.pause();g.ui.showScreen('game');});
  const rows=[];
  for(const [course,hero]of [[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[1,4],[2,4],[3,4]]){

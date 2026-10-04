@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {chromium} from 'playwright';
@@ -8,7 +9,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
  await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  await page.addStyleTag({content:'#app > :not(#game){visibility:hidden!important}'});
  await page.evaluate(async()=>{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.begin(3,0);await g.world.waitForAssets();g.paused=true;g.audio.pause();g.phase='combat';g.enemyBudget=1000;g.enemiesSpawned=0;g.spawnWave(48);g.crowd.update(g.enemies);

@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {chromium} from 'playwright';
@@ -34,7 +35,7 @@ try{
    await route.fulfill({contentType:'application/javascript',body});
   });
  }
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||window.__architectureFailure||document.body.textContent.includes('The course could not load.'),null,{timeout:120000});assert.equal(await page.evaluate(()=>window.__architectureFailure||null),null,'Game initialization failed');assert.deepEqual(errors,[],'Boot errors');await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||window.__architectureFailure||document.body.textContent.includes('The course could not load.'),null,{timeout:120000});await preloadWarriorFixtures(page);assert.equal(await page.evaluate(()=>window.__architectureFailure||null),null,'Game initialization failed');assert.deepEqual(errors,[],'Boot errors');await page.locator('#asset-curtain').waitFor({state:'detached'});
  await page.addStyleTag({content:'#app > :not(#game){visibility:hidden!important}'});
  await page.evaluate(()=>{const g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();g.time=12.5;g.renderer.setPixelRatio(1);g.renderer.setSize(1440,1000);g.rendering.resize();window.architectureTextureState=new Map([...g.world.textureCache].map(([name,t])=>[name,{repeat:t.repeat.toArray(),wrapS:t.wrapS,wrapT:t.wrapT}]));});
  const reports=[],manifest={revision,viewport:[1440,1000],themes:[]};

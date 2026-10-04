@@ -1,14 +1,11 @@
 import * as THREE from 'three';
-import {applyCharacterOutfit,awaitCharacterOutfits} from './character-outfits.js';
+import {applyCharacterOutfit} from './character-outfits.js';
+import {loadCharacterTexture,awaitCharacterTextures} from './character-textures.js';
 
-const nativeMaps=new Map();
 function nativeRoughness(name){
- if(nativeMaps.has(name))return nativeMaps.get(name).texture;
- const entry={texture:null,promise:null},url=`${import.meta.env?.BASE_URL||'/'}textures/characters/${name}-roughness.png`;
- entry.promise=new Promise((resolve,reject)=>{entry.texture=new THREE.TextureLoader().load(url,resolve,undefined,()=>reject(new Error(`Missing character surface map: ${url}`)));});
- entry.texture.colorSpace=THREE.NoColorSpace;entry.texture.flipY=false;entry.texture.anisotropy=4;nativeMaps.set(name,entry);return entry.texture;
+ return loadCharacterTexture(`${import.meta.env?.BASE_URL||'/'}textures/characters/${name}-roughness.png`,{colorSpace:THREE.NoColorSpace,anisotropy:4});
 }
-export async function awaitCharacterMaterials(){await Promise.all([...nativeMaps.values()].map(entry=>entry.promise));await awaitCharacterOutfits();}
+export const awaitCharacterMaterials=awaitCharacterTextures;
 function finishNativeMaterial(mat){
  const match=/^[fm]\d{3}_(head|body|opacity)$/.exec(mat.name);if(!match)return false;
  mat.metalness=0;applyCharacterOutfit(mat);

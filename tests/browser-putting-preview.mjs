@@ -1,10 +1,11 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  const results=await page.evaluate(async()=>{
   const {heightAt,lieAt}=await import('/src/course.js'),{BALL_RADIUS}=await import('/src/golf-equipment.js'),g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();
   const results=[],cases=[{theme:0,hole:6,kind:'fringe'},{theme:0,hole:6,kind:'overhit'},{theme:0,hole:0,kind:'sand'},{theme:1,hole:2,kind:'sand'},{theme:2,hole:6,kind:'sand'},{theme:0,hole:0,kind:'water'},{theme:2,hole:6,kind:'water'},{theme:1,hole:0,kind:'uphill'},{theme:1,hole:0,kind:'downhill'},{theme:3,hole:0,kind:'cup'}];

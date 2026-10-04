@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -9,7 +10,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);await routeModelDirectory(page,process.env.NINJA_MODEL_DIR);
- await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5174');await page.waitForFunction(()=>window.__golfTest);
+ await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5174');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);
  const rows=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{heightAt}=await import('/src/course.js');
   const {calibrateLegAnatomy,measureLegAnatomy}=await import('/src/leg-anatomy.js');

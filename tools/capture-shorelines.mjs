@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {disableHmr} from './disable-hmr.mjs';
@@ -8,7 +9,7 @@ const directory=`/tmp/ninja-shorelines-${label}`;await mkdir(directory,{recursiv
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[],reports=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await disableHmr(page);
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});await page.addStyleTag({content:'#app>:not(canvas){display:none!important}'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});await page.addStyleTag({content:'#app>:not(canvas){display:none!important}'});
  for(const [theme,hole,angle]of [[2,1,Math.PI],[2,5,0],[1,4,Math.PI/2],[0,1,-Math.PI/2],[3,7,0]]){
   const result=await page.evaluate(async({theme,hole,angle})=>{
    const g=window.__golfTest,C=await import('/src/course.js');g.frame=()=>{};g.begin(0,theme);g.loadHole(hole);g.paused=true;g.audio.pause();await g.world.waitForAssets();g.player.root.visible=false;g.ball.visible=false;g.aimLine.visible=false;g.aimMarker.visible=false;g.ballBeacon.visible=false;g.trail.visible=false;g.puttingGuide.hide?.();g.portraitLights.visible=false;

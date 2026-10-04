@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
 import {routeFixedGripCandidate} from './ronin-candidates/fixed-grip/route.mjs';
@@ -14,7 +15,7 @@ try{
  // Candidate routing changes local test responses; public assets stay intact.
  if(process.env.NINJA_BENCHMARK_CANDIDATE)await routeFixedGripCandidate(page,process.env.NINJA_BENCHMARK_CANDIDATE,{withDiagonal:true,withGuards:true,withReturn:true});
  await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);
- await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.evaluate(()=>{window.__golfTest.audio.enabled=false;});await page.click('#play');await page.click('#begin');await page.click(`[data-course="${courseIndex}"]`);await page.click('#start-round');
+ await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);await page.evaluate(()=>{window.__golfTest.audio.enabled=false;});await page.click('#play');await page.click('#begin');await page.click(`[data-course="${courseIndex}"]`);await page.click('#start-round');
  await page.evaluate(async({buildings,forest,heroIndex,moving,planted})=>{const g=window.__golfTest,{heightAt,lieAt}=await import('/src/course.js');g.selectWarrior(heroIndex);g.clearEnemies();g.phase='combat';g.enemyBudget=80;g.enemiesSpawned=0;g.spawnTime=999;g.player.root.position.set(0,heightAt(g.course,0,90),90);g.ball.position.set(0,8,220);
   if(planted){
    g.audio.pause();g.input.clear();g.input.setContext('combat');g.cameraYaw=0;g.player.root.rotation.y=0;

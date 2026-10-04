@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ const output=process.env.NINJA_REVIEW_OUTPUT??'artifacts/reviews/run-after-golf'
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto(process.env.NINJA_BASE_URL??process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.goto(process.env.NINJA_BASE_URL??process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const rows=await page.evaluate(async()=>{
   const {WARRIORS}=await import('/src/warriors.js');
   const g=window.__golfTest,rows=[];g.renderer.setAnimationLoop(null);g.audio.enabled=false;g.audio.pause();

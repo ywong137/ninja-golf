@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ const output=path.resolve(values.output);fs.mkdirSync(output,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto(url.href);await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.goto(url.href);await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const report=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{motions}=await import('/src/motion.js'),{createPlayerGuard}=await import('/src/combat.js');
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.enabled=false;g.audio.pause();g.begin(0,0);g.audio.pause();

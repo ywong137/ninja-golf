@@ -3,7 +3,8 @@ import {LegJointBalance} from './leg-joint-balance.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {loadModel} from './load-model.js';
-import {WARRIOR_ASSET_NAMES} from './warrior-assets.js';
+import {WARRIOR_ASSET_NAMES,INITIAL_WARRIOR_ASSET_NAMES} from './warrior-assets.js';
+import {createAssetCache} from './asset-cache.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
@@ -72,20 +73,42 @@ export const PALM_GRIP=new THREE.Vector3(-.028,.096,0);
 export const PALM_GRIPS={r:PALM_GRIP,l:new THREE.Vector3(.028,.096,0)};
 const handRotation=new THREE.Quaternion(),rootRotation=new THREE.Quaternion(),gripPosition=new THREE.Vector3();
 const rootInverse=new THREE.Matrix4(),decomposedPosition=new THREE.Vector3(),decomposedScale=new THREE.Vector3();
-export async function loadWarriorAssets(progress=()=>{}) {
-  const loader=new GLTFLoader();let done=0;
-  const characterCount=WARRIORS.length+ENEMY_APPEARANCES.length;
-  const urls=WARRIOR_ASSET_NAMES;
-  const results=await Promise.all(urls.map(async name=>{const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/${name}.glb?v=${MODEL_REVISIONS[name]??MODEL_REVISION}`,{compressed:import.meta.env.PROD});progress(++done,urls.length);return model;}));
-  const clipNames=new Set(results.slice(characterCount).flatMap(model=>model.animations.map(clip=>clip.name)));
-  for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
-  for(const [i,warrior]of WARRIORS.entries())for(const phase of ['Loop','Impact','Break','Walk_Forward','Walk_Right','Walk_Backward','Walk_Left']){const name=`${GUARD_PREFIX[warrior.combatStyle]}_Guard_${phase}`;if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native guard animation ${name} in ${warrior.model}.glb`);}
-  for(const [i,warrior]of WARRIORS.entries())for(const name of Object.keys(locomotion))if(!results[i].animations.some(clip=>clip.name===name))throw new Error(`Missing native locomotion ${name} in ${warrior.model}.glb`);
-  for(const [i,warrior]of WARRIORS.entries())if(!results[i].animations.some(clip=>clip.name===warrior.selectionClip))throw new Error(`Missing selection pose ${warrior.selectionClip} in ${warrior.model}.glb`);
-  templates.push(...results.slice(0,characterCount));motionSources.push(...results.slice(characterCount));
-  for(const model of templates)model.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const mat of mats){if(/eyebrow/i.test(o.name)){mat.color.set('#34241b');mat.map=null;mat.roughness=.9;}finishCharacterMaterial(mat);if(mat.map)mat.map.anisotropy=8;if(mat.normalMap)mat.normalMap.anisotropy=4;mat.envMapIntensity=.6;}}});
-  await awaitCharacterMaterials();
+const characterCount=WARRIORS.length+ENEMY_APPEARANCES.length;
+const warriorAssets=createAssetCache(async name=>{
+ const index=WARRIOR_ASSET_NAMES.indexOf(name);
+ if(index<0)throw new Error(`Unknown warrior asset: ${name}`);
+ const model=await loadModel(new GLTFLoader(),`${import.meta.env.BASE_URL}models/${name}.glb?v=${MODEL_REVISIONS[name]??MODEL_REVISION}`,{compressed:import.meta.env.PROD});
+ if(index>=characterCount){motionSources[index-characterCount]=model;return model;}
+ const warrior=WARRIORS[index];
+ if(warrior){
+  const required=[warrior.selectionClip,...Object.keys(locomotion),...['Loop','Impact','Break','Walk_Forward','Walk_Right','Walk_Backward','Walk_Left'].map(phase=>`${GUARD_PREFIX[warrior.combatStyle]}_Guard_${phase}`)];
+  for(const clip of required)if(!model.animations.some(animation=>animation.name===clip))throw new Error(`Missing animation ${clip} in ${name}.glb`);
+ }
+ const modelMaterials=[];
+ model.scene.traverse(o=>{if(o.isMesh){
+  o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;
+  for(const material of Array.isArray(o.material)?o.material:[o.material]){
+   if(/eyebrow/i.test(o.name)){material.color.set('#34241b');material.map=null;material.roughness=.9;}
+   finishCharacterMaterial(material);if(material.map)material.map.anisotropy=8;if(material.normalMap)material.normalMap.anisotropy=4;material.envMapIntensity=.6;modelMaterials.push(material);
+  }
+ }});
+ await awaitCharacterMaterials(modelMaterials);
+ // Fixed slots keep a late or retried download from changing the roster order.
+ templates[index]=model;return model;
+});
+async function loadAssetSet(names,progress=()=>{}){
+ let done=0;await Promise.all(names.map(async name=>{await warriorAssets.load(name);progress(++done,names.length);}));
+ const clipNames=new Set(motionSources.flatMap(model=>model.animations.map(clip=>clip.name)));
+ for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
 }
+export function loadWarriorAssets(progress){return loadAssetSet(WARRIOR_ASSET_NAMES,progress);}
+export function loadInitialWarriorAssets(progress){return loadAssetSet(INITIAL_WARRIOR_ASSET_NAMES,progress);}
+export function loadWarrior(index){
+ if(!Number.isInteger(index)||!WARRIORS[index])return Promise.reject(new Error(`Unknown warrior index: ${index}`));
+ return warriorAssets.load(WARRIORS[index].model);
+}
+export function isWarriorReady(index){return !!WARRIORS[index]&&warriorAssets.has(WARRIORS[index].model);}
+
 function mat(color,metal=0){const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.28:.78,metalness:metal}));return materials.get(key);}
 function part(parent,kind,color,x,y,z,sx,sy,sz,metal=0){if(!geometries.has(kind))geometries.set(kind,kind==='box'?new THREE.BoxGeometry(1,1,1):new THREE.CylinderGeometry(1,1,1,10));const mesh=new THREE.Mesh(geometries.get(kind),mat(color,metal));mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh;}
 function clipsFor(index){
@@ -116,6 +139,7 @@ export class Warrior {
     this.motionSample={};
     this.appearance=enemy?resolveEnemyAppearance(appearance):null;
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+this.appearance.family:type;
+    if(!templates[index])throw new Error(`Warrior ${index} is not ready. Await loadWarrior() or loadWarriorAssets() before creating it.`);
     this.model=cloneSkeleton(templates[index].scene);if(enemy)shareClonedSkeletons(this.model);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
     this.rigMetadata={};this.model.traverse(o=>{if(o.userData.nativeMotion)this.rigMetadata=o.userData;});
     this.nativeHuman=!!this.rigMetadata.nativeMotion;

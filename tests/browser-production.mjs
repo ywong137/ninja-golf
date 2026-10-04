@@ -1,10 +1,11 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const compact=process.env.COMPACT==='1';const page=await browser.newPage({viewport:{width:compact?1280:1440,height:compact?720:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.evaluate(()=>{window.__golfTest.audio.enabled=false;});await page.waitForTimeout(2200);await page.screenshot({path:'/tmp/ninja-quality-title.png'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);await page.evaluate(()=>{window.__golfTest.audio.enabled=false;});await page.waitForTimeout(2200);await page.screenshot({path:'/tmp/ninja-quality-title.png'});
  await page.click('#play');const bounds=await page.locator('.warrior-cards').boundingBox();assert.ok(bounds.y+bounds.height<await page.evaluate(()=>innerHeight)-70);for(let i=0;i<6;i++){await page.click(`[data-warrior="${i}"]`);await page.waitForTimeout(1400);await page.screenshot({path:`/tmp/ninja-quality-hero-${i}.png`});}
  await page.click('[data-warrior="0"]');await page.click('#begin');await page.click('#start-round');await page.waitForTimeout(1800);await page.screenshot({path:'/tmp/ninja-quality-tee.png'});
  await page.keyboard.press('KeyR');await page.waitForTimeout(1500);assert.ok(await page.evaluate(()=>window.__golfTest.camera.position.y)>35);await page.screenshot({path:'/tmp/ninja-quality-survey.png'});await page.keyboard.press('KeyR');

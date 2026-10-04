@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import {disableHmr} from './disable-hmr.mjs';
 const args=process.argv.slice(2);
@@ -6,7 +7,7 @@ if(args.some(a=>a!=='--retina')||args.length>1)throw Error('Use --help.');
 const retina=args.includes('--retina'),browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:retina?2:1}),errors=[],results=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await disableHmr(page);
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  for(const [theme,hole,mode]of [[0,0,'charging'],[1,4,'water combat'],[2,5,'water combat'],[3,7,'water combat']]){
   await page.evaluate(async({theme,hole,mode})=>{
    const g=window.__golfTest,C=await import('/src/course.js'),{findWaterEmergence}=await import('/src/water-emergence.js');clearInterval(window.shoreAttack);g.begin(0,theme);g.ui.showScreen('game');g.loadHole(hole);await g.world.waitForAssets();g.audio.pause();g.audio.enabled=false;g.paused=false;g.spawnTime=999;g.health=g.warrior.health;g.invincible=1e6;

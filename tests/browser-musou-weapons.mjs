@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -10,7 +11,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto(base);await page.waitForFunction(()=>window.__golfTest);
+ await page.goto(base);await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);
  await page.evaluate(()=>{const g=window.__golfTest;g.audio.pause();g.audio.enabled=false;g.frame=()=>{};});
  const rows=[];
  for(let hero=0;hero<6;hero++){

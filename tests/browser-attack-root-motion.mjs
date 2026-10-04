@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
@@ -6,7 +7,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage({viewport:{width:400,height:300}});await disableHmr(page);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const report=await page.evaluate(async()=>{
   const g=window.__golfTest,{motions,combatMotionName}=await import('/src/motion.js'),{SceneryCollision}=await import('/src/scenery-collision.js');
   const {samplePlanarRoot,attackRootDelta}=await import('/src/attack-root-motion.js'),{heightAt}=await import('/src/course.js');

@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 // Record real-time combat for review and measure the rendered frame rate.
 import {chromium} from 'playwright';
 import fs from 'node:fs';
@@ -15,7 +16,7 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
  await routeModelDirectory(page,process.env.NINJA_MODEL_DIRECTORY);
  const candidateName=await routeMotionCandidate(page,{hero,model:values.model,motionRecord:values['motion-record'],readyRecord:values['ready-record'],replaceClip:values['replace-clip']});
- await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const expectedClip=await page.evaluate(async({hero,kind,attackStep,requestedClip,candidateName,sprint})=>{
   const g=window.__golfTest,{heightAt}=await import('/src/course.js');g.audio.enabled=false;g.ui.showScreen('game');g.begin(hero,0);g.audio.pause();g.phase='combat';
   const {combatMotionName}=await import('/src/motion.js'),expectedClip=combatMotionName(g.warrior,kind,attackStep);

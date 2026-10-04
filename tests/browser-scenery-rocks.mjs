@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
@@ -5,7 +6,7 @@ const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'ch
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
- await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  await page.addStyleTag({content:'#app>:not(canvas){display:none!important}'});
  await page.evaluate(()=>{const g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();});
  for(const theme of [0,1,2,3,1]){

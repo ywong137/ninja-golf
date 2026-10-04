@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
@@ -7,7 +8,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try{
  const page=await browser.newPage({viewport:{width:400,height:300}});await disableHmr(page);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await preloadWarriorFixtures(page);
  const result=await page.evaluate(async()=>{
   const {heightAt}=await import('/src/course.js'),{createPlayerGuard}=await import('/src/combat.js');
   const g=window.__golfTest,dt=1/240,rows=[];g.paused=true;g.audio.pause();

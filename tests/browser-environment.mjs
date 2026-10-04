@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import assert from 'node:assert/strict';
@@ -17,7 +18,7 @@ try{
   const old=execFileSync('git',['show',`${revision}:src/${file}`],{encoding:'utf8'}),current=fs.readFileSync(new URL(`../src/${file}`,import.meta.url),'utf8');
   await page.route(`**/src/${file}*`,async route=>{const response=await route.fetch(),transformed=await response.text(),imports=s=>[...s.matchAll(/\bfrom\s*(['"])([^'"]+)\1/g)].map(m=>m[2]),original=imports(current),resolved=imports(transformed).filter(s=>!s.includes('/@vite/'));assert.equal(original.length,resolved.length,`Vite import mapping: ${file}`);const map=new Map(original.map((s,i)=>[s,resolved[i]]));const body=old.replace(/with\s*\{type:'json'\}/g,'').replaceAll('import.meta.env.BASE_URL',JSON.stringify('/')).replace(/\bfrom\s*(['"])([^'"]+)\1/g,(m,q,s)=>{assert.ok(map.has(s),`Missing historical dependency ${file}:${s}`);return `from ${JSON.stringify(map.get(s))}`;});await route.fulfill({contentType:'application/javascript',body});});
  }
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||window.__environmentError||document.body.textContent.includes('The course could not load.'),null,{timeout:120000});assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>!!window.__golfTest),true);await page.locator('#asset-curtain').waitFor({state:'detached'});await page.addStyleTag({content:'#app > :not(#game){visibility:hidden!important}'});
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest||window.__environmentError||document.body.textContent.includes('The course could not load.'),null,{timeout:120000});await preloadWarriorFixtures(page);assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>!!window.__golfTest),true);await page.locator('#asset-curtain').waitFor({state:'detached'});await page.addStyleTag({content:'#app > :not(#game){visibility:hidden!important}'});
  await page.evaluate(()=>{const g=window.__golfTest;g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();g.time=12.5;g.renderer.setPixelRatio(1);g.renderer.setSize(1440,900);g.rendering.resize();});
  const manifest={revision:baseline?revision:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),viewport:[1440,900],time:12.5,themes:[]},reports=[];
  for(let theme=0;theme<4;theme++){

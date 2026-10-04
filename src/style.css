@@ -108,3 +108,11 @@ body[data-phase=combat] #toast{width:max-content;max-width:min(600px,calc(100vw 
 @media(max-width:700px){#musou-cinema .cinema-title{left:4vw;bottom:13vh;max-width:78vw}.cinema-portrait{width:92vw;height:92vw;right:-14vw;top:4vh}#musou-cinema .cinema-title em{font-size:clamp(34px,9vw,62px)}}
 
 .cinema-portrait{mask-image:linear-gradient(90deg,transparent,#000 12% 88%,transparent),linear-gradient(0deg,transparent,#000 18% 91%,transparent);mask-composite:intersect}
+
+#character-loading{position:absolute;z-index:20;top:40%;right:9%;width:min(330px,38vw);padding:24px;background:#18382feb;border:1px solid #d8b57066;box-shadow:0 16px 48px #081b2255;border-radius:4px}
+#character-loading h3{font:italic 30px Georgia,serif;margin:12px 0}
+#character-loading p{font-size:12px;line-height:1.7;color:#d3dcca}
+#character-loading>div{display:flex;align-items:center;gap:24px}
+.character-pending .showcase-controls{visibility:hidden}
+#begin:disabled,#play:disabled,#continue-round:disabled{opacity:.5;transform:none}
+@media(max-width:700px){#character-loading{right:5%;top:20%;width:44vw;padding:15px}#character-loading h3{font-size:24px}}

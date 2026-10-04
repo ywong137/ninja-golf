@@ -1,10 +1,11 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL,headless:true,args:['--mute-audio','--use-angle=metal']});
 const page=await browser.newPage({viewport:{width:1200,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
 try{
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.click('#audio-toggle');await page.click('#play');
+ await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.click('#audio-toggle');await page.click('#play');
  await page.evaluate(async()=>{const g=window.__golfTest;g.audio.pause();g.paused=true;g.frame=()=>{};await g.world.waitForAssets();window.__materialSaved=new Map();});
  for(const theme of ['japanese','highlands','desert','cyberpunk']){
   for(let hero=0;hero<6;hero++){

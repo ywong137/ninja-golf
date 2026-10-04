@@ -1,10 +1,11 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import {chromium} from 'playwright';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await page.waitForSelector('#asset-curtain',{state:'detached'});
+ await disableHmr(page);await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest);await preloadWarriorFixtures(page);await page.waitForSelector('#asset-curtain',{state:'detached'});
  await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');await page.click('#start-round');
  const result=await page.evaluate(async()=>{
   const {createPlayerGuard}=await import('/src/combat.js'),{heightAt,COURSE_BOUNDS}=await import('/src/course.js'),g=window.__golfTest;

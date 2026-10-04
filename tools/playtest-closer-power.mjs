@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from './preload-warrior-fixtures.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ const output=path.resolve('artifacts/reviews/closer-heavy/gameplay');fs.mkdirSyn
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto('http://localhost:5174');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});
+ await page.goto('http://localhost:5174');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  const report=await page.evaluate(async()=>{
   const {createPlayerGuard}=await import('/src/combat.js'),g=window.__golfTest;
   g.renderer.setAnimationLoop(null);g.audio.enabled=false;g.audio.pause();g.begin(5,0);g.audio.pause();

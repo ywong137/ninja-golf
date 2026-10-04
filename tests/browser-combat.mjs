@@ -1,3 +1,4 @@
+import {preloadWarriorFixtures} from '../tools/preload-warrior-fixtures.mjs';
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import {disableHmr} from '../tools/disable-hmr.mjs';
@@ -5,7 +6,7 @@ const browser=process.argv[2]?await chromium.connectOverCDP(process.argv[2]):awa
 try {
 const page=process.argv[2]?browser.contexts()[0].pages().find(p=>p.url().includes('localhost:5173')):await browser.newPage({viewport:{width:1440,height:900}});
 const errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
-await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');await page.click('#start-round');await page.locator('#asset-curtain').waitFor({state:'detached'});
+await page.goto('http://localhost:5173');await page.waitForFunction(()=>!!window.__golfTest);await preloadWarriorFixtures(page);await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');await page.click('#start-round');await page.locator('#asset-curtain').waitFor({state:'detached'});
 await page.evaluate(()=>{const g=window.__golfTest;g.clearEnemies();g.phase='combat';g.spawnTime=100;g.enemyBudget=100;g.enemiesSpawned=0;g.combatTime=0;g.player.root.position.set(0,8,40);g.ball.position.set(15,8,190);g.cameraYaw=0;g.player.root.rotation.y=0;g.updateCamera(10);});
 await page.keyboard.down('KeyC');await page.keyboard.down('KeyD');await page.waitForFunction(()=>window.ninjaGolf.state().player[0]<-1);await page.keyboard.up('KeyD');
 let state=await page.evaluate(()=>window.ninjaGolf.state());assert.ok(state.player[0]<-1);assert.ok(Math.abs(state.facing)<.08,'Focused strafe keeps facing forward');
