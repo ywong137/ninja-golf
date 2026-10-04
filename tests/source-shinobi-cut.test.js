@@ -28,10 +28,11 @@ test('Shinobi opening uses a complete source cut and only its attacking blade em
  assert.ok(record.weaponGripRoll>1&&record.weaponGripRoll<1.1,'Retain the reviewed cutting-edge mount.');
 });
 
-test('Shinobi source cut retains the step, torso turn and body drop with anatomical limbs',async t=>{
+for(const clipName of ['Shinobi_Stepping_Cut','Shinobi_Left_Stepping_Cut'])test(clipName+' retains the step, torso turn and body drop with anatomical limbs',async t=>{
+ const record=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)))[clipName];
  const rig=await loadNativeSkin(new URL('../public/models/shinobi.glb',import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
  const arms={},legs={},wrists={};for(const s of ['r','l']){arms[s]=calibrateArmAnatomy(captureArmPose(bones,s));wrists[s]=calibrateWristAnatomy(captureWristPose(bones,s));legs[s]=calibrateLegAnatomy(bones['thigh_'+s],bones['calf_'+s],bones['foot_'+s]);}
- const clip=rig.animations.find(c=>c.name===name);assert.ok(clip);
+ const clip=rig.animations.find(c=>c.name===clipName);assert.ok(clip);
  const action=rig.mixer.clipAction(clip).reset().setLoop(LoopOnce).play();action.clampWhenFinished=true;
  const point=n=>bones[n].getWorldPosition(new Vector3());let firstFeet,firstChest,step=0,turn=0,minHip=Infinity,maxHip=-Infinity,maxWrist=0,maxJointStep=0,previous;
  for(let i=0;i<=Math.ceil(record.duration*240);i++){
@@ -97,4 +98,31 @@ test('Shinobi heavy attack retains a full-body leap and lands with anatomical le
  assert.ok(apex>.3&&apex<.5&&maxHip-minHip>.7&&turn>1.5,'Preserve the source jump, body drop and turn.');
  assert.ok(lowest>-.003&&landingError<.005,'The foot fit lost its floor contact.');assert.ok(maxWrist<30,'The wrist is overbent.');
  t.diagnostic(JSON.stringify({apex,lowest,landingError,maxWrist,hipTravel:maxHip-minHip,turnDegrees:turn*180/Math.PI}));
+});
+
+test('Shinobi return cut uses the complete mirrored performance and the left strike trail',()=>{
+ const name=hero.motionOverrides.Twin_Cut_Return;
+ assert.equal(name,'Shinobi_Left_Stepping_Cut');
+ const r=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)))[name];
+ assert.ok(r.nativeSourceMotion&&r.nativeAttachment&&!r.twoHanded);
+ assert.deepEqual(r.impactHands,['l']);assert.equal(r.duration,record.duration);
+ const attack=withMotionTiming(attackDefinition('light',1,hero.combatStyle),r);
+ assert.equal(attack.hits.length,1);
+ assert.deepEqual(activeBladeTrailHands({...attack,impactHands:r.impactHands,time:attack.hits[0]},true),['l']);
+ assert.ok(r.weaponGripRoll< -1.1&&r.weaponGripRoll> -1.2);
+ assert.ok(r.duration-r.impacts[0]>.8,'Keep the complete source recovery.');
+});
+
+test('mirrored Shinobi motion preserves the source body trajectory with opposite limbs',async t=>{
+ const rig=await loadNativeSkin(new URL('../public/models/shinobi.glb',import.meta.url));
+ const names=['pelvis','spine_03','Head',...['upperarm','lowerarm','hand','thigh','calf','foot'].flatMap(n=>['r','l'].map(s=>n+'_'+s))];
+ rig.scene.updateMatrixWorld(true);const center=rig.scene.getObjectByName('pelvis').getWorldPosition(new Vector3()).x;
+ const frame=(name,time)=>{rig.mixer.stopAllAction();const action=rig.mixer.clipAction(rig.animations.find(c=>c.name===name)).reset().setLoop(LoopOnce).play();action.clampWhenFinished=true;action.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);return Object.fromEntries(names.map(n=>[n,rig.scene.getObjectByName(n).getWorldPosition(new Vector3())]));};
+ let error=0;
+ for(const time of [0,.15,.3,.425,.6,.85,1.15,1.53]){
+  const original=frame('Shinobi_Stepping_Cut',time),mirrored=frame('Shinobi_Left_Stepping_Cut',time);
+  for(const name of names){const opposite=name.endsWith('_r')?name.slice(0,-2)+'_l':name.endsWith('_l')?name.slice(0,-2)+'_r':name;const expected=original[opposite].clone();expected.x=2*center-expected.x;error=Math.max(error,expected.distanceTo(mirrored[name]));}
+ }
+ assert.ok(error<.01,'Mirroring changes the whole-body source trajectory by more than one centimetre: '+error);
+ t.diagnostic(JSON.stringify({maximumJointPositionError:error}));
 });

@@ -149,3 +149,7 @@ planar travel for terrain-aware movement.
 The Ace seven-cut musou adapts the complete Sword_Regular_Combo followed by
 Sword_Heavy_Combo from Quaternius Universal Animation Library 2 (CC0).
 It preserves the original model and all prior animations.
+
+Shinobi_Left_Stepping_Cut mirrors the complete Quaternius UAL1 Sword_Attack
+(CC0) performance for the left-hand return cut. It preserves the character
+mesh, selected outfit, likeness, rig, and all previous animation clips.
