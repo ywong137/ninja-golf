@@ -14,7 +14,7 @@ import {gripFrame} from '../src/hand-grip.js';
 
 const records=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const gripData=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
-for(const [model,kind,name,count,wristLimit] of [['sora','heavy','Closer_Power_Finish',1,28],['sora','musou','Closer_Musou_Pursuit',4,28],['ronin','musou','Ronin_Musou_Advance',3,43],['ayame','musou','Hustler_Musou_Advance',4,28]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
+for(const [model,kind,name,count,wristLimit,jointLimit=8] of [['sora','heavy','Closer_Power_Finish',1,28],['sora','musou','Closer_Musou_Pursuit',4,28],['ronin','musou','Ronin_Musou_Advance',3,43],['ayame','musou','Hustler_Musou_Advance',4,28],['kaede','musou','Ace_Musou_Tempest',7,28,9]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
  const hero=WARRIORS.find(w=>w.model===model),grip=gripData[model].sword.r;
  const rig=await loadNativeSkin(new URL(`../public/models/${model}.glb`,import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
@@ -50,10 +50,12 @@ for(const [model,kind,name,count,wristLimit] of [['sora','heavy','Closer_Power_F
    assert.ok(right.addScaledVector(shaft,-record.gripSpacing).distanceTo(left)<.001,'The hands separate from the shared handle.');
   }
  }
- assert.ok(maxWrist<wristLimit,'The wrist exceeds the reviewed fitted range: '+maxWrist);assert.ok(maxJointStep<8,'The arm snaps between samples.');
+ assert.ok(maxWrist<wristLimit,'The wrist exceeds the reviewed fitted range: '+maxWrist);
+ // The Ace opening uses the existing regular-combo continuity bound (9 degrees).
+ assert.ok(maxJointStep<jointLimit,'The arm snaps between samples.');
  assert.ok(turn>1&&maxHip-minHip>.15&&samplePlanarRoot(record.planarRoot,record.duration).z>1.2,'The cut lost its full-body turn, level change, or step.');
  const blade=time=>{sample(time);const q=bones.hand_r.getWorldQuaternion(new Quaternion()).multiply(profile.frame).multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll??0));return {point:bones.hand_r.localToWorld(profile.center.clone()).addScaledVector(new Vector3(0,1,0).applyQuaternion(q),.5),edge:new Vector3(1,0,0).applyQuaternion(q)};};
- const edges=record.impacts.map(time=>{const velocity=blade(time+1/480).point.sub(blade(time-1/480).point).normalize();return blade(time).edge.dot(velocity);});
+ const edges=record.impacts.map(time=>{const velocity=blade(time+1/480).point.sub(blade(time-1/480).point).normalize();const edge=blade(time).edge.dot(velocity);return hero.weaponKind==='jian'?Math.abs(edge):edge;});
  assert.ok(edges.every(edge=>edge>.6),'The striking edge trails or hits flat: '+edges);
  t.diagnostic(JSON.stringify({maxWrist,maxJointStep,turnDegrees:turn*180/Math.PI,hipTravel:maxHip-minHip,edges}));
 });

@@ -59,7 +59,8 @@ try{
    };
    for(let i=0;i<rate/2;i++)tick();if(mode==='moving'){g.input.keys.add('KeyW');for(let i=0;i<rate;i++)tick();}
    g.attack(kind);let queued=false;
-   for(let i=0;i<10*rate;i++){
+   const horizon=Math.max(10,g.cinematic+(g.action?.duration??motion.combatDuration??motion.duration)+4);
+   for(let i=0;i<Math.ceil(horizon*rate);i++){
     if(mode==='queued-light'&&!queued&&g.action?.kind===kind&&g.action.duration-g.action.time<.25){g.attack('light');queued=true;}
     tick();
    }

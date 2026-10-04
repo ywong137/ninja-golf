@@ -145,3 +145,7 @@ The four current ninja attacks adapt Quaternius UAL2 Sword_Regular_A,
 Sword_Regular_A_Rec, Sword_Regular_B, Sword_Regular_B_Rec, Sword_Regular_C,
 and OverhandThrow (CC0). The export fits the native joints and extracts
 planar travel for terrain-aware movement.
+
+The Ace seven-cut musou adapts the complete Sword_Regular_Combo followed by
+Sword_Heavy_Combo from Quaternius Universal Animation Library 2 (CC0).
+It preserves the original model and all prior animations.
