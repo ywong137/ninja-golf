@@ -118,3 +118,8 @@ See docs/art-direction/wardrobe/README.md for sources and rebuild instructions.
 The Shinobi opening light attack adapts the complete Sword_Attack performance
 from Quaternius Universal Animation Library 1, CC0. It retains the source step,
 body turn, and recovery. Both hands use native fitted sword grips.
+
+The Shinobi jumping heavy attack adapts Adobe Mixamo Sword And Shield Power Slash.
+The complete performance retains its leap, torso turn, downward cut and recovery.
+Project-authored contact windows fit the landing soles without changing the pelvis or upper body.
+Both short swords use native fitted grips. The standalone source file remains private.

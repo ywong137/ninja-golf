@@ -36,7 +36,7 @@ test('Playable heroes retain licensed textured human meshes and native motion',(
     for(const side of ['R','L']){assert.equal(rig.extras['palmGrip'+side].length,3);assert.equal(rig.extras['shaftAxis'+side].length,3);assert.ok(Object.keys(rig.extras['closedFingers'+side]).length>=15);}
     const clips=new Set(g.animations.map(a=>a.name));for(const clip of ['Idle_Loop','Golf_Swing','Golf_Putt','Jog_Fwd_Loop',(WARRIORS[index].motionOverrides?.[WARRIORS[index].motionPrefix+'Musou_Flow']??WARRIORS[index].motionPrefix+'Musou_Flow'),WARRIORS[index].readyClip,...Object.values(WARRIORS[index].motionOverrides??{})])assert.ok(clips.has(clip),`${name}: ${clip}`);
     assert.deepEqual([...clips].filter(clip=>clip.endsWith('_Selection_Idle')),[WARRIORS[index].selectionClip],`${name}: one separate selection pose`);
-    assert.ok(clips.size<=(name==='sora'?44:name==='ronin'?42:name==='monk'?40:['ayame','kaede','shinobi'].includes(name)?39:38),`${name}: own weapon family, guard steps, native locomotion, and selection pose only`);
+    assert.ok(clips.size<=(name==='sora'?44:name==='ronin'?42:['monk','shinobi'].includes(name)?40:['ayame','kaede'].includes(name)?39:38),`${name}: own weapon family, guard steps, native locomotion, and selection pose only`);
     const eyewear=['Vice President graphite glasses','Vice President brushed silver temples'];
     const sourceMaterials=g.materials.filter(m=>!eyewear.includes(m.name)&&!g.extras?.wardrobeDefault?.materials?.includes(m.name));
     assert.ok(sourceMaterials.length>=3&&sourceMaterials.every(m=>m.pbrMetallicRoughness?.baseColorTexture),`${name}: source diffuse textures`);

@@ -65,3 +65,36 @@ test('source record export retains an explicit single-handed blade mount',()=>{
   assert.deepEqual(result.poses.map(p=>p.offTip),record.poses.map(p=>p.offTip),'Preserve the exported left-blade direction.');
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test('Shinobi heavy attack retains a full-body leap and lands with anatomical legs and grounded soles',async t=>{
+ const {captureFootSoles,sampleFootSole}=await import('../src/foot-sole.js');
+ const motion=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url))).Shinobi_Airborne_Cut;
+ assert.equal(hero.motionOverrides.Twin_Heavy_Cleave,'Shinobi_Airborne_Cut');
+ assert.deepEqual(motion.impactHands,['r']);assert.ok(motion.nativeSourceMotion&&motion.nativeAttachment&&!motion.twoHanded);
+ assert.ok(motion.planarRoot.rows.at(-1).z>.8&&motion.planarRoot.rows.at(-1).z<1);
+ const attack=withMotionTiming(attackDefinition('heavy',0,hero.combatStyle),motion);assert.ok(attack.hits[0]>.8&&attack.hits[0]<.95);
+ const rig=await loadNativeSkin(new URL('../public/models/shinobi.glb',import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
+ const legs={},arms={},wrists={};for(const side of ['r','l']){legs[side]=calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);arms[side]=calibrateArmAnatomy(captureArmPose(bones,side));wrists[side]=calibrateWristAnatomy(captureWristPose(bones,side));}
+ const soles=captureFootSoles(rig.scene),clip=rig.animations.find(c=>c.name==='Shinobi_Airborne_Cut'),action=rig.mixer.clipAction(clip).setLoop(LoopOnce).play();action.clampWhenFinished=true;
+ let lowest=Infinity,apex=0,landingError=0,maxWrist=0,minHip=Infinity,maxHip=-Infinity,firstChest,turn=0;
+ for(let time=0;time<clip.duration;time+=1/240){
+  action.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);
+  const height=bones.pelvis.getWorldPosition(new Vector3()).y;minHip=Math.min(minHip,height);maxHip=Math.max(maxHip,height);
+  const chest=bones.spine_03.getWorldQuaternion(new Quaternion()).normalize();firstChest??=chest.clone();turn=Math.max(turn,chest.angleTo(firstChest));
+  const gaps=[];
+  for(const side of ['r','l']){
+   const leg=measureLegAnatomy(legs[side],bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]),arm=measureArmAnatomy(arms[side],captureArmPose(bones,side));
+   assert.ok(leg.kneeFlexion>0&&leg.kneeFlexion<125&&leg.kneeDeviation<.1&&Math.abs(leg.hipTwist)<45&&Math.abs(leg.ankleTwist)<22,JSON.stringify(leg));
+   assert.ok(arm.signedFlexionDegrees>0&&arm.signedFlexionDegrees<135&&arm.hingeDeviationDegrees<.1&&Math.abs(arm.forearmTwistDegrees)<70,JSON.stringify(arm));
+   maxWrist=Math.max(maxWrist,measureWristAnatomy(wrists[side],captureWristPose(bones,side)).totalDegrees);
+   const gap=Math.min(...sampleFootSole(soles[side]).map(p=>p.y));gaps.push(gap);lowest=Math.min(lowest,gap);
+   if(time>=1.35&&time<=1.99)landingError=Math.max(landingError,Math.abs(gap));
+   if(time>=1.35&&time<=1.99)assert.ok(bones['calf_'+side].getWorldPosition(new Vector3()).y>.03,'The landing knee crosses the floor.');
+  }
+  apex=Math.max(apex,Math.min(...gaps));
+ }
+ for(const row of motion.poses)for(const key of ['grip','tip','offGrip','offTip'])assert.ok(row[key]?.length===3&&row[key].every(Number.isFinite),'Both weapon paths must be exported.');
+ assert.ok(apex>.3&&apex<.5&&maxHip-minHip>.7&&turn>1.5,'Preserve the source jump, body drop and turn.');
+ assert.ok(lowest>-.003&&landingError<.005,'The foot fit lost its floor contact.');assert.ok(maxWrist<30,'The wrist is overbent.');
+ t.diagnostic(JSON.stringify({apex,lowest,landingError,maxWrist,hipTravel:maxHip-minHip,turnDegrees:turn*180/Math.PI}));
+});

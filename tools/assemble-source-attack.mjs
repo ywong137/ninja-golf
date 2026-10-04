@@ -57,7 +57,7 @@ for(const track of extracted.clip.tracks){
 fs.mkdirSync(path.dirname(v.output),{recursive:true});
 fs.writeFileSync(v.output,patchAnimationTransforms(fs.readFileSync(v.base),[entry]));
 const output=v.output.replace(/\.glb$/,'-motion.json');
-execFileSync(process.execPath,[fileURLToPath(new URL('./sample-source-cut-record.mjs',import.meta.url)),'--input',v.output,'--grips',v.grips,'--hero',v.hero,'--clip',v.name,'--output',output,'--combat-duration',String(extracted.clip.duration/speed),...impacts.flatMap(t=>['--impact',String(warp(t)-clockStart)]),'--source-credit',v.credit,...(v['dual-wield']?['--dual-wield']:[]),...['paired-spacing','primary-grip','grip-roll'].flatMap(key=>v[key]===undefined?[]:['--'+key,v[key]])],{stdio:'pipe'});
+execFileSync(process.execPath,[fileURLToPath(new URL('./sample-source-cut-record.mjs',import.meta.url)),'--input',v.output,'--grips',v.grips,'--hero',v.hero,'--clip',v.name,'--output',output,'--combat-duration',String(extracted.clip.duration/speed),...impacts.flatMap(t=>['--impact',String(warp(t)-clockStart)]),'--source-credit',v.credit,...(v['dual-wield']?['--dual-wield']:[]),...['paired-spacing','primary-grip','grip-roll'].flatMap(key=>v[key]===undefined?[]:['--'+key+'='+v[key]])],{stdio:'pipe'});
 const records=JSON.parse(fs.readFileSync(output));records[v.name].planarRoot=extracted.path;
 fs.writeFileSync(output,JSON.stringify(records));
 const report={clip:v.name,duration:extracted.clip.duration,sourceInterval:[start,end],combatDuration:records[v.name].combatDuration,impacts:records[v.name].impacts,travel:extracted.path.rows.at(-1),source:v.credit};

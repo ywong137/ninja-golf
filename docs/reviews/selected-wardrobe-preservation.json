@@ -176,12 +176,13 @@
       }
     ],
     "motionExtension": {
-      "outputSha256": "06f49fef7b05e0fe2436fbc1fce260e6b4c89fb925b8d014e46cf0eb1c781390",
+      "outputSha256": "cc8177a594d205ef7af6f9b8ceaaa74bc2a692f714d55878a54ece705f580e0d",
       "baseBinaryBytes": 18541576,
       "baseBinarySha256": "28ddeff002ec6c0133c9ac5c88cb6be3580d136ddb458d40c61315f277a98275",
       "baseMeshesSha256": "8d6d49756dc4003af50a8d62c52e0a51f056ddd31a08e2d130939137b02f4300",
       "addedClips": [
-        "Shinobi_Stepping_Cut"
+        "Shinobi_Stepping_Cut",
+        "Shinobi_Airborne_Cut"
       ]
     }
   },
