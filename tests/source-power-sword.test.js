@@ -14,7 +14,7 @@ import {gripFrame} from '../src/hand-grip.js';
 
 const records=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const gripData=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
-for(const [model,kind,name,count,wristLimit] of [['sora','heavy','Closer_Power_Finish',1,28],['sora','musou','Closer_Musou_Pursuit',4,28],['ronin','musou','Ronin_Musou_Advance',3,43]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
+for(const [model,kind,name,count,wristLimit] of [['sora','heavy','Closer_Power_Finish',1,28],['sora','musou','Closer_Musou_Pursuit',4,28],['ronin','musou','Ronin_Musou_Advance',3,43],['ayame','musou','Hustler_Musou_Advance',4,28]])test(name+' retains body motion, anatomical joints, closed grip, and edge-first impacts',async t=>{
  const hero=WARRIORS.find(w=>w.model===model),grip=gripData[model].sword.r;
  const rig=await loadNativeSkin(new URL(`../public/models/${model}.glb`,import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
  const arms=Object.fromEntries(['r','l'].map(s=>[s,calibrateArmAnatomy(captureArmPose(bones,s))]));
