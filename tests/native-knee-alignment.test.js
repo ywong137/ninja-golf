@@ -103,7 +103,7 @@ for(const hero of WARRIORS)test(`${hero.model}: native knees track the feet thro
     const forward=toe.clone().sub(ankle).setY(0);
     // An airborne shoe can point vertically. Its anatomical frames still
     // define the knee hinge; a horizontal toe projection does not.
-    if(spec.sourceGait&&forward.length()<=.01)forward.set(0,0,1);
+    if((spec.sourceGait||spec.nativeKneeHeading)&&forward.length()<=.01)forward.set(0,0,1);
     else assert.ok(forward.length()>.01,`${name} ${side} at ${seconds}: ankle-to-toe heading is degenerate`);
     forward.normalize();
     // A positive value means the knee lies medial to the actual shoe's sagittal
