@@ -7,10 +7,12 @@ const reports=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardr
 const hash=x=>createHash('sha256').update(x).digest('hex');
 for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfit preserves the face, rig and motion data`,()=>{
  const raw=fs.readFileSync(new URL('../public/models/'+model+'.glb',import.meta.url)),{doc,bin}=parseGlb(raw);
- assert.equal(hash(raw),saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
+ assert.equal(hash(raw),saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
  for(const key of ['animations','nodes','skins'])assert.equal(hash(JSON.stringify(key==='animations'?doc.animations.slice(0,saved.preservedAnimations):doc[key])),saved.originalRigHashes[key],key);
  if(saved.motionExtension){
-  const ext=saved.motionExtension;assert.equal(hash(bin.subarray(0,ext.baseBinaryBytes)),ext.baseBinarySha256);assert.equal(hash(JSON.stringify(doc.meshes)),ext.baseMeshesSha256);
+  const ext=saved.motionExtension;assert.equal(hash(bin.subarray(0,ext.baseBinaryBytes)),ext.baseBinarySha256);const meshes=structuredClone(doc.meshes);
+  if(saved.garmentRevision){const revision=saved.garmentRevision;assert.equal(hash(bin),revision.binarySha256);assert.equal(hash(JSON.stringify(meshes)),revision.finalMeshesSha256);meshes[0].primitives.splice(revision.removedPrimitive,0,revision.removedPrimitiveDefinition);}
+  assert.equal(hash(JSON.stringify(meshes)),ext.baseMeshesSha256);
   assert.deepEqual(doc.animations.slice(saved.preservedAnimations).map(a=>a.name),ext.addedClips);
  }else assert.equal(doc.animations.length,saved.preservedAnimations);
  for(let i=0;i<saved.originalFacePrimitives.length;i++)assert.deepEqual(doc.meshes[0].primitives[i+1],saved.originalFacePrimitives[i],'Preserve original face and hair streams.');

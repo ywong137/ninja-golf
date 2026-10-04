@@ -25,7 +25,6 @@ def fabric(name,color,rough=.63,metal=0):
   tex=n.new('ShaderNodeTexNoise');tex.inputs['Scale'].default_value=470;tex.inputs['Detail'].default_value=2
   bump=n.new('ShaderNodeBump');bump.inputs['Strength'].default_value=.14;bump.inputs['Distance'].default_value=.00035;links.new(tex.outputs['Fac'],bump.inputs['Height']);links.new(bump.outputs['Normal'],s.inputs['Normal'])
  return m
-black=fabric('Hostile Takeover charcoal woven coat',(.056,.018,.045))
 
 def attach(mesh,name,material):
  ob=bpy.data.objects.new(name,mesh);bpy.context.collection.objects.link(ob);ob.data.materials.append(material)
@@ -56,7 +55,7 @@ def weight(ob):
  ob.parent=rig;mod=ob.modifiers.new('Shared body rig','ARMATURE');mod.object=rig
 
 # Keep original topology, normals and skin weights. The tailored coat extends
-# the existing torso with new split tails and a raised collar.
+# the existing torso with new split tails.
 cloth=body.data.materials[0].copy();cloth.name='Wardrobe body fabric'
 for n in cloth.node_tree.nodes:
  if n.type=='TEX_IMAGE' and n.image and 'color' in n.image.name.lower():
@@ -108,17 +107,7 @@ for sign in [-1,1]:
  for f in panel.data.polygons:
   for li in f.loop_indices:
    vi=panel.data.loops[li].vertex_index;r=vi//29;c=vi%29;layer.data[li].uv=(.43+c/28*.16,.42-r/11*.15)
-# A short mandarin collar, open at the throat.
-for sign in [-1,1]:
- rows=[]
- for j in range(5):
-  t=j/4;rows.append([(sign*(.052+.004*t)*math.sin(theta),.005-(.054+.004*t)*math.cos(theta),1.416+.038*t) for theta in [.28+2.7*k/24 for k in range(25)]])
- collar=surface('Wardrobe mandarin collar '+str(sign),rows,black)
- # The jacket collar follows the upper chest with a small neck contribution.
- # Facial skin weights from nearest-surface fitting do not belong on clothing.
- collar.vertex_groups.clear()
- for name,amount in [('spine_03',.75),('neck_01',.25)]:
-  group=collar.vertex_groups.new(name=name);group.add(list(range(len(collar.data.vertices))),amount,'REPLACE')
+# Keep the native bound neckline. A separate stand collar leaves a skin gap.
 # Lilac wrap sash.
 sash=fabric('Lilac woven sash',(.28,.12,.25),.68)
 rows=[]

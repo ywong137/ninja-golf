@@ -4,7 +4,7 @@ All six approved default outfits now have model implementations. The concept cat
 
 The five models in this change add textured clothing geometry. They preserve the existing faces, hair, skeletons, and animation tracks. The binary preservation report and tests verify those claims.
 
-The Ace and Closer use fitted clothing from the licensed f008 body. Their original hands and shoes preserve the established grip and ground contacts. The Ace sleeves use her native arm surface and weights. The Hustler collar follows the chest and neck instead of the facial rig.
+The Ace and Closer use fitted clothing from the licensed f008 body. Their original hands and shoes preserve the established grip and ground contacts. The Ace sleeves use her native arm surface and weights. A later repair removes the Hustler’s detached collar strips. Her jacket retains its bound neckline.
 
 ## Validation
 

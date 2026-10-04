@@ -17,7 +17,7 @@ All six defaults now include new garment geometry and textures. The remaining tw
 
 - The Ace wears an argyle top, Bermuda shorts, knee socks, and a visor.
 - The Ronin wears a burgundy wrap jacket, cream collar, and waist sash.
-- The Hustler wears an embroidered plum jacket with a raised collar and lilac sash.
+- The Hustler wears an embroidered plum jacket with a bound neckline and lilac sash.
 - The Shinobi wears a white technical vest with diagonal teal and navy bands.
 - The Closer wears a cream and jade tunic with bamboo artwork and split panels.
 

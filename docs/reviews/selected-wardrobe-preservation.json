@@ -10,7 +10,7 @@
     "preservedAnimations": 42,
     "addedParts": 3,
     "addedTriangles": 3888,
-    "bindMatrixMaximumError": 0.0000019669532775878906,
+    "bindMatrixMaximumError": 1.9669532775878906e-06,
     "handsTriangles": 1573,
     "garmentTriangles": 1927,
     "originalTargetBinaryBytes": 12422248,
@@ -101,7 +101,7 @@
     "preservedAnimations": 38,
     "addedParts": 3,
     "addedTriangles": 2028,
-    "bindMatrixMaximumError": 0.0000028014183044433594,
+    "bindMatrixMaximumError": 2.8014183044433594e-06,
     "handsTriangles": 1668,
     "garmentTriangles": 2146,
     "originalTargetBinaryBytes": 15736904,
@@ -197,7 +197,7 @@
     "preservedAnimations": 39,
     "addedParts": 8,
     "addedTriangles": 8154,
-    "bindMatrixMaximumError": 0.000012978911399841309,
+    "bindMatrixMaximumError": 1.2978911399841309e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 16508964,
@@ -303,7 +303,7 @@
     "preservedAnimations": 39,
     "addedParts": 6,
     "addedTriangles": 5164,
-    "bindMatrixMaximumError": 0.00001290440559387207,
+    "bindMatrixMaximumError": 1.290440559387207e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 14329508,
@@ -395,6 +395,34 @@
       "addedClips": [
         "Hustler_Power_Finish"
       ]
+    },
+    "garmentRevision": {
+      "change": "Remove two disconnected collar strips; retain the bound jacket neckline.",
+      "baseSha256": "bf28bbd291ca92c76d9f86131776485ee2808ef922a7dbc4bc7c5851368f3c82",
+      "outputSha256": "bf9b06d21d0abe5485d8decae6a80ad31d95e9549f72b61053df034957771b5e",
+      "binarySha256": "af47ac3c52644381c13ebf26847ac3a181dfff3f0546ecd3bf3baddae8429141",
+      "removedPrimitive": 5,
+      "removedParts": [
+        "Wardrobe mandarin collar -1",
+        "Wardrobe mandarin collar 1"
+      ],
+      "removedTriangles": 992,
+      "preservedAnimations": 40,
+      "originalMeshesSha256": "e2f9b5aedc6148e4356235d6eba6c774545b7b7cad6a69c213ded40d6a4cfc58",
+      "finalMeshesSha256": "02ac7a4deecc11d5e1c7ded78f199d222d9bff1a14d097fbf93d87eb78bd995a",
+      "unchangedBinary": true,
+      "removedPrimitiveDefinition": {
+        "attributes": {
+          "POSITION": 12746,
+          "NORMAL": 12747,
+          "TEXCOORD_0": 12748,
+          "JOINTS_0": 12749,
+          "WEIGHTS_0": 12750
+        },
+        "indices": 12751,
+        "material": 5,
+        "mode": 4
+      }
     }
   },
   "sora": {
@@ -408,7 +436,7 @@
     "preservedAnimations": 44,
     "addedParts": 6,
     "addedTriangles": 8986,
-    "bindMatrixMaximumError": 0.000013217329978942871,
+    "bindMatrixMaximumError": 1.3217329978942871e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 20054948,
