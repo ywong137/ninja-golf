@@ -6,11 +6,13 @@ export const GAMEPAD_ACTIONS=Object.freeze({
 const BUTTON_LABELS={0:'A',1:'B',2:'X',3:'Y',4:'LB',5:'RB',7:'RT',9:'START',11:'RS CLICK',12:'D-PAD ↑',13:'D-PAD ↓',14:'D-PAD ←',15:'D-PAD →'};
 const padKey=(context,action)=>Object.entries(GAMEPAD_ACTIONS[context]).filter(([,value])=>value===action).map(([button])=>BUTTON_LABELS[button]).join(' / ');
 const keyboard={
+ combatEntry:'The walk begins. Click to capture mouse · Left / right click: fast / heavy · F: Musou',
  device:'KEYBOARD + MOUSE',swing:'SPACE',survey:'R',interact:'E',musou:'F',guard:'V',heavy:'RMB',shotHeight:'Z / X',
  clubs:'Q / E · Change club   A / D · Aim',skip:'SPACE · Follow ball faster',
  combat:[['W A S D','Move'],['SHIFT','Sprint'],['SPACE','Dodge'],['V','Guard'],['LMB','Fast'],['RMB','Heavy'],['F','Musou'],['C','Focus'],['Q','Face waypoint']],
 };
 const gamepad={
+ combatEntry:`The walk begins. LS: move · ${padKey('combat','LightAttack')}: fast · ${padKey('combat','HeavyAttack')}: heavy · ${padKey('combat','Musou')}: Musou`,
  device:'GAMEPAD',swing:padKey('golf','Space'),survey:padKey('golf','KeyR'),interact:padKey('combat','Interact'),musou:padKey('combat','Musou'),guard:'LB',heavy:padKey('combat','HeavyAttack'),shotHeight:'D-PAD ↓ / ↑',
  clubs:`${padKey('golf','KeyQ')} / ${padKey('golf','KeyE')} · Change club   LS · Aim`,skip:`${padKey('golf','Space')} · Follow ball faster`,
  combat:[['LS','Move'],['LS CLICK','Sprint'],[padKey('combat','Dodge'),'Dodge'],['LB','Guard'],[padKey('combat','LightAttack'),'Fast'],[padKey('combat','HeavyAttack'),'Heavy'],[padKey('combat','Musou'),'Musou'],['LT','Focus'],[padKey('combat','Waypoint'),'Face waypoint']],

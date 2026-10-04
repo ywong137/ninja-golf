@@ -27,6 +27,7 @@ import {readRoundSave} from './round.js';
 import { Projectiles } from './projectiles.js';
 import {musouHeadings,combatMotionName,motions} from './motion.js';
 import { Input } from './input.js';
+import {controlHints} from './control-bindings.js';
 import { AudioEngine } from './audio.js';
 import { UI } from './ui.js';
 import {CharacterShowcase} from './character-showcase.js';
@@ -171,7 +172,7 @@ class Game {
     this.velocity.set(0,0,0);this.lie=lieAt(this.course,this.ball.position.x,this.ball.position.z);this.phase='combat';this.enemiesSpawned=0;this.combatTime=0;this.spawnTime=2;this.combo=0;this.comboTime=0;this.cameraYaw=this.aim;this.trail.visible=false;this.fastFlight=false;
     const distance=this.player.root.position.distanceTo(this.ball.position);this.lastShot={distance:shotDistance,lie:this.lie,pin:this.ball.position.distanceTo(this.world.cup)*YARD,relief:!!reliefNotice};this.ui.shotResult(this.lastShot);this.enemyBudget=Math.max(12,Math.min(200,Math.round(distance*.65)+this.hole*20));
     if(distance<12||this.shotStartLie==='Green'){this.phase='aim';this.aimAtPin();this.placePlayer();this.selectBestClub();this.refreshAim();this.power=1;this.ui.toast(reliefNotice+(this.lie==='Green'?'On the green. Read the line and choose your pace.':'A short walk. Your next shot is ready.'));return;}
-    this.spawnWave(14);this.preparePortrait();this.ui.toast(reliefNotice||'The walk begins. Click to capture mouse · Left / right click: fast / heavy · F: Musou',5500);
+    this.spawnWave(14);this.preparePortrait();this.ui.toast(reliefNotice||controlHints(this.input.device).combatEntry,5500,'combat');
   }
   selectBestClub(){this.shotHeight=0;const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;this.updateClubModel();}
   slideOnLand(position,from,radius=.38,lift=0){moveOnLand(position,from,this.course,this.world.collision,radius,lift);}
