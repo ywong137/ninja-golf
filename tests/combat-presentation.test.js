@@ -67,7 +67,7 @@ test('all ninja attacks preserve knee hinges and move their root consistently at
 test('the Closer merged tunic receives collision correction through her attacks and golf swing',async()=>{
  const g=await loadNativeSkin(new URL('../public/models/sora.glb',import.meta.url),{materialNames:true}),bones={};
  g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
- const cloth=new GarmentCollision(g.scene,bones);
+ const cloth=new GarmentCollision(g.scene,bones,{clearance:.028,surfaceQuantile:.99});
  assert.ok(cloth.report.vertices>1000,'The merged tunic was silently excluded from cloth correction');
  const body=cloth.plans.find(p=>/body fabric/i.test(p.mesh.material.name));assert.ok(body,'Missing body-fabric tunic');
  const knee=Math.max(...['r','l'].map(s=>bones['calf_'+s].getWorldPosition(new T.Vector3()).y));

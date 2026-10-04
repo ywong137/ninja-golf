@@ -8,8 +8,11 @@ export const COMBAT_SAMPLES=Object.freeze({
 export class CombatAudio{
  constructor(ctx,destination){
   this.ctx=ctx;this.buffers=new Map();this.voices=[];this.sequence={};
-  this.bus=ctx.createDynamicsCompressor();this.bus.threshold.value=-12;this.bus.knee.value=8;
-  this.bus.ratio.value=5;this.bus.attack.value=.003;this.bus.release.value=.12;this.bus.connect(destination);
+  this.bus=ctx.createDynamicsCompressor();this.bus.threshold.value=-7;this.bus.knee.value=8;
+  this.bus.ratio.value=8;this.bus.attack.value=.003;this.bus.release.value=.08;
+  this.output=ctx.createGain();this.output.gain.value=.82;this.bus.connect(this.output).connect(destination);
+  this.presence=ctx.createBiquadFilter();this.presence.type='highshelf';this.presence.frequency.value=1800;this.presence.gain.value=4.5;this.presence.connect(this.bus);
+  this.lowCut=ctx.createBiquadFilter();this.lowCut.type='highpass';this.lowCut.frequency.value=85;this.lowCut.Q.value=.6;this.lowCut.connect(this.presence);
   this.ready=Promise.all(Object.values(COMBAT_SAMPLES).flat().map(async name=>{
    try{const response=await fetch(`${import.meta.env.BASE_URL}audio/combat/${name}.ogg`);
     if(!response.ok)throw Error(String(response.status));
@@ -17,26 +20,32 @@ export class CombatAudio{
    }catch(error){console.warn(`Combat recording unavailable: ${name}`,error);}
   }));
  }
- sample(kind,level,rate=1){
+ sample(kind,level,rate=1,{offset=0,delay=0,duration}={}){
   const variants=COMBAT_SAMPLES[kind],index=this.sequence[kind]??0;
   this.sequence[kind]=(index+1)%variants.length;
   const buffer=this.buffers.get(variants[index]);if(!buffer)return false;
   while(this.voices.length>=16)this.voices.shift().source.stop();
   const source=this.ctx.createBufferSource(),gain=this.ctx.createGain(),voice={source,gain};
-  source.buffer=buffer;source.playbackRate.value=rate;gain.gain.value=level;
-  source.connect(gain).connect(this.bus);this.voices.push(voice);
+  source.buffer=buffer;source.playbackRate.value=rate;
+  const when=this.ctx.currentTime+delay,seconds=Math.min(duration??buffer.duration-offset,buffer.duration-offset)/rate;
+  gain.gain.setValueAtTime(0,when);gain.gain.linearRampToValueAtTime(level,when+.002);
+  gain.gain.setValueAtTime(level,when+Math.max(.002,seconds-.025));gain.gain.linearRampToValueAtTime(0,when+seconds);
+  source.connect(gain).connect(this.lowCut);this.voices.push(voice);
   source.onended=()=>{const i=this.voices.indexOf(voice);if(i>=0)this.voices.splice(i,1);source.disconnect();gain.disconnect();};
-  source.start();return true;
+  source.start(when,offset,duration??Math.max(.01,buffer.duration-offset));return true;
  }
  play(kind){
   const rate=.96+Math.random()*.08;
   if(kind==='sword')return this.sample('sword',.65,rate);
-  if(kind==='clash')return this.sample('clash',.72,rate);
+  if(kind==='clash')return this.sample('clash',.6,rate,{offset:.15});
   if(kind==='hit'||kind==='heavy-hit'){
-   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?1.35:1.12,heavy?.88:rate);
-   this.sample('crunch',heavy?.95:.72,heavy?.86:1.05);
-   this.sample('clash',heavy?.3:.21,1.25);
-   this.sample('sword',heavy?.5:.35,1.1);
+   // The old wood layer arrived first; the cut and metal recordings had
+   // 130–150 ms of lead-in. Align their transients with the contact frame.
+   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?1.15:.95,heavy?.94:rate);
+   this.sample('hit',heavy?.65:.4,heavy?1.24:1.35,{offset:.09,delay:.018,duration:.24});
+   this.sample('crunch',heavy?.24:.14,heavy?1.12:1.3,{delay:.012,duration:.20});
+   this.sample('clash',heavy?.18:.1,1.35,{offset:.15,duration:.22});
+   this.sample('sword',heavy?.45:.32,1.35,{offset:.20,duration:.32});
    return played;
   }
   return false;

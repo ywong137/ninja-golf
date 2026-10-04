@@ -27,15 +27,15 @@ export class ImpactParticles{
   return {mesh,attributes,capacity,glowing,cursor:0,particles:Array.from({length:capacity},()=>({p:new T.Vector3(),v:new T.Vector3(),life:0,max:1,width:0}))};
  }
  emit(position,direction,{heavy=false,guarded=false,special=false}={}){
-  const count=special?360:heavy?216:120;
+  const count=special?440:heavy?290:176;
   for(let i=0;i<count;i++){
    velocity.set((Math.random()-.5)*13,1+Math.random()*10,(Math.random()-.5)*13).addScaledVector(direction,3);
    if(special)velocity.multiplyScalar(1.5);
-   this.add(0,position,velocity,.19+Math.random()*.32,.025+Math.random()*.035,i%4===0?0xfff4da:i%3===0?0x95deff:0xffbd5c);
+   this.add(0,position,velocity,.19+Math.random()*.32,.038+Math.random()*.048,i%4===0?0xfff4da:i%3===0?0x95deff:0xffbd5c);
   }
   if(!guarded)for(let i=0;i<(heavy?66:36);i++){
    velocity.set((Math.random()-.5)*3,Math.random()*2.4,(Math.random()-.5)*3).addScaledVector(direction,2.4);
-   this.add(1,position,velocity,.17+Math.random()*.23,.018+Math.random()*.027,i%2?0x9b1b2f:0x510b19);
+   this.add(1,position,velocity,.17+Math.random()*.23,.026+Math.random()*.035,i%2?0x9b1b2f:0x510b19);
   }
  }
  add(poolIndex,position,v,life,width,color){
@@ -48,7 +48,7 @@ export class ImpactParticles{
    for(let i=0;i<pool.capacity;i++){const p=pool.particles[i];
     if(p.life<=0){a.opacity.setX(i,0);continue;}
     p.life-=dt*(calm?4:1);p.v.y-=9.8*dt;p.p.addScaledVector(p.v,dt);
-    origin.copy(p.p).addScaledVector(p.v,-(pool.glowing?.065:.026));
+    origin.copy(p.p).addScaledVector(p.v,-(pool.glowing?.11:.035));
     a.head.setXYZ(i,p.p.x,p.p.y,p.p.z);a.tail.setXYZ(i,origin.x,origin.y,origin.z);
     const age=1-Math.max(0,p.life)/p.max;a.opacity.setX(i,Math.pow(1-age,.6));a.width.setX(i,p.width*(1-age*.6));
    }

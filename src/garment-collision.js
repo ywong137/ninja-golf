@@ -37,7 +37,7 @@ function shaderOffset(material){
  material.customProgramCacheKey=()=>key+'-garment-collision-v1';material.needsUpdate=true;
 }
 export class GarmentCollision{
- constructor(model,bones){
+ constructor(model,bones,{clearance=.016,surfaceQuantile=.96}={}){
   this.model=model;this.bones=bones;this.plans=[];this.proxies=[];
   this.report={vertices:0,corrected:0,maximumOffset:0};
   model.updateWorldMatrix(true,true);this.baseScale=model.getWorldScale(new T.Vector3()).x;
@@ -59,7 +59,7 @@ export class GarmentCollision{
     const radial=point.clone().sub(a).addScaledVector(axis,-t);
     if(radial.length()<.025*this.baseScale)continue;
     radial.normalize().applyQuaternion(bone.getWorldQuaternion(new T.Quaternion()).invert());
-    entries.push({id:v,side,outward:radial,clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?.022:.016,weight:T.MathUtils.smoothstep(hipHeight+.08*this.baseScale-point.y,0,.12*this.baseScale)});
+    entries.push({id:v,side,outward:radial,clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?clearance+.006:clearance,weight:T.MathUtils.smoothstep(hipHeight+.08*this.baseScale-point.y,0,.12*this.baseScale)});
    }
    if(entries.length)candidates.push({mesh,entries,ids:new Set(entries.map(e=>e.id))});
   });
@@ -73,7 +73,7 @@ export class GarmentCollision{
      const distance=delta.addScaledVector(axis,-t).length();radii[t<.45?0:1].push(distance);
     }
    });
-   const quantile=(list,fallback)=>{list.sort((a,b)=>a-b);return list.length?list[Math.floor((list.length-1)*.96)]:fallback*this.baseScale;};
+   const quantile=(list,fallback)=>{list.sort((a,b)=>a-b);return list.length?list[Math.floor((list.length-1)*surfaceQuantile)]:fallback*this.baseScale;};
    this.proxies.push({side,bone,lower:bones['calf_'+side],a,b,r0:quantile(radii[0],.135),r1:quantile(radii[1],.105),q:new T.Quaternion()});
   }
   for(const {mesh,entries}of candidates){

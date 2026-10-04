@@ -52,7 +52,8 @@ export class Rendering {
     // Separate thresholds keep the pass stable as waves enter and leave.
     const crowd=this.scene.userData.crowdCount||0;
     if(quality==='high'||crowd<24)this.contact.enabled=true;else if(crowd>32)this.contact.enabled=false;
-    this.bloom.enabled=this.scene.userData.courseTheme==='cyberpunk'||!!this.scene.userData.musou;this.bloom.strength=this.scene.userData.musou?.45:.32;this.bloom.threshold=this.scene.userData.musou?3.5:1.05;
+    const impact=this.scene.userData.contactFlash;
+    this.bloom.enabled=this.scene.userData.courseTheme==='cyberpunk'||!!this.scene.userData.musou||impact;this.bloom.strength=impact?.22:this.scene.userData.musou?.45:.32;this.bloom.threshold=this.scene.userData.musou||impact?3.5:1.05;
     const draw=()=>{if(quality==='low')this.renderer.render(this.scene,this.camera);else this.composer.render();};
     if(this.portraitRoots){
       // The AO override shader cannot use each scenery material's cutaway plane.

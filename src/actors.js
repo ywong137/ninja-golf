@@ -157,7 +157,7 @@ export class Warrior {
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
     this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[],overflow:templates[index].userData?.wardrobeDefault?.replacedBody?'nearest':'reject'}):null;
-    this.garmentCollision=!enemy?new GarmentCollision(this.model,this.bones):null;
+    this.garmentCollision=!enemy?new GarmentCollision(this.model,this.bones,WARRIORS[type].model==='sora'?{clearance:.028,surfaceQuantile:.99}:{}):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     this.armContinuation=!enemy&&this.nativeHuman?new ArmMotionContinuation(this.bones,this.golfRestPose):null;
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
