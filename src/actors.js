@@ -61,6 +61,7 @@ MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
 MODEL_REVISIONS.ayame='connected-combo-20261004';
 MODEL_REVISIONS.sora='selected-wardrobe-20261003';
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='native-facs-musou-20261004';
+MODEL_REVISIONS.shinobi='left-airborne-cut-20261004';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-emergence-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];

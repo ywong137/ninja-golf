@@ -67,16 +67,16 @@ test('source record export retains an explicit single-handed blade mount',()=>{
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 
-test('Shinobi heavy attack retains a full-body leap and lands with anatomical legs and grounded soles',async t=>{
+for(const [clipName,override,hand,step]of [['Shinobi_Airborne_Cut','Twin_Heavy_Cleave','r',0],['Shinobi_Left_Airborne_Cut','Twin_Heavy_Rising','l',1]])test(clipName+' retains a full-body leap and lands with anatomical legs and grounded soles',async t=>{
  const {captureFootSoles,sampleFootSole}=await import('../src/foot-sole.js');
- const motion=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url))).Shinobi_Airborne_Cut;
- assert.equal(hero.motionOverrides.Twin_Heavy_Cleave,'Shinobi_Airborne_Cut');
- assert.deepEqual(motion.impactHands,['r']);assert.ok(motion.nativeSourceMotion&&motion.nativeAttachment&&!motion.twoHanded);
+ const motion=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)))[clipName];
+ assert.equal(hero.motionOverrides[override],clipName);
+ assert.deepEqual(motion.impactHands,[hand]);assert.ok(motion.nativeSourceMotion&&motion.nativeAttachment&&!motion.twoHanded);
  assert.ok(motion.planarRoot.rows.at(-1).z>.8&&motion.planarRoot.rows.at(-1).z<1);
- const attack=withMotionTiming(attackDefinition('heavy',0,hero.combatStyle),motion);assert.ok(attack.hits[0]>.8&&attack.hits[0]<.95);
+ const attack=withMotionTiming(attackDefinition('heavy',step,hero.combatStyle),motion);assert.ok(attack.hits[0]>.8&&attack.hits[0]<.95);
  const rig=await loadNativeSkin(new URL('../public/models/shinobi.glb',import.meta.url)),bones={};rig.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});rig.scene.updateMatrixWorld(true);
  const legs={},arms={},wrists={};for(const side of ['r','l']){legs[side]=calibrateLegAnatomy(bones['thigh_'+side],bones['calf_'+side],bones['foot_'+side]);arms[side]=calibrateArmAnatomy(captureArmPose(bones,side));wrists[side]=calibrateWristAnatomy(captureWristPose(bones,side));}
- const soles=captureFootSoles(rig.scene),clip=rig.animations.find(c=>c.name==='Shinobi_Airborne_Cut'),action=rig.mixer.clipAction(clip).setLoop(LoopOnce).play();action.clampWhenFinished=true;
+ const soles=captureFootSoles(rig.scene),clip=rig.animations.find(c=>c.name===clipName),action=rig.mixer.clipAction(clip).setLoop(LoopOnce).play();action.clampWhenFinished=true;
  let lowest=Infinity,apex=0,landingError=0,maxWrist=0,minHip=Infinity,maxHip=-Infinity,firstChest,turn=0;
  for(let time=0;time<clip.duration;time+=1/240){
   action.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);
@@ -113,14 +113,15 @@ test('Shinobi return cut uses the complete mirrored performance and the left str
  assert.ok(r.duration-r.impacts[0]>.8,'Keep the complete source recovery.');
 });
 
-test('mirrored Shinobi motion preserves the source body trajectory with opposite limbs',async t=>{
+for(const [sourceName,mirroredName]of [['Shinobi_Stepping_Cut','Shinobi_Left_Stepping_Cut'],['Shinobi_Airborne_Cut','Shinobi_Left_Airborne_Cut']])test(mirroredName+' preserves the source body trajectory with opposite limbs',async t=>{
  const rig=await loadNativeSkin(new URL('../public/models/shinobi.glb',import.meta.url));
  const names=['pelvis','spine_03','Head',...['upperarm','lowerarm','hand','thigh','calf','foot'].flatMap(n=>['r','l'].map(s=>n+'_'+s))];
  rig.scene.updateMatrixWorld(true);const center=rig.scene.getObjectByName('pelvis').getWorldPosition(new Vector3()).x;
  const frame=(name,time)=>{rig.mixer.stopAllAction();const action=rig.mixer.clipAction(rig.animations.find(c=>c.name===name)).reset().setLoop(LoopOnce).play();action.clampWhenFinished=true;action.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);return Object.fromEntries(names.map(n=>[n,rig.scene.getObjectByName(n).getWorldPosition(new Vector3())]));};
  let error=0;
- for(const time of [0,.15,.3,.425,.6,.85,1.15,1.53]){
-  const original=frame('Shinobi_Stepping_Cut',time),mirrored=frame('Shinobi_Left_Stepping_Cut',time);
+ const duration=rig.animations.find(c=>c.name===sourceName).duration;
+ for(const fraction of [0,.10,.2,.3,.45,.6,.75,.9,1]){
+  const original=frame(sourceName,fraction*duration),mirrored=frame(mirroredName,fraction*duration);
   for(const name of names){const opposite=name.endsWith('_r')?name.slice(0,-2)+'_l':name.endsWith('_l')?name.slice(0,-2)+'_r':name;const expected=original[opposite].clone();expected.x=2*center-expected.x;error=Math.max(error,expected.distanceTo(mirrored[name]));}
  }
  assert.ok(error<.01,'Mirroring changes the whole-body source trajectory by more than one centimetre: '+error);

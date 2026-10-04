@@ -23,7 +23,7 @@ const STYLE_ATTACKS={
       {duration:.672,hits:[.28]},
       {duration:.812,hits:[.28,.532]},
     ],
-    heavy:[{},{},{duration:.984,hits:[.336,.636]},{}],
+    heavy:[{},{name:'Crossing dive'},{duration:.984,hits:[.336,.636]},{}],
   },
   naginata:{
     light:[

@@ -199,7 +199,19 @@
       "baseBinaryBytes": 19673608,
       "baseBinarySha256": "286ab167e19fbc43829452be0ada4ed86b3e68fa511496689ac41b0d3b8253d7",
       "target": "Musou_Snarl"
-    }
+    },
+    "animationRevisions": [
+      {
+        "sourceSha256": "7435a9330c9b563fdd2cb55ec4505e95f0b3284e4c17972248facf2686db8247",
+        "outputSha256": "ce41cd0e1fd0ec73595412b84a5f87c9d11221317f601b596d19d5582af14c14",
+        "baseBinaryBytes": 19864984,
+        "baseBinarySha256": "d639cf6427745cf146b0e1b02f3c2a62b559634d161fc604198fc15c378d5938",
+        "preservedAnimations": 41,
+        "addedClips": [
+          "Shinobi_Left_Airborne_Cut"
+        ]
+      }
+    ]
   },
   "kaede": {
     "originalBinarySha256": "47bceafa16535a853c0f09b476bbc9355090df49f1ce21ce1419de302300612a",

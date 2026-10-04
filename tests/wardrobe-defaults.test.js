@@ -8,14 +8,17 @@ const reports=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardr
 const hash=x=>createHash('sha256').update(x).digest('hex');
 for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfit preserves the face, rig and motion data`,()=>{
  const raw=fs.readFileSync(new URL('../public/models/'+model+'.glb',import.meta.url)),{doc,bin}=parseGlb(raw);
- assert.equal(hash(raw),saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
+ const revisions=saved.animationRevisions??[],appendedClips=revisions.flatMap(r=>r.addedClips);
+ let preceding=saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256;
+ for(const revision of revisions){assert.equal(revision.sourceSha256,preceding);assert.equal(hash(bin.subarray(0,revision.baseBinaryBytes)),revision.baseBinarySha256,'Preserve every preceding binary byte');assert.deepEqual(doc.animations.slice(revision.preservedAnimations,revision.preservedAnimations+revision.addedClips.length).map(a=>a.name),revision.addedClips);preceding=revision.outputSha256;}
+ assert.equal(hash(raw),revisions.at(-1)?.outputSha256??saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
  if(saved.facialRevision){const f=saved.facialRevision;assert.equal(hash(bin.subarray(0,f.baseBinaryBytes)),f.baseBinarySha256,'Every original binary byte must remain unchanged');assert.equal(f.sourceSha256,saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);withoutMusouTarget({doc});}
  for(const key of ['animations','nodes','skins'])assert.equal(hash(JSON.stringify(key==='animations'?doc.animations.slice(0,saved.preservedAnimations):doc[key])),saved.originalRigHashes[key],key);
  if(saved.motionExtension){
   const ext=saved.motionExtension;assert.equal(hash(bin.subarray(0,ext.baseBinaryBytes)),ext.baseBinarySha256);const meshes=structuredClone(doc.meshes);
   if(saved.garmentRevision){const revision=saved.garmentRevision;assert.equal(hash(bin.subarray(0,saved.motionAppend?.baseBinaryBytes??saved.facialRevision?.baseBinaryBytes??bin.length)),revision.binarySha256);assert.equal(hash(JSON.stringify(meshes)),revision.finalMeshesSha256);meshes[0].primitives.splice(revision.removedPrimitive,0,revision.removedPrimitiveDefinition);}
   assert.equal(hash(JSON.stringify(meshes)),ext.baseMeshesSha256);
-  assert.deepEqual(doc.animations.slice(saved.preservedAnimations).map(a=>a.name),ext.addedClips);
+  assert.deepEqual(doc.animations.slice(saved.preservedAnimations).map(a=>a.name),[...ext.addedClips,...appendedClips]);
  }else assert.equal(doc.animations.length,saved.preservedAnimations);
  for(let i=0;i<saved.originalFacePrimitives.length;i++)assert.deepEqual(doc.meshes[0].primitives[i+1],saved.originalFacePrimitives[i],'Preserve original face and hair streams.');
  assert.ok(doc.meshes[0].primitives.length<=8,'Keep the wardrobe within eight skinned draw groups.');
@@ -25,7 +28,7 @@ for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfi
   const ext=saved.motionAppend;
   assert.equal(ext.baseSha256,saved.garmentRevision.outputSha256);
   assert.equal(hash(JSON.stringify(doc.animations.slice(0,ext.baseAnimations))),ext.baseAnimationsSha256);
-  assert.deepEqual(doc.animations.slice(ext.baseAnimations).map(a=>a.name),ext.addedClips);
+  assert.deepEqual(doc.animations.slice(ext.baseAnimations).map(a=>a.name),[...ext.addedClips,...appendedClips]);
  }
  const joints=doc.skins[0].joints.length;
  for(const p of doc.meshes[0].primitives){

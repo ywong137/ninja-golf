@@ -169,3 +169,8 @@ License: MIT, Copyright (c) 2020 Microsoft (license text above).
 The original Rocketbox release credits the Headbox facial animation toolkit.
 Ninja Golf combines six FACS shapes and applies local mesh corrections.
 It retains the project's existing neutral geometry, textures, and animation.
+
+2026-10-04: Shinobi_Left_Airborne_Cut mirrors the complete fitted
+Shinobi_Airborne_Cut, derived from Adobe Mixamo Sword And Shield Power Slash.
+The standalone source stays private. The existing character geometry and
+native musou face target remain unchanged.
