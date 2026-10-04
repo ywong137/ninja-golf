@@ -1,0 +1,65 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as T from 'three';
+import {projectGarmentPoint} from '../src/garment-collision.js';
+import {ImpactParticles} from '../src/impact-particles.js';
+import {ENEMY_TYPES} from '../src/combat.js';
+import {validatePlanarRoot,attackRootDelta} from '../src/attack-root-motion.js';
+import {calibrateLegAnatomy,measureLegAnatomy} from '../src/leg-anatomy.js';
+import {loadNativeSkin} from './native-skin-helper.mjs';
+
+test('garment collision stays outside a raised thigh and preserves separated fabric layers',()=>{
+ for(const angle of [0,.6,1.3,2.1]){
+  const q=new T.Quaternion().setFromAxisAngle(new T.Vector3(1,0,0),angle);
+  const a=new T.Vector3(),b=new T.Vector3(0,-.5,0).applyQuaternion(q),outward=new T.Vector3(0,0,1).applyQuaternion(q);
+  const original=new T.Vector3(.04,-.2,-.06).applyQuaternion(q);
+  const lining=original.clone(),outer=original.clone();
+  projectGarmentPoint(lining,a,b,.13,.10,outward,.010);
+  projectGarmentPoint(outer,a,b,.13,.10,outward,.016);
+  const axis=b.clone().normalize(),t=outer.dot(axis),radial=outer.clone().addScaledVector(axis,-t);
+  assert.ok(radial.dot(outward)>0,'panel crossed to the back of the thigh');
+  assert.ok(radial.length()>=T.MathUtils.lerp(.13,.10,t/.5)+.016-1e-10);
+  assert.ok(outer.clone().sub(lining).dot(outward)>.0059,'fabric layers collapsed together');
+  const prior=outer.clone();assert.ok(projectGarmentPoint(outer,a,b,.13,.10,outward,.016)<1e-9);assert.ok(outer.distanceTo(prior)<1e-9);
+  const clear=new T.Vector3(.4,-.2,.2).applyQuaternion(q),before=clear.clone();
+  assert.equal(projectGarmentPoint(clear,a,b,.13,.10,outward,.016),0);assert.deepEqual(clear,before);
+ }
+});
+
+test('impact effects have bounded pools, distinguish guards, and clear when returning to golf',()=>{
+ const scene=new T.Scene(),effects=new ImpactParticles(scene),p=new T.Vector3(),direction=new T.Vector3(0,0,1);
+ effects.emit(p,direction,{guarded:true});assert.equal(effects.pools[1].particles.filter(p=>p.life>0).length,0);
+ effects.emit(p,direction,{heavy:true});assert.equal(effects.pools[1].particles.filter(p=>p.life>0).length,22);
+ for(let i=0;i<100;i++)effects.emit(p,direction,{special:true});
+ assert.equal(scene.children.length,2);assert.deepEqual(effects.pools.map(p=>p.particles.length),[1024,384]);
+ effects.update(.03);assert.ok(effects.pools[0].attributes.opacity.array.some(v=>v>0));
+ effects.update(1,true);assert.ok(effects.pools.every(p=>p.attributes.opacity.array.every(v=>v===0)));
+ effects.emit(p,direction);effects.update(.01);effects.clear();
+ assert.ok(effects.pools.every(p=>p.particles.every(v=>v.life===0)&&p.attributes.opacity.array.every(v=>v===0)));
+});
+
+test('all ninja attacks preserve knee hinges and move their root consistently at different frame rates',async()=>{
+ const records=JSON.parse(fs.readFileSync(new URL('../src/enemy-motion.json',import.meta.url)));
+ const g=await loadNativeSkin(new URL('../public/models/enemy-cloth-ninja.glb',import.meta.url));
+ const bones=side=>['thigh_','calf_','foot_'].map(n=>g.scene.getObjectByName(n+side));
+ const calibration=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(...bones(s))]));
+ for(const role of ENEMY_TYPES){
+  const record=records[role.clip];assert.ok(record.nativeSourceMotion);validatePlanarRoot(record.planarRoot);
+  const clip=g.animations.find(c=>c.name===role.clip);assert.ok(clip);
+  for(const hz of [30,60,120]){
+   let time=0;const position={x:0,z:0};
+   while(time<role.duration){const next=Math.min(role.duration,time+1/hz),d=attackRootDelta(record.planarRoot,time,next,role.duration,.6,1.1);position.x+=d.x;position.z+=d.z;time=next;}
+   const expected=attackRootDelta(record.planarRoot,0,role.duration,role.duration,.6,1.1);
+   assert.ok(Math.hypot(position.x-expected.x,position.z-expected.z)<1e-10);
+  }
+  g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
+  for(let i=0;i<=120;i++){
+   action.time=clip.duration*i/120;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+   for(const side of ['r','l']){const m=measureLegAnatomy(calibration[side],...bones(side));
+    assert.ok(m.kneeFlexion>=-.1&&m.kneeFlexion<140,`${role.name}: reversed or folded ${side} knee ${m.kneeFlexion}`);
+    assert.ok(m.kneeDeviation<.05,`${role.name}: sideways ${side} knee ${m.kneeDeviation}`);
+   }
+  }
+ }
+});

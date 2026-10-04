@@ -88,7 +88,15 @@ function specialWeapon(kind){
   }
   batchSpecial(group);group.userData.kind=kind;group.userData.grip=[0,0,0];return group;
 }
+export function throwingStarGeometry(radius=.16){
+  const shape=new THREE.Shape();for(let i=0;i<8;i++){const a=i*Math.PI/4,r=i%2?radius*.28:radius,x=Math.cos(a)*r,y=Math.sin(a)*r;i?shape.lineTo(x,y):shape.moveTo(x,y);}shape.closePath();
+  const hole=new THREE.Path();hole.absarc(0,0,radius*.11,0,Math.PI*2,true);shape.holes.push(hole);
+  const geometry=new THREE.ExtrudeGeometry(shape,{depth:.008,bevelEnabled:true,bevelThickness:.0015,bevelSize:.002,bevelSegments:1,curveSegments:12});geometry.translate(0,0,-.004);return geometry;
+}
 export function createWeapon(kind='odachi'){
+  if(kind==='shuriken'){
+    if(cache.has(kind))return cache.get(kind).clone();const group=new THREE.Group(),star=new THREE.Mesh(throwingStarGeometry(.105),steel);star.position.y=.105;star.castShadow=true;star.name='Four-point throwing star';group.add(star);group.userData={kind,tip:[0,.21,0],primaryGrip:0,defaultGrip:0,gripRadius:.012};cache.set(kind,group);return group.clone();
+  }
   if(cache.has(kind))return cache.get(kind).clone();if(SPECIAL_WEAPON_KINDS.includes(kind)){const weapon=specialWeapon(kind);cache.set(kind,weapon);return weapon.clone();}const p=BLADE_PROFILES[kind];if(!p)throw new Error(`Unknown weapon kind: ${kind}`);const group=new THREE.Group(),pieces=[],fittingParts=[];
   const add=(geo,color,x,y,z,sx=1,sy=1,sz=1)=>{const g=geo.index?geo.toNonIndexed():geo.clone();g.scale(sx,sy,sz);g.translate(x,y,z);const c=new THREE.Color(color),colors=[];for(let i=0;i<g.attributes.position.count;i++)colors.push(c.r,c.g,c.b);g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));fittingParts.push({start:pieces.reduce((sum,piece)=>sum+piece.attributes.position.count,0),count:g.attributes.position.count});pieces.push(g);geo.dispose();};
   const pole=kind==='naginata'||kind==='lancer';

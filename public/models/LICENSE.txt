@@ -5,9 +5,10 @@ https://github.com/microsoft/Microsoft-Rocketbox
 Source commit: 0943055db6ec570bcef9f2c8b41c9e5467c808f9
 
 The six heroes and four source enemy roles derive from the licensed bodies,
-faces, clothing meshes, and textures. Three enemy wardrobes reuse these bodies.
+faces, clothing meshes, and textures. The retained source wardrobes reuse these bodies.
 The cloth ninja adds original weighted wraps and generated cloth artwork.
-The runtime assigns four fixed palettes to each wardrobe, independently of role.
+The runtime uses only the cloth ninja, with four dark palettes and course trim,
+independently of its combat role.
 Native motion and hand markers fit each original skeleton.
 Source identities and build details: docs/rocketbox-roster.md.
 Enemy wardrobe sources and artwork: assets/enemies/SOURCES.md.
@@ -139,3 +140,8 @@ The Hustler three-cut light chain adapts Sword_Regular_Combo and matching A/B
 recoveries from Quaternius Universal Animation Library 2 (CC0).
 Hustler_Musou_Advance adapts Sword_Heavy_Combo from the same library.
 Both preserve the original human mesh, likeness, clothing, rig, and previous clips.
+
+The four current ninja attacks adapt Quaternius UAL2 Sword_Regular_A,
+Sword_Regular_A_Rec, Sword_Regular_B, Sword_Regular_B_Rec, Sword_Regular_C,
+and OverhandThrow (CC0). The export fits the native joints and extracts
+planar travel for terrain-aware movement.

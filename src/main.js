@@ -1,3 +1,4 @@
+import enemyMotions from './enemy-motion.json';
 import {findWaterEmergence,waterEmergencePosition} from './water-emergence.js';
 import './style.css';
 import './selection.css';
@@ -155,7 +156,7 @@ class Game {
     const p=this.player.root.position,yaw=Math.atan2(this.ball.position.x-p.x,this.ball.position.z-p.z);
     const sites=chooseAmbushSites(this.world.ambushSites,p,yaw,this.time);if(!sites.length)return;const waterEntries=new Map();
     for(let i=0;i<count&&this.enemies.filter(e=>!e.dead).length<64&&this.enemiesSpawned<this.enemyBudget;i++){
-      const site=sites[i%Math.min(5,sites.length)],slot=this.enemiesSpawned,enemy=new Warrior(enemyTypeForSlot(slot),true,enemyAppearanceForSlot(slot));
+      const site=sites[i%Math.min(5,sites.length)],slot=this.enemiesSpawned,enemy=new Warrior(enemyTypeForSlot(slot),true,enemyAppearanceForSlot(slot,this.course.theme));
       // Entrances always begin at visible scenery, then land on a verified dry point.
       const dx=p.x-site.x,dz=p.z-site.z,length=Math.hypot(dx,dz)||1;let x=site.x+dx/length*2.5,z=site.z+dz/length*2.5;
       let landing=null,waterEntry=null;
@@ -207,12 +208,12 @@ class Game {
   }
   strike(action){
     const strikeFacing=this.attackYaw+(action.headings?.[action.hitIndex]||0),strikeArc=action.kind==='musou'&&action.hitIndex<action.hits.length-1?1.1:action.arc;
-    this.effects.slash(this.player.root.position,strikeFacing,action.kind!=='light',{style:action.style,reach:action.reach,arc:strikeArc,color:this.warrior.color});if(action.kind==='musou')this.effects.flourish(this.player.root.position,action.hitIndex,this.warrior.color,action.style,{final:action.hitIndex===action.hits.length-1});let hit=false;
+    this.effects.slash(this.player.root.position,strikeFacing,action.kind!=='light',{style:action.style,reach:action.reach,arc:strikeArc,color:this.warrior.color});if(action.kind==='musou')this.effects.flourish(this.player.root.position,action.hitIndex,this.warrior.color,action.style,{final:action.hitIndex===action.hits.length-1});let hit=false,guardedHit=false;
     for(const e of this.enemies){if(e.dead||e.emerging)continue;v1.copy(e.root.position).sub(this.player.root.position);
-      if(strikeContains(v1.x,v1.z,strikeFacing,action.reach,strikeArc)&&this.world.collision.segmentClear({x:this.player.root.position.x,y:this.player.root.position.y+1,z:this.player.root.position.z},{x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},0,0,true)){const front=Math.cos(Math.atan2(-v1.x,-v1.z)-e.root.rotation.y)>.35,multiplier=guardDamageMultiplier(e.type,action.kind,front,e.stun>0);e.hp-=action.damage*this.warrior.damage*multiplier;hit=true;if(multiplier<1)this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.4,0)),15,4,0);if(multiplier===1){if(action.kind!=='light'){e.stun=ENEMY_TYPES[e.type].armor?1.3:.6;if(ENEMY_TYPES[e.type].armor)this.ui.combatCue('GUARD BROKEN');}e.enemyAction=null;e.oneShot=0;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(action.pull?-Math.min(10,Math.max(0,v1.length()-2)*4):action.knockback||(action.kind==='light'?7:14));e.verticalSpeed=action.launch||0;e.strike=0;e.cooldown=1.1;}this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.2,0)),action.kind==='light'?20:45,action.kind==='light'?6:11,action.kind==='musou'?2:0);
+      if(strikeContains(v1.x,v1.z,strikeFacing,action.reach,strikeArc)&&this.world.collision.segmentClear({x:this.player.root.position.x,y:this.player.root.position.y+1,z:this.player.root.position.z},{x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},0,0,true)){const front=Math.cos(Math.atan2(-v1.x,-v1.z)-e.root.rotation.y)>.35,multiplier=guardDamageMultiplier(e.type,action.kind,front,e.stun>0);e.hp-=action.damage*this.warrior.damage*multiplier;hit=true;guardedHit ||= multiplier<1;if(multiplier<1)this.effects.burst(e.root.position.clone().add(new THREE.Vector3(0,1.4,0)),15,4,0);if(multiplier===1){if(action.kind!=='light'){e.stun=ENEMY_TYPES[e.type].armor?1.3:.6;if(ENEMY_TYPES[e.type].armor)this.ui.combatCue('GUARD BROKEN');}e.enemyAction=null;e.oneShot=0;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(action.pull?-Math.min(10,Math.max(0,v1.length()-2)*4):action.knockback||(action.kind==='light'?7:14));e.verticalSpeed=action.launch||0;e.strike=0;e.cooldown=1.1;}this.effects.hit(e.root.position.clone().add(new THREE.Vector3(0,1.2,0)),v1.clone().setY(0).normalize(),{heavy:action.kind!=='light',special:action.kind==='musou',guarded:multiplier<1});
         if(e.hp<=0){e.dead=.001;e.dramaticDeath=action.kind==='musou';e.deathYaw=e.root.rotation.y;e.tumble=(e.slot%2?1:-1)*(2.6+(e.slot%3)*.6);e.verticalSpeed=e.dramaticDeath?9+(e.slot%4)*1.3:action.kind==='heavy'?5:2;e.knockback.copy(v1).setY(0).normalize().multiplyScalar(e.dramaticDeath?18+(e.slot%3)*3:9);if(e.dramaticDeath)this.effects.explosion(e.root.position,0.75);this.kills++;this.combo++;this.bestCombo=Math.max(this.bestCombo,this.combo);this.resolve=Math.min(100,this.resolve+7);this.health=Math.min(this.warrior.health,this.health+1.6);}}
     }
-    if(hit){this.audio.play('hit');this.hitStop=action.kind==='light'?.045:action.kind==='musou'?.065:.085;this.shake=action.kind==='light'?.075:.16;}
+    if(hit){this.audio.play(action.kind!=='light'?'heavy-hit':guardedHit?'clash':'hit');this.hitStop=action.kind==='light'?.045:action.kind==='musou'?.065:.085;this.shake=action.kind==='light'?.075:.16;}
   }
   updateCombat(dt){
     const input=this.input,p=this.player.root.position;
@@ -413,12 +414,15 @@ class Game {
       const toward=Math.atan2(p.x-e.root.position.x,p.z-e.root.position.z);e.root.rotation.y=turnToward(e.root.rotation.y,e.enemyAction?e.enemyAction.yaw:enemyMoving&&!definition.ranged?(e.moveYaw??toward):toward,dt*12);
       if(engaged.has(e)&&distance<definition.reach&&this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&e.cooldown<=0&&e.lift<.1&&e.stun<=0&&!e.enemyAction){
         e.enemyAction={token:`enemy-${++this.enemyActionSerial}`,duration:definition.duration,time:0,hitIndex:0,yaw:toward,target:p.clone().add(new THREE.Vector3(this.playerVelocity.x*.22,1,this.playerVelocity.z*.22))};e.cooldown=definition.duration+definition.recovery+Math.random()*.6;e.readyAt=this.time+e.cooldown+(Math.random()<.65?1.6+Math.random()*2.6:0);
-        this.effects.telegraph(e.root.position,toward,definition.reach,definition.hits[0],e.type===2?'thrust':definition.ranged?'ranged':'sweep');
+        this.effects.telegraph(e.root.position,toward,definition.reach,definition.hits[0],definition.ranged?'ranged':'sweep');
       }
-      if(e.enemyAction){const a=e.enemyAction;a.time+=dt;e.strike=Math.max(0,a.duration-a.time);
+      if(e.enemyAction){const a=e.enemyAction,previousTime=a.time;a.time+=dt;
+        const path=enemyMotions[definition.clip]?.planarRoot;
+        if(path){const delta=attackRootDelta(path,previousTime,a.time,a.duration,a.yaw,e.root.scale.x),before=e.root.position.clone();e.root.position.x+=delta.x;e.root.position.z+=delta.z;this.slideOnLand(e.root.position,before,.31,0);e.root.position.y=heightAt(this.course,e.root.position.x,e.root.position.z);}
+        e.strike=Math.max(0,a.duration-a.time);
         while(a.hitIndex<definition.hits.length&&a.time>=definition.hits[a.hitIndex]){
-          if(definition.ranged){this.projectiles.spawn(e.root.position.clone().add(new THREE.Vector3(0,1.35,0)),a.target,definition.damage,e);this.audio.play('sword');}
-          else if(this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&strikeContains(p.x-e.root.position.x,p.z-e.root.position.z,a.yaw,definition.reach+.3,e.type===2?.48:1.15))this.hurt(definition.damage,e.root.position,e);
+          if(definition.ranged){this.projectiles.spawn(e.bones.hand_r.getWorldPosition(new THREE.Vector3()),a.target,definition.damage,e);this.audio.play('sword');}
+          else if(this.world.collision.segmentClear({x:e.root.position.x,y:e.root.position.y+1,z:e.root.position.z},{x:p.x,y:p.y+1,z:p.z},0,0,true)&&strikeContains(p.x-e.root.position.x,p.z-e.root.position.z,a.yaw,definition.reach+.3,1.15))this.hurt(definition.damage,e.root.position,e);
           a.hitIndex++;if(!e.enemyAction)break;
         }
       }else e.strike=0;

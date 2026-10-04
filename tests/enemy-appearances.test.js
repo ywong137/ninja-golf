@@ -4,8 +4,11 @@ import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy
 import{ENEMY_TYPES}from'../src/combat.js';import{loadNativeSkin}from'./native-skin-helper.mjs';
 const directory=process.env.ENEMY_APPEARANCE_DIR||new URL('../public/models/',import.meta.url).pathname;
 const read=file=>{const raw=fs.readFileSync(file),n=raw.readUInt32LE(12);return{doc:JSON.parse(raw.subarray(20,20+n)),bin:raw.subarray(28+n)}};
-test('twelve fixed enemy appearances cover each family without changing four combat roles',()=>{
- assert.equal(ENEMY_TYPES.length,4);assert.equal(ENEMY_APPEARANCES.length,3);const seen=new Set();for(let slot=0;slot<12;slot++){let a=resolveEnemyAppearance(enemyAppearanceForSlot(slot));seen.add(a.definition.id+':'+a.definition.palettes[a.palette].id);}assert.equal(seen.size,12);assert.deepEqual(ENEMY_APPEARANCES[1].palettes.map(p=>p.id),['white','red','gray','navy']);assert.deepEqual(ENEMY_APPEARANCES[2].palettes.map(p=>p.id),['black','darkgray','darkblue','burgundy']);assert.throws(()=>enemyAppearanceForSlot(-1));assert.throws(()=>resolveEnemyAppearance({family:3}));
+test('all roles use traditional ninja cloth with four dark palettes and course trim',()=>{
+ assert.equal(ENEMY_TYPES.length,4);assert.equal(ENEMY_APPEARANCES.length,1);
+ const seen=new Set();for(let slot=0;slot<16;slot++){const a=resolveEnemyAppearance(enemyAppearanceForSlot(slot,'desert'));seen.add(a.palette+':'+a.trim);assert.equal(a.definition.id,'cloth-ninja');assert.equal(a.theme,'desert');}
+ assert.equal(seen.size,16);assert.deepEqual(ENEMY_APPEARANCES[0].palettes.map(p=>p.id),['black','charcoal','navy','indigo']);
+ assert.throws(()=>enemyAppearanceForSlot(-1));assert.throws(()=>resolveEnemyAppearance({family:1}));assert.throws(()=>resolveEnemyAppearance({trim:4}));
 });
 for(const family of ENEMY_APPEARANCES)test(`${family.id}: every role attack and native knee frames during running and jumps`,async()=>{
  const file=path.join(directory,family.model+'.glb'),asset=read(file),g=await loadNativeSkin(file),point=name=>g.scene.getObjectByName(name).getWorldPosition(new T.Vector3());

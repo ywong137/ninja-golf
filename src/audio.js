@@ -1,3 +1,4 @@
+import {CombatAudio} from './combat-audio.js';
 import {FieldAudio} from './field-audio.js';
 import {MusicPlaylist} from './music-playlist.js';
 import {SOUNDTRACKS} from './soundtracks.js';
@@ -14,7 +15,7 @@ export class AudioEngine {
   async start(){
     try{
       if(!this.ctx){
-        this.ctx=new (window.AudioContext||window.webkitAudioContext)();this.master=this.ctx.createGain();this.master.gain.value=this.enabled?this.volume:0;this.master.connect(this.ctx.destination);this.field=new FieldAudio(this.ctx,this.master);
+        this.ctx=new (window.AudioContext||window.webkitAudioContext)();this.master=this.ctx.createGain();this.master.gain.value=this.enabled?this.volume:0;this.master.connect(this.ctx.destination);this.field=new FieldAudio(this.ctx,this.master);this.combat=new CombatAudio(this.ctx,this.master);
         for(const track of Object.values(this.tracks)){track.source=this.ctx.createMediaElementSource(track.element);track.gain=this.ctx.createGain();track.gain.gain.value=0;track.source.connect(track.gain).connect(this.master);}
       }
       this.paused=false;if(this.enabled)this.channel?.postMessage('playing');await this.ctx.resume();this.syncMusic();
@@ -41,16 +42,15 @@ export class AudioEngine {
   tone(freq,duration,volume=.2,type='sine',end=freq){if(!this.ctx||!this.enabled)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(10,end),t+duration);g.gain.setValueAtTime(.001,t);g.gain.linearRampToValueAtTime(volume,t+.006);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g).connect(this.master);o.start(t);o.stop(t+duration+.01);}
   update(dt,combat,position,coastal=true){if(this.ctx&&!this.paused&&this.enabled)this.field?.update(dt,combat,Math.abs(position.x-145),coastal);}
   play(name,lie='Fairway'){if(!this.enabled||this.paused)return;
+    if(['sword','hit','heavy-hit','clash'].includes(name)){if(!this.combat?.play(name))this.noise(name==='sword'?.16:.09,name==='sword'?2200:900,.3);return;}
     if(name==='step'&&this.field?.play(lie==='Bunker'?'step_sand':'step_grass',.22,.94+Math.random()*.12))return;
-    if((name==='sword'||name==='swing')&&this.field?.play('rod_swish',name==='sword'?.52:.68,name==='sword'?1.35:1.2))return;
+    if(name==='swing'&&this.field?.play('rod_swish',.68,1.2))return;
     if(name==='water'&&this.field?.play('splash',.4))return;
     if(name==='click'&&this.field?.play('bail_click',.18,1.15))return;
     if(name==='land'&&this.field?.play(lie==='Bunker'?'step_sand':'step_grass',.16,.8))return;
     if(name==='swing'){this.noise(.24,3800,.6);this.tone(700,.09,.5,'triangle',170);}
     if(name==='putt'){this.tone(600,.06,.23,'sine',160);this.noise(.04,1600,.16);}
     if(name==='land')this.noise(.1,330,.28);
-    if(name==='sword'){this.noise(.19,2400,.55);this.tone(230,.12,.09,'triangle',90);}
-    if(name==='hit'){this.noise(.13,700,.7);this.tone(940,.14,.23,'triangle',400);}
     if(name==='hurt'){this.noise(.18,390,.38);this.tone(80,.2,.2,'sawtooth',40);}
     if(name==='special'){this.noise(.9,1200,.85);this.tone(65,.9,.35,'triangle',210);}
     if(name==='cup'){this.tone(880,.38,.2,'sine',760);this.noise(.15,320,.18);}
@@ -58,6 +58,6 @@ export class AudioEngine {
     if(name==='click')this.tone(560,.045,.08,'sine',440);
     if(name==='water')this.noise(.7,1200,.45);
   }
-  pause(){this.paused=true;clearTimeout(this.fadeTimer);for(const track of Object.values(this.tracks))track.element.pause();this.ctx?.suspend();}
+  pause(){this.paused=true;this.combat?.stop();clearTimeout(this.fadeTimer);for(const track of Object.values(this.tracks))track.element.pause();this.ctx?.suspend();}
   resume(){if(this.ctx)this.start();}
 }

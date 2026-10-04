@@ -1,3 +1,4 @@
+import {GarmentCollision} from './garment-collision.js';
 import {LegJointBalance} from './leg-joint-balance.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -6,7 +7,9 @@ import {WARRIOR_ASSET_NAMES} from './warrior-assets.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
 import { WARRIORS } from './warriors.js';
 import { createWeapon } from './weapons.js';
-import { motions, sampleMotionInto, combatMotionName } from './motion.js';
+import { motions as heroMotions, sampleMotionInto, combatMotionName } from './motion.js';
+import enemyMotions from './enemy-motion.json';
+const motions={...heroMotions,...enemyMotions};
 import {matchesContinuationBoundary} from './attack-continuation.js';
 import {headingKnee} from './knee-alignment.js';
 import {RunFootwork} from './run-footwork.js';
@@ -56,7 +59,7 @@ MODEL_REVISIONS.monk='hostile-takeover-20261003';
 MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
 MODEL_REVISIONS.ayame='connected-combo-20261004';
 MODEL_REVISIONS.sora='selected-wardrobe-20261003';
-for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='enemy-native-leg-frames-2';
+for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-body-attacks-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
 const retargeted=new Map();
@@ -109,7 +112,7 @@ function clipsFor(index){
   retargeted.set(index,clips);return clips;
 }
 export class Warrior {
-  constructor(type=0,enemy=false,appearance={family:type%3,palette:0}){
+  constructor(type=0,enemy=false,appearance={family:0,palette:0}){
     this.motionSample={};
     this.appearance=enemy?resolveEnemyAppearance(appearance):null;
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+this.appearance.family:type;
@@ -124,6 +127,7 @@ export class Warrior {
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
     this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[],overflow:templates[index].userData?.wardrobeDefault?.replacedBody?'nearest':'reject'}):null;
+    this.garmentCollision=!enemy?new GarmentCollision(this.model,this.bones):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     this.armContinuation=!enemy&&this.nativeHuman?new ArmMotionContinuation(this.bones,this.golfRestPose):null;
     const chestInverse=this.bones.spine_03.getWorldQuaternion(new THREE.Quaternion()).invert();
@@ -190,6 +194,9 @@ export class Warrior {
       const relative=handFrame.invert().multiply(held.quaternion);
       basis.multiply(new THREE.Quaternion().setFromAxisAngle(axisY,2*Math.atan2(relative.y,relative.w)));
     }
+    // The classic ninja grip uses the same round handle mount for every cut.
+    // Calibrate its edge once; never turn the blade independently during a swing.
+    if(enemy)for(const basis of Object.values(palmFrames))basis.multiply(new THREE.Quaternion().setFromAxisAngle(axisY,-80*Math.PI/180));
     this.palmWeaponFrames=palmFrames;
     if(!enemy&&gripData[WARRIORS[type].model]){
       this.handGrip=new HandGrip(this,gripData[WARRIORS[type].model]);
@@ -581,6 +588,7 @@ export class Warrior {
     // Extracted root travel and the skeleton use the same action clock.
     // An attack started by input this frame still has time zero.
     if((action?.planarRoot||action?.syncMotion)&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,action.time/action.duration*playback.getClip().duration);this.updateMixer(0);}
+    if(enemyAction&&!previewPose){const playback=this.actions.get(this.current);playback.time=Math.min(playback.getClip().duration,enemyAction.time/enemyAction.duration*playback.getClip().duration);this.updateMixer(0);}
     this.armContinuation?.apply(this.mixer.time);
     this.recordedStopPose?.applyExit(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
@@ -733,8 +741,9 @@ export class Warrior {
       if(golf?.isScheduled())weight+=golfShoulderSkinWeight(golf.time,THREE.MathUtils.clamp(golf.getEffectiveWeight(),0,1));
     weight=Math.min(1,weight);
     this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight});
+    this.garmentCollision?.update();
   }
-  dispose(){this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);const skeletons=new Set();this.model.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();for(const material of this.ownedMaterials)material.dispose();}
+  dispose(){this.garmentCollision?.dispose();this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);const skeletons=new Set();this.model.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {
   constructor(scene){

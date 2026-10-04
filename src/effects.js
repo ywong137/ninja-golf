@@ -1,3 +1,4 @@
+import {ImpactParticles} from './impact-particles.js';
 import * as THREE from 'three';
 const PALETTE=['#ffe1a0','#c9d9af','#ee557d','#9ee4ff','#dcc294'];
 const TRAIL_HANDS=[[],['r'],['l'],['r','l']].map(Object.freeze);
@@ -27,7 +28,7 @@ export function telegraphGeometry(position,yaw,reach,type,groundHeight){
 }
 export class Effects {
   constructor(scene,groundHeight){
-    this.groundHeight=groundHeight;
+    this.groundHeight=groundHeight;this.impacts=new ImpactParticles(scene);
     this.scene=scene;this.items=[];this.ribbonTracks=new Map();this.ribbonSamples=[];this.elapsed=0;this.capacity=4096;this.cursor=0;this.particles=Array.from({length:this.capacity},()=>({life:0,v:new THREE.Vector3()}));
     this.positions=new Float32Array(this.capacity*3);this.colors=new Float32Array(this.capacity*3);this.sizes=new Float32Array(this.capacity);
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(this.positions,3).setUsage(THREE.DynamicDrawUsage));geometry.setAttribute('color',new THREE.BufferAttribute(this.colors,3));geometry.setAttribute('size',new THREE.BufferAttribute(this.sizes,1).setUsage(THREE.DynamicDrawUsage));
@@ -39,8 +40,9 @@ export class Effects {
   }
   particle(position,velocity,life,size,kind){const i=this.cursor++%this.capacity,p=this.particles[i];p.life=p.max=life;p.size=size;p.v.copy(velocity);position.toArray(this.positions,i*3);this.palette[kind].toArray(this.colors,i*3);this.points.geometry.attributes.color.needsUpdate=true;}
   burst(position,count=12,power=4,kind=0){for(let i=0;i<count;i++)this.particle(position,new THREE.Vector3((Math.random()-.5)*power,Math.random()*power*.8,(Math.random()-.5)*power),.35+Math.random()*.55,.07+Math.random()*.16,kind);}
-  explosion(position,scale=1){
-    const center=position.clone().add(new THREE.Vector3(0,.8,0));this.burst(center,Math.round(48*scale),12*scale,0);this.burst(center,Math.round(24*scale),9*scale,2);
+  hit(position,direction,options={}){this.impacts.emit(position,direction,options);this.explosion(position.clone().add(new THREE.Vector3(0,-.8,0)),options.heavy?.36:.23,{debris:false});}
+  explosion(position,scale=1,{debris=true}={}){
+    const center=position.clone().add(new THREE.Vector3(0,.8,0));if(debris){this.burst(center,Math.round(48*scale),12*scale,0);this.burst(center,Math.round(24*scale),9*scale,2);}
     const material=new THREE.ShaderMaterial({
       transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
       uniforms:{tint:{value:new THREE.Color('#ffe8b8')},opacity:{value:.7}},
@@ -68,6 +70,7 @@ export class Effects {
     this.items.push({m,life:.22,max:.22,peak:.6,growth:3,flash:true});
   }
   flourish(position,beat,color,style,{final=false}={}){
+    this.impacts.emit(position.clone().add(new THREE.Vector3(0,1.2,0)),new THREE.Vector3(Math.sin(beat),.1,Math.cos(beat)),{heavy:true,special:true,guarded:true});
     for(let i=0;i<3;i++){
       const radius=2.4+i*1.3,m=new THREE.Mesh(new THREE.RingGeometry(radius,radius+.12,64,1,-2.1,4.2),new THREE.MeshBasicMaterial({color:i===1?'#fff1b2':color,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
       m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.5,max:.5,peak:.48,growth:style==='ring'?3:2.1});
@@ -97,9 +100,9 @@ export class Effects {
     }else this.burst(m.position,special?80:20,special?17:7,special?2:0);
   }
   update(dt,calm=false){
-    this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<.18&&!calm));
+    this.impacts.update(dt,calm);this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<.18&&!calm));
     const rg=this.ribbon.geometry;let n=0;for(const samples of this.ribbonTracks.values())for(let i=1;i<samples.length;i++){const a=samples[i-1],b=samples[i];for(const [sample,point] of [[a,a.a],[a,a.b],[b,b.b],[a,a.a],[b,b.b],[b,b.a]]){point.toArray(rg.attributes.position.array,n*3);this.palette[sample.kind].toArray(rg.attributes.color.array,n*3);rg.attributes.alpha.array[n++]=Math.max(0,1-(this.elapsed-sample.time)/.18)*.24*(point===sample.a?0:1);}}
     rg.setDrawRange(0,n);Object.values(rg.attributes).forEach(a=>a.needsUpdate=true);
     for(let i=0;i<this.capacity;i++){const p=this.particles[i];if(p.life<=0)continue;p.life-=dt*(calm?3:1);p.v.y-=6*dt;const j=i*3;this.positions[j]+=p.v.x*dt;this.positions[j+1]+=p.v.y*dt;this.positions[j+2]+=p.v.z*dt;this.sizes[i]=Math.max(0,p.life/p.max)*p.size;}this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.size.needsUpdate=true;for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt*(calm?3:1);if(p.life<=0){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();this.items.splice(i,1);}else{p.m.material.opacity=p.telegraph?.12+(1-p.life/p.max)*.18:p.life/p.max*(p.peak||.32);if(p.flash)p.m.material.uniforms.opacity.value=p.m.material.opacity;if(!p.telegraph)p.m.scale.multiplyScalar(1+dt*(p.growth||3));}}}
-  clear(){for(const p of this.items){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();}this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
+  clear(){this.impacts.clear();for(const p of this.items){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();}this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
 }
