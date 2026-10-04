@@ -31,6 +31,7 @@ import {TravelPose} from './travel-pose.js';
 import {pairedTravelGrip} from './travel-grip.js';
 import {AttackLocomotion} from './attack-locomotion.js';
 import {FacialPose} from './facial-pose.js';
+import {loadMusouAlbedo,installMusouAlbedo} from './musou-albedo.js';
 import {palmWeaponBasis,alignWeaponShaft} from './weapon-frame.js';
 import {HandGrip,compatibleNativePair} from './hand-grip.js';
 import {PairedGripClosure} from './paired-grip-closure.js';
@@ -94,6 +95,7 @@ const warriorAssets=createAssetCache(async name=>{
    finishCharacterMaterial(material);if(material.map)material.map.anisotropy=8;if(material.normalMap)material.normalMap.anisotropy=4;material.envMapIntensity=.6;modelMaterials.push(material);
   }
  }});
+ const musouAlbedo=loadMusouAlbedo(name);if(musouAlbedo)modelMaterials.push({map:musouAlbedo});
  await awaitCharacterMaterials(modelMaterials);
  // Fixed slots keep a late or retried download from changing the roster order.
  templates[index]=model;return model;
@@ -149,6 +151,8 @@ export class Warrior {
     this.shaftAxes={r:new THREE.Vector3().fromArray(this.rigMetadata.shaftAxisR||[0,0,1]),l:new THREE.Vector3().fromArray(this.rigMetadata.shaftAxisL||[0,0,1])};
     this.bones={};this.ownedMaterials=[];this.model.traverse(o=>{if(o.isBone)this.bones[o.name]=o;if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;if(enemy){o.material=o.material.clone();finishCharacterMaterial(o.material);this.ownedMaterials.push(o.material);if(/Woven|Silk|Indigo/.test(o.material.name))o.material.color.set(['#344b58','#6b3128','#7b7450','#574767'][type%4]);if(/brass/i.test(o.material.name))o.material.color.set('#555b51');}}});
     if(enemy)applyEnemyAppearance(this.model,this.appearance);
+    this.musouAlbedo=enemy?null:installMusouAlbedo(this.model,loadMusouAlbedo(WARRIORS[type].model));
+    if(this.musouAlbedo)this.ownedMaterials.push(...this.musouAlbedo.materials);
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
@@ -169,7 +173,7 @@ export class Warrior {
     this.footPlacement=!enemy&&this.nativeHuman?new FootPlacement(this.root,this.bones):null;
     this.sourceTerrain=!enemy&&this.nativeHuman?new SourceTerrainFrame(this.root,this.model,this.bones):null;
     this.pairedGripClosure=!enemy&&this.nativeHuman?new PairedGripClosure(this.bones):null;
-    this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model,model:this.model}):null;
+    this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model,model:this.model,albedo:this.musouAlbedo}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     this.footContactMotions=new Map(clipsFor(index).map(c=>[c.name,resolveFootSupport(c,motions[c.name])]));
@@ -698,7 +702,7 @@ export class Warrior {
     this.travelPose?.apply(dt,this.running&&!authoredTravel&&!golf&&!dodge&&!selection&&!action&&!blocking,{motion,bodyMotionWeight,nativeAttachment:!!motions[this.current]?.nativeAttachment,exitDuration:blocking?.30:action?.kind==='light'?(motions[this.current]?.carryExitDuration??(motions[this.current]?.athleticAttack?.10:.12)):action?.kind==='heavy'?(motions[this.current]?.carryExitDuration??.22):.16});
     if(this.facialPose){
       if(cinematic){
-        const head=this.bones.Head,chin=new THREE.Quaternion().setFromAxisAngle(this.facialPose.right,2*Math.PI/180);
+        const head=this.bones.Head,chin=new THREE.Quaternion().setFromAxisAngle(this.facialPose.right,(WARRIORS[this.type].model==='sora'?7:2)*Math.PI/180);
         head.quaternion.multiply(chin);this.overlays.push([head,chin]);
       }
       let gazeYaw=0,gazePitch=0;

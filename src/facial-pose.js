@@ -26,7 +26,8 @@ const finite=(value,fallback=0)=>Number.isFinite(value)?value:fallback;
 export const FACIAL_LIMITS=Object.freeze({gazeYaw:4*Math.PI/180,gazePitch:2*Math.PI/180,jaw:Math.PI/180,musouJaw:0,brow:Math.max(Math.hypot(...EXPRESSION.RInnerEyebrow),Math.hypot(...EXECUTIVE_FROWN.RInnerEyebrow))});
 // Eyelid closure must preserve triangle orientation and eyeball clearance before it can ship.
 export class FacialPose {
- constructor(bones,{identity=null,model=null}={}){
+ constructor(bones,{identity=null,model=null,albedo=null}={}){
+  this.albedo=albedo;this.albedo?.set(0);
   this.morphs=[];
   model?.traverse(mesh=>{const index=mesh.morphTargetDictionary?.Musou_Snarl;if(index!==undefined)this.morphs.push({mesh,index,weight:mesh.morphTargetInfluences[index]});});
   this.expression=identity==='sora'?{...EXPRESSION,...CLENCHED_GLARE}:EXPRESSION;
@@ -47,7 +48,7 @@ export class FacialPose {
   this.forward=this.right.clone().cross(this.up).normalize();
   for(const axis of [this.right,this.up,this.forward])axis.applyQuaternion(inverse);
  }
- restore(){if(!this.applied)return;for(const e of this.entries){e.bone.position.copy(e.position);e.bone.quaternion.copy(e.rotation);}for(const m of this.morphs)m.mesh.morphTargetInfluences[m.index]=m.weight;this.applied=false;}
+ restore(){this.albedo?.set(0);if(!this.applied)return;for(const e of this.entries){e.bone.position.copy(e.position);e.bone.quaternion.copy(e.rotation);}for(const m of this.morphs)m.mesh.morphTargetInfluences[m.index]=m.weight;this.applied=false;}
  apply(dt,{gazeYaw=0,gazePitch=0,exertion=0,musou=0,enabled=true}={}){
   this.restore();if(!enabled)return;
   const blend=1-Math.exp(-MathUtils.clamp(finite(dt),0,.1)*12),limits=FACIAL_LIMITS;
@@ -56,6 +57,7 @@ export class FacialPose {
   this.effort=MathUtils.lerp(this.effort,MathUtils.clamp(finite(exertion),0,1),blend);this.anger=MathUtils.lerp(this.anger,MathUtils.clamp(finite(musou),0,1),blend);
   for(const e of this.entries){e.position.copy(e.bone.position);e.rotation.copy(e.bone.quaternion);}
   for(const m of this.morphs){m.weight=m.mesh.morphTargetInfluences[m.index];m.mesh.morphTargetInfluences[m.index]=this.anger;}
+  this.albedo?.set(this.anger);
   for(const name of EYES){const e=this.byName.get(name);if(e){e.bone.quaternion.multiply(this.rotation.setFromAxisAngle(Y,-this.yaw));e.bone.quaternion.multiply(this.rotation.setFromAxisAngle(Z,-this.pitch));}}
   const jaw=this.byName.get('MJaw');if(jaw)jaw.bone.quaternion.multiply(this.rotation.setFromAxisAngle(Z,MathUtils.lerp(limits.jaw*this.effort,limits.musouJaw,this.anger)));
   this.head.getWorldQuaternion(this.headRotation);
