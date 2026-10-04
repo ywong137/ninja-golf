@@ -89,23 +89,23 @@ body[data-phase=combat] #toast{width:max-content;max-width:min(600px,calc(100vw 
 @media(max-width:800px){body[data-phase=combat] #toast{max-width:calc(100vw - 40px)}body[data-phase=combat] #shot-result{top:185px;right:20px}}
 
 /* Dedicated expression artwork, backed by the live course and character close-up. */
-#musou-cinema{isolation:isolate;background:linear-gradient(105deg,#070b13df 5%,#111927bb 38%,#0a0e1880 100%);overflow:hidden}
-.cinema-ink{position:absolute;inset:0;z-index:0;background:repeating-conic-gradient(from 17deg at 69% 38%,transparent 0deg 7deg,#03060ce8 8deg 10deg,transparent 11deg 22deg);animation:musou-ink 2.85s both}
+#musou-cinema{isolation:isolate;background:radial-gradient(ellipse at 50% 44%,transparent 0% 30%,#070b1330 62%,#070b13a0 100%);overflow:hidden}
+.cinema-ink{position:absolute;inset:0;z-index:0;mask-image:radial-gradient(ellipse at 50% 48%,transparent 0% 34%,#000 82%);background:repeating-conic-gradient(from 17deg at 69% 38%,transparent 0deg 7deg,#03060ce8 8deg 10deg,transparent 11deg 22deg);animation:musou-ink 2.85s both}
 .cinema-portrait{position:absolute;z-index:1;width:min(90vh,70vw);height:min(90vh,70vw);right:4vw;top:2vh;background-image:var(--musou-face);background-size:300% 100%;background-position:var(--musou-face-x) 0;mask-image:linear-gradient(0deg,transparent,#000 18% 91%,transparent);animation:musou-portrait 2.85s cubic-bezier(.17,.68,.17,1) both}
 .cinema-eye-strip{position:absolute;z-index:7;inset:24% -3%;height:30%;background-color:#070a11;background-image:var(--musou-face);background-size:300% auto;background-repeat:no-repeat;background-position:var(--musou-face-x) 36%;border-block:7px solid #ffe6c7;box-shadow:0 -12px 0 #a92038,0 12px 0 #a92038,0 0 50px #fc714785;transform:rotate(-7deg);animation:musou-eyes .66s both}
 .cinema-slash{position:absolute;left:-15%;top:33%;width:140%;height:5px;z-index:8;background:#fff4d4;box-shadow:0 0 10px #fff2bd,0 0 28px var(--musou-color),0 15px 0 #bf2748;transform:rotate(-7deg);animation:musou-slash 2.85s both}
 .cinema-slash.slash-b{top:67%;transform:rotate(-11deg);animation-delay:.12s;height:3px}
-#musou-cinema .cinema-title{z-index:5;left:5vw;bottom:14vh;max-width:57vw;text-shadow:3px 5px 0 #090b12,0 0 25px #000;animation:musou-title 2.85s both}
+#musou-cinema .cinema-title{z-index:5;left:5vw;bottom:3.5vh;max-width:57vw;text-shadow:3px 5px 0 #090b12,0 0 25px #000;animation:musou-title 2.85s both}
 #musou-cinema .cinema-title span{display:block;color:#f3d5a3;font-size:clamp(11px,1.1vw,17px);letter-spacing:.2em}
 #musou-cinema .cinema-title strong{display:block;font-size:clamp(20px,2.5vw,40px);font-weight:700;letter-spacing:.02em;color:#fff2da;margin:12px 0}
 #musou-cinema .cinema-title em{display:block;font-family:Impact,'Arial Black',sans-serif;font-size:clamp(42px,7.8vw,118px);line-height:.93;font-weight:950;font-style:italic;text-transform:uppercase;letter-spacing:-.025em;color:#fff3d2;-webkit-text-stroke:1px #fff1d2;filter:drop-shadow(4px 5px 0 var(--musou-color))}
 #musou-cinema .musou-kanji{z-index:3;font-size:clamp(70px,12vw,160px);right:3vw;top:auto;bottom:7vh;color:#fff1d2;opacity:.85;transform:rotate(-9deg);text-shadow:4px 5px 0 #0b0b13,0 0 30px var(--musou-color)}
 @keyframes musou-eyes{0%{clip-path:inset(49% 0);opacity:0;translate:-20% 0}15%,65%{clip-path:inset(0);opacity:1;translate:0 0}100%{clip-path:inset(50% 0);opacity:0;translate:15% 0}}
-@keyframes musou-portrait{0%,12%{opacity:0;transform:translateX(20%) scale(.92)}24%{opacity:1;transform:translateX(0) scale(1)}84%{opacity:1;transform:translateX(-2%) scale(1.10)}100%{opacity:0;transform:translateX(-6%) scale(1.17)}}
+@keyframes musou-portrait{0%,12%{opacity:0;transform:translateX(20%) scale(.92)}24%{opacity:1;transform:translateX(0) scale(1)}52%{opacity:1;transform:translateX(-2%) scale(1.10)}66%,100%{opacity:0;transform:translateX(-6%) scale(1.17)}}
 @keyframes musou-title{0%,18%{opacity:0;transform:translateX(-100px) skewX(-8deg)}29%,88%{opacity:1;transform:translateX(0) skewX(-8deg)}100%{opacity:0;transform:translateX(80px) skewX(-8deg)}}
 @keyframes musou-slash{0%{opacity:0;scale:0 1}7%,15%{opacity:1;scale:1 1}20%,83%{opacity:.3;scale:1 1}89%{opacity:1;scale:1.2 2}100%{opacity:0;scale:1.5 1}}
 @keyframes musou-ink{0%{opacity:0;transform:scale(1.5)}18%,87%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}
-@media(max-width:700px){#musou-cinema .cinema-title{left:4vw;bottom:13vh;max-width:78vw}.cinema-portrait{width:92vw;height:92vw;right:-14vw;top:4vh}#musou-cinema .cinema-title em{font-size:clamp(34px,9vw,62px)}}
+@media(max-width:700px){#musou-cinema .cinema-title{left:4vw;bottom:4vh;max-width:78vw}.cinema-portrait{width:92vw;height:92vw;right:-14vw;top:4vh}#musou-cinema .cinema-title em{font-size:clamp(34px,9vw,62px)}}
 
 .cinema-portrait{mask-image:linear-gradient(90deg,transparent,#000 12% 88%,transparent),linear-gradient(0deg,transparent,#000 18% 91%,transparent);mask-composite:intersect}
 

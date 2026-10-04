@@ -1,3 +1,4 @@
+import {withoutMusouTarget} from './without-musou-target.mjs';
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -14,7 +15,7 @@ import {measureFace} from '../tools/audit-facial-pose.mjs';
 
 const publishedPath=fileURLToPath(new URL('../public/models/monk.glb',import.meta.url)),publishedBytes=fs.readFileSync(publishedPath),recipe=loadVicePresidentBrowRecipe();
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'ninja-brow-weights-'));
-const source=readModel(publishedBytes);
+const source=withoutMusouTarget(readModel(publishedBytes));
 if(source.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(source,recipe);
 const sourceBytes=serializeModel(source),candidate=applyVicePresidentBrowWeights(readModel(sourceBytes),recipe).model,candidateBytes=serializeModel(candidate);
 const sourcePath=path.join(temporary,'source.glb'),candidatePath=path.join(temporary,'candidate.glb');

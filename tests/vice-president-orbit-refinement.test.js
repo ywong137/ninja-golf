@@ -1,3 +1,4 @@
+import {withoutMusouTarget} from './without-musou-target.mjs';
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -11,10 +12,10 @@ import {FacialPose,FACIAL_LIMITS} from '../src/facial-pose.js';
 import {measureFace} from '../tools/audit-facial-pose.mjs';
 
 const sourcePath=new URL('../public/models/monk.glb',import.meta.url);
-const sourceBytes=fs.readFileSync(sourcePath),before=readModel(sourceBytes);
+const sourceBytes=fs.readFileSync(sourcePath),before=withoutMusouTarget(readModel(sourceBytes));
 const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'ninja-orbit-test-'));
 const candidatePath=path.join(temporary,'refined.glb');
-const generated=refineVicePresidentOrbit(readModel(sourceBytes));
+const generated=refineVicePresidentOrbit(withoutMusouTarget(readModel(sourceBytes)));
 fs.writeFileSync(candidatePath,serializeModel(generated.model));
 const result=readModel(fs.readFileSync(candidatePath));
 after(()=>{fs.rmSync(temporary,{recursive:true,force:true});assert.deepEqual(fs.readFileSync(sourcePath),sourceBytes,'The published source must not change.');});

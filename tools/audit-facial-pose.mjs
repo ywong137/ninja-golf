@@ -21,7 +21,7 @@ export function measureFace(rig){
  const weight=(i,pattern)=>{let w=0;for(let k=0;k<4;k++)if(pattern.test(mesh.skeleton.bones[si.getComponent(i,k)].name))w+=sw.getComponent(i,k);return w;};
  for(let i=0;i<p.count;i++)if(weight(i,/EyeBlink/)>0.05)lid.push(i);
  const expressionPattern=new RegExp(`_(?:MJaw|${Object.keys(EXPRESSION).join('|')})$`);
- for(let i=0;i<p.count;i++)if(weight(i,expressionPattern)>0.05)expression.push(i);
+ for(let i=0;i<p.count;i++)if(weight(i,expressionPattern)>0.05||mesh.geometry.morphAttributes.position?.some(a=>Math.hypot(a.getX(i),a.getY(i),a.getZ(i))>1e-8))expression.push(i);
  for(let i=0;i<index.count;i+=3){const tri=[index.getX(i),index.getX(i+1),index.getX(i+2)];(tri.every(v=>weight(v,/_[RL]Eye$/)>.9)?eye:skin).push(tri);}
  // Sample each eyeball independently. A total visible area cannot prove that
  // both eyes are open, and a shared grid shifts when their spacing changes.

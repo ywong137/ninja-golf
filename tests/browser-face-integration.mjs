@@ -4,7 +4,7 @@ import {FACIAL_LIMITS} from '../src/facial-pose.js';
 import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
- const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);await page.goto('http://localhost:5173/tests/rig-stage.html');
+ const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);await page.goto((process.env.NINJA_BASE_URL??'http://localhost:5173')+'/tests/rig-stage.html');
  const reports=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{Warrior,loadWarriorAssets}=await import('/src/actors.js');await loadWarriorAssets();const {ATTACKS}=await import('/src/combat.js');const reports=[];
   const owned=['REye','LEye','MJaw','RInnerEyebrow','LInnerEyebrow'];
@@ -18,21 +18,23 @@ try{
     p.update(frame/60,1/60,{selection:true,gazeTarget:target});p.root.updateMatrixWorld(true);
     const actual=new T.Vector3(1,0,0).applyQuaternion(p.bones.Bip01_REye.getWorldQuaternion(new T.Quaternion()));if(frame>120){gazeError=Math.max(gazeError,actual.angleTo(direction));restError=Math.max(restError,new T.Vector3(1,0,0).applyQuaternion(q).angleTo(direction));}maxAngle=Math.max(maxAngle,delta(p,control).angle);
    }
+   // Heroes cannot use the enemy-only emergence clock.
    const disabled=[];
-   for(const [name,flags]of [['golf',{golf:true}],['dodge',{dodge:true}],['emerging',{emerging:{progress:.2}}],['death',{}]]){
+   for(const [name,flags]of [['golf',{golf:true}],['dodge',{dodge:true}],['death',{}]]){
     if(name==='death'){p.dead=control.dead=1;}p.update(4,1/60,{...flags,gazeTarget:target});control.update(4,1/60,flags);disabled.push({name,...delta(p,control),applied:p.facialPose.applied});
    }
    p.dispose();control.dispose();
-   const active=new Warrior(hero),base=new Warrior(hero);base.facialPose=null;let effortJaw=0,musouJaw=0,browDistance=0,attackBrowDistance=0;
+   const active=new Warrior(hero),base=new Warrior(hero);base.facialPose=null;let effortJaw=0,musouJaw=0,nativeFaceDistance=0,attackFaceDistance=0;
+   const faceDistance=()=>{const a=active.model.getObjectByName('Mesh_1'),b=base.model.getObjectByName('Mesh_1');let max=0;for(let i=0;i<a.geometry.attributes.position.count;i++)max=Math.max(max,a.getVertexPosition(i,new T.Vector3()).distanceTo(b.getVertexPosition(i,new T.Vector3())));return max;};
    for(let frame=0;frame<120;frame++)for(const actor of [active,base])actor.update(frame/60,1/60,{moving:true,moveSpeed:5.6});
    effortJaw=active.bones.Bip01_MJaw.quaternion.angleTo(base.bones.Bip01_MJaw.quaternion);
    for(let frame=0;frame<120;frame++)for(const actor of [active,base])actor.update(3+frame/60,1/60,{cinematic:true});
-   musouJaw=active.bones.Bip01_MJaw.quaternion.angleTo(base.bones.Bip01_MJaw.quaternion);browDistance=active.bones.Bip01_RInnerEyebrow.position.distanceTo(base.bones.Bip01_RInnerEyebrow.position);
-   for(let frame=0;frame<120;frame++)for(const actor of [active,base])actor.update(6+frame/60,1/60,{action:{kind:'musou',step:0,token:777,time:frame/60,duration:ATTACKS.musou.duration}});attackBrowDistance=active.bones.Bip01_RInnerEyebrow.position.distanceTo(base.bones.Bip01_RInnerEyebrow.position);
-   reports.push({hero,gazeError,restError,maxAngle,disabled,effortJaw,musouJaw,browDistance,attackBrowDistance});active.dispose();base.dispose();
+   musouJaw=active.bones.Bip01_MJaw.quaternion.angleTo(base.bones.Bip01_MJaw.quaternion);nativeFaceDistance=faceDistance();
+   for(let frame=0;frame<120;frame++)for(const actor of [active,base])actor.update(6+frame/60,1/60,{action:{kind:'musou',step:0,token:777,time:frame/60,duration:ATTACKS.musou.duration}});attackFaceDistance=faceDistance();
+   reports.push({hero,gazeError,restError,maxAngle,disabled,effortJaw,musouJaw,nativeFaceDistance,attackFaceDistance});active.dispose();base.dispose();
   }
   const enemyOverlays=[];for(let type=0;type<4;type++){const enemy=new Warrior(type,true);enemyOverlays.push(Boolean(enemy.facialPose));enemy.dispose();}return {reports,enemyOverlays};
  });
- for(const r of reports.reports){assert.ok(r.gazeError<.003,JSON.stringify(r));assert.ok(r.gazeError<r.restError*.1);assert.ok(r.maxAngle<.08,'Overlay accumulated beyond the gaze limits');for(const state of r.disabled){assert.ok(state.angle<1e-6&&state.distance<1e-10,JSON.stringify({hero:r.hero,...state}));assert.equal(state.applied,false);}assert.ok(r.effortJaw>.001&&r.effortJaw<=Math.PI/180+.00001,JSON.stringify(r));assert.ok(Math.abs(r.musouJaw-FACIAL_LIMITS.musouJaw)<.00001,JSON.stringify(r));assert.ok(r.browDistance>.004&&r.browDistance<=FACIAL_LIMITS.brow*1.15+.00001,JSON.stringify(r));assert.ok(r.attackBrowDistance>.004&&r.attackBrowDistance<=FACIAL_LIMITS.brow*1.15+.00001,JSON.stringify(r));}
+ for(const r of reports.reports){assert.ok(r.gazeError<.003,JSON.stringify(r));assert.ok(r.gazeError<r.restError*.1);assert.ok(r.maxAngle<.08,'Overlay accumulated beyond the gaze limits');for(const state of r.disabled){assert.ok(state.angle<1e-6&&state.distance<1e-10,JSON.stringify({hero:r.hero,...state}));assert.equal(state.applied,false);}assert.ok(r.effortJaw>.001&&r.effortJaw<=Math.PI/180+.00001,JSON.stringify(r));assert.ok(Math.abs(r.musouJaw-FACIAL_LIMITS.musouJaw)<.00001,JSON.stringify(r));assert.ok(r.nativeFaceDistance>.004&&r.nativeFaceDistance<=.025,JSON.stringify(r));assert.ok(r.attackFaceDistance>.004&&r.attackFaceDistance<=.025,JSON.stringify(r));}
  assert.deepEqual(reports.enemyOverlays,[false,false,false,false]);assert.deepEqual(errors,[]);console.log(JSON.stringify(reports,null,2));console.log('Actual actor facial integration passed for all six heroes and four enemy classes.');
 }finally{await browser.close();}

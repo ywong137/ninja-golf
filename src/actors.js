@@ -60,6 +60,7 @@ MODEL_REVISIONS.monk='hostile-takeover-20261003';
 MODEL_REVISIONS.ronin='selected-wardrobe-20261003';
 MODEL_REVISIONS.ayame='connected-combo-20261004';
 MODEL_REVISIONS.sora='selected-wardrobe-20261003';
+for(const {model}of WARRIORS)MODEL_REVISIONS[model]='native-facs-musou-20261004';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-emergence-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -167,7 +168,7 @@ export class Warrior {
     this.footPlacement=!enemy&&this.nativeHuman?new FootPlacement(this.root,this.bones):null;
     this.sourceTerrain=!enemy&&this.nativeHuman?new SourceTerrainFrame(this.root,this.model,this.bones):null;
     this.pairedGripClosure=!enemy&&this.nativeHuman?new PairedGripClosure(this.bones):null;
-    this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model}):null;
+    this.facialPose=!enemy&&this.nativeHuman?new FacialPose(this.bones,{identity:WARRIORS[type].model,model:this.model}):null;
     if(this.facialPose){this.gazeDirection=new THREE.Vector3();this.eyePosition=new THREE.Vector3();this.eyeRotation=new THREE.Quaternion();}
     this.mixer=new THREE.AnimationMixer(this.model);this.actions=new Map(clipsFor(index).map(c=>[c.name,this.mixer.clipAction(c)]));this.current='';this.oneShot=0;this.wasAttack=false;this.wasSwing=false;
     this.footContactMotions=new Map(clipsFor(index).map(c=>[c.name,resolveFootSupport(c,motions[c.name])]));

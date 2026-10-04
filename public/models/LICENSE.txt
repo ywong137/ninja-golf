@@ -158,3 +158,14 @@ Ninja_Emerge_Start, Ninja_Emerge_Flight, and Ninja_Emerge_Land adapt the complet
 NinjaJump_Start, NinjaJump_Idle_Loop, and NinjaJump_Land performances from
 Quaternius Universal Animation Library 2 (CC0). The transfer fits the native
 joint frames and ankle twist. The original mesh and previous clips remain intact.
+
+Native musou facial targets (2026-10-04)
+--------------------------------------
+Derived from the authored FACS blendshapes in Microsoft Rocketbox's official
+*_facial.fbx files for Male_Adult_10, Male_Adult_09, Male_Adult_05,
+Female_Adult_03, Female_Adult_08, and Female_Adult_12.
+Source: https://github.com/microsoft/Microsoft-Rocketbox
+License: MIT, Copyright (c) 2020 Microsoft (license text above).
+The original Rocketbox release credits the Headbox facial animation toolkit.
+Ninja Golf combines six FACS shapes and applies local mesh corrections.
+It retains the project's existing neutral geometry, textures, and animation.

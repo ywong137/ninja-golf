@@ -10,7 +10,7 @@
     "preservedAnimations": 42,
     "addedParts": 3,
     "addedTriangles": 3888,
-    "bindMatrixMaximumError": 0.0000019669532775878906,
+    "bindMatrixMaximumError": 1.9669532775878906e-06,
     "handsTriangles": 1573,
     "garmentTriangles": 1927,
     "originalTargetBinaryBytes": 12422248,
@@ -88,7 +88,14 @@
         "indices": 20,
         "material": 2
       }
-    ]
+    ],
+    "facialRevision": {
+      "sourceSha256": "aa94bd2479329b020d41a572d23c9113311c372f39cd63678f0d05524178f4da",
+      "outputSha256": "f28a47cf4486afe5844863e44ceca5c6360939ba448318c1b267d24e3bb62c8e",
+      "baseBinaryBytes": 15477272,
+      "baseBinarySha256": "5d2929f060fc772feee712172192bd3863a0c5fb9fc762442be280509c54e28f",
+      "target": "Musou_Snarl"
+    }
   },
   "shinobi": {
     "originalBinarySha256": "fef816a48064db5ac5a2cc47bef23b5f9bc4b4119eb5be725c9b0f6e65bfa2ef",
@@ -101,7 +108,7 @@
     "preservedAnimations": 38,
     "addedParts": 3,
     "addedTriangles": 2028,
-    "bindMatrixMaximumError": 0.0000028014183044433594,
+    "bindMatrixMaximumError": 2.8014183044433594e-06,
     "handsTriangles": 1668,
     "garmentTriangles": 2146,
     "originalTargetBinaryBytes": 15736904,
@@ -185,6 +192,13 @@
         "Shinobi_Airborne_Cut",
         "Shinobi_Left_Stepping_Cut"
       ]
+    },
+    "facialRevision": {
+      "sourceSha256": "577b40650f4a1ac92a13ee76f950d8316d6bf73138082961c0c0c4c1a7dbf4e2",
+      "outputSha256": "7435a9330c9b563fdd2cb55ec4505e95f0b3284e4c17972248facf2686db8247",
+      "baseBinaryBytes": 19673608,
+      "baseBinarySha256": "286ab167e19fbc43829452be0ada4ed86b3e68fa511496689ac41b0d3b8253d7",
+      "target": "Musou_Snarl"
     }
   },
   "kaede": {
@@ -198,7 +212,7 @@
     "preservedAnimations": 39,
     "addedParts": 8,
     "addedTriangles": 8154,
-    "bindMatrixMaximumError": 0.000012978911399841309,
+    "bindMatrixMaximumError": 1.2978911399841309e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 16508964,
@@ -303,6 +317,13 @@
         "Ace_Combo_Finish",
         "Ace_Musou_Tempest"
       ]
+    },
+    "facialRevision": {
+      "sourceSha256": "fef890686f54ffad44b25ac9c12c145c4368c8be935e32808cb266211c0ab432",
+      "outputSha256": "f9af1e6a5256515c7d2e3c72024ce912f1a4e6f434f53d6d67e26f1fc170a1d8",
+      "baseBinaryBytes": 24288328,
+      "baseBinarySha256": "404f5fb737edb61830094215155a5a3cc8a3cdbb4f0867ca1e6431a47f9b2869",
+      "target": "Musou_Snarl"
     }
   },
   "ayame": {
@@ -316,7 +337,7 @@
     "preservedAnimations": 39,
     "addedParts": 6,
     "addedTriangles": 5164,
-    "bindMatrixMaximumError": 0.00001290440559387207,
+    "bindMatrixMaximumError": 1.290440559387207e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 14329508,
@@ -453,6 +474,13 @@
         "Hustler_Combo_Return",
         "Hustler_Combo_Finish"
       ]
+    },
+    "facialRevision": {
+      "sourceSha256": "23b7543e3d23b6581f14fd19cdea7f6e5f5985a7482eb783dfc9644e003e347a",
+      "outputSha256": "e50eb01fbb2bf23d4b52f10aa3e0a201378ee25807a8c079b81cdb4eff1d2b30",
+      "baseBinaryBytes": 21224540,
+      "baseBinarySha256": "b7e6f3863a8be55969a47be2df7b1619cf9e3016ef9fb1a088310f13a842f353",
+      "target": "Musou_Snarl"
     }
   },
   "sora": {
@@ -466,7 +494,7 @@
     "preservedAnimations": 44,
     "addedParts": 6,
     "addedTriangles": 8986,
-    "bindMatrixMaximumError": 0.000013217329978942871,
+    "bindMatrixMaximumError": 1.3217329978942871e-05,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 20054948,
@@ -549,6 +577,13 @@
         "indices": 23,
         "material": 2
       }
-    ]
+    ],
+    "facialRevision": {
+      "sourceSha256": "41913449a0a8a3a0289b9ee927efcfb0befa4d2175b4a893a5bebffa6e0d3a18",
+      "outputSha256": "bc9ce6310f596181355a57146b7f7500414ef2e323024516fcdaeac3fcd7582a",
+      "baseBinaryBytes": 25112980,
+      "baseBinarySha256": "0168a1f9a3669c47f3c2509fa637007a3fb001360e856c2651d1f4b3b5eb904a",
+      "target": "Musou_Snarl"
+    }
   }
 }

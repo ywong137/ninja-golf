@@ -1,3 +1,4 @@
+import {withoutMusouTarget} from './without-musou-target.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -11,7 +12,7 @@ test('The full-rebuild revision matches the currently published head',()=>{
  for(const name of ['POSITION','NORMAL'])assert.deepEqual(packedStream(model,head.attributes[name]),Buffer.from(recipe.streams[name].result,'base64'));
 });
 function baseline(){
- const model=readModel(publicBytes),head=model.doc.meshes[0].primitives[1];
+ const model=withoutMusouTarget(readModel(publicBytes)),head=model.doc.meshes[0].primitives[1];
  if(model.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(model);
  for(const name of ['POSITION','NORMAL'])replaceStream(model,head.attributes[name],Buffer.from(recipe.streams[name].source,'base64'));
  delete model.doc.extras.vicePresidentShapeFit;return model;

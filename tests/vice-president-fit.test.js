@@ -1,3 +1,4 @@
+import {withoutMusouTarget} from './without-musou-target.mjs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -17,7 +18,7 @@ function meshesOf(g){const meshes=[];g.scene.traverse(m=>{if(m.isSkinnedMesh)mes
 function update(g){g.scene.updateMatrixWorld(true);for(const m of meshesOf(g))m.skeleton.update();}
 
 test('Ethan refinement preserves the body, topology, UVs, and skin streams',()=>{
- const model=readModel(raw);
+ const model=withoutMusouTarget(readModel(raw));
  // The geometric fit predates the separately tested eight-row skin repair.
  // Reverse only that exact approved patch; retain the original fingerprints.
  if(model.doc.extras?.vicePresidentBrowWeights)restoreVicePresidentLegacyBrowWeights(model);
