@@ -49,6 +49,14 @@ The preceding musou-only CI run failed because two asset records still contained
 The corrected records retain the original wardrobe proof and verify all later appended animation data.
 The preview bounds were regenerated from the current visible geometry at 60 Hz.
 
+The next CI run passed 970 checks but found one inconsistent knee limit in the older roster test.
+That test recognized the Ace and Closer versions of the shared UAL2 lunge, but omitted the Hustler.
+It now identifies the reviewed source and return/finish phases, preserving the same 125-degree limit across characters.
+Unrelated attacks retain their 120-degree limit. The model and motion data did not change.
+The Hustler return reaches 124.35 degrees, matching the Ace within 0.001 degrees.
+All 18 connected-combo and full roster leg tests pass, including the stricter 480 Hz knee sampling.
+Run both `tests/source-connected-combo.test.js` and `tests/combat-leg-frames.test.js` after adding a shared combo.
+
 ## Limits
 
 Some source foot glide remains during entry and recovery.

@@ -9,7 +9,7 @@ export const DISTANT_FOREST_LIMITS={japanese:2800,highlands:1200};
 export function distantForestPlacements(c,region,sampledHeight=null){
  const limit=DISTANT_FOREST_LIMITS[c.theme];if(!limit||!region)return[];
  const height=(x,z)=>sampledHeight?.(x,z)??landscapeHeight(c,region,x,z);
- const japanese=c.theme==='japanese',r=random(c.seed+91357),records=[],occupied=new Set(),spacing=japanese?13:17;
+ const japanese=c.theme==='japanese',r=random(c.seed+91357),records=[],occupied=new Map(),spacing=japanese?13:17;
  // Alternating belts leave broad landscape windows, rather than forming a solid wall.
  const clusters=japanese?58:30;
  for(let grove=0;grove<clusters&&records.length<limit;grove++){
@@ -28,9 +28,13 @@ export function distantForestPlacements(c,region,sampledHeight=null){
    const y=height(x,z);if(y<4||!Number.isFinite(y)||!japanese&&y>260)continue;
    const gx=(height(x+8,z)-height(x-8,z))/16,gz=(height(x,z+8)-height(x,z-8))/16;
    if(Math.hypot(gx,gz)>.48)continue;
+   // The grid accelerates exact distance checks; neighboring cells can contain valid trees.
    const cellX=Math.floor(x/spacing),cellZ=Math.floor(z/spacing);let crowded=false;
-   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)if(occupied.has(`${cellX+dx},${cellZ+dz}`))crowded=true;
-   if(crowded)continue;occupied.add(`${cellX},${cellZ}`);
+   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
+    for(const placed of occupied.get(`${cellX+dx},${cellZ+dz}`)||[])if(Math.hypot(placed.x-x,placed.z-z)<spacing)crowded=true;
+   }
+   if(crowded)continue;
+   const key=`${cellX},${cellZ}`;if(!occupied.has(key))occupied.set(key,[]);occupied.get(key).push({x,z});
    records.push({x,z,y:y-.12,scale:(japanese?.82:.72)+r()*.56,angle:r()*Math.PI*2,grove,species:selectForestSpecies(c.theme,r())});
   }
  }

@@ -55,3 +55,16 @@ test('Shared tree atlas programs keep each species center as independent materia
  assert.notEqual(shaders[0].uniforms.treeCenterHeight,shaders[1].uniforms.treeCenterHeight);
  for(const material of materials)material.dispose();map.dispose();
 });
+
+test('Forest spacing protects trunks without leaving an empty cell around every tree',()=>{
+ for(const set of COURSE_SETS.slice(0,2)){
+  const c=set.holes[0],spacing=c.theme==='japanese'?13:17,records=distantForestPlacements(c,region,()=>40),nearest=records.map(()=>Infinity);
+  // Measure actual nearest neighbors independently of the placement grid.
+  for(let i=0;i<records.length;i++)for(let j=i+1;j<records.length;j++){
+   const d=Math.hypot(records[i].x-records[j].x,records[i].z-records[j].z);
+   assert.ok(d>=spacing,`${c.theme} trees overlap their ${spacing} metre spacing`);
+   nearest[i]=Math.min(nearest[i],d);nearest[j]=Math.min(nearest[j],d);
+  }
+  assert.ok(nearest.filter(d=>d<spacing*1.3).length/nearest.length>.3,`${c.theme} groves are too sparse to join their crowns`);
+ }
+});
