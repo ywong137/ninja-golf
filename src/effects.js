@@ -42,7 +42,7 @@ export class Effects {
   burst(position,count=12,power=4,kind=0){for(let i=0;i<count;i++)this.particle(position,new THREE.Vector3((Math.random()-.5)*power,Math.random()*power*.8,(Math.random()-.5)*power),.35+Math.random()*.55,.07+Math.random()*.16,kind);}
   hit(position,direction,options={}){this.impacts.emit(position,direction,options);this.explosion(position.clone().add(new THREE.Vector3(0,-.8,0)),options.heavy?.36:.23,{debris:false});}
   explosion(position,scale=1,{debris=true}={}){
-    const center=position.clone().add(new THREE.Vector3(0,.8,0));if(debris){this.burst(center,Math.round(48*scale),12*scale,0);this.burst(center,Math.round(24*scale),9*scale,2);}
+    const center=position.clone().add(new THREE.Vector3(0,.8,0));if(debris)this.impacts.emit(center,new THREE.Vector3(0,1,0),{heavy:scale>.5,special:scale>1,guarded:true});
     const material=new THREE.ShaderMaterial({
       transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
       uniforms:{tint:{value:new THREE.Color('#ffe8b8')},opacity:{value:.7}},
@@ -75,14 +75,12 @@ export class Effects {
       const radius=2.4+i*1.3,m=new THREE.Mesh(new THREE.RingGeometry(radius,radius+.12,64,1,-2.1,4.2),new THREE.MeshBasicMaterial({color:i===1?'#fff1b2':color,transparent:true,opacity:.5,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
       m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.5,max:.5,peak:.48,growth:style==='ring'?3:2.1});
     }
-    for(let i=0;i<100;i++){const angle=i*2.39996+beat,r=1+Math.random()*4,p=position.clone().add(new THREE.Vector3(Math.sin(angle)*r,.5+Math.random()*2,Math.cos(angle)*r));this.particle(p,new THREE.Vector3(Math.sin(angle)*9,2+Math.random()*7,Math.cos(angle)*9),.5+Math.random()*.45,.10+Math.random()*.15,i%3===0?2:0);}
     if(final)this.explosion(position,2);
   }
   trail(a,b,kind=0,token=0,channel=0){
     if(token!==this.trailToken){this.ribbonTracks.clear();this.trailToken=token;}
     let samples=this.ribbonTracks.get(channel)||[];const previous=samples.at(-1);if(previous&&(this.elapsed-previous.time>.09||previous.b.distanceTo(b)>7))samples=[];
     samples.push({a:a.clone().lerp(b,kind===2?.68:.84),b:b.clone(),kind,time:this.elapsed});if(samples.length>45)samples.shift();this.ribbonTracks.set(channel,samples);
-    this.particle(b,new THREE.Vector3(0,.1,0),.13,.045,kind);
   }
   telegraph(position,yaw,reach,duration,type){
     const geo=telegraphGeometry(position,yaw,reach,type,this.groundHeight);
@@ -95,9 +93,7 @@ export class Effects {
     const radius=Math.min(reach,special?8:6),sweep=Math.min(Math.PI,arc),g=new THREE.RingGeometry(radius-.24,radius,56,1,-sweep,sweep*2);
     const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:style?color:special?'#efb5ff':'#ffedb3',transparent:true,opacity:.6,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
     m.rotation.set(-Math.PI/2,style==='ring'?.38:.12,yaw-Math.PI/2);m.position.copy(position);m.position.y+=style==='sickle'?.55:1.2;this.scene.add(m);this.items.push({m,life:.24,max:.24,peak:.45});
-    if(style==='fan'){
-      for(let i=0;i<18;i++){const a=yaw-sweep+sweep*2*i/17;this.particle(m.position,new THREE.Vector3(Math.sin(a)*9,1+Math.random()*3,Math.cos(a)*9),.3+Math.random()*.2,.1,i%3===0?2:0);}
-    }else this.burst(m.position,special?80:20,special?17:7,special?2:0);
+    this.impacts.emit(m.position,new THREE.Vector3(Math.sin(yaw),.1,Math.cos(yaw)),{heavy:special,guarded:true});
   }
   update(dt,calm=false){
     this.impacts.update(dt,calm);this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<.18&&!calm));

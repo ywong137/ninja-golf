@@ -1,32 +1,36 @@
 # Production quality targets
 
-## Current readiness — October 3, 2026
+## Current readiness — October 4, 2026
 
 The game remains a playable alpha. It does not yet meet the requested AAA presentation or animation standard.
 All six approved outfit defaults are live. The concept references remain archived for future unlockable outfits.
 
-The release checkout now has complete source performances for every hero's opening light and heavy attack.
-The Shinobi and Hustler heavy attacks are live and verified.
-Their checks cover full-body movement, anatomical limbs, attached weapons, cutting direction, hit timing, and recovery.
-The Hustler reuses an accepted body performance with her own rig and sabre.
-This avoids rebuilding common human movement separately for each character.
+Every hero has complete source performances for the opening light and heavy attacks.
+Recent connected combos improve the Ace, Closer, and Hustler. Other later branches still need visual review.
+Shared anatomical constraints apply across the rigs, while each weapon retains its grip and cutting direction.
 
-Remaining release work includes:
+The combat presentation release adds cloth collision, four native ninja attacks, dark ninja palettes, and course trim.
+Six dedicated angry portraits now accompany musou, with large attack names and animated decoration.
+Recorded CC0 combat audio, local flashes, red droplets, and spark streaks replace the earlier impact presentation.
+The spark follow-up also removes older round particles from sword sweeps, musou finishers, and guard effects.
 
-- Replace weak later attack branches and musou sequences with complete, connected body performances.
-- Refine the first 3D outfit implementations toward the approved concept silhouettes and materials.
-- Play complete rounds across all four courses, including combat, penalties, and scorecards.
-- Verify rendering performance on the same integrated build used for visual acceptance.
+Commit 911ba3f passed 957 tests and public verification of all models, portraits, recordings, and six selections.
+Its 64-enemy moving forest test averaged 52.90 FPS at 1440×900, Balanced, on this M1 Max.
+This is one local stress measurement. It does not predict performance on other devices.
+See [the combat presentation review](reviews/combat-presentation-2026-10-04.md) for evidence and limits.
 
-Before the skeleton optimization, the 64-enemy moving-combat stress test averaged 32.3 FPS at 1440×900 on this M1 Max.
-Balanced mode reduced the render ratio to 0.75. That earlier result missed the user's 40–50 FPS target.
-It is a local stress measurement, not a universal frame-rate estimate.
-A second test with loaded assets and fixed resolution measured 32.4 FPS.
-The CPU profile points mainly to rendering and scene transforms.
-The release checkout now shares duplicate enemy skeleton palettes, reducing 212 palettes to 64 in the fixed crowd test.
-Eighteen rendered comparisons match exactly. A repeated fixed-frame comparison saves about 1.6 ms of CPU work per frame.
-The moving stress test measured 48 FPS after the change. Separate-run variance prevents attributing the entire increase to this optimization.
-See `docs/reviews/shared-enemy-skeletons.md` for the conditions and limits.
+Complete normal-input rounds exist for Crane Coast and Copper Saguaro on earlier builds.
+Heather and Neo-Tokyo retain partial round coverage.
+The resumed Neo-Tokyo review completed hole 3 through encounters and scoring, then stopped during hole 4.
+It preserved the earlier first two scores through Continue. It is not a fresh complete-round result.
+
+Remaining acceptance work includes:
+
+- Replace weak later attack branches and musou sequences with complete body performances.
+- Refine the outfits toward the approved concept silhouettes and materials.
+- Complete Heather and Neo-Tokyo rounds, including hazards and final scorecards.
+- Improve environment materials and lighting toward the requested realistic appearance.
+- Verify integrated visuals and performance across representative devices.
 
 The older experiment reports below remain historical evidence. They do not describe the current release's exact behavior.
 

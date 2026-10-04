@@ -35,3 +35,22 @@ Musou decoration references SW5 storyboard frames from https://www.youtube.com/w
 Cloth uses a lightweight collision constraint, not a full fabric simulation. The game remains an alpha. Broader visual quality still needs human gameplay review.
 
 Local evidence: artifacts/reviews/combat-presentation/ in the primary workspace.
+
+## Spark follow-up
+
+The integrated review found older round particles in sword sweeps, musou finishers, and guard effects.
+Those combat effects now use the same bounded spark pools as impacts.
+Blade ribbons remain visible, while their former round tip particles are removed.
+Guard responses use recorded blade clashes and local flashes.
+Golf landing particles and environmental debris remain separate.
+
+Eleven focused collision, particle, motion, and guard checks pass.
+The muted browser check passes heavy impacts, running recovery, all six portraits, recording decode, and cleanup.
+The separate musou capture checks the complete effects sequence.
+Evidence: artifacts/reviews/combat-presentation/spark-followup/ in the primary workspace.
+
+A resumed Neo-Tokyo review completed hole 3 with four strokes and no penalties.
+It preserved the prior release's first two scores, [3,2], through the real Continue interface.
+The controller used ordinary gamepad inputs, including combat and musou.
+The review stopped during hole 4 to finish this effects correction.
+It does not establish a complete nine-hole result on this build.
