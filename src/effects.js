@@ -41,7 +41,31 @@ export class Effects {
   burst(position,count=12,power=4,kind=0){for(let i=0;i<count;i++)this.particle(position,new THREE.Vector3((Math.random()-.5)*power,Math.random()*power*.8,(Math.random()-.5)*power),.35+Math.random()*.55,.07+Math.random()*.16,kind);}
   explosion(position,scale=1){
     const center=position.clone().add(new THREE.Vector3(0,.8,0));this.burst(center,Math.round(48*scale),12*scale,0);this.burst(center,Math.round(24*scale),9*scale,2);
-    const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.6*scale,1),new THREE.MeshBasicMaterial({color:'#fff2c2',transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending}));m.position.copy(center);this.scene.add(m);this.items.push({m,life:.22,max:.22,peak:.6,growth:8});
+    const material=new THREE.ShaderMaterial({
+      transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+      uniforms:{tint:{value:new THREE.Color('#ffe8b8')},opacity:{value:.7}},
+      vertexShader:`varying vec2 flashUv;
+        void main(){
+          flashUv=uv;
+          vec4 center=modelViewMatrix*vec4(0.,0.,0.,1.);
+          vec2 scale=vec2(length(modelMatrix[0].xyz),length(modelMatrix[1].xyz));
+          center.xy+=position.xy*scale;
+          gl_Position=projectionMatrix*center;
+        }`,
+      fragmentShader:`uniform vec3 tint;uniform float opacity;varying vec2 flashUv;
+        void main(){
+          vec2 p=(flashUv-.5)*2.;float r2=dot(p,p);
+          float core=exp(-r2*105.);
+          float halo=.2*exp(-r2*7.);
+          float edge=1.-smoothstep(.75,1.,sqrt(r2));
+          gl_FragColor=vec4(tint*1.5,(core+halo)*opacity*edge);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }`
+    });
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(4*scale,4*scale),material);
+    m.name='Soft impact flash';m.position.copy(center);this.scene.add(m);
+    this.items.push({m,life:.22,max:.22,peak:.6,growth:3,flash:true});
   }
   flourish(position,beat,color,style,{final=false}={}){
     for(let i=0;i<3;i++){
@@ -76,6 +100,6 @@ export class Effects {
     this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<.18&&!calm));
     const rg=this.ribbon.geometry;let n=0;for(const samples of this.ribbonTracks.values())for(let i=1;i<samples.length;i++){const a=samples[i-1],b=samples[i];for(const [sample,point] of [[a,a.a],[a,a.b],[b,b.b],[a,a.a],[b,b.b],[b,b.a]]){point.toArray(rg.attributes.position.array,n*3);this.palette[sample.kind].toArray(rg.attributes.color.array,n*3);rg.attributes.alpha.array[n++]=Math.max(0,1-(this.elapsed-sample.time)/.18)*.24*(point===sample.a?0:1);}}
     rg.setDrawRange(0,n);Object.values(rg.attributes).forEach(a=>a.needsUpdate=true);
-    for(let i=0;i<this.capacity;i++){const p=this.particles[i];if(p.life<=0)continue;p.life-=dt*(calm?3:1);p.v.y-=6*dt;const j=i*3;this.positions[j]+=p.v.x*dt;this.positions[j+1]+=p.v.y*dt;this.positions[j+2]+=p.v.z*dt;this.sizes[i]=Math.max(0,p.life/p.max)*p.size;}this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.size.needsUpdate=true;for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt*(calm?3:1);if(p.life<=0){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();this.items.splice(i,1);}else{p.m.material.opacity=p.telegraph?.12+(1-p.life/p.max)*.18:p.life/p.max*(p.peak||.32);if(!p.telegraph)p.m.scale.multiplyScalar(1+dt*(p.growth||3));}}}
+    for(let i=0;i<this.capacity;i++){const p=this.particles[i];if(p.life<=0)continue;p.life-=dt*(calm?3:1);p.v.y-=6*dt;const j=i*3;this.positions[j]+=p.v.x*dt;this.positions[j+1]+=p.v.y*dt;this.positions[j+2]+=p.v.z*dt;this.sizes[i]=Math.max(0,p.life/p.max)*p.size;}this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.size.needsUpdate=true;for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt*(calm?3:1);if(p.life<=0){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();this.items.splice(i,1);}else{p.m.material.opacity=p.telegraph?.12+(1-p.life/p.max)*.18:p.life/p.max*(p.peak||.32);if(p.flash)p.m.material.uniforms.opacity.value=p.m.material.opacity;if(!p.telegraph)p.m.scale.multiplyScalar(1+dt*(p.growth||3));}}}
   clear(){for(const p of this.items){this.scene.remove(p.m);p.m.geometry.dispose();p.m.material.dispose();}this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
 }
