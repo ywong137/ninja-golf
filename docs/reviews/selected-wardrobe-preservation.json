@@ -10,7 +10,7 @@
     "preservedAnimations": 42,
     "addedParts": 3,
     "addedTriangles": 3888,
-    "bindMatrixMaximumError": 1.9669532775878906e-06,
+    "bindMatrixMaximumError": 0.0000019669532775878906,
     "handsTriangles": 1573,
     "garmentTriangles": 1927,
     "originalTargetBinaryBytes": 12422248,
@@ -101,7 +101,7 @@
     "preservedAnimations": 38,
     "addedParts": 3,
     "addedTriangles": 2028,
-    "bindMatrixMaximumError": 2.8014183044433594e-06,
+    "bindMatrixMaximumError": 0.0000028014183044433594,
     "handsTriangles": 1668,
     "garmentTriangles": 2146,
     "originalTargetBinaryBytes": 15736904,
@@ -197,7 +197,7 @@
     "preservedAnimations": 39,
     "addedParts": 8,
     "addedTriangles": 8154,
-    "bindMatrixMaximumError": 1.2978911399841309e-05,
+    "bindMatrixMaximumError": 0.000012978911399841309,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 16508964,
@@ -290,7 +290,18 @@
         "indices": 29,
         "material": 2
       }
-    ]
+    ],
+    "motionExtension": {
+      "outputSha256": "85561f63b3cde7da5a7fa4569f0e479280797a9313c4644e3b07b6de3314098b",
+      "baseBinaryBytes": 21723748,
+      "baseBinarySha256": "270e74647ed3aff0fe016cebcc447b4c79b015b4e02c85c6ee861d59eeb3acba",
+      "baseMeshesSha256": "56733f4038288b86a2d730de5411e754c7745ed76230aba66313da6ff631d236",
+      "addedClips": [
+        "Ace_Combo_Opening",
+        "Ace_Combo_Return",
+        "Ace_Combo_Finish"
+      ]
+    }
   },
   "ayame": {
     "originalBinarySha256": "4fa894be29c6470329cc48036937c7ac131020705b8bec2d620659cb4fd77a09",
@@ -303,7 +314,7 @@
     "preservedAnimations": 39,
     "addedParts": 6,
     "addedTriangles": 5164,
-    "bindMatrixMaximumError": 1.290440559387207e-05,
+    "bindMatrixMaximumError": 0.00001290440559387207,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 14329508,
@@ -436,7 +447,7 @@
     "preservedAnimations": 44,
     "addedParts": 6,
     "addedTriangles": 8986,
-    "bindMatrixMaximumError": 1.3217329978942871e-05,
+    "bindMatrixMaximumError": 0.000013217329978942871,
     "handsTriangles": 1708,
     "garmentTriangles": 2546,
     "originalTargetBinaryBytes": 20054948,

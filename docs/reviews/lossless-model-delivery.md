@@ -1,7 +1,9 @@
 # Lossless model delivery
 
 The startup loader previously requested 160,201,740 bytes of character and motion GLBs before HTTP compression.
-The build now creates gzip copies totaling 99,802,393 bytes, a reduction of 37.7%.
+The local Node 25 build created gzip copies totaling 99,802,393 bytes, a reduction of 37.7%.
+The deployed Node 22 build produced 100,895,410 gzip body bytes, a reduction of 37.0%.
+These figures describe release `4b519f1`; later animation additions change the totals.
 These eleven assets include six heroes, three enemy appearances, and two shared motion files.
 The original GLBs remain available for browsers without `DecompressionStream`.
 The development server continues to use the original loader.
@@ -36,3 +38,8 @@ node tools/verify-model-delivery.mjs http://localhost:5184 /tmp/ninja-model-fall
 Pass the public release URL to the same command to verify deployment.
 The command compares downloaded content with the current local build and source assets.
 Local evidence lives in the primary checkout under `artifacts/reviews/model-delivery/`.
+
+The public check for `4b519f1` passed after deployment `37175304685` completed.
+All 956 CI tests passed. The public browser verified all eleven decoded model hashes and the exact JavaScript bundle.
+It selected every hero, completed a real shot, entered combat, and attacked without browser errors.
+The public report is `artifacts/reviews/model-delivery/live/report.json` in the primary checkout.

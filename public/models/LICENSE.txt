@@ -127,3 +127,9 @@ Both short swords use native fitted grips. The standalone source file remains pr
 2026-10-03: Hustler_Power_Finish adapts the complete final cut and recovery
 from Quaternius Universal Animation Library 2 Sword_Heavy_Combo (CC0).
 The existing character mesh, face, wardrobe, rig and prior animations remain unchanged.
+
+The Ace three-cut light combo adapts Sword_Regular_Combo and the matching
+A/B recoveries from Quaternius Universal Animation Library 2 (CC0).
+The full-body source controls the steps, turns, balancing arm and recovery.
+The native transfer fits the joints, extracts actor travel, and adjusts the
+head direction and one recovery shoulder angle. The original mesh is unchanged.

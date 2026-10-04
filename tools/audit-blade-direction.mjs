@@ -16,6 +16,7 @@ try{
   const {motions,combatMotionName,sampleMotion}=await import('/src/motion.js');
   const {WARRIORS}=await import('/src/warriors.js');
   const {attackDefinition}=await import('/src/combat.js');
+  const {samplePlanarRoot}=await import('/src/attack-root-motion.js');
   const {withMotionTiming}=await import('/src/attack-timing.js');
   await loadWarriorAssets();const rows=[];
   for(let hero=0;hero<WARRIORS.length;hero++){
@@ -24,7 +25,7 @@ try{
     const name=combatMotionName(w,kind,step),motion=motions[name],definition=withMotionTiming(attackDefinition(kind,step,w.combatStyle),motion);
     a.handGrip.restore();a.mixer.stopAllAction();a.current='';a.play(name,0,true);a.handGrip.engage(!!motion.twoHanded,0);a.mixer.update(0);
     const frame=t=>{
-     a.handGrip.restore();a.actions.get(name).time=t;a.mixer.update(0);a.syncHeldObjects(sampleMotion(name,t));a.root.updateMatrixWorld(true);
+     a.handGrip.restore();a.actions.get(name).time=t;a.mixer.update(0);a.syncHeldObjects(sampleMotion(name,t));const travel=motion.planarRoot?samplePlanarRoot(motion.planarRoot,t):{x:0,z:0};a.root.position.set(travel.x*a.root.scale.x,0,travel.z*a.root.scale.x);a.root.updateMatrixWorld(true);
      return [a.weapon,...(a.offhand?[a.offhand]:[])].map(o=>{
       const q=o.getWorldQuaternion(new T.Quaternion()),tip=new T.Vector3().fromArray(o.userData.tip),grip=o.userData.primaryGrip;
       tip.lerp(new T.Vector3(0,grip,0),.2);

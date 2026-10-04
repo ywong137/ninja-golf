@@ -10,7 +10,7 @@ try{
  execFileSync(process.execPath,['tools/audit-blade-direction.mjs','--output',output,'--url',process.env.GAME_URL||'http://localhost:5174'],{stdio:'pipe',maxBuffer:1024*1024});
  const report=JSON.parse(fs.readFileSync(output)),rows=[];
  assert.deepEqual(report.errors,[]);
- const checked=[...corrections,{clip:'Shinobi_Stepping_Cut'},{clip:'Shinobi_Airborne_Cut'},{clip:'Hustler_Power_Finish'}];
+ const checked=[...corrections,{clip:'Shinobi_Stepping_Cut'},{clip:'Shinobi_Airborne_Cut'},{clip:'Hustler_Power_Finish'},{clip:'Ace_Combo_Opening'},{clip:'Ace_Combo_Return'},{clip:'Ace_Combo_Finish'}];
  for(const {clip}of checked){
   const cuts=report.rows.filter(r=>r.clip===clip&&r.active);assert.ok(cuts.length,'Missing corrected clip: '+clip);
   for(const cut of cuts){assert.ok(cut.edge>.85&&cut.flat<.5,`${clip}: the blade flat leads its cutting interval.`);rows.push({clip,edge:cut.edge,flat:cut.flat});}

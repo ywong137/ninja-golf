@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {weaponSteel as steel,weaponEdge as edge,weaponBrass,weaponCord,weaponGrip,enamelMaterial} from './weapon-materials.js';
 const cache=new Map();
 const fittings=new THREE.MeshStandardMaterial({vertexColors:true,map:weaponBrass.map,roughnessMap:weaponBrass.roughnessMap,metalness:.55,roughness:.48});
-export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.53,width:.046,curve:.015,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},jian:{length:.78,width:.046,curve:0,grip:.32,doubleEdge:true},dao:{length:.80,width:.066,curve:.12,grip:.32},wakizashi:{length:.57,width:.045,curve:.045,grip:.20},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
+export const BLADE_PROFILES={odachi:{length:1.40,width:.104,curve:.16,grip:.34},twin:{length:.53,width:.046,curve:.015,grip:.25},naginata:{length:1.10,width:.143,curve:.22,grip:.48},jian:{length:.78,width:.046,curve:0,grip:.18,doubleEdge:true},dao:{length:.80,width:.066,curve:.12,grip:.32},wakizashi:{length:.57,width:.045,curve:.045,grip:.20},scout:{length:.48,width:.035,curve:.035,grip:.20},guard:{length:.79,width:.045,curve:.06,grip:.27},lancer:{length:.39,width:.05,curve:.025,grip:.50},skirmisher:{length:.25,width:.038,curve:.01,grip:.15}};
 export function bladeGeometry(profile){
   const positions=[],uvs=[],groups=[];const segments=48;
   // The honed edge faces +X. Sweep the blade back toward -X so its convex
