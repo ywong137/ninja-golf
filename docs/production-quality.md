@@ -22,7 +22,11 @@ The current 64-enemy moving-combat stress test averaged 32.3 FPS at 1440×900 on
 Balanced mode reduced the render ratio to 0.75. This result misses the user's 40–50 FPS target.
 It is a local stress measurement, not a universal frame-rate estimate.
 A second test with loaded assets and fixed resolution measured 32.4 FPS.
-The CPU profile points mainly to rendering and scene transforms. Performance work remains separate from the attack changes.
+The CPU profile points mainly to rendering and scene transforms.
+The release checkout now shares duplicate enemy skeleton palettes, reducing 212 palettes to 64 in the fixed crowd test.
+Eighteen rendered comparisons match exactly. A repeated fixed-frame comparison saves about 1.6 ms of CPU work per frame.
+The moving stress test measured 48 FPS after the change. Separate-run variance prevents attributing the entire increase to this optimization.
+See `docs/reviews/shared-enemy-skeletons.md` for the conditions and limits.
 
 The older experiment reports below remain historical evidence. They do not describe the current release's exact behavior.
 

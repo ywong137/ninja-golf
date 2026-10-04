@@ -35,6 +35,7 @@ import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import {installLimbSkinning} from './forearm-twist.js';
 import {golfShoulderSkinWeight} from './golf-shoulder-skin.js';
 import {installSkinnedBounds} from './skinned-bounds.js';
+import {shareClonedSkeletons} from './shared-skeletons.js';
 import gripData from './grip-data.json';
 import locomotion from './locomotion-data.json';
 import {nativeRunSpec,nativeWalkSpec} from './native-stride.js';
@@ -110,7 +111,7 @@ export class Warrior {
     this.motionSample={};
     this.appearance=enemy?resolveEnemyAppearance(appearance):null;
     this.type=type;this.enemy=enemy;this.dead=0;this.root=new THREE.Group();const index=enemy?WARRIORS.length+this.appearance.family:type;
-    this.model=cloneSkeleton(templates[index].scene);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
+    this.model=cloneSkeleton(templates[index].scene);if(enemy)shareClonedSkeletons(this.model);this.root.add(this.model);this.root.scale.setScalar(enemy?1.1:1.1);
     this.rigMetadata={};this.model.traverse(o=>{if(o.userData.nativeMotion)this.rigMetadata=o.userData;});
     this.nativeHuman=!!this.rigMetadata.nativeMotion;
     this.palmGrips={r:new THREE.Vector3().fromArray(this.rigMetadata.palmGripR||PALM_GRIPS.r.toArray()),l:new THREE.Vector3().fromArray(this.rigMetadata.palmGripL||PALM_GRIPS.l.toArray())};
@@ -731,7 +732,7 @@ export class Warrior {
     weight=Math.min(1,weight);
     this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight});
   }
-  dispose(){this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);this.model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});for(const material of this.ownedMaterials)material.dispose();}
+  dispose(){this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);const skeletons=new Set();this.model.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();for(const material of this.ownedMaterials)material.dispose();}
 }
 export class CrowdRenderer {
   constructor(scene){
