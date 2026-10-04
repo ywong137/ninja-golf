@@ -3,7 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
-import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission} from './foliage-materials.js';
+import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission,leafShadowCutoff} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
 import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.js';
 export {queueSceneryRock} from './scenery-rocks.js';
@@ -13,8 +13,11 @@ const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
 export async function loadNature(){
  const loader=new GLTFLoader(),textures=new THREE.TextureLoader();
  await Promise.all(SOURCES.map(async name=>{
+  const conifer=['pine-open','pine-young','fir-layered'].includes(name);
   const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}.glb`);model.scene.updateMatrixWorld(true);
-  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(['pine-open','pine-young','fir-layered'].includes(name))material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
+  // The source needle alpha has soft coverage. A 0.45 cutoff erased it in
+  // minified views. The custom shadow material below shares this same cutoff.
+  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=conifer?.18:.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
   let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${kind==='shadow'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
   assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
  }));
@@ -88,7 +91,7 @@ export class NaturalLandscape{
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
     if(plant){material.envMapIntensity=.85;sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
     const mesh=new THREE.InstancedMesh(part.geometry.clone(),material,records.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
-    if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree)treeTransition(mesh.customDepthMaterial,part.lod,detail);}
+    if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree)treeTransition(mesh.customDepthMaterial,part.lod,detail);if(['pine-open','pine-young','fir-layered'].includes(name))leafShadowCutoff(mesh.customDepthMaterial,material.alphaTest);}
     root.add(mesh);this.groups.push({mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map});
    }
    if(source.map){const geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}

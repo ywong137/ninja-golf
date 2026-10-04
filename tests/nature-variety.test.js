@@ -15,10 +15,10 @@ test('Distinct conifer anatomy retains bounded near and middle geometry with tex
  assert.equal(new Set(signatures).size,3,'Separate authored tree forms must not reuse one mesh');
  const scrub=glb('woody-scrub');assert.ok(scrub.raw.length<2e6);assert.ok(scrub.doc.materials.some(m=>/leaves/.test(m.name)));
 });
-test('Japanese and Highland groves select different three-species mixes without canopy reuse in Highlands',()=>{
+test('Japanese and Highland groves select different species mixes without canopy reuse in Highlands',()=>{
  for(const theme of ['japanese','highlands']){
   const entries=forestSpecies(theme),counts=Object.fromEntries(entries.map(e=>[e.name,0]));
-  assert.equal(entries.length,3);assert.ok(Math.abs(entries.reduce((sum,e)=>sum+e.weight,0)-1)<1e-8);
+  assert.equal(entries.length,theme==='japanese'?4:3);assert.ok(Math.abs(entries.reduce((sum,e)=>sum+e.weight,0)-1)<1e-8);
   for(let i=0;i<1000;i++)counts[selectForestSpecies(theme,(i+.5)/1000)]++;
   for(const entry of entries)assert.equal(counts[entry.name],entry.weight*1000);
  }

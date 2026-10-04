@@ -22,6 +22,18 @@ export function leafTransmission(material){
  };
  material.customProgramCacheKey=()=>`${cache}-leaf-transmission-v1`;
 }
+// WebGLShadowMap replaces alpha-to-coverage cutoffs with 0.5. Native needle
+// textures need the same lower cutoff in the depth draw as in the color draw.
+export function leafShadowCutoff(material,cutoff){
+ const before=material.onBeforeCompile,cache=material.customProgramCacheKey();
+ const uniform={value:cutoff};material.userData.foliageShadowCutoff=uniform;
+ material.onBeforeCompile=shader=>{
+  before?.(shader);shader.uniforms.foliageShadowCutoff=uniform;
+  shader.fragmentShader='uniform float foliageShadowCutoff;\n'+shader.fragmentShader;
+  shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>','#define alphaTest foliageShadowCutoff\n#include <alphatest_fragment>\n#undef alphaTest');
+ };
+ material.customProgramCacheKey=()=>`${cache}-leaf-shadow-cutoff-v1`;
+}
 const fadeDeclarations='uniform vec3 natureEye;varying float natureDistance;';
 const fadeVertex='vec3 treeOrigin=instanceMatrix[3].xyz;natureDistance=length(vec3(treeOrigin.x-natureEye.x,max(0.,natureEye.y-treeOrigin.y-5.),treeOrigin.z-natureEye.z));';
 function fadeFragment(lod,detail=TREE_DETAIL){return `float nearMix=smoothstep(${detail.nearStart.toFixed(1)},${detail.nearEnd.toFixed(1)},natureDistance),farMix=smoothstep(${detail.farStart.toFixed(1)},${detail.farEnd.toFixed(1)},natureDistance);float screenNoise=fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453);float low=${lod===0?'0.':lod===1?'1.-nearMix':'1.-farMix'},high=${lod===0?'1.-nearMix':lod===1?'1.-farMix':'1.'};if(screenNoise<low||screenNoise>=high)discard;`;}

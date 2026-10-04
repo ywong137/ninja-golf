@@ -33,7 +33,7 @@ test('Mixed forest belts preserve every species, instance transform, and terrain
  for(const set of COURSE_SETS.slice(0,2)){
   const c=set.holes[0],root=new THREE.Group(),source={...sourceFor('forest-canopy'),species:forestSpecies(c.theme).map(entry=>({...entry,source:sourceFor(entry.name)}))};
   const sample=(x,z)=>40+x*.001+z*.002,result=buildDistantForest(root,c,region,source,sample,()=>new THREE.MeshBasicMaterial({map}));
-  assert.equal(result.meshes.length,3);assert.equal(result.shadows.length,3);assert.equal(root.children.length,6);
+  assert.equal(result.meshes.length,source.species.length);assert.equal(result.shadows.length,source.species.length);assert.equal(root.children.length,source.species.length*2);
   assert.equal(result.meshes.reduce((n,m)=>n+m.count,0),result.records.length);
   for(const mesh of result.meshes){
    const expected=result.records.filter(p=>p.species===mesh.userData.species);assert.equal(mesh.count,expected.length);

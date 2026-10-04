@@ -31,15 +31,16 @@ The latest Heather round on c251043 includes all nine holes, 25 correctly counte
 The following controller update makes HUD prompts match the active device and adds right-stick click to face the ball.
 Its normal-input built-game check passes through survey, golf, and combat.
 See [the controller and Heather review](reviews/controller-prompts-and-heather-round.md) for evidence and limits.
-Neo-Tokyo retains partial round coverage.
-The resumed Neo-Tokyo review completed hole 3 through encounters and scoring, then stopped during hole 4.
-It preserved the earlier first two scores through Continue. It is not a fresh complete-round result.
+A fresh Neo-Tokyo round now covers all nine holes as The Hustler on 9047ad6.
+Its 25 recorded shots match the final scorecard and saved progress. Sixteen combat passages reported no browser errors.
+The forest update restores native needle coverage and uses the cheaper fir source across more groves.
+See [the forest and Neo-Tokyo review](reviews/forest-needle-coverage.md) for evidence and limits.
 
 Remaining acceptance work includes:
 
 - Replace weak later attack branches and musou sequences with complete body performances.
 - Refine the outfits toward the approved concept silhouettes and materials.
-- Complete a fresh Neo-Tokyo round and expand normal-input hazard coverage.
+- Expand normal-input hazard coverage and repeat full rounds after major gameplay changes.
 - Improve environment materials and lighting toward the requested realistic appearance.
 - Verify integrated visuals and performance across representative devices.
 
