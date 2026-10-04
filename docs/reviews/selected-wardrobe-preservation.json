@@ -386,7 +386,16 @@
         "indices": 23,
         "material": 2
       }
-    ]
+    ],
+    "motionExtension": {
+      "outputSha256": "bf28bbd291ca92c76d9f86131776485ee2808ef922a7dbc4bc7c5851368f3c82",
+      "baseBinaryBytes": 17490112,
+      "baseBinarySha256": "c338527f663f3872eb5f0cb6bcbfbc5c2f38b3b512e69fcc6d9c1e19634654ed",
+      "baseMeshesSha256": "e2f9b5aedc6148e4356235d6eba6c774545b7b7cad6a69c213ded40d6a4cfc58",
+      "addedClips": [
+        "Hustler_Power_Finish"
+      ]
+    }
   },
   "sora": {
     "originalBinarySha256": "4bdf085ef8777fa2a97294b61f37186987de684f296629bee157c1049ea49a8e",
