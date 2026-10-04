@@ -600,7 +600,7 @@ export class Warrior {
       playback.setEffectiveTimeScale(0);playback.time=Math.min(playback.getClip().duration,emerging.clipTime);
     }
     else if(enemyAction&&this.actionToken!==enemyAction.token){this.actionToken=enemyAction.token;const name=ENEMY_TYPES[this.type].clip;this.play(name,.07,true,motions[name].duration/enemyAction.duration);}
-    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,motions[name].entryBlend??.07,true,motions[name].duration/action.duration);}
+    else if(action&&this.actionToken!==action.token){this.actionToken=action.token;const name=action.motionName??combatMotionName(WARRIORS[this.type],action.kind,action.step);this.play(name,action.entryBlend??motions[name].entryBlend??.07,true,motions[name].duration/action.duration);}
     else if(guardImpact&&guardBreak<=0)this.play(`${guardPrefix}_Guard_Impact`,.035,true,parry>0?1.15:1);
     else if(swing>0&&!this.wasSwing)this.play(putting?'Golf_Putt':'Golf_Swing',.10,true,1);
     else if(!action&&!enemyAction&&attack>0&&!this.wasAttack)this.play('Sword_Attack',.07,true,2.2);

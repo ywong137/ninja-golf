@@ -23,7 +23,9 @@ try{
    const inspect=stage=>{
     row[stage+'Frames']++;
     for(const [hand,weapon]of [['right',g.player.weapon],['left',g.player.offhand]])if(weapon){
-     if(!visible(weapon)&&row.hidden.length<8)row.hidden.push({stage,hand,time:g.time,clip:g.player.current});
+     const intentionalSmoke=!!g.action?.sequence&&g.action.sequence.segments.some((s,i)=>i>0&&g.action.time>=g.action.sequence.segments[i-1].end&&g.action.time<s.start);
+     if(intentionalSmoke){ if(g.player.root.visible||!weapon.visible)row.hidden.push({stage,hand,time:g.time,reason:'The smoke must hide the whole actor, not remove a blade.'}); }
+     if(!intentionalSmoke&&!visible(weapon)&&row.hidden.length<8)row.hidden.push({stage,hand,time:g.time,clip:g.player.current});
      let attached=false;for(let p=weapon;p;p=p.parent)if(p===g.player.root)attached=true;
      if(!attached)row.detached.push({stage,hand});
     }
