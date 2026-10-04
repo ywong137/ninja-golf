@@ -26,8 +26,12 @@ Larger contact bursts and fourfold spark counts now accompany recorded flesh imp
 The Closer’s 64-enemy moving forest test averages 58.88 FPS on the same local hardware.
 See [the correction review](reviews/combat-corrections-2026-10-04.md) for scope and limits.
 
-Complete normal-input rounds exist for Crane Coast and Copper Saguaro on earlier builds.
-Heather and Neo-Tokyo retain partial round coverage.
+Complete normal-input rounds now exist for Crane Coast, Copper Saguaro, and Heather & Crown.
+The latest Heather round on c251043 includes all nine holes, 25 correctly counted shots, and 16 combat passages.
+The following controller update makes HUD prompts match the active device and adds right-stick click to face the ball.
+Its normal-input built-game check passes through survey, golf, and combat.
+See [the controller and Heather review](reviews/controller-prompts-and-heather-round.md) for evidence and limits.
+Neo-Tokyo retains partial round coverage.
 The resumed Neo-Tokyo review completed hole 3 through encounters and scoring, then stopped during hole 4.
 It preserved the earlier first two scores through Continue. It is not a fresh complete-round result.
 
@@ -35,7 +39,7 @@ Remaining acceptance work includes:
 
 - Replace weak later attack branches and musou sequences with complete body performances.
 - Refine the outfits toward the approved concept silhouettes and materials.
-- Complete Heather and Neo-Tokyo rounds, including hazards and final scorecards.
+- Complete a fresh Neo-Tokyo round and expand normal-input hazard coverage.
 - Improve environment materials and lighting toward the requested realistic appearance.
 - Verify integrated visuals and performance across representative devices.
 
