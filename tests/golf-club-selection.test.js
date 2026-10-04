@@ -20,7 +20,7 @@ const context={THREE,CLUBS,carryFor,SHOT_HEIGHTS,WARRIORS:[{power:1,health:100},
 vm.runInNewContext(source.slice(source.indexOf('class Game {'),source.indexOf('\nasync function boot')).replace('class Game {','this.Game=class Game {').replaceAll('import.meta.env.DEV','false'),context);
 function fixture(){
  const game=Object.create(context.Game.prototype);
- Object.assign(game,{mode:'game',phase:'aim',paused:false,club:0,shotHeight:0,playerIndex:0,player:new FakeWarrior(),scene:new THREE.Scene(),ball:{position:new THREE.Vector3()},world:{cup:new THREE.Vector3(),build(){}},ui:{warriorDetails(){},showcaseState(){}},audio:{play(){}},showcaseSettings:{},refreshAim(){this.refreshCount=(this.refreshCount||0)+1;},placePlayer(){}});
+ Object.assign(game,{mode:'game',phase:'aim',paused:false,club:0,shotHeight:0,playerIndex:0,player:new FakeWarrior(),scene:new THREE.Scene(),ball:{position:new THREE.Vector3()},world:{cup:new THREE.Vector3(),build(){}},ui:{warriorDetails(){},showcaseState(){}},audio:{play(){}},showcaseSettings:{},refreshAim(){this.refreshCount=(this.refreshCount||0)+1;},placePlayer(){},preparePortrait(){}});
  game.updateClubModel();return game;
 }
 function active(game,code){assert.equal(game.player.clubShort,code);assert.equal(game.player.golfClub.head.children[0].userData.clubShort,code);}
