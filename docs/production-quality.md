@@ -6,7 +6,7 @@ The game remains a playable alpha. It does not yet meet the requested AAA presen
 All six approved outfit defaults are live. The concept references remain archived for future unlockable outfits.
 
 The release checkout now has complete source performances for every hero's opening light and heavy attack.
-The Shinobi heavy attack is live and verified. The Hustler heavy attack has passed local checks and awaits deployment.
+The Shinobi and Hustler heavy attacks are live and verified.
 Their checks cover full-body movement, anatomical limbs, attached weapons, cutting direction, hit timing, and recovery.
 The Hustler reuses an accepted body performance with her own rig and sabre.
 This avoids rebuilding common human movement separately for each character.
@@ -18,8 +18,8 @@ Remaining release work includes:
 - Play complete rounds across all four courses, including combat, penalties, and scorecards.
 - Verify rendering performance on the same integrated build used for visual acceptance.
 
-The current 64-enemy moving-combat stress test averaged 32.3 FPS at 1440×900 on this M1 Max.
-Balanced mode reduced the render ratio to 0.75. This result misses the user's 40–50 FPS target.
+Before the skeleton optimization, the 64-enemy moving-combat stress test averaged 32.3 FPS at 1440×900 on this M1 Max.
+Balanced mode reduced the render ratio to 0.75. That earlier result missed the user's 40–50 FPS target.
 It is a local stress measurement, not a universal frame-rate estimate.
 A second test with loaded assets and fixed resolution measured 32.4 FPS.
 The CPU profile points mainly to rendering and scene transforms.

@@ -74,7 +74,14 @@ class Game {
   begin(i=this.playerIndex,courseIndex=0){this.stopShowcase();this.mode='game';this.setCourse(courseIndex);this.selectWarrior(i);this.scores=[];this.scorePenalties=[];this.kills=0;this.bestCombo=0;this.resolve=35;this.mode='game';this.paused=false;this.loadHole(0);this.audio.start();this.ui.toast('Q / E selects a club. A / D aims. Press SPACE twice to swing.',6000);this.save();}
   loadHole(index){
     this.hole=index;this.course=this.holes[index];this.groundHeight=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.scene.userData.courseTheme=this.course.theme;this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.shotHeight=0;this.club=this.course.par===3?2:0;this.updateClubModel();this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
-    this.ball.position.set(0,heightAt(this.course,0,0)+BALL_RADIUS,0);this.shotOrigin.copy(this.ball.position);this.ball.visible=true;this.trail.visible=false;this.lie='Tee';this.player.root.visible=this.mode==='game';this.aimAtPin();this.placePlayer();this.cameraYaw=this.aim;this.camera.position.set(-9,heightAt(this.course,0,0)+8,-14);this.currentLook=this.ball.position.clone().add(new THREE.Vector3(0,2,20));this.refreshAim();
+    this.ball.position.set(0,heightAt(this.course,0,0)+BALL_RADIUS,0);this.shotOrigin.copy(this.ball.position);this.ball.visible=true;this.trail.visible=false;this.lie='Tee';this.player.root.visible=this.mode==='game';this.aimAtPin();this.placePlayer();this.cameraYaw=this.aim;this.camera.position.set(-9,heightAt(this.course,0,0)+8,-14);this.currentLook=this.ball.position.clone().add(new THREE.Vector3(0,2,20));this.refreshAim();this.preparePortrait();
+  }
+  preparePortrait(){
+    const request={};this.portraitPreparation=request;
+    this.portraitReady=this.world.waitForAssets().then(()=>{
+      if(this.portraitPreparation!==request)return;
+      return this.rendering.preparePortrait([this.world.root,...this.enemies.map(enemy=>enemy.root)],this.portraitLights);
+    }).catch(error=>console.warn('Portrait shader preparation failed; the renderer will compile on demand.',error));
   }
   placePlayer(addressWeight=1){
     const p=this.ball.position,facing=(this.aim||0)+Math.PI/2,fit=this.player.golfClubFit;
@@ -140,7 +147,7 @@ class Game {
     this.velocity.set(0,0,0);this.lie=lieAt(this.course,this.ball.position.x,this.ball.position.z);this.phase='combat';this.enemiesSpawned=0;this.combatTime=0;this.spawnTime=2;this.combo=0;this.comboTime=0;this.cameraYaw=this.aim;this.trail.visible=false;this.fastFlight=false;
     const distance=this.player.root.position.distanceTo(this.ball.position);this.lastShot={distance:shotDistance,lie:this.lie,pin:this.ball.position.distanceTo(this.world.cup)*YARD,relief:!!reliefNotice};this.ui.shotResult(this.lastShot);this.enemyBudget=Math.max(12,Math.min(200,Math.round(distance*.65)+this.hole*20));
     if(distance<12||this.shotStartLie==='Green'){this.phase='aim';this.aimAtPin();this.placePlayer();this.selectBestClub();this.refreshAim();this.power=1;this.ui.toast(reliefNotice+(this.lie==='Green'?'On the green. Read the line and choose your pace.':'A short walk. Your next shot is ready.'));return;}
-    this.spawnWave(14);this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast(reliefNotice||'Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
+    this.spawnWave(14);this.preparePortrait();this.ui.achievement('BALL LANDS. BLADES RISE.','The walk begins.',`${Math.round(distance)} metres to your ball. Mind the company.`);this.ui.toast(reliefNotice||'Click to capture mouse · Left / right click: fast / heavy · F: Musou · C: focused stance',5500);
   }
   selectBestClub(){this.shotHeight=0;const d=this.ball.position.distanceTo(this.world.cup);this.club=d<23&&this.lie==='Green'?7:this.lie==='Bunker'?6:CLUBS.findIndex((c,i)=>i<7&&carryFor(c,this.warrior,this.lie)<d*1.05);if(this.club<0)this.club=6;this.updateClubModel();}
   slideOnLand(position,from,radius=.38,lift=0){moveOnLand(position,from,this.course,this.world.collision,radius,lift);}
@@ -163,7 +170,7 @@ class Game {
       enemy.spawnSite=site.id;enemy.role=ENEMY_TYPES[enemy.type].role;enemy.slot=slot;enemy.hp=ENEMY_TYPES[enemy.type].hp;enemy.cooldown=1.4+Math.random()*1.8;enemy.readyAt=this.time+(Math.random()<.65?2+Math.random()*3:0);enemy.strike=0;enemy.speed=ENEMY_TYPES[enemy.type].speed;enemy.dead=0;enemy.knockback=new THREE.Vector3();enemy.lift=0;enemy.verticalSpeed=0;this.enemies.push(enemy);this.enemiesSpawned++;site.readyAt=this.time+8;
     }
   }
-  clearEnemies(){this.projectiles?.clear();this.pendingStrike=null;this.guardBufferedAttack=null;this.action=null;this.runAcceleration=null;this.attackTimer=0;this.attackBuffer=null;this.lightChain=0;this.cinematic=0;document.body.classList.remove('musou-active');this.ui?.$ ('musou-cinema')?.classList.add('hidden');for(const e of this.enemies)this.scene?.remove(e.root);this.enemies=[];}
+  clearEnemies(){this.projectiles?.clear();this.pendingStrike=null;this.guardBufferedAttack=null;this.action=null;this.runAcceleration=null;this.attackTimer=0;this.attackBuffer=null;this.lightChain=0;this.cinematic=0;this.rendering?.setPortrait(null);document.body.classList.remove('musou-active');this.ui?.$ ('musou-cinema')?.classList.add('hidden');for(const e of this.enemies)this.scene?.remove(e.root);this.enemies=[];}
   nearbyEnemies(){return this.enemies.filter(e=>!e.dead&&e.root.position.distanceTo(this.player.root.position)<8).length;}
   attack(kind='light'){
     if(this.phase!=='combat'||this.paused||this.cinematic>0)return;
@@ -462,6 +469,8 @@ class Game {
     camTarget.y=Math.max(camTarget.y,heightAt(this.course,camTarget.x,camTarget.z)+(this.cinematic>0?1.1:1.8));const cameraBlend=immediate?1:1-Math.exp(-speed*dt);this.camera.position.lerp(camTarget,cameraBlend);this.currentLook.lerp(camLook,cameraBlend);if(this.shake>0&&!this.input.reducedMotion){this.shake-=dt;this.camera.position.x+=(Math.random()-.5)*this.shake*2;this.camera.position.y+=(Math.random()-.5)*this.shake;}
     if(this.mode==='game'&&this.phase==='combat'&&!(this.cinematic>0))this.world.collision.camera(v1.copy(p).add(new THREE.Vector3(0,1.7,0)),this.camera.position);
     this.camera.lookAt(this.currentLook);
+    const portrait=this.mode==='game'&&this.phase==='combat'&&this.cinematic>0;
+    this.rendering.setPortrait(portrait?camLook:null,portrait?[this.world.root,...this.enemies.map(enemy=>enemy.root)]:null);
   }
   frame(){
     const now=performance.now();const realDt=(now-this.previousTime)/1000;let dt=Math.min(realDt,.05);this.previousTime=now;if(this.hitStop>0){this.hitStop-=realDt;dt*=.12;}this.input.setContext(this.mode==='game'&&!this.paused?(this.survey?'survey':this.phase):'menu');this.input.poll(dt,this.mode==='game'&&this.phase==='combat');

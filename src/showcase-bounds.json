@@ -5575,7 +5575,7 @@
       ],
       "samples": 625,
       "rate": 60,
-      "modelSha256": "bf28bbd291ca92c76d9f86131776485ee2808ef922a7dbc4bc7c5851368f3c82"
+      "modelSha256": "bf9b06d21d0abe5485d8decae6a80ad31d95e9549f72b61053df034957771b5e"
     },
     "sora": {
       "min": [

@@ -12,3 +12,5 @@ The asset preservation test reconstructs the previous mesh list before checking 
 Local review images and the exact preservation report are in `artifacts/reviews/hustler-neckline` in the primary checkout.
 
 The rejected four-cut Hustler musou remains separate. This repair does not include that clip or its weapon changes.
+
+The first CI run caught a stale preview asset fingerprint. A fresh 625-sample bake returned identical bounds and updated that fingerprint.

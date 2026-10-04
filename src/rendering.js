@@ -3,7 +3,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { Vector2 } from 'three';
+import { Vector2,Vector3 } from 'three';
+import {PortraitCutaway} from './portrait-cutaway.js';
 
 class ContactPass extends GTAOPass {
   setSize(width,height){super.setSize(Math.max(1,Math.round(width*.65)),Math.max(1,Math.round(height*.65)));}
@@ -16,7 +17,7 @@ class ContactPass extends GTAOPass {
 }
 export class Rendering {
   constructor(renderer,scene,camera){
-    this.renderer=renderer;this.scene=scene;this.camera=camera;
+    this.renderer=renderer;this.scene=scene;this.camera=camera;this.cutaway=new PortraitCutaway();this.portraitFocus=new Vector3();this.portraitRoots=null;
     this.composer=new EffectComposer(renderer);this.composer.renderTarget1.samples=4;this.composer.renderTarget2.samples=4;
     this.composer.addPass(new RenderPass(scene,camera));
     this.contact=new ContactPass(scene,camera,innerWidth,innerHeight);
@@ -26,6 +27,25 @@ export class Rendering {
     this.resize();renderer.info.autoReset=false;renderer.shadowMap.autoUpdate=false;
   }
   resize(){this.composer.setPixelRatio(this.renderer.getPixelRatio());this.composer.setSize(innerWidth,innerHeight);}
+  preparePortrait(roots,lights){
+    const target=this.renderer.getRenderTarget(),visible=lights.visible;
+    const focus=this.camera.getWorldDirection(new Vector3()).add(this.camera.position);
+    lights.visible=true;
+    try{
+      // compileAsync submits its shader variants synchronously, then waits for
+      // GPU compilation. Restore scene state before another frame can draw.
+      const pending=this.cutaway.withClippedScenery(this.renderer,this.camera,focus,roots,()=>{
+        const jobs=[];
+        for(const destination of [null,this.composer.readBuffer]){
+          this.renderer.setRenderTarget(destination);
+          jobs.push(this.renderer.compileAsync(this.scene,this.camera));
+        }
+        return jobs;
+      });
+      return Promise.all(pending);
+    }finally{this.renderer.setRenderTarget(target);lights.visible=visible;}
+  }
+  setPortrait(focus,roots){this.portraitRoots=focus?roots:null;if(focus)this.portraitFocus.copy(focus);}
   render(quality){
     this.renderer.info.reset();this.renderer.shadowMap.needsUpdate=true;
     // Avoid drawing every skinned crowd member a third time in Balanced mode.
@@ -33,6 +53,13 @@ export class Rendering {
     const crowd=this.scene.userData.crowdCount||0;
     if(quality==='high'||crowd<24)this.contact.enabled=true;else if(crowd>32)this.contact.enabled=false;
     this.bloom.enabled=this.scene.userData.courseTheme==='cyberpunk'||!!this.scene.userData.musou;this.bloom.strength=this.scene.userData.musou?.45:.32;
-    if(quality==='low')this.renderer.render(this.scene,this.camera);else this.composer.render();
+    const draw=()=>{if(quality==='low')this.renderer.render(this.scene,this.camera);else this.composer.render();};
+    if(this.portraitRoots){
+      // The AO override shader cannot use each scenery material's cutaway plane.
+      // Dedicated portrait lighting supplies the face's close-up shading.
+      const contactEnabled=this.contact.enabled;this.contact.enabled=false;
+      try{this.cutaway.withClippedScenery(this.renderer,this.camera,this.portraitFocus,this.portraitRoots,draw);}
+      finally{this.contact.enabled=contactEnabled;}
+    }else draw();
   }
 }
