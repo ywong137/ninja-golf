@@ -38,3 +38,40 @@ The earlier untreated portrait also incurred a 399.3 ms first render.
 
 Evidence resides in `artifacts/reviews/musou-cutaway` in the primary checkout.
 The rejected Hustler four-cut candidate remains unpublished. This change does not alter attack animation assets.
+
+## Combat overlay follow-up
+
+The shot result and combat cue now hide immediately during the musou portrait.
+Their nodes sit outside the main HUD, so hiding the HUD did not hide them.
+Opacity and transform transitions remain. Visibility changes no longer wait for a transition.
+Ending or interrupting the portrait restores these overlays without discarding the shot result.
+
+Combat now places the ball waypoint above the action.
+One short toast replaces the duplicate phase banner and large arrival announcement.
+Short windows use smaller control and counter panels. The shot result stays above the radar.
+
+Muted browser checks verified normal completion and interruption at 1440×900 and 960×640.
+The built application passed layout checks at 1920×1080, 1440×900, 1280×720, 1024×600, and 960×640.
+Checks cover the waypoint, health, shot result, radar, toast, and control panels.
+The review selected all six characters and played a real golf shot into combat as The Closer.
+All eleven loaded character assets and the JavaScript bundle matched the local release hashes. No browser errors occurred.
+Evidence resides in `artifacts/reviews/musou-hud` in the primary checkout.
+
+## Resolution changes
+
+The layout review exposed a separate blank-frame bug.
+Automatic resolution changes resized the canvas after rendering. Resizing clears its drawing buffer.
+The frame now changes resolution before its final render. The existing resolution thresholds remain unchanged.
+
+The pixel check reproduced empty buffers after both decreasing and increasing resolution.
+After the fix, both cases retained all 1,024 sampled opaque pixels. The stable-resolution control also passed.
+`tests/browser-resolution-frame.mjs` checks this through the actual application frame.
+Evidence resides in `artifacts/reviews/resolution-frame` in the primary checkout.
+
+## Rejected motion study
+
+The Shinobi dual-weapon candidate remains unpublished.
+Both the 53-centimetre and 36-centimetre blade trials crossed the head or torso in 39 sampled frames.
+Opus 5.5 High also flagged clearance in the preparation poses.
+The existing motion and weapon lengths remain unchanged.
+The decision and evidence reside in `artifacts/reviews/shinobi-complete-musou` in the primary checkout.
