@@ -6545,7 +6545,7 @@
       ],
       "samples": 622,
       "rate": 60,
-      "modelSha256": "5aef89efea219db7018bc4fa1e91a542201fcd34472c0d43b7d973340731bff4"
+      "modelSha256": "f45861a258044903db827fab41c01172dd19b4134ec7762a3fae35c4c354d4e5"
     },
     "sora": {
       "min": [
@@ -8167,7 +8167,7 @@
       ],
       "samples": 622,
       "rate": 60,
-      "modelSha256": "f4ea1bdfc95139065d4914506f6e520639f081278cac6dc5550c0d3cc9561fff"
+      "modelSha256": "ea021670a71e0edcf4016bd65d5b94a868cfd52db2f3b8b97f22270c0b678091"
     }
   }
 }

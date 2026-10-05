@@ -42,3 +42,18 @@ test('Nonlinear, incomplete and duplicate pelvis keys cannot silently produce a 
  const g=rig();g.clip.tracks[0].setInterpolation(T.InterpolateSmooth);assert.throws(()=>extractPlanarRoot(g.scene,g.clip),/linear pelvis/i);
  for(const times of [[.1,.35,1],[0,.35,.9],[0,.35,.35]]){const a=rig();a.clip.tracks[0].times=Float32Array.from(times);assert.throws(()=>extractPlanarRoot(a.scene,a.clip),/complete clip|increasing/);}
 });
+
+test('A ready anchor removes only the initial horizontal offset from the complete performance',()=>{
+ const original=rig(),anchor={x:-.2,z:.4},result=extractPlanarRoot(original.scene,original.clip,{anchor});
+ assert.deepEqual(result.path.rows[0],{time:0,x:0,z:0});
+ for(let i=0;i<=100;i++){
+  const a=rig(),b=rig(),t=i/100;
+  play(a.scene,a.clip,t);play(b.scene,result.clip,t);const shift=samplePlanarRoot(result.path,t);b.scene.position.set(shift.x,0,shift.z);b.scene.updateMatrixWorld(true);
+  for(const name of ['pelvis','hand']){
+   const expected=a[name].getWorldPosition(new T.Vector3()).sub(new T.Vector3(result.offset.x,0,result.offset.z));
+   assert.ok(expected.distanceTo(b[name].getWorldPosition(new T.Vector3()))<2e-7);
+  }
+  if(i===0){const p=b.pelvis.getWorldPosition(new T.Vector3());assert.ok(Math.abs(p.x-anchor.x)<2e-7&&Math.abs(p.z-anchor.z)<2e-7);}
+ }
+ assert.throws(()=>extractPlanarRoot(original.scene,original.clip,{anchor:{x:NaN,z:0}}),/finite world/);
+});
