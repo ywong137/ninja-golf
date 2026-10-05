@@ -45,7 +45,26 @@ export class Effects {
   ring(radius,width,segments,start,sweep,color){
     const key=[radius,width,segments,start,sweep].join(':');
     const pool=this.ringPools.get(key)??[];this.ringPools.set(key,pool);
-    const m=pool.pop()??new THREE.Mesh(new THREE.RingGeometry(radius,radius+width,segments,1,start,sweep),new THREE.MeshBasicMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+    let m=pool.pop();
+    if(!m){
+      const geometry=new THREE.RingGeometry(radius,radius+width,segments,1,start,sweep);
+      const coordinates=new Float32Array(geometry.attributes.position.count*2);
+      for(let row=0;row<2;row++)for(let i=0;i<=segments;i++){const vertex=row*(segments+1)+i;coordinates[vertex*2]=i/segments;coordinates[vertex*2+1]=row;}
+      geometry.setAttribute('effectUv',new THREE.BufferAttribute(coordinates,2));
+      const material=new THREE.MeshBasicMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending});
+      // Feather both radial edges and taper the ends of each moving arc.
+      material.onBeforeCompile=shader=>{
+        shader.vertexShader='attribute vec2 effectUv;varying vec2 arcUv;\n'+shader.vertexShader;
+        shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narcUv=effectUv;');
+        shader.fragmentShader='varying vec2 arcUv;\n'+shader.fragmentShader;
+        shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+          float widthFade=pow(max(0.,sin(arcUv.y*3.14159)),1.5);
+          float endFade=smoothstep(0.,.18,arcUv.x)*(1.-smoothstep(.65,1.,arcUv.x));
+          diffuseColor.a*=widthFade*endFade;
+        `);
+      };
+      m=new THREE.Mesh(geometry,material);
+    }
     m.material.color.set(color);m.material.opacity=1;m.scale.setScalar(1);m.userData.effectPool=key;
     return m;
   }
@@ -70,7 +89,7 @@ export class Effects {
     this.impacts.emit(position.clone().add(new THREE.Vector3(0,1.2,0)),new THREE.Vector3(Math.sin(beat),.1,Math.cos(beat)),{heavy:true,special:true,guarded:true});
     for(let i=0;i<3;i++){
       const radius=2.8+i*1.8,m=this.ring(radius,final?.55:.28,64,-2.1,4.2,i===1?'#ffb16c':'#ff3020');
-      m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.7,max:.7,peak:.82,growth:style==='ring'?3:2.1});
+      m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.7,max:.7,peak:.64,growth:style==='ring'?3:2.1});
     }
     if(final){this.explosion(position,2);for(let i=0;i<8;i++){const angle=i*Math.PI/4;this.explosion(position.clone().add(new THREE.Vector3(Math.sin(angle)*5,0,Math.cos(angle)*5)),.85);}}
   }
@@ -91,7 +110,7 @@ export class Effects {
     const radius=Math.min(reach,special?8:6),sweep=Math.min(Math.PI,arc);
     const m=this.ring(radius-.24,.24,56,-sweep,sweep*2,style?color:special?'#efb5ff':'#ffedb3');
     m.rotation.set(-Math.PI/2,style==='ring'?.38:.12,yaw-Math.PI/2);m.position.copy(position);m.position.y+=style==='sickle'?.55:1.2;this.scene.add(m);this.items.push({m,life:.24,max:.24,peak:.45});
-    this.impacts.emit(m.position,new THREE.Vector3(Math.sin(yaw),.1,Math.cos(yaw)),{heavy:special,guarded:true});
+    // Blade ribbons and the swing arc show misses. Sparks require a contact.
   }
   setMusou(position,active,reducedMotion=false){this.musouAura.set(position,active,reducedMotion);}
   update(dt,calm=false){

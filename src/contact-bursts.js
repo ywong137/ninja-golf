@@ -15,26 +15,34 @@ export class ContactBursts {
   this.attributes.age.array.fill(1);geometry.instanceCount=this.capacity;
   this.material=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,
    vertexShader:`attribute vec3 center;attribute float radius,age,rotation,guard;varying vec2 p;varying float t,spin,metal;
-    void main(){p=position.xy;t=age;spin=rotation;metal=guard;vec4 view=modelViewMatrix*vec4(center,1.);view.xy+=position.xy*radius;gl_Position=projectionMatrix*view;}`,
+    void main(){p=position.xy;t=age;spin=rotation;metal=guard;if(age>=1.){gl_Position=vec4(2.,2.,2.,1.);return;}vec4 view=modelViewMatrix*vec4(center,1.);view.xy+=position.xy*radius;gl_Position=projectionMatrix*view;}`,
    fragmentShader:`varying vec2 p;varying float t,spin,metal;
-    void main(){if(t>=1.)discard;float r=length(p);if(r>1.)discard;float a=atan(p.y,p.x)+spin;
-     float rays=pow(abs(cos(a*5.)),26.);float slash=pow(abs(cos(a)),90.);
-     float ignition=1.-smoothstep(.13,.68,t);float core=exp(-r*r*38.);
-     float star=(1.-smoothstep(.17+rays*.58+slash*.18,.24+rays*.58+slash*.18,r))*ignition;
-     float shock=exp(-pow((r-mix(.20,.90,t))*32.,2.))*(.50+.50*cos(a*9.+t*5.))*(1.-t);
-     float glow=exp(-r*r*7.)*.32;
-     float alpha=(core+star*.75+shock*.7+glow)*pow(1.-t,.65)*(1.-smoothstep(.9,1.,r));
-     vec3 gold=mix(vec3(1.,.07,.005),vec3(1.,.95,.72),clamp(core,0.,1.));
-     vec3 ice=mix(vec3(.18,.60,1.),vec3(.83,.96,1.),clamp(core+star,0.,1.));
-     gl_FragColor=vec4(mix(gold,ice,metal)*(1.4+core*3.),min(.85,alpha));
+    float hash(vec2 v){return fract(sin(dot(v,vec2(127.1,311.7)))*43758.5453);}
+    float noise(vec2 v){vec2 i=floor(v),f=fract(v);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
+    void main(){if(t>=1.)discard;float r=length(p);if(r>1.)discard;
+     vec2 q=mat2(cos(spin),-sin(spin),sin(spin),cos(spin))*p;
+     float grain=noise(q*7.+vec2(spin,t*2.));
+     float ignition=1.-smoothstep(.05,.62,t);
+     float core=exp(-r*r*60.)*ignition;
+     // One short hot filament replaces the repeated geometric star points.
+     float filament=exp(-q.x*q.x*6.-q.y*q.y*650.)*ignition;
+     float halo=exp(-r*r*9.)*(.30+grain*.40)*(1.-t);
+     float shockRadius=mix(.12,.88,sqrt(t));
+     float shock=exp(-pow((r-shockRadius+(grain-.5)*.055)*35.,2.));
+     shock*=smoothstep(.30,.68,grain)*sin(t*3.14159)*.42;
+     float alpha=(core*.95+filament*.62+halo+shock)*pow(1.-t,.8)*(1.-smoothstep(.88,1.,r));
+     float heat=clamp(core+filament*.7+halo*.4,0.,1.);
+     vec3 gold=mix(vec3(1.,.23,.025),vec3(1.,.97,.80),heat);
+     vec3 ice=mix(vec3(.25,.58,1.),vec3(.88,.97,1.),heat);
+     gl_FragColor=vec4(mix(gold,ice,metal)*(1.4+core*2.5),min(.85,alpha));
      #include <tonemapping_fragment>
      #include <colorspace_fragment>
     }`});
-  this.mesh=new T.Mesh(geometry,this.material);this.mesh.name='Contact flash pool';this.mesh.frustumCulled=false;scene.add(this.mesh);
+  this.mesh=new T.Mesh(geometry,this.material);this.mesh.name='Contact flash pool';this.mesh.frustumCulled=false;this.mesh.visible=false;scene.add(this.mesh);
  }
  emit(position,{heavy=false,special=false,guarded=false,radius,duration}={}){
   const index=this.cursor++%this.capacity,p=this.records[index],a=this.attributes;
-  p.life=p.duration=duration??(special?.38:heavy?.32:.26);p.size=radius??(special?2.6:heavy?1.65:1.25);
+  this.mesh.visible=true;p.life=p.duration=duration??(special?.38:heavy?.32:.26);p.size=radius??(special?2.6:heavy?1.65:1.25);
   a.center.setXYZ(index,position.x,position.y,position.z);a.radius.setX(index,p.size);a.age.setX(index,0);a.rotation.setX(index,Math.random()*Math.PI*2);a.guard.setX(index,guarded?1:0);
   for(const attribute of Object.values(a))attribute.needsUpdate=true;
  }
@@ -44,7 +52,7 @@ export class ContactBursts {
    const p=this.records[i];p.life=Math.max(0,p.life-dt*(calm?4:1));const age=1-p.life/p.duration;
    this.attributes.age.setX(i,age);this.attributes.radius.setX(i,p.size*(1+age*.45));if(p.life>0)this.active++;
   }
-  this.attributes.age.needsUpdate=true;this.attributes.radius.needsUpdate=true;
+  this.mesh.visible=this.active>0;this.attributes.age.needsUpdate=true;this.attributes.radius.needsUpdate=true;
  }
- clear(){for(const p of this.records)p.life=0;this.active=0;this.attributes.age.array.fill(1);this.attributes.age.needsUpdate=true;}
+ clear(){this.mesh.visible=false;for(const p of this.records)p.life=0;this.active=0;this.attributes.age.array.fill(1);this.attributes.age.needsUpdate=true;}
 }

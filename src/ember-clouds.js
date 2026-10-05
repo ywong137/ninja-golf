@@ -11,7 +11,7 @@ export class EmberClouds {
   a.age.array.fill(1);geometry.instanceCount=capacity;
   const material=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:fire?T.AdditiveBlending:T.NormalBlending,
    vertexShader:`attribute vec3 center;attribute float size,age,seed;varying vec2 vUv;varying float t,s;
-    void main(){vUv=position.xy;t=age;s=seed;vec4 p=modelViewMatrix*vec4(center,1.);p.xy+=position.xy*size;gl_Position=projectionMatrix*p;}`,
+    void main(){vUv=position.xy;t=age;s=seed;if(age>=1.){gl_Position=vec4(2.,2.,2.,1.);return;}vec4 p=modelViewMatrix*vec4(center,1.);p.xy+=position.xy*size;gl_Position=projectionMatrix*p;}`,
    fragmentShader:`varying vec2 vUv;varying float t,s;
     float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
     float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
@@ -19,15 +19,15 @@ export class EmberClouds {
     void main(){if(t>=1.)discard;float r=length(vUv);if(r>1.)discard;
      vec2 p=vUv*2.7+vec2(s,t*-1.8);p+=vec2(fbm(p+t),fbm(p+4.-t))*.85;
      float n=fbm(p),density=smoothstep(.23,.76,n)*(1.-smoothstep(.20,1.,r));
-     float fade=smoothstep(0.,.075,t)*pow(1.-t,1.25);
-     ${fire?`float heat=clamp(density*2.8-t*.7,0.,1.);vec3 color=mix(vec3(.55,.006,.001),vec3(1.,.20,.009),smoothstep(.05,.5,heat));color=mix(color,vec3(1.,.84,.40),smoothstep(.62,1.,heat));gl_FragColor=vec4(color*2.5,density*fade*1.35);`:`vec3 color=mix(vec3(.12,.15,.20),vec3(.46,.50,.57),n*.8+vUv.y*.12);gl_FragColor=vec4(color,density*fade*.56);`}
+     float fade=smoothstep(0.,.075,t)*pow(1.-t,1.6);
+     ${fire?`float heat=clamp(density*1.7-t*.65,0.,1.);vec3 color=mix(vec3(.55,.004,.001),vec3(1.,.10,.002),smoothstep(.04,.58,heat));color=mix(color,vec3(1.,.48,.06),smoothstep(.80,1.,heat));gl_FragColor=vec4(color*1.7,density*fade*.85);`:`vec3 color=mix(vec3(.12,.15,.20),vec3(.46,.50,.57),n*.8+vUv.y*.12);gl_FragColor=vec4(color,density*fade*.56);`}
      #include <tonemapping_fragment>
      #include <colorspace_fragment>
     }`});
-  const mesh=new T.Mesh(geometry,material);mesh.name=fire?'Turbulent impact fire':'Dissolving ninja wisps';mesh.frustumCulled=false;scene.add(mesh);
+  const mesh=new T.Mesh(geometry,material);mesh.name=fire?'Turbulent impact fire':'Dissolving ninja wisps';mesh.frustumCulled=false;mesh.visible=false;scene.add(mesh);
   return {mesh,a,capacity,cursor:0,fire,particles:Array.from({length:capacity},()=>({p:new T.Vector3(),v:new T.Vector3(),life:0,max:1,size:1,seed:0}))};
  }
- add(index,position,velocity,size,life){const pool=this.pools[index],i=pool.cursor++%pool.capacity,p=pool.particles[i];p.p.copy(position);p.v.copy(velocity);p.life=p.max=life;p.size=size;p.seed=Math.random()*100;pool.a.seed.setX(i,p.seed);}
+ add(index,position,velocity,size,life){const pool=this.pools[index],i=pool.cursor++%pool.capacity,p=pool.particles[i];p.p.copy(position);p.v.copy(velocity);p.life=p.max=life;p.size=size;p.seed=Math.random()*100;pool.a.seed.setX(i,p.seed);pool.a.age.setX(i,0);pool.a.center.setXYZ(i,position.x,position.y,position.z);pool.a.size.setX(i,size);pool.mesh.visible=true;for(const attribute of Object.values(pool.a))attribute.needsUpdate=true;}
  explosion(position,scale=1){
   for(let i=0;i<7;i++){const angle=i*2.4,r=.15+Math.random()*.3;const p=position.clone().add(new T.Vector3(Math.cos(angle)*r,.15+Math.random()*.3,Math.sin(angle)*r));this.add(0,p,new T.Vector3(Math.cos(angle)*1.9,1.1+Math.random()*1.5,Math.sin(angle)*1.9),(.5+Math.random()*.5)*scale,.38+Math.random()*.35);}
   for(let i=0;i<4;i++)this.add(1,position,new T.Vector3((Math.random()-.5)*1.8,1.4+Math.random(),(Math.random()-.5)*1.8),(.4+Math.random()*.35)*scale,.8+Math.random()*.5);
@@ -41,7 +41,7 @@ export class EmberClouds {
   this.trails.set(key,{p:position.clone(),time:this.clock});
  }
  update(dt,calm=false){this.clock+=dt;for(const[key,value]of this.trails)if(this.clock-value.time>.5)this.trails.delete(key);
-  for(const pool of this.pools){const a=pool.a;for(let i=0;i<pool.capacity;i++){const p=pool.particles[i];if(p.life<=0){a.age.setX(i,1);continue;}p.life=Math.max(0,p.life-dt*(calm?4:1));const age=1-p.life/p.max;p.v.multiplyScalar(Math.exp(-dt*.7));p.p.addScaledVector(p.v,dt);p.p.x+=Math.sin(age*5+p.seed)*dt*.18;p.p.z+=Math.cos(age*4+p.seed)*dt*.18;a.center.setXYZ(i,p.p.x,p.p.y,p.p.z);a.age.setX(i,age);a.size.setX(i,p.size*(pool.fire?1+age*.9:1+age*1.8));}for(const attribute of Object.values(a))attribute.needsUpdate=true;}
+  for(const pool of this.pools){if(!pool.mesh.visible)continue;const a=pool.a;let active=0;for(let i=0;i<pool.capacity;i++){const p=pool.particles[i];if(p.life<=0){a.age.setX(i,1);continue;}p.life=Math.max(0,p.life-dt*(calm?4:1));if(p.life>0)active++;const age=1-p.life/p.max;p.v.multiplyScalar(Math.exp(-dt*.7));p.p.addScaledVector(p.v,dt);p.p.x+=Math.sin(age*5+p.seed)*dt*.18;p.p.z+=Math.cos(age*4+p.seed)*dt*.18;a.center.setXYZ(i,p.p.x,p.p.y,p.p.z);a.age.setX(i,age);a.size.setX(i,p.size*(pool.fire?1+age*.9:1+age*1.8));}pool.mesh.visible=active>0;for(const attribute of Object.values(a))attribute.needsUpdate=true;}
  }
- clear(){this.trails.clear();for(const pool of this.pools){for(const p of pool.particles)p.life=0;pool.a.age.array.fill(1);pool.a.age.needsUpdate=true;}}
+ clear(){this.trails.clear();for(const pool of this.pools){pool.mesh.visible=false;for(const p of pool.particles)p.life=0;pool.a.age.array.fill(1);pool.a.age.needsUpdate=true;}}
 }

@@ -21,6 +21,12 @@ The Ronin and Ethan use three-stage light chains, with source-based finishers.
 Twenty-five input sequences pass across the six heroes. Four crowded encounters average 51–55 FPS on the local M1 Max.
 See [the complete combat branch review](reviews/complete-combat-branches-2026-10-05.md).
 
+Contact flashes now use softer light, varied spark streaks, and less over-bright fire.
+Missed swings retain blade trails without false contact sparks. Musou arcs have soft edges and tapered ends.
+Eleven focused checks pass. Four crowded fights average 51–58 FPS; sustained musou averages 42 FPS on this Mac.
+The private production build passes normal selection, golf, and combat input without errors.
+See [the impact effects review](reviews/impact-refinement-2026-10-05.md) for test conditions and limits.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026
