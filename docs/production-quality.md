@@ -1,6 +1,24 @@
 # Production quality targets
 
-## Current readiness — October 4, 2026
+## Current readiness — October 5, 2026
+
+The game remains a playable alpha. The requested AAA visual standard is not yet met.
+The current complete build stays local because it includes Ethan's purchased polearm motions.
+The public website remains on the earlier release.
+
+The approved Ronin and Closer identities now appear in their models and portraits.
+Musou sequences sustain their motion. Separate camera-cutaway materials preserve hero weapons and clothes.
+Enemy deaths dissolve with smoke, and moving ranged enemies face their travel direction.
+See [the character and combat review](reviews/release-polish-2026-10-05.md).
+
+Bunkers now use fine scanned sand, shallow rake shading, and smoother terrain edges.
+Generated scenery stays outside their protected margins. Ground sampling and golf lies pass checks across all 36 holes.
+The built game passes four course previews and a normal-input golf-to-combat check.
+See [the bunker surface review](reviews/bunker-surfaces-2026-10-05.md).
+
+The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
+
+## Previous readiness — October 4, 2026
 
 The game remains a playable alpha. It does not yet meet the requested AAA presentation or animation standard.
 The user now accepts ordinary combat controls and the musou introduction. Preserve these during release preparation.

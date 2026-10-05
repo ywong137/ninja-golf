@@ -6,6 +6,7 @@ import {natureAssetsForTheme} from './nature-assets.js';
 import {createAssetCache} from './asset-cache.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
+import {bunkerDistance} from './bunkers.js';
 import views from './nature-views.json' with {type:'json'};
 import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission,leafShadowCutoff} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock,sceneryRockObstacle} from './scenery-rocks.js';
@@ -35,12 +36,12 @@ function sway(material,foliage){
 // Tree placement follows authored fairway edges. Plants form groves and rock gardens.
 export class NaturalLandscape{
  constructor(root,c,sites){
-  this.records=[];this.groups=[];this.rockObstacles=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),desert=c.theme==='desert',highland=c.theme==='highlands';
+  this.records=[];this.groups=[];this.rockObstacles=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),authoredRocks=new Set(),desert=c.theme==='desert',highland=c.theme==='highlands';
   const add=(name,x,z,scale=1,angle=r()*Math.PI*2,depth=0)=>{if(!placements.has(name))placements.set(name,[]);const rec={x,z,y:heightAt(c,x,z)-depth,scale,angle};placements.get(name).push(rec);return rec;};
   for(const rock of root.userData.sceneryRocks||[]){
    const source=assets.get(rock.source);if(!source)throw new Error(`Missing scenery scan ${rock.source}; await loadNature before building the course`);
    if(!placements.has(rock.source))placements.set(rock.source,[]);
-   placements.get(rock.source).push(fitSceneryRock(rock,source.bounds));
+   const fitted=fitSceneryRock(rock,source.bounds);placements.get(rock.source).push(fitted);authoredRocks.add(fitted);
   }
   delete root.userData.sceneryRocks;
   const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&bridgeDistance(c,x,z)>3&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
@@ -79,6 +80,16 @@ export class NaturalLandscape{
    const a=r()*6.28,d=1.5+r()*3,x=t.x+Math.cos(a)*d,z=t.z+Math.sin(a)*d;if(!safe(x,z,5))continue;
    add(desert?'desert-rock':highland?'woody-scrub':j%2?'understory':'fern',x,z,desert?.2+r()*.25:.45+r()*.45);
   }
+  // Filter after generation so removing a plant cannot change the seeded random
+  // sequence and move unrelated groves, formations, and their collision bounds.
+  const inBunker=record=>c.bunkers.some(b=>bunkerDistance(record.x,record.z,b)<=2);
+  for(const [name,records]of placements){
+   // Authored covers keep the same visible rock as their registered ambush site.
+   const kept=records.filter(record=>authoredRocks.has(record)||!inBunker(record));
+   if(kept.length)placements.set(name,kept);else placements.delete(name);
+  }
+  this.records=this.records.filter(record=>!inBunker(record));
+  for(let i=sites.length-1;i>=0;i--)if(sites[i].id.startsWith('scan-')&&inBunker(sites[i]))sites.splice(i,1);
   // Ground silhouettes follow the scanned branches and the actual sun direction.
   for(const {name:tree} of forestSpecies(c.theme)){
   const source=assets.get(tree),shadowPositions=[],shadowUV=[],shadowIds=[],anchors=[];

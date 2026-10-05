@@ -58,5 +58,31 @@
     "asset": "shanghai_bund",
     "license": "CC0-1.0",
     "source": "https://polyhaven.com/a/shanghai_bund"
+  },
+  {
+    "asset": "sand_03",
+    "author": {
+      "Charlotte Baglioni": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/sand_03",
+    "licenseSource": "https://polyhaven.com/license",
+    "physicalDimensionsMetres": [
+      2,
+      2
+    ],
+    "usage": "Bunker-only fine sand. Existing sand_01 remains the dry soil and beach material.",
+    "files": [
+      {
+        "file": "bunker-color-2k.jpg",
+        "sha256": "538453033d28a64c671b89389a6ee904184af18d365adb5a15d5ea9e1eb5705b",
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/sand_03/sand_03_diff_2k.jpg"
+      },
+      {
+        "file": "bunker-normal-2k.jpg",
+        "sha256": "ce870ef363010e0b96faa47f3fac47982cdbb40e3a59c0fe23fa64f587f54c7f",
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/sand_03/sand_03_nor_gl_2k.jpg"
+      }
+    ]
   }
 ]

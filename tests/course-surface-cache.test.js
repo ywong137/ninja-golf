@@ -6,10 +6,10 @@ import {shorelinePoint} from '../src/shoreline.js';
 import {bunkerOutline} from '../src/bunkers.js';
 import {courseGeometry,courseSurfaceHeight,createCourseSurfaceSampler} from '../src/terrain.js';
 
-// Frozen pre-cache lookup: this regression oracle retains the old arithmetic.
+// Independent uncached lookup, with the current quarter-metre bunker grid.
 // Rendered-mesh checks below provide a separate source of geometric truth.
 function originalCell(c,cx,cz){
- if(c.bunkers.some(b=>ellipse(cx,cz,b)<1.3))return 6;
+ if(c.bunkers.some(b=>ellipse(cx,cz,b)<1.3))return 12;
  let detail=Math.hypot(cx-c.greenX,cz-c.length)<26?3:1;
  for(const p of pondProfiles(c)){
   const distance=basinDistance(cx,cz,p.basin);if(distance>=p.bankWidth+2)continue;
@@ -29,7 +29,7 @@ function originalHeight(c,x,z){
 }
 function random(seed){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 
-test('Cached triangles match direct and pre-cache heights across all 36 holes and subdivision boundaries',()=>{
+test('Cached triangles match direct and uncached reference heights across all 36 holes and subdivision boundaries',()=>{
  let total=0,largestOriginalDifference=0;
  for(const [courseIndex,set]of COURSE_SETS.entries())for(const [holeIndex,c]of set.holes.entries()){
   const sample=createCourseSurfaceSampler(c,heightAt,ellipse),rng=random(courseIndex*100+holeIndex+1),extent=c.length+330,nz=Math.round(extent/3),dz=extent/nz;
@@ -48,15 +48,15 @@ test('Cached triangles match direct and pre-cache heights across all 36 holes an
    const actual=sample(x,z),direct=courseSurfaceHeight(c,x,z,heightAt,ellipse),original=originalHeight(c,x,z);
    assert.equal(actual,direct,`${set.id}/${holeIndex}: cached/direct mismatch at ${x},${z}`);
    const difference=Math.abs(actual-original);largestOriginalDifference=Math.max(largestOriginalDifference,difference);
-   assert.ok(difference<1e-10,`${set.id}/${holeIndex}: changed pre-cache height by ${difference}`);total++;
+   assert.ok(difference<1e-10,`${set.id}/${holeIndex}: changed uncached reference height by ${difference}`);total++;
   }
   assert.ok(sample.stats.cells<=sample.stats.maxCells);
-  assert.ok(sample.stats.vertexSlots<=49*sample.stats.cells);
+  assert.ok(sample.stats.vertexSlots<=169*sample.stats.cells);
   assert.equal(sample.stats.typedArrayBytes,sample.stats.vertexSlots*9);
  }
  assert.equal(COURSE_SETS.reduce((n,set)=>n+set.holes.length,0),36);
  assert.ok(total>30000);
- console.log(`course cache: ${total} queries, maximum pre-cache difference ${largestOriginalDifference} m`);
+ console.log(`course cache: ${total} queries, maximum uncached reference difference ${largestOriginalDifference} m`);
 });
 
 test('Cached heights match rendered Float32 triangles in all four course themes',()=>{
