@@ -1,4 +1,6 @@
 import {heightAt,smooth} from './course.js';
+import {regionalSunVisibility} from './regional-lighting.js';
+import grids from '../public/terrain/SOURCES.json' with {type:'json'};
 const REGION_SETTINGS={
  japanese:{span:14000,scale:1.05,datum:0,u:.5,v:.5,direction:1},
  highlands:{span:16000,scale:.58,datum:0,u:.5,v:.5,direction:-1},
@@ -6,14 +8,16 @@ const REGION_SETTINGS={
 };
 export async function loadRegionalTerrain(base){
  const results=await Promise.allSettled(Object.keys(REGION_SETTINGS).map(async theme=>{
-  const response=await fetch(`${base}terrain/${theme}.i16`);
+  const grid=grids.find(g=>g.theme===theme);
+  const response=await fetch(`${base}terrain/${grid.file}`);
   if(!response.ok)throw new Error(`Terrain ${theme}: HTTP ${response.status}`);
   const buffer=await response.arrayBuffer();
-  if(buffer.byteLength!==513*513*2)throw new Error(`Terrain ${theme}: invalid elevation grid`);
+  if(buffer.byteLength!==grid.size*grid.size*2)throw new Error(`Terrain ${theme}: invalid elevation grid`);
   // DataView makes the documented little-endian asset format independent of the host.
-  const view=new DataView(buffer),heights=new Int16Array(513*513);
+  const view=new DataView(buffer),heights=new Int16Array(grid.size*grid.size);
   for(let i=0;i<heights.length;i++)heights[i]=view.getInt16(i*2,true);
-  return [theme,{size:513,heights,...REGION_SETTINGS[theme]}];
+  const region={size:grid.size,heights,...REGION_SETTINGS[theme]};region.sunVisibility=regionalSunVisibility(region);
+  return [theme,region];
  }));
  const entries=[];for(const result of results){if(result.status==='fulfilled')entries.push(result.value);else console.warn(result.reason);}
  return Object.fromEntries(entries);
@@ -40,4 +44,11 @@ export function landscapeHeight(c,region,x,z){
 export function regionalTextureFrame(c,region){
  if(!region)return [0,0,0,0];
  return [region.u,1.-region.v+region.direction*c.length*.5/region.span,1/region.span,-region.direction/region.span];
+}
+
+export function regionalVisibilityAt(c,region,x,z){
+ if(!region?.sunVisibility)return 1;
+ const amount=smooth(900,2000,landscapeDistance(c,x,z));if(amount===0)return 1;
+ const visibility=sampleElevation(region.sunVisibility,region.u+x/region.span,region.v+region.direction*(z-c.length*.5)/region.span)/255;
+ return 1+(visibility-1)*amount;
 }

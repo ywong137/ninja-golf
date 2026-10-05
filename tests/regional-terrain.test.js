@@ -6,7 +6,7 @@ import {sampleElevation,landscapeHeight} from '../src/regional-terrain.js';
 import {COURSE_SETS,heightAt} from '../src/course.js';
 test('regional grids match source metadata and retain different surveyed landforms',()=>{
  const sources=JSON.parse(fs.readFileSync('public/terrain/SOURCES.json'));assert.equal(sources.length,3);
- const hashes=new Set();for(const source of sources){const data=fs.readFileSync(`public/terrain/${source.file}`);assert.equal(data.length,513*513*2);const hash=crypto.createHash('sha256').update(data).digest('hex');assert.equal(hash,source.sha256);hashes.add(hash);assert.ok(source.maxMetres-source.minMetres>400);}
+ const hashes=new Set();for(const source of sources){const data=fs.readFileSync(`public/terrain/${source.file}`);assert.equal(data.length,source.size*source.size*2);const hash=crypto.createHash('sha256').update(data).digest('hex');assert.equal(hash,source.sha256);hashes.add(hash);assert.ok(source.maxMetres-source.minMetres>400);}
  assert.equal(hashes.size,3);
 });
 test('regional terrain preserves every detailed mesh edge and all playable positions',()=>{
@@ -20,7 +20,7 @@ test('elevation sampling is bilinear, bounded, finite and leaves no far-boundary
 });
 test('one failed regional asset preserves the other theme grids',async()=>{
  const {loadRegionalTerrain}=await import('../src/regional-terrain.js'),fetch=globalThis.fetch,warn=console.warn,warnings=[];
- globalThis.fetch=async url=>url.includes('highlands')?{ok:false,status:503}:{ok:true,arrayBuffer:async()=>new ArrayBuffer(513*513*2)};console.warn=e=>warnings.push(e.message);
+ globalThis.fetch=async url=>url.includes('highlands')?{ok:false,status:503}:{ok:true,arrayBuffer:async()=>new ArrayBuffer((url.includes('desert')?2049:513)**2*2)};console.warn=e=>warnings.push(e.message);
  try{const regions=await loadRegionalTerrain('/');assert.deepEqual(Object.keys(regions).sort(),['desert','japanese']);assert.match(warnings[0],/highlands.*503/);}finally{globalThis.fetch=fetch;console.warn=warn;}
 });
 test('graded horizon triangles face upward and retain an exact detailed edge',async()=>{

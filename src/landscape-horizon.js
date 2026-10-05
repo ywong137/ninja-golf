@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {heightAt} from './course.js';
-import {landscapeHeight} from './regional-terrain.js';
-export const HORIZON_TRIANGLE_LIMIT=198000;
+import {landscapeHeight,regionalVisibilityAt} from './regional-terrain.js';
+export const HORIZON_TRIANGLE_LIMIT=400000;
+const COARSE_TRIANGLE_LIMIT=198000;
 // Rectangular rings retain the detailed course edge. Shared corner and refinement
 // vertices keep the surface watertight and give adjacent faces identical normals.
 export function landscapeHorizon(c,region,{refine=true}={}){
@@ -22,8 +23,9 @@ export function landscapeHorizon(c,region,{refine=true}={}){
    while(i<a.length-1||j<b.length-1){if(i<a.length-1&&(j===b.length-1||(i+1)/(a.length-1)<=(j+1)/(b.length-1))){triangle(a[i],b[j],a[i+1]);i++;}else{triangle(a[i],b[j],b[j+1]);j++;}}
   }previous=next;
  }
- const baseTriangles=indices.length/3;
- if(region&&refine){
+ const baseTriangles=indices.length/3,passes=region?.size>513?2:1,limit=region?.size>513?HORIZON_TRIANGLE_LIMIT:COARSE_TRIANGLE_LIMIT;
+ for(let pass=0;region&&refine&&pass<passes;pass++){
+  const currentTriangles=indices.length/3,passLimit=passes>1&&pass===0?260000:limit;
   const edges=new Map(),key=(a,b)=>a<b?`${a}:${b}`:`${b}:${a}`;
   for(let i=0;i<indices.length;i+=3){
    const ids=indices.slice(i,i+3),x=ids.reduce((sum,id)=>sum+vertices[id*3],0)/3,z=ids.reduce((sum,id)=>sum+vertices[id*3+2],0)/3;
@@ -38,7 +40,7 @@ export function landscapeHorizon(c,region,{refine=true}={}){
   }
   // Splitting a shared edge adds exactly one triangle per adjacent face.
   let added=0;for(const edge of [...edges.values()].filter(e=>e.error>.8).sort((a,b)=>b.error-a.error)){
-   if(baseTriangles+added+edge.faces>HORIZON_TRIANGLE_LIMIT)continue;
+   if(currentTriangles+added+edge.faces>passLimit)continue;
    edge.mid=vertices.length/3;vertices.push(edge.x,edge.y,edge.z);uvs.push((edge.x+375)/750,(edge.z+165)/extent);added+=edge.faces;
   }
   const original=indices.splice(0);
@@ -59,5 +61,7 @@ export function landscapeHorizon(c,region,{refine=true}={}){
  // The inner ring meets the existing course surface, whose normals use this derivative.
  const normal=geo.getAttribute('normal');
  for(const id of inner){const x=vertices[id*3],z=vertices[id*3+2],nx=heightAt(c,x-.15,z)-heightAt(c,x+.15,z),nz=heightAt(c,x,z-.15)-heightAt(c,x,z+.15),length=Math.hypot(nx,.3,nz);normal.setXYZ(id,nx/length,.3/length,nz/length);}
- geo.computeBoundingSphere();geo.userData.horizon={baseTriangles,triangles:indices.length/3,innerVertices:inner.size};return geo;
+ const sunlight=new Float32Array(vertices.length/3);for(let i=0;i<sunlight.length;i++)sunlight[i]=regionalVisibilityAt(c,region,vertices[i*3],vertices[i*3+2]);
+ geo.setAttribute('terrainSun',new THREE.BufferAttribute(sunlight,1));
+ geo.computeBoundingSphere();geo.userData.horizon={baseTriangles,triangles:indices.length/3,innerVertices:inner.size,limit,passes:region&&refine?passes:0};return geo;
 }

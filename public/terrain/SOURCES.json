@@ -40,8 +40,8 @@
   {
     "theme": "desert",
     "name": "Sedona, Arizona, United States",
-    "file": "desert.i16",
-    "size": 513,
+    "file": "desert-relief.i16",
+    "size": 2049,
     "encoding": "int16 little-endian, row-major north to south",
     "bounds": [
       -111.89137187896922,
@@ -50,10 +50,13 @@
       34.96779734099892
     ],
     "spanMetres": 24000,
-    "minMetres": 1043,
-    "maxMetres": 2168,
-    "source": "https://s3.amazonaws.com/elevation-tiles-prod/skadi/N34/N34W112.hgt.gz",
-    "sourceSHA256": "ed15b717a7e056724f025f8a3a632bd467ddf9287d433d6b8d2a1aa42c417464",
-    "sha256": "4cab7ce378e0d481cc5e4fac1853f292d5b1bb01d9eeffe57c3a0d8742ef2889"
+    "nominalSampleSpacingMetres": 11.71875,
+    "minMetres": 1044,
+    "maxMetres": 2173,
+    "source": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox=-111.8914360253945%2C34.75215002358067%2C-111.62856397460551%2C34.96784997641933&bboxSR=4326&imageSR=4326&size=2049%2C2049&format=tiff&pixelType=F32&interpolation=RSP_BilinearInterpolation&renderingRule=%7B%22rasterFunction%22%3A%22None%22%7D&adjustAspectRatio=false&f=pjson",
+    "sourceService": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+    "attribution": "USGS National Map 3D Elevation Program (3DEP). August 25, 2026.",
+    "sourceSHA256": "fca73f9a0307f6241b8288530d92372a912d5a29207bd708d7828300f2c1aee3",
+    "sha256": "55f1cb2f9c4d5ab9b23aed9a3e6e4672531f6f79ce7e20fcee9de5b3768fae1a"
   }
 ]

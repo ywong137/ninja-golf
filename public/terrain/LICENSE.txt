@@ -1,12 +1,14 @@
 REGIONAL ELEVATION DATA
 
-The Japanese, Scottish and Arizona distant landscapes use adapted Mapzen Terrain
-Tiles. The game changes placement, horizontal scale, elevation and the course
+The Japanese and Scottish distant landscapes use adapted Mapzen Terrain Tiles.
+The Arizona landscape uses a finer USGS National Map 3DEP elevation crop. The game changes placement, horizontal scale, elevation and the course
 surroundings. The fictional golf courses are not surveys of real golf courses.
 
 Source collection: https://registry.opendata.aws/terrain-tiles/
 Format and attribution: https://github.com/tilezen/joerd/tree/master/docs
-Tile URLs, crop bounds, source hashes and derived hashes: SOURCES.json
+USGS service: https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer
+Data release: August 25, 2026.
+Source URLs, crop bounds, source hashes and derived hashes: SOURCES.json
 
 Mapzen
 United States 3DEP (formerly NED) and global GMTED2010 and SRTM terrain data

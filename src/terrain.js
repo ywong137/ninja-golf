@@ -15,9 +15,9 @@ export function courseMaterial(c, textures, distant=false) {
     const routes=fairwayPrimitives(c);
     Object.assign(shader.uniforms,{mowingProfile:{value:mowingProfile(c)},...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},bunkerColor:{value:textures.bunkerColor},bunkerNormal:{value:textures.bunkerNormal},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
     if(distant)Object.assign(shader.uniforms,{regionalColor:regionalImage?.map||{value:textures.cliffColor},hasRegionalColor:regionalImage?.available||{value:0},regionalFrame:{value:new THREE.Vector4(...regionalTextureFrame(c,textures.regions?.[c.theme]))}});
-    shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
-    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
-    shader.fragmentShader=TURF_MOWING_GLSL+FAIRWAY_GLSL+BUNKER_GLSL+BUNKER_SURFACE_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
+    shader.vertexShader=(distant?'attribute float terrainSun;varying float terrainVisibility;\n':'')+'varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
+    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;'+(distant?'terrainVisibility=terrainSun;':''));
+    shader.fragmentShader=(distant?'varying float terrainVisibility;\n':'')+TURF_MOWING_GLSL+FAIRWAY_GLSL+BUNKER_GLSL+BUNKER_SURFACE_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
 varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform sampler2D turfColor;uniform sampler2D turfNormal;uniform sampler2D turfRoughness;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
       float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}
@@ -59,6 +59,14 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
        return mix(mean,result,resolved);
       }
       `+(distant?LANDSCAPE_GLSL:'')+shader.fragmentShader;
+    if(distant)shader.fragmentShader=shader.fragmentShader.replace('#include <lights_physical_pars_fragment>', `#include <lights_physical_pars_fragment>
+      void RE_Direct_Terrain(const in IncidentLight light,const in vec3 position,const in vec3 n,const in vec3 view,const in vec3 clearcoatNormal,const in PhysicalMaterial material,inout ReflectedLight reflectedLight){
+       IncidentLight shadowed=light;shadowed.color*=terrainVisibility;
+       RE_Direct_Physical(shadowed,position,n,view,clearcoatNormal,material,reflectedLight);
+      }
+      #undef RE_Direct
+      #define RE_Direct RE_Direct_Terrain
+    `);
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
       vec2 grassUV=p/2.7,grassDx=dFdx(grassUV),grassDy=dFdy(grassUV);
@@ -185,7 +193,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask,normalMap);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-v18-regional-image-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-v19-regional-shadow-${distant}`;
   return mat;
 }
 

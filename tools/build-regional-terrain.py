@@ -2,6 +2,7 @@
 
 Usage: python3 tools/build-regional-terrain.py --source-dir /path/to/hgt-files
 Source URLs and checksums are recorded in public/terrain/SOURCES.json.
+This tool rebuilds Japan and Scotland. Use build-desert-relief.py for Arizona.
 The game adapts horizontal scale, elevation and placement. These are not course maps.
 """
 import argparse, gzip, hashlib, json, math
@@ -12,11 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 REGIONS = [
  ('japanese','Sanuki Hills, Shikoku, Japan','N34E134',34,134,34.34,134.16,24000),
  ('highlands','Cuillin Hills, Isle of Skye, Scotland','N57W007',57,-7,57.14,-6.25,28000),
- ('desert','Sedona, Arizona, United States','N34W112',34,-112,34.86,-111.76,24000),
 ]
 def main():
  parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source-dir',type=Path,required=True);args=parser.parse_args()
- out=ROOT/'public/terrain';out.mkdir(exist_ok=True);manifest=[]
+ out=ROOT/'public/terrain';out.mkdir(exist_ok=True)
+ manifest_path=out/'SOURCES.json'
+ manifest=[r for r in json.loads(manifest_path.read_text()) if r['theme'] not in {region[0] for region in REGIONS}]
  for theme,name,tile,lat,lon,cy,cx,span in REGIONS:
   source=args.source_dir/(tile+'.hgt.gz');compressed=source.read_bytes();raw=gzip.decompress(compressed)
   if len(raw)!=3601*3601*2:raise ValueError(f'{source}: expected a 3601-square signed 16-bit Skadi tile')
@@ -31,5 +33,6 @@ def main():
   target=out/(theme+'.i16');target.write_bytes(grid.tobytes())
   manifest.append(dict(theme=theme,name=name,file=target.name,size=513,encoding='int16 little-endian, row-major north to south',bounds=bounds,spanMetres=span,minMetres=int(grid.min()),maxMetres=int(grid.max()),source=f'https://s3.amazonaws.com/elevation-tiles-prod/skadi/{tile[:3]}/{tile}.hgt.gz',sourceSHA256=hashlib.sha256(compressed).hexdigest(),sha256=hashlib.sha256(target.read_bytes()).hexdigest()))
   print(theme,grid.min(),grid.max(),target.stat().st_size)
- (out/'SOURCES.json').write_text(json.dumps(manifest,indent=2)+'\n')
+ manifest.sort(key=lambda r:['japanese','highlands','desert'].index(r['theme']))
+ manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
 if __name__=='__main__':main()
