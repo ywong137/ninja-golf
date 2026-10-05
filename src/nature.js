@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {loadModel} from './load-model.js';
+import {NATURE_ASSET_NAMES} from './nature-assets.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
@@ -9,13 +12,12 @@ import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.j
 export {queueSceneryRock} from './scenery-rocks.js';
 const ATLAS_REVISION='leaf-opacity-2';
 const OPACITY_REPAIRED=new Set(['forest-canopy','understory','fern','woody-scrub']);
-const SOURCES=['forest-canopy','dry-tree','understory','fern','coastal-rock','desert-rock','sea-cliff','pine-open','pine-young','fir-layered','woody-scrub'];
 const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
 export async function loadNature(){
- const loader=new GLTFLoader(),textures=new THREE.TextureLoader();
- await Promise.all(SOURCES.map(async name=>{
+ const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),textures=new THREE.TextureLoader();
+ await Promise.all(NATURE_ASSET_NAMES.map(async name=>{
   const conifer=['pine-open','pine-young','fir-layered'].includes(name);
-  const model=await loader.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}.glb${OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`);model.scene.updateMatrixWorld(true);
+  const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
   // The source needle alpha has soft coverage. A 0.45 cutoff erased it in
   // minified views. The custom shadow material below shares this same cutoff.
   const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=conifer?.18:.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});

@@ -11,6 +11,11 @@ All 36 tees and greens remain clear. Four-course movement, dodge, and camera che
 The exact production build also passes normal keyboard and gamepad checks.
 See [the rock and aura review](reviews/rock-collision-musou-aura-2026-10-04.md) for the measured scope.
 
+A fresh rock-collision round completed all nine Copper Saguaro holes as Ethan.
+Its 32 recorded shots plus five penalties match the 37-stroke scorecard and saved progress.
+All 18 combat passages completed without a failed route or browser error.
+See [the loading and round review](reviews/release-loading-and-copper-round-2026-10-04.md) for scope and limits.
+
 All six approved outfit defaults are live. The concept references remain archived for future unlockable outfits.
 
 Every hero has complete source performances for the opening light and heavy attacks.
