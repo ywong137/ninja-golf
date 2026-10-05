@@ -84,5 +84,31 @@
         "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/sand_03/sand_03_nor_gl_2k.jpg"
       }
     ]
+  },
+  {
+    "asset": "grass_bermuda_01",
+    "author": {
+      "Rico Cilliers": "All"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/grass_bermuda_01",
+    "licenseSource": "https://polyhaven.com/license",
+    "usage": "Authored short grass templates and photographic leaf cutouts for course rough.",
+    "sourceBlend": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/blend/1k/grass_bermuda_01/grass_bermuda_01_1k.blend",
+      "md5": "61d700a2259ec67ba8ed6846ebc680cc"
+    },
+    "files": [
+      {
+        "file": "rough-blades-color-1k.jpg",
+        "sha256": "ef202eeb8f8fb3312446009acecc87e5679a7d612e4dee859d8a849e00af5fcb",
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/grass_bermuda_01/grass_bermuda_01_diff_1k.jpg"
+      },
+      {
+        "file": "rough-blades-alpha-1k.png",
+        "sha256": "e58b3052aad2f107cdd763e437f80ed8fb5a31bcc43b44023f7f767cb3d9888e",
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_bermuda_01/grass_bermuda_01_alpha_1k.png"
+      }
+    ]
   }
 ]

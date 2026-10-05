@@ -15,7 +15,8 @@ import {buildBridges} from './bridges.js';
 import {landscapeHorizon} from './landscape-horizon.js';
 import {createTerrainSurfaceSampler} from './terrain-surface.js';
 import {buildArchitecture} from './architecture.js';
-import {courseMaterial,courseGeometry} from './terrain.js';
+import {courseMaterial,courseGeometry,createCourseSurfaceSampler} from './terrain.js';
+import {ROUGH_GRASS,roughGrassGeometry,roughGrassMaterial,roughGrassGrowth,grassCellSample,placeGrassPatch} from './rough-grass.js';
 import {createCoursePath} from './course-path.js';
 import {buildTeeMarkers} from './tee-markers.js';
 import {buildThemeScenery,buildFairwayCover,THEME_LIGHTS} from './course-themes.js';
@@ -25,7 +26,6 @@ import { CourseSunShadow } from './course-sun-shadow.js';
 import { heightAt, lieAt, routePoint, waterBasins, waterSurfaceAt, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
-const color = new THREE.Color();
 function material(hex, roughness=.9, metalness=0) { return new THREE.MeshStandardMaterial({color:hex,roughness,metalness}); }
 function addMesh(g, geo, mat, x,y,z, sx=1,sy=1,sz=1) {
   const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.scale.set(sx,sy,sz); m.castShadow=true;m.receiveShadow=true;g.add(m);return m;
@@ -103,34 +103,40 @@ export class World {
     buildTeeMarkers(this.root,c,{stoneColor:this.rockColor,stoneNormal:this.rockNormal});
   }
   makeGrass(r){
-    const vertices=[],colors=[],indices=[];
-    for(let blade=0;blade<6;blade++){
-      const angle=blade*2.4,h=.045+r()*.09,cx=(r()-.5)*.20,cz=(r()-.5)*.20,base=vertices.length/3;
-      for(const [side,y,bend] of [[-1,0,0],[1,0,0],[-.65,h*.65,.008],[.65,h*.65,.008],[0,h,.024]]){
-        vertices.push(cx+Math.cos(angle)*side*.0035+Math.sin(angle)*bend,y,cz+Math.sin(angle)*side*.0035-Math.cos(angle)*bend);
-        color.set(y===0?'#415324':'#758a45');colors.push(color.r,color.g,color.b);
-      }
-      indices.push(base,base+1,base+2,base+1,base+3,base+2,base+2,base+3,base+4);
-    }
-    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));geo.setIndex(indices);geo.computeVertexNormals();
-    const mat=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:1,emissive:'#253414',emissiveIntensity:.18});
+    // Preserve the seeded sequence used by petals and other existing scenery.
+    for(let blade=0;blade<6;blade++){r();r();r();}
     this.grassTime={value:0};this.grassFocus={value:new THREE.Vector3()};
-    mat.onBeforeCompile=s=>{s.uniforms.grassTime=this.grassTime;s.uniforms.grassFocus=this.grassFocus;s.vertexShader='uniform float grassTime;uniform vec3 grassFocus;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-      vec3 origin=instanceMatrix[3].xyz;float fade=1.-smoothstep(22.,29.,distance(origin.xz,grassFocus.xz));
-      transformed.y*=fade;transformed.x+=sin(grassTime*1.7+origin.x*.4+origin.z*.2)*position.y*.22*fade;`);};mat.customProgramCacheKey=()=> 'coastal-grass';
-    this.grass=new THREE.InstancedMesh(geo,mat,15000);this.grass.receiveShadow=true;this.grass.frustumCulled=false;this.grassAnchor=new THREE.Vector2(Infinity,Infinity);this.root.add(this.grass);this.updateGrass(new THREE.Vector3(0,0,0));
+    this.grass=new THREE.InstancedMesh(roughGrassGeometry(this.course.theme),roughGrassMaterial(this.grassTime,this.grassFocus,{color:this.texture('rough-blades-color-1k.jpg',true),alpha:this.texture('rough-blades-alpha-1k.png')}),ROUGH_GRASS.capacity);
+    this.grass.name='Rough grass';this.grass.receiveShadow=true;this.grass.frustumCulled=false;
+    this.grass.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.grassSurface=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.grassCells=new Map();
+    this.grassAnchor=new THREE.Vector2(Infinity,Infinity);this.root.add(this.grass);this.updateGrass(new THREE.Vector3(0,0,0));
   }
   updateGrass(focus){
     if(!this.grass)return;
     const x0=Math.floor(focus.x/5)*5,z0=Math.floor(focus.z/5)*5;
-    // Compare cell identities: a cell corner can be more than 5 m from its origin.
     if(this.grassAnchor.x===x0&&this.grassAnchor.y===z0)return;
     this.grassAnchor.set(x0,z0);let n=0;
-    for(let z=z0-30;z<z0+30;z+=.5)for(let x=x0-30;x<x0+30;x+=.5){
-      const hash=Math.sin(x*127.1+z*311.7)*43758.5453,j=hash-Math.floor(hash),xx=x+j*.45,zz=z+(1-j)*.45;
-      if(this.course.theme==='desert'||this.course.theme==='cyberpunk'||lieAt(this.course,xx,zz)!=='Rough'||heightAt(this.course,xx,zz)<3.5||this.root.userData.pathContains?.(xx,zz,.2))continue;
-      obj.position.set(xx,heightAt(this.course,xx,zz)-.025,zz);obj.rotation.set(0,j*6.28,0);const scale=.65+j*.6;obj.scale.set(scale,scale,scale);obj.updateMatrix();this.grass.setMatrixAt(n++,obj.matrix);
+    const firstX=Math.floor((x0-ROUGH_GRASS.radius)/ROUGH_GRASS.step),firstZ=Math.floor((z0-ROUGH_GRASS.radius)/ROUGH_GRASS.step),side=Math.round(ROUGH_GRASS.radius*2/ROUGH_GRASS.step);
+    const ground=this.grassSurface||((x,z)=>heightAt(this.course,x,z)),previous=this.grassCells||new Map(),next=new Map();
+    let tested=0,reused=0;
+    for(let iz=firstZ;iz<firstZ+side;iz++)for(let ix=firstX;ix<firstX+side;ix++){
+      // Include the complete fade circle at every position inside this five-metre cell.
+      // Corner patches outside this circle would run vertex shaders but show no blades.
+      const dx=(ix+.5)*ROUGH_GRASS.step-(x0+2.5),dz=(iz+.5)*ROUGH_GRASS.step-(z0+2.5);
+      if(dx*dx+dz*dz>ROUGH_GRASS.streamRadius**2)continue;
+      const key=ix+','+iz;let matrix;
+      if(previous.has(key)){matrix=previous.get(key);reused++;}
+      else{
+        tested++;matrix=null;const sample=grassCellSample(ix,iz),x=sample.x,z=sample.z;
+        const growth=roughGrassGrowth(this.course,x,z);
+        if(growth>.02&&!this.root.userData.pathContains?.(x,z,.6)&&ground(x,z)>=3.5){
+          placeGrassPatch(obj,sample,growth,ground);matrix=obj.matrix.clone();
+        }
+      }
+      next.set(key,matrix);if(matrix)this.grass.setMatrixAt(n++,matrix);
     }
+    this.grassCells=next;this.grassStats={tested,reused,cells:next.size};
     this.grass.count=n;this.grass.instanceMatrix.needsUpdate=true;
   }
   makeBuildings(){buildArchitecture(this.root,this.course,{color:this.texture('rock-color-2k.jpg',true),normal:this.texture('rock-normal-2k.jpg')});}

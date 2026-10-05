@@ -31,6 +31,12 @@ Nearby shadows now resolve shoes, blades, and small scenery with about three tim
 Distant coverage and atlas size remain unchanged. Four crowded encounters average 49–56 FPS on this Mac.
 See [the ground shadow review](reviews/ground-shadows-2026-10-05.md) for measurements and scope.
 
+Nearby rough now uses photographed grass leaves, curved geometry, and slope fitting.
+Grass stays outside playing surfaces and protected hazard margins. Cached transforms reduce movement updates.
+Four crowded fights average 41–56 FPS at full resolution; the final Japanese check averages 40 FPS on this Mac.
+The added detail has a measurable rendering cost. The built game passes course selection, golf, and combat checks.
+See [the rough grass review](reviews/rough-grass-2026-10-05.md) for the source, measurements, and limits.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026
