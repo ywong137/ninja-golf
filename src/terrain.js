@@ -2,6 +2,7 @@ import {pondUniforms} from './water-uniforms.js';
 import {pondProfiles,basinDistance} from './ponds.js';
 import * as THREE from 'three';
 import {LANDSCAPE_GLSL} from './landscape-material.js';
+import {regionalTextureFrame} from './regional-terrain.js';
 import {BUNKER_GLSL,bunkerProfile} from './bunkers.js';
 import {BUNKER_SURFACE_GLSL} from './bunker-surface.js';
 import {mowingProfile,TURF_MOWING_GLSL} from './turf-mowing.js';
@@ -9,9 +10,11 @@ import {fairwayPrimitives,dryLandDistance,FAIRWAY_GLSL,MAX_FAIRWAY_SEGMENTS,MAX_
 // Course boundaries use the same analytic shapes as lieAt. They stay crisp at any mesh resolution.
 export function courseMaterial(c, textures, distant=false) {
   const mat=new THREE.MeshStandardMaterial({map:textures.grassColor,normalMap:textures.grassNormal,normalScale:new THREE.Vector2(.36,.36),roughness:.96});
+  const regionalImage=distant?textures.regionalImage?.(c.theme):null;
   mat.onBeforeCompile=shader=>{
     const routes=fairwayPrimitives(c);
-    Object.assign(shader.uniforms,{mowingProfile:{value:mowingProfile(c)},...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},bunkerColor:{value:textures.bunkerColor},bunkerNormal:{value:textures.bunkerNormal},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
+    Object.assign(shader.uniforms,{mowingProfile:{value:mowingProfile(c)},...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},bunkerColor:{value:textures.bunkerColor},bunkerNormal:{value:textures.bunkerNormal},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
+    if(distant)Object.assign(shader.uniforms,{regionalColor:regionalImage?.map||{value:textures.cliffColor},hasRegionalColor:regionalImage?.available||{value:0},regionalFrame:{value:new THREE.Vector4(...regionalTextureFrame(c,textures.regions?.[c.theme]))}});
     shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
     shader.fragmentShader=TURF_MOWING_GLSL+FAIRWAY_GLSL+BUNKER_GLSL+BUNKER_SURFACE_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
@@ -179,10 +182,10 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       vec3 terrainNormal=mix(mix(gn,tn,shortGrass),sn,max(sandMask,beach));
       normal=normalize(mix(normal,normalize(tbn*terrainNormal),${distant?'1.-landBlend':'1.'}));
       if(sandMask>.001){vec3 rakeView=mat3(viewMatrix)*vec3(rakeSlope.x,0.,rakeSlope.y);normal=normalize(normal-(rakeView-normal*dot(normal,rakeView))*sandMask);}
-      ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
+      ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask,normalMap);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-v17-rough-canopy-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-v18-regional-image-${distant}`;
   return mat;
 }
 

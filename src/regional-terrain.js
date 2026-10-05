@@ -34,3 +34,10 @@ export function landscapeHeight(c,region,x,z){
  const blend=smooth(40,1550,distance);
  return blend===1?adapted:heightAt(c,x,z)*(1-blend)+adapted*blend;
 }
+
+// Images and elevations share geographic bounds. TextureLoader flips the image
+// vertically, so image UV.y is the inverse of the north-to-south elevation row.
+export function regionalTextureFrame(c,region){
+ if(!region)return [0,0,0,0];
+ return [region.u,1.-region.v+region.direction*c.length*.5/region.span,1/region.span,-region.direction/region.span];
+}

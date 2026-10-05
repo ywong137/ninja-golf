@@ -188,4 +188,4 @@ Grip checks compare handles with the actual curled finger joints. Motion checks 
 Run `node tools/benchmark.mjs --course=0` through `--course=3` to measure each environment. Add `--retina` for the adaptive-resolution check.
 All automated browser tests mute audio.
 
-Distant Japanese, Scottish, and Arizona landforms use adapted [Mapzen Terrain Tiles](https://registry.opendata.aws/terrain-tiles/). See [source credits](public/terrain/LICENSE.txt) and [crop metadata](public/terrain/SOURCES.json). These are fictional course settings, not recreations of real courses.
+Distant Japanese, Scottish, and Arizona landforms use adapted [Mapzen Terrain Tiles](https://registry.opendata.aws/terrain-tiles/). See [source credits](public/terrain/LICENSE.txt) and [crop metadata](public/terrain/SOURCES.json). These are fictional course settings, not recreations of real courses. Scottish and Arizona surface colors also contain modified Copernicus Sentinel data 2024. [Imagery metadata](public/terrain/IMAGERY.json) records the two scenes and matching geographic bounds. Each course loads its own 2K image when needed; failed image downloads retain the existing terrain textures.

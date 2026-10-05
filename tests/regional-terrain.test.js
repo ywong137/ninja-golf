@@ -29,3 +29,22 @@ test('graded horizon triangles face upward and retain an exact detailed edge',as
  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);if(Math.abs(x)===375||z===-165||z===c.length+165)assert.ok(Math.abs(p.getY(i)-heightAt(c,x,z))<.00003);}
  geometry.dispose();
 });
+test('regional images use the elevation coordinates with the image row flipped',async()=>{
+ const {regionalTextureFrame}=await import('../src/regional-terrain.js');
+ for(const set of COURSE_SETS.slice(0,3))for(const c of set.holes)for(const direction of [-1,1]){
+  const region={u:.43,v:.57,span:14000,direction};const [u,v,sx,sz]=regionalTextureFrame(c,region);
+  for(const [x,z]of [[0,c.length*.5],[-5000,-4000],[5000,4000]]){
+   assert.ok(Math.abs(u+x*sx-(region.u+x/region.span))<1e-12);
+   assert.ok(Math.abs(v+z*sz-(1-(region.v+direction*(z-c.length*.5)/region.span)))<1e-12);
+  }
+ }
+});
+test('regional color maps match verified geographic source bounds and checksums',()=>{
+ const elevation=JSON.parse(fs.readFileSync('public/terrain/SOURCES.json')),images=JSON.parse(fs.readFileSync('public/terrain/IMAGERY.json'));
+ assert.deepEqual(images.map(i=>i.theme),['highlands','desert']);
+ for(const image of images){
+  assert.deepEqual(image.bounds,elevation.find(e=>e.theme===image.theme).bounds);
+  assert.equal(image.size,2048);assert.equal(image.notice,'Contains modified Copernicus Sentinel data 2024');
+  const data=fs.readFileSync('public/terrain/'+image.file);assert.equal(data.length,image.bytes);assert.equal(crypto.createHash('sha256').update(data).digest('hex'),image.sha256);assert.ok(data.length<2100000);
+ }
+});

@@ -51,12 +51,12 @@ export class World {
     this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.far=280;this.sun.shadow.bias=-.00002;this.sun.shadow.normalBias=.015;this.sun.shadow.radius=1.5;
     scene.add(this.sun);this.hemisphere=new THREE.HemisphereLight('#d7e6e4','#777a49',.8);scene.add(this.hemisphere);
     const env=new THREE.PMREMGenerator(renderer);this.environment=env.fromScene(sky,.04,1,30000);scene.environment=this.environment.texture;scene.environmentIntensity=.18;env.dispose();
-    this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');this.bunkerColor=this.texture('bunker-color-2k.jpg',true);this.bunkerNormal=this.texture('bunker-normal-2k.jpg');
+    this.regionalImages=new Map();this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');this.bunkerColor=this.texture('bunker-color-2k.jpg',true);this.bunkerNormal=this.texture('bunker-normal-2k.jpg');
     this.turfColor=this.texture('turf-color-2k.jpg',true);this.turfNormal=this.texture('turf-normal-2k.jpg');this.turfRoughness=this.texture('turf-roughness-2k.jpg');
     this.pathColor=this.texture('path-color-2k.jpg',true);this.pathNormal=this.texture('path-normal-2k.jpg');this.pathRoughness=this.texture('path-roughness-2k.jpg');
     this.waterMaterial=createOceanMaterial({time:{value:0},skyMap:{value:null},hasSky:{value:0}});
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
-    this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');this.cliffNormal=this.texture('cliff-normal.jpg');
+    this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');
     this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(this.course.theme),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
     this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=DAY_SKY_YAW;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentRotation.y=DAY_SKY_YAW;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
     this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
@@ -65,7 +65,16 @@ export class World {
     if(this.textureCache.has(file))return this.textureCache.get(file);
     let loaded;const ready=new Promise(resolve=>loaded=resolve);this.texturePromises.push(ready);const t=new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/${file}`,loaded,undefined,error=>{console.warn(`Surface texture unavailable: ${file}`,error);loaded();});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());if(srgb)t.colorSpace=THREE.SRGBColorSpace;this.textureCache.set(file,t);return t;
   }
-  waitForAssets(){return Promise.all([this.ready,this.nightReady,this.terrainReady,...this.texturePromises]);}
+  regionalImage(theme){
+    if(!['highlands','desert'].includes(theme)||!this.regions?.[theme])return null;
+    if(this.regionalImages.has(theme))return this.regionalImages.get(theme);
+    const state={map:{value:null},available:{value:0}};this.regionalImages.set(theme,state);
+    let done;const ready=new Promise(resolve=>done=resolve);this.texturePromises.push(ready);
+    const texture=new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}terrain/${theme}-color-2k.jpg`,()=>{state.available.value=1;done();},undefined,error=>{console.warn(`Regional image unavailable: ${theme}; using terrain textures.`,error);done();});
+    texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;texture.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());state.map.value=texture;
+    return state;
+  }
+  async waitForAssets(){await Promise.all([this.ready,this.nightReady,this.terrainReady]);await Promise.all(this.texturePromises);}
   buildHorizon(c){
     this.distantCity?.dispose();this.distantCity=null;
     if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
