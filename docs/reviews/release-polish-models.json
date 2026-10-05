@@ -3744,7 +3744,7 @@
   },
   "monk": {
     "sourceSha256": "72546096c118d300ded7bc6eea0a95094fa74f037344544c5bb3432a6dc58464",
-    "outputSha256": "e03308da85c25b467d6e7260b3519fda585b2b765dc5324e9cf9e4d73723bd75",
+    "outputSha256": "30099081f3bebb94ad7da838ab5aa0bd997c590f42b66ee6e9e72407f9994b46",
     "baseBinaryBytes": 25559560,
     "baseBinarySha256": "e6e327930f265a560b2d96d569408e40e93a0c52151aaee94ee407326c5b44a3",
     "nodesSha256": "5bc362a3f87b99424b69499bba8ba72c278d5785b6348a5c661c45c4773275a4",
@@ -3934,7 +3934,9 @@
     "replacedAnimations": [],
     "addedClips": [
       "Ethan_GDH_Combo5_Review",
-      "Ethan_GDH_Advancing_Thrust"
+      "Ethan_GDH_Advancing_Thrust",
+      "Ethan_GDH_Return_Cuts",
+      "Ethan_GDH_Leaping_Finish"
     ]
   }
 }

@@ -16,6 +16,11 @@ Generated scenery stays outside their protected margins. Ground sampling and gol
 The built game passes four course previews and a normal-input golf-to-combat check.
 See [the bunker surface review](reviews/bunker-surfaces-2026-10-05.md).
 
+All hero light and heavy branches now select full-body source motion.
+The Ronin and Ethan use three-stage light chains, with source-based finishers.
+Twenty-five input sequences pass across the six heroes. Four crowded encounters average 51–55 FPS on the local M1 Max.
+See [the complete combat branch review](reviews/complete-combat-branches-2026-10-05.md).
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026

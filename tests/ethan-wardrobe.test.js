@@ -16,7 +16,7 @@ test('Ethan coat preserves the existing head, skeleton and all native animation 
  const triangles=rows=>Array.from({length:rows.length/3},(_,i)=>rows.slice(i*3,i*3+3).join(',')).sort();
  assert.deepEqual(triangles([...indices(doc.meshes[0].primitives[0]),...indices(doc.meshes[0].primitives[3])]),triangles(indices(baseline.meshes[0].primitives[0])),'The cloth/hand split must preserve every original triangle.');
  assert.equal(doc.extras.wardrobeDefault.id,1);assert.equal(doc.extras.wardrobeDefault.name,'Hostile Takeover');
- assert.equal(doc.animations.length,42);assert.deepEqual(doc.animations.slice(40).map(a=>a.name),['Ethan_GDH_Combo5_Review','Ethan_GDH_Advancing_Thrust']);assert.ok(saved.addedTriangles<10000);assert.ok(doc.meshes[0].primitives.length<=8,'Merge small trim pieces into shared draw groups.');
+ assert.equal(doc.animations.length,44);assert.deepEqual(doc.animations.slice(40).map(a=>a.name),['Ethan_GDH_Combo5_Review','Ethan_GDH_Advancing_Thrust','Ethan_GDH_Return_Cuts','Ethan_GDH_Leaping_Finish']);assert.ok(saved.addedTriangles<10000);assert.ok(doc.meshes[0].primitives.length<=8,'Merge small trim pieces into shared draw groups.');
  const skin=doc.skins[0],newPrimitives=doc.meshes[0].primitives.filter(p=>doc.accessors[p.attributes.POSITION].bufferView>=doc.bufferViews.findIndex(v=>v.byteOffset>=saved.preservedBinaryBytes));
  assert.equal(newPrimitives.length,4);
  for(const p of newPrimitives){
