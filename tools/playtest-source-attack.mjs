@@ -53,7 +53,8 @@ try{
      for(const side of motion.twoHanded||a.offhand?['r','l']:['r']){
       const palm=a.bones['hand_'+side].localToWorld(a.handGrip.profiles.sword[side].center.clone());
       const held=side==='l'&&a.offhand?a.offhand:a.weapon;
-      const station=held.userData.primaryGrip-(side==='l'&&!a.offhand?motion.gripSpacing:0);
+      const spacing=motion.slidingGrip?a.handGrip.report.spacing:motion.gripSpacing;
+      const station=held.userData.primaryGrip-(side==='l'&&!a.offhand?spacing:0);
       row.maxPalmGap=Math.max(row.maxPalmGap,palm.distanceTo(held.localToWorld(new T.Vector3(0,station,0))));
      }
     }

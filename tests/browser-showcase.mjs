@@ -41,14 +41,14 @@ try{
  await page.click('#showcase-pause');await page.waitForFunction(()=>window.__golfTest.showcase.state.time>0);await page.click('#showcase-pause');
  const results=await page.evaluate(async()=>{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.pause();await g.world.waitForAssets();const rows=[];
-  for(let hero=0;hero<6;hero++){
+  for(let hero=0;hero<6;hero++)for(const rate of [60,120]){
    g.selectWarrior(hero);g.showcase.clock.paused=false;g.showcase.clock.setSpeed(1);const stages=new Set(),weapons=[];
-   for(let f=0,frames=Math.ceil(g.showcase.clock.stages.reduce((sum,stage)=>sum+stage.duration,0)*60)+2;f<frames;f++){g.showcase.update(1/60);const s=g.showcase.state;stages.add(s.stage);if(f%12===0)weapons.push({stage:s.stage,golf:g.player.club.visible,sword:g.player.weapon.visible});
+   for(let f=0,frames=Math.ceil(g.showcase.clock.stages.reduce((sum,stage)=>sum+stage.duration,0)*rate)+2;f<frames;f++){g.showcase.update(1/rate);const s=g.showcase.state;stages.add(s.stage);if(f%12===0)weapons.push({stage:s.stage,golf:g.player.club.visible,sword:g.player.weapon.visible});
     for(const b of Object.values(g.player.bones))assertFinite([...b.position,...b.quaternion,...b.scale]);
    }
    if(g.showcase.clock.cycle<1)throw Error('Showcase never looped');
    for(const w of weapons){const golf=['address','swing','follow','golf-out','golf-in'].includes(w.stage);if(w.golf!==golf||w.sword===golf)throw Error('Wrong held object in '+w.stage);}
-   rows.push({hero,stages:[...stages],cycle:g.showcase.clock.cycle});
+   rows.push({hero,rate,stages:[...stages],cycle:g.showcase.clock.cycle});
   }
   g.selectWarrior(2);g.showcase.clock.paused=false;g.showcase.clock.setSpeed(1);g.showcase.update(.1);g.updateShowcaseUI();g.updateCamera(10);g.portraitLights.visible=true;g.portraitLights.position.copy(g.player.root.position);g.rendering.render('balanced');
   function assertFinite(values){if(!values.every(Number.isFinite))throw Error('Non-finite showcase skeleton');}

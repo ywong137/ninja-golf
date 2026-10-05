@@ -5,10 +5,15 @@ const Y=new Vector3(0,1,0);
 const position=bone=>bone.getWorldPosition(new Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new Quaternion());
 export function compatibleNativePair(from,to,defaultStation){
- const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&!clip.slidingGrip&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing!==0;
+ const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing!==0;
  if(!paired(from)||!paired(to))return false;
  const start=from.primaryGrip??defaultStation,end=to.primaryGrip??defaultStation;
- return Number.isFinite(start)&&Number.isFinite(end)&&Math.abs(start-end)<1e-8&&Math.abs(from.gripSpacing-to.gripSpacing)<1e-8;
+ if(!Number.isFinite(start)||!Number.isFinite(end))return false;
+ // Two captured sliding grips keep both authored arms through a crossfade.
+ // Their displayed palms determine the distance along the same polearm.
+ if(from.slidingGrip||to.slidingGrip)return from.slidingGrip===true&&to.slidingGrip===true
+   &&!from.fixedGripFrame&&!to.fixedGripFrame&&Math.sign(from.gripSpacing)===Math.sign(to.gripSpacing);
+ return Math.abs(start-end)<1e-8&&Math.abs(from.gripSpacing-to.gripSpacing)<1e-8;
 }
 function setWorldRotation(bone,q){
  bone.quaternion.copy(rotation(bone.parent).invert().multiply(q)).normalize();

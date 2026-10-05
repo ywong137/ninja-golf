@@ -2,7 +2,8 @@
 // hand targets and the club path stay in the authored animation.
 const ramp=(time,start,end)=>{
  const x=Math.min(1,Math.max(0,(time-start)/(end-start)));
- return x*x*x*(10+x*(-15+6*x));
+ // Floating-point cancellation near one can exceed the mathematical range.
+ return Math.min(1,Math.max(0,x*x*x*(10+x*(-15+6*x))));
 };
 export function golfShoulderSkinWeight(time,actionWeight=1){
  if(!Number.isFinite(time)||!Number.isFinite(actionWeight)||actionWeight<0||actionWeight>1)

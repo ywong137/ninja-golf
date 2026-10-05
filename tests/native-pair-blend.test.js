@@ -93,3 +93,11 @@ test('Sliding polearm grips follow displayed palms without moving native arms',(
  }
  assert.throws(()=>grip.apply(null,false,{...clip,fixedGripFrame:true}),/sliding grip cannot preserve/);
 });
+
+
+test('captured sliding polearm pairs retain authored arms while hand spacing changes',()=>{
+ const sliding={...pair,primaryGrip:-.845,gripSpacing:-.45,slidingGrip:true};
+ assert.equal(compatibleNativePair(sliding,{...sliding,gripSpacing:-.52,primaryGrip:-.7},0),true);
+ for(const change of [{gripSpacing:.45},{primaryGrip:NaN},{slidingGrip:false},{fixedGripFrame:true}])
+  assert.equal(compatibleNativePair(sliding,{...sliding,...change},0),false);
+});

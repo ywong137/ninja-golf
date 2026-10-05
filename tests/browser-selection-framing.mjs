@@ -72,11 +72,11 @@ try{
   },course));
   await page.screenshot({path:`${output}/course-${course}.png`});
  }
- await page.click('#begin');await page.evaluate(()=>{const g=window.__golfTest;g.updateCamera(0,{immediate:true});});
+ await page.click('#begin');await page.waitForFunction(()=>window.__golfTest.mode==='courses');await page.evaluate(()=>{const g=window.__golfTest;g.updateCamera(0,{immediate:true});});
  assert.equal(await page.evaluate(()=>!!window.__golfTest.camera.view?.enabled),false,'Course camera must discard the portrait projection');
- await page.click('#back-warriors');await page.click('#back-home');await page.evaluate(()=>window.__golfTest.updateCamera(0,{immediate:true}));
+ await page.click('#back-warriors');await page.waitForFunction(()=>window.__golfTest.mode==='selection');await page.click('#back-home');await page.waitForFunction(()=>window.__golfTest.mode==='home');await page.evaluate(()=>window.__golfTest.updateCamera(0,{immediate:true}));
  assert.equal(await page.evaluate(()=>!!window.__golfTest.camera.view?.enabled),false,'Title camera must discard the portrait projection');
- await page.click('#play');await page.click('#begin');await page.click('#start-round');await page.evaluate(()=>window.__golfTest.updateCamera(0,{immediate:true}));
+ await page.click('#play');await page.waitForFunction(()=>window.__golfTest.mode==='selection');await page.click('#begin');await page.waitForFunction(()=>window.__golfTest.mode==='courses');await page.click('#start-round');await page.waitForFunction(()=>window.__golfTest.mode==='game');await page.evaluate(()=>window.__golfTest.updateCamera(0,{immediate:true}));
  assert.equal(await page.evaluate(()=>!!window.__golfTest.camera.view?.enabled),false,'Gameplay camera must discard the portrait projection');
  assert.deepEqual(errors,[]);fs.writeFileSync(`${output}/regression.json`,JSON.stringify({rows,courses,errors},null,2));
  console.log(JSON.stringify({layouts:rows.length,fullLoops:6,courses,errors}));

@@ -103,3 +103,15 @@ for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(hero+':
  assert.ok(pose.angleTo(helper.upperArmHelpers.r.base.quaternion)<1e-6,'Scrubbing changes the same shoulder pose');
  assert.equal(golfShoulderSwingWeight(0),1);assert.equal(golfShoulderSwingWeight(1.3),0);helper.dispose();
 });
+
+
+test('shoulder blend weights stay bounded across fractional frame times',()=>{
+ for(const rate of [40,60,120,144])for(const offset of [0,.000001,.1,.33,.9]){
+  let time=offset/rate;
+  for(let frame=0;frame<Math.ceil(2.5*rate);frame++,time+=1/rate){
+   for(const fn of [golfShoulderSkinWeight,golfShoulderSwingWeight]){
+    const w=fn(time);assert.ok(Number.isFinite(w)&&w>=0&&w<=1,`Invalid weight ${w} at ${time}`);
+   }
+  }
+ }
+});

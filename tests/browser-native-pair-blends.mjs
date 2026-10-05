@@ -9,13 +9,13 @@ try{
  const report=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js');
   const {Warrior,loadWarriorAssets}=await import('/src/actors.js');
-  const {motions}=await import('/src/motion.js');await loadWarriorAssets();
+  const {motions}=await import('/src/motion.js'),{compatibleNativePair}=await import('/src/hand-grip.js');await loadWarriorAssets();
   const ready='Ethan_Naginata_Ready',guard='Naginata_Guard_Loop';
-  const attacks=Object.keys(motions).filter(name=>name.startsWith('Ethan_Naginata_')&&name!==ready);
+  const attacks=['Ethan_GDH_Combo5_Review',...Object.keys(motions).filter(name=>name.startsWith('Ethan_Naginata_')&&name!==ready||name.startsWith('Ethan_GDH_')&&name!=='Ethan_GDH_Combo5_Review')];
   const cases=attacks.flatMap(name=>[[ready,name],[guard,name],[name,ready],[name,guard],[name,name]]);
   cases.push([guard,'Naginata_Guard_Impact'],[guard,'Naginata_Guard_Break'],['Naginata_Guard_Impact',guard],['Naginata_Guard_Break',guard]);
   const rows=[];
-  for(const rate of [60,240])for(const [from,to]of cases)for(const fromTime of from===ready||from===guard?[.4,motions[from].duration-1e-5]:[motions[from].duration-1e-5,motions[from].duration]){
+  for(const rate of [60,240])for(const [from,to]of cases.filter(([a,b])=>compatibleNativePair(motions[a],motions[b],-.36)))for(const fromTime of from===ready||from===guard?[.4,motions[from].duration-1e-5]:[motions[from].duration-1e-5,motions[from].duration]){
    const actor=new Warrior(2);actor.handGrip.restore();actor.mixer.stopAllAction();actor.current='';
    actor.play(from,0,true);actor.actions.get(from).time=fromTime;
    actor.mixer.update(0);actor.syncHeldObjects();
@@ -24,14 +24,15 @@ try{
    const row={rate,from,to,fromTime,completedAttack:!!motions[from].athleticAttack&&fromTime>=motions[from].duration,preserved:!!actor.heldBlend?.preservePair,direct:!actor.heldBlend,previousStopped:!previous.isScheduled(),maxEntryChange:0,maxArmChange:0,maxPalmGap:0,samples:0};
    for(const {bone,p,q,s}of entry)row.maxEntryChange=Math.max(row.maxEntryChange,bone.position.distanceTo(p),bone.quaternion.clone().normalize().angleTo(q),bone.scale.distanceTo(s));
    for(let frame=0;frame<=Math.ceil(.10*rate);frame++){
-    actor.handGrip.restore();actor.mixer.update(1/rate);actor.root.updateMatrixWorld(true);
+    actor.handGrip.restore();actor.updateMixer(1/rate);actor.root.updateMatrixWorld(true);
     const names=['upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l'];
     const before=names.map(name=>actor.bones[name].quaternion.clone().normalize());
     actor.syncHeldObjects();row.samples++;
     for(let i=0;i<names.length;i++)row.maxArmChange=Math.max(row.maxArmChange,before[i].angleTo(actor.bones[names[i]].quaternion.clone().normalize()));
     for(const side of ['r','l']){
      const palm=actor.bones['hand_'+side].localToWorld(actor.handGrip.active[side].center.clone());
-     const station=actor.weapon.userData.primaryGrip-(side==='l'?motions[to].gripSpacing:0);
+     const spacing=motions[to].slidingGrip?actor.handGrip.report.spacing:motions[to].gripSpacing;
+     const station=actor.weapon.userData.primaryGrip-(side==='l'?spacing:0);
      const shaft=actor.weapon.localToWorld(new T.Vector3(0,station,0));
      row.maxPalmGap=Math.max(row.maxPalmGap,palm.distanceTo(shaft)/actor.root.scale.x);
     }
@@ -61,6 +62,9 @@ try{
   }
   return{rows,exclusions,mismatches};
  });
+ for(const name of ['Ethan_GDH_Advancing_Thrust','Ethan_GDH_Return_Cuts','Ethan_GDH_Leaping_Finish','Ethan_GDH_Combo5_Review'])
+  for(const [from,to]of [['Ethan_Naginata_Ready',name],[name,'Ethan_Naginata_Ready']])
+   assert.ok(report.rows.some(row=>row.from===from&&row.to===to),'Missing current polearm transition: '+from+' -> '+to);
  for(const row of report.rows){
   assert.ok(row.preserved||row.direct&&(row.from==='Ethan_Naginata_Ready'||row.completedAttack)&&(row.from===row.to||row.previousStopped),JSON.stringify(row));
   assert.ok(row.maxEntryChange<1e-7,`The animation handoff jumps: ${JSON.stringify(row)}`);
