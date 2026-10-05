@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {chromium} from 'playwright';
-import {WARRIOR_ASSET_NAMES,INITIAL_WARRIOR_ASSET_NAMES} from '../src/warrior-assets.js';
+import {WARRIOR_ASSET_NAMES} from '../src/warrior-assets.js';
 
 if(process.argv.includes('--help')){console.log('Usage: node tests/browser-character-loading.mjs [BUILT_APP_URL] [OUTPUT_DIRECTORY] [--baseline]\nBuild and start Vite preview first. Checks real selection, download retries, saved rounds, and combat with audio muted.\n--baseline measures startup without asserting lazy loading.');process.exit(0);}
 const [url='http://127.0.0.1:4184',output='/private/tmp/ninja-character-loading',flag]=process.argv.slice(2);
@@ -24,10 +24,14 @@ try{
  await page.screenshot({path:path.join(output,'title.png')});
  if(!report.baseline){
   const loaded=report.startup.map(r=>new URL(r.url).pathname.split('/').at(-1).replace(/\.glb(\.gz)?$/,''));
-  assert.deepEqual(loaded.sort(),[...INITIAL_WARRIOR_ASSET_NAMES].sort());
-  assert.ok(report.modelBytes<22_000_000,'The first screen should not download the full roster');report.checks.push('Startup downloads only the default hero and round assets');
+  assert.deepEqual(loaded,[],'The aerial title needs no character models');
+  assert.equal(report.modelBytes,0);report.checks.push('Title downloads no hidden hero, enemies, or motion source models');
+  let motionFailures=0;await page.route('**/assets/motion-ronin-*.json',route=>++motionFailures===1?route.abort('failed'):route.continue());
   await page.click('#audio-toggle');await page.click('#play');
+  await page.locator('#character-retry').waitFor({state:'visible'});await page.click('#character-cancel');
+  assert.equal(await page.evaluate(()=>window.ninjaGolf.state().mode),'home');await page.click('#play');
   const ready=index=>page.waitForFunction(i=>window.ninjaGolf.state().playerIndex===i&&!!window.ninjaGolf.state().showcase&&document.querySelector('#character-loading').classList.contains('hidden'),index);
+  await ready(0);assert.equal(motionFailures,2);report.checks.push('The first hero can cancel and retry an interrupted motion download without an existing player model');
   let releaseMonk,monkRequested;const monkGate=new Promise(resolve=>releaseMonk=resolve),monkStarted=new Promise(resolve=>monkRequested=resolve);
   await page.route('**/models/monk.glb*',async route=>{monkRequested();await monkGate;await route.continue();});
   await page.click('[data-warrior="2"]');await monkStarted;
@@ -56,7 +60,16 @@ try{
   await page.click('#play');for(let i=0;i<6;i++){await page.click(`[data-warrior="${i}"]`);await ready(i);}
   await page.screenshot({path:path.join(output,'selection.png')});report.checks.push('All six characters remain selectable');
   // Save an unloaded-on-next-boot hero, then use the actual Continue control after a reload.
-  await page.click('[data-warrior="2"]');await ready(2);await page.click('#begin');await page.click('#start-round');
+  await page.click('[data-warrior="2"]');await ready(2);
+  let releaseEnemy,enemyRequested;const enemyGate=new Promise(resolve=>releaseEnemy=resolve),enemyStarted=new Promise(resolve=>enemyRequested=resolve);
+  await page.route('**/models/enemy-cloth-ninja.glb*',async route=>{enemyRequested();await enemyGate;await route.continue();});
+  await page.click('#begin');await enemyStarted;await page.click('#start-round');
+  await page.locator('#character-loading').waitFor({state:'visible'});
+  await page.click('[data-course="0"]');await page.waitForFunction(()=>document.querySelector('#character-loading').classList.contains('hidden'));
+  const enemyResponse=page.waitForResponse(response=>response.url().includes('/models/enemy-cloth-ninja.glb'));releaseEnemy();await enemyResponse;await page.waitForTimeout(2500);
+  assert.equal(await page.evaluate(()=>window.ninjaGolf.state().mode),'courses');
+  report.checks.push('A changed course cancels a pending round while its enemy model loads');
+  await page.click('#start-round');
   await page.waitForFunction(()=>window.ninjaGolf.state().mode==='game');
   // Resume is offered only after a completed hole. Seed that saved-progress fixture.
   await page.evaluate(()=>{const save=JSON.parse(localStorage.getItem('ninja-golf-save'));Object.assign(save,{scores:[4],penalties:[0],nextHole:1});localStorage.setItem('ninja-golf-save',JSON.stringify(save));});

@@ -4,6 +4,7 @@ import {DAY_SKY_YAW,SUN_DIRECTION} from './lighting.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import {loadRegionalTerrain} from './regional-terrain.js';
+import {loadEnvironmentTexture} from './compressed-environment.js';
 import {createPond,createOceanMaterial} from './water.js';
 import { NaturalLandscape,forestAtlasSource,shrubAtlasSources,queueSceneryRock } from './nature.js';
 import {buildDistantForest} from './distant-forest.js';
@@ -58,9 +59,33 @@ export class World {
     this.waterMaterial=createOceanMaterial({time:{value:0},skyMap:{value:null},hasSky:{value:0}});
     this.ocean=new THREE.Mesh(new THREE.PlaneGeometry(18000,18000),this.waterMaterial);this.ocean.rotation.x=-Math.PI/2;this.ocean.position.y=-1.1;scene.add(this.ocean);
     this.rockColor=this.texture('rock-color-2k.jpg',true);this.cliffColor=this.texture('cliff-color.jpg',true);this.rockNormal=this.texture('rock-normal-2k.jpg');
-    this.terrainReady=loadRegionalTerrain(import.meta.env.BASE_URL).then(regions=>{this.regions=regions;if(this.course){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[this.course.theme],forestAtlasSource(this.course.theme),this.horizonHeight);}}).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
-    this.ready=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;sky.visible=false;this.coastalSky=texture;scene.background=texture;scene.backgroundIntensity=.78;scene.backgroundRotation.y=DAY_SKY_YAW;const pmrem=new THREE.PMREMGenerator(renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);scene.environment=this.environment.texture;scene.environmentRotation.y=DAY_SKY_YAW;pmrem.dispose();this.waterMaterial.uniforms.skyMap.value=texture;this.waterMaterial.uniforms.hasSky.value=1;this.applyTheme(this.course);}).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
-    this.nightReady=new HDRLoader().loadAsync(`${import.meta.env.BASE_URL}textures/city-night.hdr`).then(texture=>{texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;const pmrem=new THREE.PMREMGenerator(renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();this.applyTheme(this.course);}).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
+    this.regions={};this.themeLoads=new Map();this.readyThemes=new Set();
+
+  }
+  isThemeReady(theme){return this.readyThemes.has(theme);}
+  prepareTheme(theme){
+    if(this.themeLoads.has(theme))return this.themeLoads.get(theme);
+    const sky=this.prepareSky(theme);
+    const terrain=loadRegionalTerrain(import.meta.env.BASE_URL,theme).then(regions=>{
+      Object.assign(this.regions,regions);
+      if(this.course?.theme===theme){this.buildHorizon(this.course);this.distantForest=buildDistantForest(this.root,this.course,this.regions[theme],forestAtlasSource(theme),this.horizonHeight);}
+    }).catch(error=>console.warn('Regional terrain unavailable; using the course outskirts.',error));
+    const ready=Promise.all([sky,terrain]).then(()=>{this.readyThemes.add(theme);});
+    this.themeLoads.set(theme,ready);return ready;
+  }
+  prepareSky(theme){
+    if(theme==='cyberpunk'){
+      return this.nightReady??=loadEnvironmentTexture(new HDRLoader(),`${import.meta.env.BASE_URL}textures/city-night.hdr`,{compressed:import.meta.env.PROD}).then(texture=>{
+        texture.mapping=THREE.EquirectangularReflectionMapping;this.citySky=texture;
+        const pmrem=new THREE.PMREMGenerator(this.renderer);this.nightEnvironment=pmrem.fromEquirectangular(texture);pmrem.dispose();
+        if(this.course)this.applyTheme(this.course);
+      }).catch(error=>console.warn('City sky unavailable; using the night atmosphere.',error));
+    }
+    return this.ready??=loadEnvironmentTexture(new HDRLoader(),`${import.meta.env.BASE_URL}textures/coastal-sky.hdr`,{compressed:import.meta.env.PROD}).then(texture=>{
+      texture.mapping=THREE.EquirectangularReflectionMapping;this.coastalSky=texture;
+      const pmrem=new THREE.PMREMGenerator(this.renderer);this.environment.dispose();this.environment=pmrem.fromEquirectangular(texture);pmrem.dispose();
+      if(this.course)this.applyTheme(this.course);
+    }).catch(error=>console.warn('Photographic sky unavailable; using atmospheric sky.',error));
   }
   texture(file,srgb=false){
     if(this.textureCache.has(file))return this.textureCache.get(file);
@@ -90,7 +115,7 @@ export class World {
     });
     this.texturePromises.push(ready);return state;
   }
-  async waitForAssets(){await Promise.all([this.ready,this.nightReady,this.terrainReady]);await Promise.all(this.texturePromises);}
+  async waitForAssets(){if(this.course)await this.prepareTheme(this.course.theme);await Promise.all(this.texturePromises);}
   buildHorizon(c){
     this.distantCity?.dispose();this.distantCity=null;
     if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
@@ -120,7 +145,7 @@ export class World {
     this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.distantCity=null;this.distantUnderstory=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
-    this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
+    this.clear();this.ambushSites=[];this.course=course;this.prepareTheme(course.theme);this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
     const geo=courseGeometry(c,heightAt,ellipse);
     const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);this.buildHorizon(c);
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);this.makePath();

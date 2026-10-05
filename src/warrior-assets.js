@@ -6,7 +6,8 @@ export const WARRIOR_ASSET_NAMES=Object.freeze([
  ...WARRIORS.map(w=>w.model),...ENEMY_APPEARANCES.map(e=>e.model),'warrior-motion','golf-motion',
 ]);
 
-// Every round needs the enemy and shared motion sources. Other heroes load on selection.
+// Eager templates for development and standalone animation reviews.
+// Production loads heroes on selection and enemies before starting a round.
 export const INITIAL_WARRIOR_ASSET_NAMES=Object.freeze([
  WARRIORS[0].model,...ENEMY_APPEARANCES.map(e=>e.model),'warrior-motion','golf-motion',
 ]);

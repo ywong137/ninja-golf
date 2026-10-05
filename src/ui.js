@@ -42,7 +42,7 @@ export class UI {
     this.$('back-home').onclick=()=>{this.showScreen('home');menuAction(()=>callbacks.home());};
     this.$('begin').onclick=()=>{this.showScreen('courses');menuAction(()=>callbacks.courseSelection());};
     this.$('back-warriors').onclick=()=>{this.showScreen('selection');menuAction(()=>callbacks.selection());};
-    this.$('start-round').onclick=()=>{this.showScreen('game');menuAction(()=>callbacks.begin(this.selected,this.selectedCourse));};
+    this.$('start-round').onclick=()=>{menuAction(()=>callbacks.begin(this.selected,this.selectedCourse));};
     document.querySelectorAll('[data-course]').forEach(el=>el.onclick=()=>{this.selectedCourse=+el.dataset.course;document.querySelectorAll('[data-course]').forEach(x=>x.classList.toggle('selected',x===el));const index=this.selectedCourse;menuAction(()=>callbacks.course(index));});
     document.querySelectorAll('[data-warrior]').forEach(el=>el.onclick=()=>{const index=+el.dataset.warrior;this.warriorDetails(index);menuAction(()=>callbacks.warrior(index));});
     this.$('audio-toggle').onclick=()=>callbacks.audio();this.$('pause-button').onclick=()=>callbacks.pause();this.$('home-help').onclick=()=>callbacks.help();this.$('credits-button').onclick=()=>this.credits();

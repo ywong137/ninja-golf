@@ -48,3 +48,13 @@ test('regional color maps match verified geographic source bounds and checksums'
   const data=fs.readFileSync('public/terrain/'+image.file);assert.equal(data.length,image.bytes);assert.equal(crypto.createHash('sha256').update(data).digest('hex'),image.sha256);assert.ok(data.length<2100000);
  }
 });
+
+test('a course fetches only its elevation grid; the city needs no surveyed grid',async()=>{
+ const {loadRegionalTerrain}=await import('../src/regional-terrain.js'),saved=globalThis.fetch,urls=[];
+ globalThis.fetch=async url=>{urls.push(url);return{ok:true,arrayBuffer:async()=>new ArrayBuffer(513*513*2)};};
+ try{
+  const region=await loadRegionalTerrain('/','japanese');assert.deepEqual(Object.keys(region),['japanese']);assert.equal(urls.length,1);assert.match(urls[0],/japanese/);
+  assert.deepEqual(await loadRegionalTerrain('/','cyberpunk'),{});assert.equal(urls.length,1);
+  await assert.rejects(loadRegionalTerrain('/','unknown'),/Unknown terrain/);
+ }finally{globalThis.fetch=saved;}
+});

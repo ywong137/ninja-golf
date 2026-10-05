@@ -3,6 +3,7 @@ import {LegJointBalance} from './leg-joint-balance.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {loadModel} from './load-model.js';
+import {loadMotionData} from './motion-loading.js';
 import {WARRIOR_ASSET_NAMES,INITIAL_WARRIOR_ASSET_NAMES} from './warrior-assets.js';
 import {createAssetCache} from './asset-cache.js';
 import {finishCharacterMaterial,awaitCharacterMaterials} from './character-materials.js';
@@ -88,6 +89,7 @@ const warriorAssets=createAssetCache(async name=>{
  const index=WARRIOR_ASSET_NAMES.indexOf(name);
  if(index<0)throw new Error(`Unknown warrior asset: ${name}`);
  const model=await loadModel(new GLTFLoader(),`${import.meta.env.BASE_URL}models/${name}.glb?v=${MODEL_REVISIONS[name]??MODEL_REVISION}`,{compressed:import.meta.env.PROD});
+ await loadMotionData(model.animations.map(clip=>clip.name));
  if(index>=characterCount){motionSources[index-characterCount]=model;return model;}
  const warrior=WARRIORS[index];
  if(warrior){
@@ -113,6 +115,8 @@ async function loadAssetSet(names,progress=()=>{}){
  for(const name of ['Idle_Loop','Jog_Fwd_Loop','Sprint_Loop','Sword_Attack','Roll','Death01','Golf_Address','Golf_Swing','Golf_Putt'])if(!clipNames.has(name))throw new Error(`Missing warrior animation: ${name}`);
 }
 export function loadWarriorAssets(progress){return loadAssetSet(WARRIOR_ASSET_NAMES,progress);}
+export function loadRoundAssets(){return Promise.all(ENEMY_APPEARANCES.map(enemy=>warriorAssets.load(enemy.model)));}
+export function isRoundAssetsReady(){return ENEMY_APPEARANCES.every(enemy=>warriorAssets.has(enemy.model));}
 export function loadInitialWarriorAssets(progress){return loadAssetSet(INITIAL_WARRIOR_ASSET_NAMES,progress);}
 export function loadWarrior(index){
  if(!Number.isInteger(index)||!WARRIORS[index])return Promise.reject(new Error(`Unknown warrior index: ${index}`));

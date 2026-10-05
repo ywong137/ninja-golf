@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {gzipSync} from 'node:zlib';
-import {PLAYBACK_POSE_FIELDS,projectPlaybackMotions,playbackMotionPlugin} from '../tools/playback-motion.mjs';
+import {PLAYBACK_POSE_FIELDS,projectPlaybackMotions,splitPlaybackMotions,playbackMotionPlugin} from '../tools/playback-motion.mjs';
 
 const source=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url),'utf8'));
 const projected=projectPlaybackMotions(source);
@@ -63,6 +63,20 @@ test('Only release builds replace the game motion import',async()=>{
   assert.equal(plugin.resolveId('./selection-data.json',root+'/src/motion.js'),undefined);
   const watched=[],code=await plugin.load.call({addWatchFile:file=>watched.push(file)},id);
   const actual=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
-  assert.deepEqual(actual.default,projected);
-  assert.deepEqual(watched,[root+'/src/motion-data.json']);
+  assert.deepEqual(actual.default,Object.fromEntries(Object.entries(projected).map(([name,{poses,...metadata}])=>[name,metadata])));
+  const assets=[],loader=plugin.resolveId('./motion-loading.js',root+'/src/actors.js');
+  const loaderCode=await plugin.load.call({addWatchFile:()=>{},emitFile:asset=>{assets.push(asset);return String(assets.length);}},loader);
+  assert.match(loaderCode,/createMotionDataLoader/);
+  const restored=structuredClone(actual.default);
+  for(const asset of assets)for(const [name,poses]of Object.entries(JSON.parse(asset.source)))restored[name].poses=poses;
+  assert.deepEqual(restored,projected,'Lazy assets reconstruct every exact playback record');
+  assert.equal(watched.length,8);assert.ok(watched.includes(root+'/src/motion-data.json'));
 });
+
+ test('Motion assets separate shared poses, character poses, and unused historical poses',()=>{
+  const clip=name=>({duration:1,name,poses:[{t:0},{t:1}]}),records={Golf:clip('Golf'),Ronin:clip('Ronin'),Ace:clip('Ace'),Old:clip('Old')};
+  const result=splitPlaybackMotions(records,{ronin:['Golf','Ronin'],kaede:['Golf','Ace']});
+  assert.deepEqual(result.owners,{Golf:'shared',Ronin:'ronin',Ace:'kaede',Old:'legacy'});
+  assert.deepEqual(result.bundles.shared.Golf,records.Golf.poses);
+  assert.deepEqual(result.metadata.Ronin,{duration:1,name:'Ronin'});
+ });

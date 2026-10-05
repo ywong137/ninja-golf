@@ -1,4 +1,5 @@
 import {heightAt,smooth} from './course.js';
+import {loadEnvironmentBytes} from './compressed-environment.js';
 import {regionalSunVisibility} from './regional-lighting.js';
 import grids from '../public/terrain/SOURCES.json' with {type:'json'};
 const REGION_SETTINGS={
@@ -6,12 +7,11 @@ const REGION_SETTINGS={
  highlands:{span:16000,scale:.58,datum:0,u:.5,v:.5,direction:-1},
  desert:{span:14000,scale:.66,datum:1300,u:.5,v:.5,direction:-1},
 };
-export async function loadRegionalTerrain(base){
- const results=await Promise.allSettled(Object.keys(REGION_SETTINGS).map(async theme=>{
+export async function loadRegionalTerrain(base,theme){
+ if(theme!==undefined&&!Object.hasOwn(REGION_SETTINGS,theme)&&theme!=='cyberpunk')throw Error(`Unknown terrain theme: ${theme}`);
+ const results=await Promise.allSettled(Object.keys(REGION_SETTINGS).filter(name=>theme===undefined||name===theme).map(async theme=>{
   const grid=grids.find(g=>g.theme===theme);
-  const response=await fetch(`${base}terrain/${grid.file}`);
-  if(!response.ok)throw new Error(`Terrain ${theme}: HTTP ${response.status}`);
-  const buffer=await response.arrayBuffer();
+  const buffer=await loadEnvironmentBytes(`${base}terrain/${grid.file}`,{compressed:import.meta.env?.PROD});
   if(buffer.byteLength!==grid.size*grid.size*2)throw new Error(`Terrain ${theme}: invalid elevation grid`);
   // DataView makes the documented little-endian asset format independent of the host.
   const view=new DataView(buffer),heights=new Int16Array(grid.size*grid.size);

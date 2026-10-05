@@ -29,27 +29,61 @@ export function projectPlaybackMotions(records){
   }));
 }
 
+// Shared clips occupy one asset. Character-specific clips load with their model.
+export function splitPlaybackMotions(records,clipSets){
+  const metadata={},bundles={},owners={};
+  for(const [name,{poses,...details}]of Object.entries(records)){
+    const users=Object.entries(clipSets).filter(([,names])=>names.includes(name)).map(([model])=>model);
+    const group=users.length>1?'shared':users[0]??'legacy';
+    metadata[name]=details;owners[name]=group;(bundles[group]??={})[name]=poses;
+  }
+  return{metadata,bundles,owners};
+}
+
 export function playbackMotionPlugin(){
-  const virtualId='\0ninja-golf:playback-motion';
-  let sourceFile,consumerFile;
+  const virtualId='\0ninja-golf:playback-motion',loaderId='\0ninja-golf:motion-loader';
+  let sourceFile,consumerFile,loaderFile,root,prepared;
+  async function prepare(context){
+    if(!prepared)prepared=(async()=>{
+      context.addWatchFile(sourceFile);
+      const records=projectPlaybackMotions(JSON.parse(await readFile(sourceFile,'utf8'))),clipSets={};
+      for(const model of ['ronin','shinobi','monk','kaede','ayame','sora','enemy-cloth-ninja']){
+        const file=path.join(root,'public/models',model+'.glb');context.addWatchFile(file);
+        const bytes=await readFile(file),gltf=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());
+        clipSets[model]=(gltf.animations??[]).map(clip=>clip.name);
+      }
+      return splitPlaybackMotions(records,clipSets);
+    })();
+    return prepared;
+  }
   return {
-    name:'ninja-golf-playback-motion',
-    enforce:'pre',
-    // Development and the explicit reference build keep the complete authoring records.
+    name:'ninja-golf-playback-motion',enforce:'pre',
     apply:(_config,{command,mode})=>command==='build'&&mode!=='motion-reference',
     configResolved(config){
-      sourceFile=path.resolve(config.root,'src/motion-data.json');
-      consumerFile=path.resolve(config.root,'src/motion.js');
+      root=config.root;sourceFile=path.resolve(root,'src/motion-data.json');
+      consumerFile=path.resolve(root,'src/motion.js');loaderFile=path.resolve(root,'src/motion-loading.js');
     },
+    buildStart(){prepared=null;},
     resolveId(source,importer){
-      if(source==='./motion-data.json'&&importer?.split('?')[0]===consumerFile)return virtualId;
+      if(source==='ninja-golf:motion-records'||source==='./motion-data.json'&&importer?.split('?')[0]===consumerFile)return virtualId;
+      if(source==='./motion-loading.js'&&path.resolve(path.dirname(importer?.split('?')[0]??root),source)===loaderFile)return loaderId;
     },
     async load(id){
-      if(id!==virtualId)return;
-      this.addWatchFile(sourceFile);
-      const records=projectPlaybackMotions(JSON.parse(await readFile(sourceFile,'utf8')));
-      // Match Vite's large-JSON strategy: parse one string rather than a large object expression.
-      return `export default JSON.parse(${JSON.stringify(JSON.stringify(records))});`;
+      if(id!==virtualId&&id!==loaderId)return;
+      const {metadata,bundles,owners}=await prepare(this);
+      if(id===virtualId)return `export default JSON.parse(${JSON.stringify(JSON.stringify(metadata))});`;
+      const urls=Object.entries(bundles).map(([group,poses])=>{
+        const ref=this.emitFile({type:'asset',name:`motion-${group}.json`,source:JSON.stringify(poses)});
+        return `${JSON.stringify(group)}:import.meta.ROLLUP_FILE_URL_${ref}`;
+      });
+      return `import records from 'ninja-golf:motion-records';
+import {createMotionDataLoader} from ${JSON.stringify(path.resolve(root,'src/motion-data-loader.js'))};
+const urls={${urls.join(',')}};
+export const loadMotionData=createMotionDataLoader(records,${JSON.stringify(owners)},async group=>{
+  const response=await fetch(urls[group]);
+  if(!response.ok)throw Error('Motion download failed: '+response.status+'. Try again.');
+  return response.json();
+});`;
     },
   };
 }
