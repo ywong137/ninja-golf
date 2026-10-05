@@ -13,7 +13,7 @@ const {installLimbSkinning}=await load('src/forearm-twist.js');
 const {golfShoulderSkinWeight}=await load('src/golf-shoulder-skin.js');
 const {createGolfClub}=await load('src/golf-club.js');
 const {captureGolfRestPose,calibrateGolfClub}=await load('src/golf-club-fit.js');
-const {headSurfaceMetadata:headOnlyMetadata,measureTriangleHeadClearance}=await load('tools/blade-head-surface.mjs');
+const {headSurfaceMetadata:headOnlyMetadata,measureTriangleHeadClearance,measureTriangleHeadClearances}=await load('tools/blade-head-surface.mjs');
 function headSurfaceMetadata(g,{includeNeck=false}={}){
  const head=headOnlyMetadata(g);if(!includeNeck)return head;
  g.scene.traverse(mesh=>{
@@ -138,11 +138,10 @@ export async function inspectGolfHeadClearance(model,{start=1.6,end=2.4,includeN
           return points.get(vertex);
         });
       }
-      const current={time,limbs:{}};
+      const trianglesByPart=Object.fromEntries(parts.map(limb=>[limb,groups[limb].map(posed)]));
+      const current={time,limbs:measureTriangleHeadClearances(head,trianglesByPart,{distanceCap:.005})};
       for (const limb of parts) {
-        const triangles=groups[limb].map(posed);
-        const result=measureTriangleHeadClearance(head,{[limb]:triangles},{distanceCap:.005});
-        current.limbs[limb]=result;
+        const triangles=trianglesByPart[limb],result=current.limbs[limb];
         const stats=statistics[limb];
         stats.minimumClearance=Math.min(stats.minimumClearance,result.minimumClearance);
         if (result.crossings>stats.maxCrossings) {stats.maxCrossings=result.crossings;stats.worstTime=time;}

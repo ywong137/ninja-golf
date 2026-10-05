@@ -3,6 +3,7 @@ import * as T from 'three';
 
 const boxGap=(a,b)=>Math.hypot(Math.max(a.min.x-b.max.x,b.min.x-a.max.x,0),Math.max(a.min.y-b.max.y,b.min.y-a.max.y,0),Math.max(a.min.z-b.max.z,b.min.z-a.max.z,0));
 const surfaceCaches=new WeakMap();
+const crossingEpsilon=1e-7;
 
 function buildTree(triangles){
  const box=new T.Box3();for(const triangle of triangles)box.union(triangle.box);
@@ -43,7 +44,21 @@ function segmentDistance(a,b,c,d){
  if(den>1e-12){const s=(bb*ee-cc*dd)/den,t=(aa*ee-bb*dd)/den;if(s>=0&&s<=1&&t>=0&&t<=1)distance=Math.min(distance,a.clone().addScaledVector(u,s).distanceTo(c.clone().addScaledVector(v,t)));}
  return distance;
 }
-function triangleDistance(a,b){
+// Every point of a triangle lies between its three signed plane distances.
+// If that entire interval is farther than the cap, no pair can improve the
+// result or intersect. Keep degenerate planes on the original exact path.
+function beyondPlane(points,plane,limit){
+ const a=plane[0],b=plane[1],c=plane[2];
+ const ux=b.x-a.x,uy=b.y-a.y,uz=b.z-a.z,vx=c.x-a.x,vy=c.y-a.y,vz=c.z-a.z;
+ const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,n2=nx*nx+ny*ny+nz*nz;
+ if(n2<1e-24)return false;
+ let low=Infinity,high=-Infinity;
+ for(const p of points){const d=(p.x-a.x)*nx+(p.y-a.y)*ny+(p.z-a.z)*nz;low=Math.min(low,d);high=Math.max(high,d);}
+ const gap=low>0?low:high<0?-high:0;
+ return gap*gap>(limit+1e-9)**2*n2;
+}
+function triangleDistance(a,b,limit=Infinity){
+ if(Number.isFinite(limit)&&(beyondPlane(a,b,limit)||beyondPlane(b,a,limit)))return Infinity;
  const ray=new T.Ray(),hit=new T.Vector3();
  for(const [p,q]of [[a,b],[b,a]])for(let k=0;k<3;k++){
   const direction=p[(k+1)%3].clone().sub(p[k]),length=direction.length();if(length<1e-12)continue;
@@ -73,11 +88,12 @@ export function headSurfaceMetadata(g){
  return surfaces;
 }
 
-// Each named query contains world-space triangles: {name: [[Vector3, Vector3, Vector3], ...]}.
-// The caller owns query deformation; this function updates the head skin and BVH.
-export function measureTriangleHeadClearance(surfaces,triangleSets,{distanceCap=.03,bruteForce=false}={}){
+function validateOptions({distanceCap=.03,bruteForce=false}={}){
  if(!(distanceCap>0&&Number.isFinite(distanceCap)))throw Error('distanceCap must be a positive finite distance.');
- const head=deformHead(surfaces),headBox=head.tree.box;
+ return{distanceCap,bruteForce};
+}
+function measurePreparedHead(head,triangleSets,{distanceCap,bruteForce}){
+ const headBox=head.tree.box;
  let minimum=distanceCap,closest=null,crossings=0;
  for(const [source,triangles]of Object.entries(triangleSets)){
   const queryBox=new T.Box3();
@@ -90,8 +106,8 @@ export function measureTriangleHeadClearance(surfaces,triangleSets,{distanceCap=
    const box=new T.Box3().setFromPoints(points);
    const compare=surface=>{
     if(boxGap(box,surface.box)>Math.max(minimum,1e-8))return;
-    const distance=triangleDistance(points,surface.points);
-    if(distance<1e-7)crossings++;
+    const distance=triangleDistance(points,surface.points,bruteForce?Infinity:Math.max(minimum,crossingEpsilon));
+    if(distance<crossingEpsilon)crossings++;
     if(distance<minimum){minimum=distance;closest={source,headMesh:surface.mesh};}
    };
    if(bruteForce){for(const surface of head.triangles)compare(surface);continue;}
@@ -104,6 +120,22 @@ export function measureTriangleHeadClearance(surfaces,triangleSets,{distanceCap=
   }
  }
  return{minimumClearance:minimum,clearanceCappedAt:distanceCap,crossings,closest};
+}
+
+// Each named query contains world-space triangles: {name: [[Vector3, Vector3, Vector3], ...]}.
+// The caller owns query deformation; this function updates the head skin and BVH.
+export function measureTriangleHeadClearance(surfaces,triangleSets,options={}){
+ const validated=validateOptions(options);
+ return measurePreparedHead(deformHead(surfaces),triangleSets,validated);
+}
+
+// Independent results for several parts in one pose. Deform and refit once,
+// then measure each part with its own clearance minimum and collision count.
+// Each call refreshes the skin, so animated poses cannot reuse stale bounds.
+export function measureTriangleHeadClearances(surfaces,triangleSets,options={}){
+ const validated=validateOptions(options),head=deformHead(surfaces);
+ return Object.fromEntries(Object.entries(triangleSets).map(([name,triangles])=>
+  [name,measurePreparedHead(head,{[name]:triangles},validated)]));
 }
 
 export function measureBladeHeadClearance(surfaces,weapons,options={}){

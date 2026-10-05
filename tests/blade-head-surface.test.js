@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {headSurfaceMetadata,measureBladeHeadClearance,measureTriangleHeadClearance} from '../tools/blade-head-surface.mjs';
+import {headSurfaceMetadata,measureBladeHeadClearance,measureTriangleHeadClearance,measureTriangleHeadClearances} from '../tools/blade-head-surface.mjs';
 
 const HEAD=[[-1,-1,0],[1,-1,0],[0,1,0]];
 function fixture(bladePoints,{indexed=false}={}){
@@ -80,4 +80,71 @@ test('arbitrary posed triangles match blade queries and brute force',()=>{
   if(query.closest)assert.deepEqual(query.closest,{source:'forearm',headMesh:wrapped.closest.headMesh});
  }
  assert.throws(()=>measureTriangleHeadClearance(f.surfaces,{forearm:[[new T.Vector3()]]}),/three finite/);
+});
+
+
+test('batched parts retain independent collision counts and nearest distances across poses',()=>{
+ const f=fixture(HEAD.map(([x,y])=>[x,y,.02]),{indexed:true});
+ const sets={
+  crossing:[[new T.Vector3(0,0,-.2),new T.Vector3(0,0,.2),new T.Vector3(.2,.1,.2)]],
+  near:[HEAD.map(([x,y])=>new T.Vector3(x,y,.007))],
+  far:[HEAD.map(([x,y])=>new T.Vector3(x,y,1))],
+ };
+ let changed=false,previous;
+ for(let i=0;i<20;i++){
+  f.head.position.z=.015*Math.sin(i*.3);f.eye.position.z=.008*Math.cos(i*.4);f.scene.updateMatrixWorld(true);
+  const actual=measureTriangleHeadClearances(f.surfaces,sets);
+  for(const [name,triangles]of Object.entries(sets)){
+   const single=measureTriangleHeadClearance(f.surfaces,{[name]:triangles});
+   const reference=measureTriangleHeadClearance(f.surfaces,{[name]:triangles},{bruteForce:true});
+   assert.deepEqual(actual[name],single);assert.deepEqual(actual[name],reference);
+  }
+  assert.ok(actual.crossing.crossings>0);assert.equal(actual.far.crossings,0);
+  assert.equal(actual.far.minimumClearance,.03);
+  if(previous&&actual.near.minimumClearance!==previous.near.minimumClearance)changed=true;
+  previous=actual;
+ }
+ assert.ok(changed,'Each batch must refresh the animated head and eye surface.');
+ assert.throws(()=>measureTriangleHeadClearances(f.surfaces,sets,{distanceCap:0}),/positive finite/);
+ assert.throws(()=>measureTriangleHeadClearances(f.surfaces,{bad:[[new T.Vector3()]]}),/three finite/);
+});
+
+test('one batch deforms each head vertex once, and the next batch refreshes it',()=>{
+ const f=fixture(HEAD.map(([x,y])=>[x,y,.02])),original=f.mesh.getVertexPosition.bind(f.mesh);let reads=0;
+ f.mesh.getVertexPosition=(...args)=>{reads++;return original(...args);};
+ const triangles=[HEAD.map(([x,y])=>new T.Vector3(x,y,.007))],sets=Object.fromEntries(Array.from({length:8},(_,i)=>['part'+i,triangles]));
+ const first=measureTriangleHeadClearances(f.surfaces,sets);assert.equal(reads,3,'Eight parts share one head deformation.');
+ f.head.position.z=.004;f.scene.updateMatrixWorld(true);
+ const next=measureTriangleHeadClearances(f.surfaces,sets);assert.equal(reads,6,'Do not reuse head geometry between poses.');
+ assert.ok(next.part0.minimumClearance<first.part0.minimumClearance);
+});
+
+
+test('plane rejection preserves exact results for thin, degenerate, and reversed triangles',()=>{
+ const f=fixture(HEAD.map(([x,y])=>[x,y,.02]),{indexed:true});
+ const shapes=[
+  HEAD.map(([x,y])=>new T.Vector3(x,y,.029999999)),
+  HEAD.map(([x,y])=>new T.Vector3(x,y,.030000001)),
+  [new T.Vector3(-.3,0,0),new T.Vector3(.3,0,0),new T.Vector3(.300000000001,0,0)],
+  [new T.Vector3(0,0,-.3),new T.Vector3(0,0,.3),new T.Vector3(.1,.1,.3)],
+  [new T.Vector3(-.2,-.2,.08),new T.Vector3(.2,-.2,.09),new T.Vector3(0,.2,.10)],
+ ];
+ for(const reversed of [false,true])for(const triangle of shapes)for(const dz of [0,.011,-.011]){
+  f.head.position.z=dz;f.eye.position.z=.002;f.scene.updateMatrixWorld(true);
+  const query={part:[reversed?[...triangle].reverse():triangle]};
+  assert.deepEqual(measureTriangleHeadClearance(f.surfaces,query),measureTriangleHeadClearance(f.surfaces,query,{bruteForce:true}));
+ }
+});
+
+
+test('plane rejection retains near-contact counts after an exact crossing sets the minimum to zero',()=>{
+ const f=fixture(HEAD.map(([x,y])=>[x,y,.02]),{indexed:true});
+ f.head.rotation.set(.5,.37,.2);f.scene.updateMatrixWorld(true);f.mesh.skeleton.update();
+ const points=[0,1,2].map(i=>f.mesh.getVertexPosition(i,new T.Vector3()).applyMatrix4(f.mesh.matrixWorld));
+ const normal=points[1].clone().sub(points[0]).cross(points[2].clone().sub(points[0])).normalize();
+ const center=points.reduce((p,v)=>p.add(v),new T.Vector3()).multiplyScalar(1/3),edge=points[1].clone().sub(points[0]).normalize();
+ const crossing=[center.clone().addScaledVector(normal,-.2),center.clone().addScaledVector(normal,.2),center.clone().addScaledVector(edge,.1).addScaledVector(normal,.2)];
+ const near=points.map(p=>p.clone().addScaledVector(normal,5e-8)),sets={first:[crossing],then:[near]};
+ const expected=measureTriangleHeadClearance(f.surfaces,sets,{bruteForce:true});assert.equal(expected.minimumClearance,0);assert.equal(expected.crossings,2);
+ assert.deepEqual(measureTriangleHeadClearance(f.surfaces,sets),expected);
 });
