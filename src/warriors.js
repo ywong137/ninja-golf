@@ -44,6 +44,6 @@ SHINOBI_MUSOU_SEQUENCE.push({clip:'Shinobi_Stepping_Cut',heading:-2.094395102393
 // The purchased performances are part of the normal character build.
 WARRIORS[2].musouChain=['Ethan_GDH_Combo5_Review','Ethan_GDH_Advancing_Thrust','Ethan_GDH_Combo5_Review'];
 
-// Short blades use captured lunges and airborne cuts throughout the combo.
-Object.assign(WARRIORS[1].motionOverrides,{Twin_Cut_Diagonal:'Shinobi_Airborne_Cut',Twin_Cut_Return:'Shinobi_Left_Airborne_Cut',Twin_Cut_Rising:'Shinobi_Stepping_Cut',Twin_Cut_Sweep:'Shinobi_Left_Stepping_Cut',Twin_Heavy_Sweep:'Shinobi_Airborne_Cut',Twin_Heavy_Slam:'Shinobi_Left_Airborne_Cut'});
-WARRIORS[1].heavySequence=[{clip:'Shinobi_Airborne_Cut',heading:0},{clip:'Shinobi_Left_Stepping_Cut',heading:Math.PI*2/3,shadowTravel:.6},{clip:'Shinobi_Left_Airborne_Cut',heading:-Math.PI*2/3,shadowTravel:.6}];
+// Light cuts step through the target. Heavy cuts keep the complete captured
+// leap, landing, and recovery; ordinary attacks never use shadow teleports.
+Object.assign(WARRIORS[1].motionOverrides,{Twin_Cut_Diagonal:'Shinobi_Stepping_Cut',Twin_Cut_Return:'Shinobi_Left_Stepping_Cut',Twin_Cut_Rising:'Shinobi_Stepping_Cut',Twin_Cut_Sweep:'Shinobi_Left_Stepping_Cut',Twin_Heavy_Sweep:'Shinobi_Airborne_Cut',Twin_Heavy_Slam:'Shinobi_Left_Airborne_Cut'});

@@ -15,14 +15,14 @@ try{
    this.selectScreen=original;
   };
  });
- await page.click('#play');
+ await page.click('#play');await page.waitForFunction(()=>Array.isArray(window.firstSelectionFrame));
  for(const [x,y,z]of await page.evaluate(()=>window.firstSelectionFrame)){
   assert.ok(x>.1&&x<.98&&Math.abs(y)<.96&&Math.abs(z)<1,'The head and feet must occupy the portrait area before the first selection frame.');
  }
  await page.keyboard.press('c');await page.waitForFunction(()=>document.getElementById('showcase-console-toggle').getAttribute('aria-expanded')==='true');assert.equal(await page.locator('#showcase-console-toggle').getAttribute('aria-expanded'),'true');
  await page.locator('#showcase-speed').fill('0.1');assert.equal(await page.locator('#showcase-speed-value').textContent(),'0.1×');
  await page.click('#showcase-pause');const paused=await page.evaluate(()=>window.__golfTest.showcase.state);await page.waitForTimeout(150);assert.deepEqual(await page.evaluate(()=>window.__golfTest.showcase.state),paused);
- await page.click('[data-warrior="2"]');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.clock.speed),.1);assert.equal(await page.locator('#showcase-pause').textContent(),'Go');
+ await page.click('[data-warrior="2"]');await page.waitForFunction(()=>window.__golfTest.playerIndex===2);assert.equal(await page.evaluate(()=>window.__golfTest.showcase.clock.speed),.1);assert.equal(await page.locator('#showcase-pause').textContent(),'Go');
  await page.click('#showcase-pause');await page.waitForFunction(()=>window.__golfTest.showcase.state.time>0);await page.click('#showcase-pause');
  // Direct selection and scrubbing must change the pose even while paused.
  await page.selectOption('#showcase-stage','heavy');
@@ -43,7 +43,7 @@ try{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.pause();await g.world.waitForAssets();const rows=[];
   for(let hero=0;hero<6;hero++){
    g.selectWarrior(hero);g.showcase.clock.paused=false;g.showcase.clock.setSpeed(1);const stages=new Set(),weapons=[];
-   for(let f=0;f<720;f++){g.showcase.update(1/60);const s=g.showcase.state;stages.add(s.stage);if(f%12===0)weapons.push({stage:s.stage,golf:g.player.club.visible,sword:g.player.weapon.visible});
+   for(let f=0,frames=Math.ceil(g.showcase.clock.stages.reduce((sum,stage)=>sum+stage.duration,0)*60)+2;f<frames;f++){g.showcase.update(1/60);const s=g.showcase.state;stages.add(s.stage);if(f%12===0)weapons.push({stage:s.stage,golf:g.player.club.visible,sword:g.player.weapon.visible});
     for(const b of Object.values(g.player.bones))assertFinite([...b.position,...b.quaternion,...b.scale]);
    }
    if(g.showcase.clock.cycle<1)throw Error('Showcase never looped');
@@ -56,7 +56,7 @@ try{
  });
  await page.screenshot({path:process.env.SHOWCASE_SCREENSHOT??'/tmp/ninja-showcase-selection.png'});
  for(const row of results)for(const stage of ['address','swing','follow','ready','light','heavy'])assert.ok(row.stages.includes(stage),`${row.hero} missing ${stage}`);
- await page.click('#begin');assert.equal(await page.evaluate(()=>window.__golfTest.showcase),null);assert.equal(await page.locator('#selection').isVisible(),false);
- await page.click('#back-warriors');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.stage),'address');
+ await page.click('#begin');await page.waitForFunction(()=>window.__golfTest.showcase===null);assert.equal(await page.evaluate(()=>window.__golfTest.showcase===null),true);assert.equal(await page.locator('#selection').isVisible(),false);
+ await page.click('#back-warriors');await page.waitForFunction(()=>window.__golfTest.showcase?.state.stage==='address');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.stage),'address');
  assert.deepEqual(errors,[]);console.log(JSON.stringify({characters:results,controls:'C, speed, pause, resume, direct motion selection, exact scrubbing, frame stepping, retained settings and cleanup pass'}));
 }finally{await browser.close();}

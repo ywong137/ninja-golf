@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from 'three';
 import {loadNativeSkin,skinGroups} from './native-skin-helper.mjs';
 import {installForearmTwistHelpers,installLimbSkinning} from '../src/forearm-twist.js';
-import {golfShoulderSkinWeight} from '../src/golf-shoulder-skin.js';
+import {golfShoulderSkinWeight,golfShoulderSwingWeight} from '../src/golf-shoulder-skin.js';
 
 const file=new URL('../public/models/kaede.glb',import.meta.url);
 function surfaces(g){
@@ -83,4 +83,23 @@ test('the optional shoulder correction falls back before a twist branch or singu
  assert.doesNotThrow(()=>helper.update({upperArmWeight:1}));
  assert.ok(helper.upperArmHelpers.r.base.quaternion.angleTo(upper.quaternion)<1e-7);
  helper.dispose();
+});
+
+for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(hero+': shoulder cap preserves the complete golf skeleton and remains continuous',async()=>{
+ const g=await loadNativeSkin(new URL('../public/models/'+hero+'.glb',import.meta.url));
+ const bones=[];g.scene.traverse(b=>{if(b.isBone)bones.push(b);});
+ const helper=installLimbSkinning(g.scene,{upperArms:['r'],overflow:'nearest'});
+ const action=g.mixer.clipAction(g.animations.find(c=>c.name==='Golf_Swing')).play();let previous,maxStep=0;
+ for(let frame=0;frame<=288;frame++){
+  const time=frame/120;action.time=time;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+  const before=bones.map(b=>b.matrixWorld.elements.slice());
+  helper.update({upperArmWeight:golfShoulderSkinWeight(time),upperArmSwingWeight:golfShoulderSwingWeight(time)});
+  for(let i=0;i<bones.length;i++)assert.deepEqual(bones[i].matrixWorld.elements,before[i]);
+  const q=helper.upperArmHelpers.r.base.quaternion.clone();if(previous)maxStep=Math.max(maxStep,q.angleTo(previous));previous=q;
+ }
+ assert.ok(maxStep<.4,hero+': shoulder skin jumps between adjacent frames');
+ action.time=.4;g.mixer.update(0);helper.update({upperArmSwingWeight:1});const pose=helper.upperArmHelpers.r.base.quaternion.clone();
+ action.time=1.1;g.mixer.update(0);helper.update({upperArmSwingWeight:1});action.time=.4;g.mixer.update(0);helper.update({upperArmSwingWeight:1});
+ assert.ok(pose.angleTo(helper.upperArmHelpers.r.base.quaternion)<1e-6,'Scrubbing changes the same shoulder pose');
+ assert.equal(golfShoulderSwingWeight(0),1);assert.equal(golfShoulderSwingWeight(1.3),0);helper.dispose();
 });

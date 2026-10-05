@@ -70,7 +70,7 @@ class Game {
   }
   get warrior(){return WARRIORS[this.playerIndex];}
   stopShowcase(){if(!this.showcase)return;this.showcaseSettings={speed:this.showcase.clock.speed,paused:this.showcase.clock.paused};this.showcase.dispose();this.showcase=null;}
-  startShowcase(){this.stopShowcase();this.player.setGolfClub('DR');this.showcase=new CharacterShowcase(this.player,this.showcaseSettings);this.updateShowcaseUI();}
+  startShowcase(){this.stopShowcase();this.player.setGolfClub('DR');this.showcase=new CharacterShowcase(this.player,{...this.showcaseSettings,groundHeight:(x,z)=>heightAt(this.course,x,z)});this.updateShowcaseUI();}
   updateShowcaseUI(){if(this.showcase)this.ui.showcaseState(this.showcase.state);}
   selectWarrior(i){const player=new Warrior(i);this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=player;this.updateClubModel();this.scene.add(this.player.root);if(this.ball&&this.course)this.placePlayer();if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();this.updateCamera(0,{immediate:true});}this.audio.play('click');}
   cancelCharacterLoad(){this.characterRequest++;this.ui.characterLoading(null);this.ui.warriorDetails(this.playerIndex);}
@@ -251,7 +251,7 @@ class Game {
     const step=continuation?.step??(kind==='light'?(this.lightChain||0)%(this.warrior.lightComboLength??4):Math.max(0,(this.lightChain||0)-1));
     const motionName=continuation?.clip??combatMotionName(this.warrior,kind,step),motion=motions[motionName];
     let definition=withMotionTiming(attackDefinition(kind,step,this.warrior.combatStyle),motion);
-    const sequence=kind==='musou'?(this.warrior.musouChain?buildMusouSequence(motions,this.warrior.musouChain):this.warrior.musouSequence?buildShadowSequence(motions,this.warrior.musouSequence,{gap:.075,continuous:true,minDuration:7}):null):kind==='heavy'&&this.warrior.heavySequence?buildShadowSequence(motions,this.warrior.heavySequence,{gap:.075,continuous:true}):null;
+    const sequence=kind==='musou'?(this.warrior.musouChain?buildMusouSequence(motions,this.warrior.musouChain):this.warrior.musouSequence?buildShadowSequence(motions,this.warrior.musouSequence,{gap:.075,continuous:true,minDuration:7}):null):null;
     if(sequence)definition={...definition,duration:sequence.duration,hits:sequence.hits,headings:sequence.headings,damage:definition.damage*definition.hits.length/sequence.hits.length};
     this.action={...definition,motionName,syncMotion:!!(continuation||motion.continuations),impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,sequence,headings:definition.headings??(kind==='musou'?musouHeadings(this.warrior):null),time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     if(sequence){this.action.planarRoot=sequence.planarRoot;this.action.impactHands=sequence.impactHands;this.action.movementScale=0;}

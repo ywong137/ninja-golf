@@ -40,7 +40,7 @@ import {ArmMotionContinuation} from './arm-motion-continuation.js';
 import {createGolfClub} from './golf-club.js';
 import {captureGolfRestPose,calibrateGolfClub} from './golf-club-fit.js';
 import {installLimbSkinning} from './forearm-twist.js';
-import {golfShoulderSkinWeight} from './golf-shoulder-skin.js';
+import {golfShoulderSkinWeight,golfShoulderSwingWeight} from './golf-shoulder-skin.js';
 import {installSkinnedBounds} from './skinned-bounds.js';
 import {shareClonedSkeletons} from './shared-skeletons.js';
 import gripData from './grip-data.json';
@@ -69,6 +69,7 @@ const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ri
 const templates=[];
 MODEL_REVISIONS.monk='complete-polearm-combo-20261005';
 for(const model of ['ronin','sora','kaede','shinobi'])MODEL_REVISIONS[model]='release-polish-20261005';
+MODEL_REVISIONS.kaede='captured-ready-20261005';
 const retargeted=new Map();
 const motionSources=[];
 const materials=new Map();
@@ -696,7 +697,7 @@ export class Warrior {
     if(sourceEntry)({contactWeights,stance}=sourceEntry);
     const travelHeading=moveAngle+this.root.rotation.y;
     const balanceTargets=this.runTurnBalance?.apply(dt,{velocity:{x:Math.sin(travelHeading)*(moveSpeed??0),z:Math.cos(travelHeading)*(moveSpeed??0)},active:!!(this.running&&this.sourceRun)&&!action&&!golf&&!selection&&!dodge&&!emerging,groundHeight,targets:sourceEntry?.targets,contactWeights});
-    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,pelvisPlan:runTerrainPlan,referencePlane:sourcePlane,preserveAuthored:this.running||authoredFeet||!!attackSteps||!!braking,worldFootTargets:balanceTargets??sourceEntry?.targets??braking?.targets??attackSteps?.worldFootTargets??(this.running&&!this.sourceRun?this.runFootwork.worldFootTargets:null),preserveHinge:this.running||nativeGuard||!!braking||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
+    this.footPlacement?.apply(dt,groundHeight,{golf,contactWeights,stance,pelvisPlan:runTerrainPlan,referencePlane:sourcePlane,preserveAuthored:this.running||authoredFeet||!!attackSteps||!!braking,worldFootTargets:balanceTargets??sourceEntry?.targets??braking?.targets??attackSteps?.worldFootTargets??(this.running&&!this.sourceRun?this.runFootwork.worldFootTargets:null),preserveHinge:this.running||nativeGuard||!!braking||!!motions[this.current]?.nativeKneeHinges,enforceClearance:this.running||!!previewPose,kneeSolver:this.running||motions[this.current]?.nativeKneeHeading?headingKnee:undefined,enabled:!selection&&!dodge&&!emerging&&!/Roll|Jump_|Death/.test(this.current)&&!(!authoredAttack&&this.current.includes('Musou')&&motion?.footR?.[2]>.06&&motion?.footL?.[2]>.06)});
     // Both recorded and directional runs can hold a shoe while the hips turn.
     // The directional planner has no terrain callback of its own; this actor
     // still supplies the real terrain and must retain the same joint bounds.
@@ -793,11 +794,13 @@ export class Warrior {
   weaponPoints(offhand=false){const held=offhand&&this.offhand?this.offhand:this.weapon;this.root.updateMatrixWorld(true);held.localToWorld(this.tip.fromArray(held.userData.tip));held.getWorldPosition(this.hilt);return [this.hilt,this.tip];}
   updateSkinDeformation(){
     if(!this.forearmTwist)return;
-    let weight=0;
+    let weight=0,swingWeight=0;
     if(this.forearmTwist.upperArmHelpers.r)for(const golf of [this.actions.get('Golf_Swing'),this.repeatActions?.get('Golf_Swing')])
       if(golf?.isScheduled())weight+=golfShoulderSkinWeight(golf.time,THREE.MathUtils.clamp(golf.getEffectiveWeight(),0,1));
+    for(const name of ['Golf_Address','Golf_Swing','Golf_Putt'])for(const golf of [this.actions.get(name),this.repeatActions?.get(name)])
+      if(golf?.isScheduled())swingWeight+=golfShoulderSwingWeight(name==='Golf_Swing'?golf.time:0,THREE.MathUtils.clamp(golf.getEffectiveWeight(),0,1));
     weight=Math.min(1,weight);
-    this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight});
+    this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight,upperArmSwingWeight:Math.min(1,swingWeight)});
     this.garmentCollision?.update();
   }
   setDeathFade(opacity){

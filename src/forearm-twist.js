@@ -2,7 +2,7 @@
 // Keep the anatomical lowerarm/hand hierarchy and all original transforms intact.
 import {Bone,Quaternion,Skeleton,Uint16BufferAttribute,Float32BufferAttribute,Vector3} from 'three';
 
-const TAU=2*Math.PI,DEGREES=180/Math.PI;
+const TAU=2*Math.PI,DEGREES=180/Math.PI,IDENTITY=new Quaternion();
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=(x,a,b)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
 const wrapped=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
@@ -86,12 +86,13 @@ export function installLimbSkinning(scene,{sides=['r','l'],stations=[.12,.5,.9],
  // All preflight checks finish before any scene or mesh mutation.
  for(const arm of arms){arm.upper.add(arm.base,arm.mid);}
  const palettes=new Map();for(const plan of plans){let extended=palettes.get(plan.sourceSkeleton);if(!extended){const added=plan.additions.flatMap(a=>[a.arm.base,a.arm.mid]),inverses=plan.additions.flatMap(a=>[plan.sourceSkeleton.boneInverses[a.index].clone(),plan.sourceSkeleton.boneInverses[a.index].clone()]);extended=new Skeleton([...plan.sourceSkeleton.bones,...added],[...plan.sourceSkeleton.boneInverses.map(m=>m.clone()),...inverses]);palettes.set(plan.sourceSkeleton,extended);}const geometry=plan.sourceGeometry.clone();geometry.setAttribute('skinIndex',new Uint16BufferAttribute(plan.newIds,4));geometry.setAttribute('skinWeight',new Float32BufferAttribute(plan.newWeights,4));plan.privateGeometry=geometry;plan.mesh.geometry=geometry;plan.mesh.skeleton=extended;report.meshes.push(plan.metrics);report.modifiedVertices+=plan.metrics.modifiedVertices;report.splitVertices+=plan.metrics.splitVertices;report.protectedFingerVertices+=plan.metrics.protectedFingerVertices;report.quantizedOverflowVertices+=plan.metrics.quantizedOverflowVertices;report.maximumInfluences=Math.max(report.maximumInfluences,plan.metrics.maximumInfluences);}
- function update({continuousTwist=false,resetContinuity=false,refreshMatrices=true,upperArmWeight=0}={}){
+ function update({continuousTwist=false,resetContinuity=false,refreshMatrices=true,upperArmWeight=0,upperArmSwingWeight=0}={}){
+  if(!Number.isFinite(upperArmSwingWeight)||upperArmSwingWeight<0||upperArmSwingWeight>1)throw new Error('upperArmSwingWeight must be between zero and one.');
   if(!Number.isFinite(upperArmWeight)||upperArmWeight<0||upperArmWeight>1)throw new Error('upperArmWeight must be between zero and one.');
   if(report.disposed)throw new Error('The limb helper instance is disposed.');
-  report.upperArmWeight=upperArmWeight;
+  report.upperArmWeight=upperArmWeight;report.upperArmSwingWeight=upperArmSwingWeight;
   for(const arm of arms){
-   if(arm.isUpper&&upperArmWeight===0){
+   if(arm.isUpper&&upperArmWeight===0&&upperArmSwingWeight===0){
     followNative(arm);continue;
    }
    const delta=arm.delta.copy(arm.lower.quaternion).normalize().multiply(arm.restInverse),projection=delta.x*arm.axis.x+delta.y*arm.axis.y+delta.z*arm.axis.z,norm=Math.hypot(projection,delta.w);
@@ -104,6 +105,13 @@ export function installLimbSkinning(scene,{sides=['r','l'],stations=[.12,.5,.9],
     // skin correction to the native surface before that branch or singularity.
     const confidence=(1-smooth(Math.abs(principal)*DEGREES,165,175))*smooth(norm,.001,.02);
     for(const helper of [arm.base,arm.mid])helper.quaternion.slerp(arm.lower.quaternion,1-.25*upperArmWeight*confidence).normalize();
+    // The shoulder cap follows only part of the arm's aiming rotation. The
+    // two skin stations distribute that rotation before the mid upper arm.
+    // Anatomical joints, elbows, hands and the club keep the recorded pose.
+    if(upperArmSwingWeight>0)for(const [helper,amount]of [[arm.base,.32],[arm.mid,.112]]){
+      const correction=arm.half.copy(swing).invert().slerp(IDENTITY,1-amount*upperArmSwingWeight);
+      helper.quaternion.premultiply(correction).normalize();
+    }
    }
    const angles=report.angles[arm.key];angles.principalDegrees=principal*DEGREES;angles.unwrappedDegrees=angle*DEGREES;angles.branchTurns=Math.round((angle-principal)/TAU);
   }

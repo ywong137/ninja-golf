@@ -11,3 +11,10 @@ export function golfShoulderSkinWeight(time,actionWeight=1){
  const release=ramp(time,1.26,1.44)*(1-ramp(time,1.55,1.82));
  return actionWeight*Math.max(takeaway,release);
 }
+
+// Start at the address value; release the cap correction before impact.
+export function golfShoulderSwingWeight(time,actionWeight=1){
+ if(!Number.isFinite(time)||!Number.isFinite(actionWeight)||actionWeight<0||actionWeight>1)
+  throw new Error('Supply a finite clip time and an action weight between zero and one.');
+ return actionWeight*(1-ramp(time,.95,1.30));
+}

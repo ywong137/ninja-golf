@@ -1,5 +1,3 @@
-import {buildShadowSequence} from './shadow-sequence.js';
-import {combatSequenceFrame} from './musou-sequence.js';
 import {ShowcaseClock,showcaseStages} from './showcase-clock.js';
 import {attackDefinition} from './combat.js';
 import {withMotionTiming} from './attack-timing.js';
@@ -8,11 +6,9 @@ import {WARRIORS} from './warriors.js';
 import {attackRootDelta} from './attack-root-motion.js';
 
 export class CharacterShowcase{
- constructor(actor,{speed=1,paused=false}={}){
-  this.actor=actor;this.warrior=WARRIORS[actor.type];this.origin=actor.root.position.clone();this.baseYaw=actor.root.rotation.y;
+ constructor(actor,{speed=1,paused=false,groundHeight=null}={}){
+  this.groundHeight=groundHeight;this.actor=actor;this.warrior=WARRIORS[actor.type];this.origin=actor.root.position.clone();this.baseYaw=actor.root.rotation.y;
   for(const kind of ['light','heavy'])this[kind]=withMotionTiming(attackDefinition(kind,0,this.warrior.combatStyle),motions[combatMotionName(this.warrior,kind,0)]);
-  this.heavySequence=this.warrior.heavySequence?buildShadowSequence(motions,this.warrior.heavySequence,{gap:.075,continuous:true}):null;
-  if(this.heavySequence)this.heavy={...this.heavy,duration:this.heavySequence.duration};
   this.swingDuration=actor.actions.get('Golf_Swing').getClip().duration;
   this.clock=new ShowcaseClock(showcaseStages(this.swingDuration,this.light.duration,this.heavy.duration));this.clock.setSpeed(speed);
   this.originalMaterials=[];this.materials=new Map();
@@ -40,7 +36,6 @@ export class CharacterShowcase{
    const definition=stage.id==='light'?this.light:this.heavy;clip=combatMotionName(this.warrior,stage.id,0);
    time=elapsed/definition.duration*motions[clip].duration;
    action={...definition,kind:stage.id,step:0,time:elapsed,token:this.clock.cycle*2+(stage.id==='light'?1:2)};
-   if(stage.id==='heavy'&&this.heavySequence){const frame=combatSequenceFrame({...action,sequence:this.heavySequence});action=frame.action;clip=action.motionName;time=action.time/action.duration*motions[clip].duration;this.actor.root.rotation.y=this.baseYaw+frame.heading;this.actor.root.visible=!frame.hidden;}
   }
   // Keep extracted travel visible in the preview. Retain completed attack
   // travel until the combat fade hides the return to the golf origin.
@@ -49,12 +44,13 @@ export class CharacterShowcase{
    const index=this.clock.stages.findIndex(s=>s.id===kind),record=motions[combatMotionName(this.warrior,kind,0)];
    if(!golf&&this.clock.index>=index&&record.planarRoot){
     const duration=this[kind].duration,t=this.clock.index===index?elapsed:duration;
-    const delta=attackRootDelta(kind==='heavy'&&this.heavySequence?this.heavySequence.planarRoot:record.planarRoot,0,t,duration,this.baseYaw,this.actor.root.scale.x);
+    const delta=attackRootDelta(record.planarRoot,0,t,duration,this.baseYaw,this.actor.root.scale.x);
     this.actor.root.position.x+=delta.x;this.actor.root.position.z+=delta.z;
    }
   }
+  if(this.groundHeight)this.actor.root.position.y=this.groundHeight(this.actor.root.position.x,this.actor.root.position.z);
   const duration=this.actor.actions.get(clip).getClip().duration;
-  this.actor.update(this.clock.time,step,{golf,action,previewPose:{clip,time:Math.min(time,duration-1e-5)}});
+  this.actor.update(this.clock.time,step,{golf,action,groundHeight:this.groundHeight,previewPose:{clip,time:Math.min(time,duration-1e-5)}});
   for(const [original,material]of this.materials)material.opacity=original.opacity*this.clock.opacity;
   return this.state;
  }
