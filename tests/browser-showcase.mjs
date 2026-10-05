@@ -39,6 +39,31 @@ try{
  await page.click('#showcase-back');assert.ok(Math.abs((await page.evaluate(()=>window.__golfTest.showcase.state.time))-.4)<1e-8);
  await page.selectOption('#showcase-stage','light');await page.click('#showcase-back');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.time),0);
  await page.click('#showcase-pause');await page.waitForFunction(()=>window.__golfTest.showcase.state.time>0);await page.click('#showcase-pause');
+ // A paused seek must release the old golf grip immediately. Otherwise the
+ // secondary-hand solver bends the free arm through the body indefinitely.
+ const seekGrips=await page.evaluate(async()=>{
+  const g=window.__golfTest,{WARRIORS}=await import('/src/warriors.js'),{motions}=await import('/src/motion.js'),rows=[];
+  for(let hero=0;hero<6;hero++){
+   g.selectWarrior(hero);
+   for(const from of ['address','swing','heavy']){
+    g.showcase.seek(from,from==='address'?0:.35);
+    g.showcase.clock.paused=false;g.showcase.update(.2);
+    g.showcase.seek('ready',0);
+    const a=g.player,record=motions[WARRIORS[hero].readyClip];
+    let maxFreeArmAngle=0;
+    if(!record.twoHanded){
+     const clip=a.actions.get(WARRIORS[hero].readyClip).getClip();
+     for(const name of ['upperarm_l','lowerarm_l','hand_l']){
+      const q=a.bones[name].quaternion.clone().fromArray(clip.tracks.find(t=>t.name===name+'.quaternion').createInterpolant().evaluate(0));
+      maxFreeArmAngle=Math.max(maxFreeArmAngle,a.bones[name].quaternion.clone().normalize().angleTo(q.normalize()));
+     }
+    }
+    rows.push({hero,from,weight:a.handGrip.secondaryWeight,expected:record.twoHanded?1:0,maxFreeArmAngle});
+   }
+  }
+  return rows;
+ });
+ for(const row of seekGrips){assert.equal(row.weight,row.expected,JSON.stringify(row));assert.ok(row.maxFreeArmAngle<1e-5,JSON.stringify(row));}
  const results=await page.evaluate(async()=>{
   const g=window.__golfTest;g.renderer.setAnimationLoop(null);g.audio.pause();await g.world.waitForAssets();const rows=[];
   for(let hero=0;hero<6;hero++)for(const rate of [60,120]){
@@ -58,5 +83,5 @@ try{
  for(const row of results)for(const stage of ['address','swing','follow','ready','light','heavy'])assert.ok(row.stages.includes(stage),`${row.hero} missing ${stage}`);
  await page.click('#begin');await page.waitForFunction(()=>window.__golfTest.showcase===null);assert.equal(await page.evaluate(()=>window.__golfTest.showcase===null),true);assert.equal(await page.locator('#selection').isVisible(),false);
  await page.click('#back-warriors');await page.waitForFunction(()=>window.__golfTest.showcase?.state.stage==='address');assert.equal(await page.evaluate(()=>window.__golfTest.showcase.state.stage),'address');
- assert.deepEqual(errors,[]);console.log(JSON.stringify({characters:results,controls:'C, speed, pause, resume, direct motion selection, exact scrubbing, frame stepping, retained settings and cleanup pass'}));
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({characters:results,seekGrips,controls:'C, speed, pause, resume, direct motion selection, exact scrubbing, frame stepping, retained settings and cleanup pass'}));
 }finally{await browser.close();}

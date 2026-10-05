@@ -1,6 +1,8 @@
 // Copy one captured full-body stance, including channels absent from the old idle.
 import fs from 'node:fs';
 import {parseArgs} from 'node:util';
+import {PropertyBinding} from 'three';
+import {parseGlb} from './bake-native-golf.mjs';
 import {loadNativeSkin} from '../tests/native-skin-helper.mjs';
 import {patchAnimationTransforms} from './patch-animation-rotations.mjs';
 
@@ -8,15 +10,23 @@ export async function capturedReadyPose(input,sourceName,targetName,{time=0,dura
  if(!Number.isFinite(time)||time<0||!Number.isFinite(duration)||duration<=0)throw Error('Use a nonnegative source time and a positive idle duration.');
  const g=await loadNativeSkin(input),source=g.animations.find(c=>c.name===sourceName),target=g.animations.find(c=>c.name===targetName);
  if(!source||!target||time>source.duration)throw Error('The input must contain both named clips and the requested source time.');
+ const inputBytes=fs.readFileSync(input),{doc}=parseGlb(inputBytes),nativeNames=new Map();
+ for(const node of doc.nodes){
+  if(!node.name)continue;
+  const alias=PropertyBinding.sanitizeNodeName(node.name);
+  if(nativeNames.has(alias))throw Error('Ambiguous node name: '+alias);
+  nativeNames.set(alias,node.name);
+ }
  const existing=new Set(target.tracks.map(t=>t.name));
  const entry={clip:targetName,times:[0,duration],rotations:{},newRotations:{},translations:{},scales:{},extras:{readySource:{clip:sourceName,time,version:1}}};
  for(const track of source.tracks){
   const dot=track.name.lastIndexOf('.'),name=track.name.slice(0,dot),property=track.name.slice(dot+1);
   const field={quaternion:existing.has(track.name)?'rotations':'newRotations',position:'translations',scale:'scales'}[property];
   if(!field||property!=='quaternion'&&!existing.has(track.name))throw Error('Unsupported new stance channel: '+track.name);
-  const value=Array.from(track.createInterpolant().evaluate(time));entry[field][name]=[...value,...value];
+  const nativeName=nativeNames.get(name);if(!nativeName)throw Error('Missing native node: '+name);
+  const value=Array.from(track.createInterpolant().evaluate(time));entry[field][nativeName]=[...value,...value];
  }
- return patchAnimationTransforms(fs.readFileSync(input),[entry]);
+ return patchAnimationTransforms(inputBytes,[entry]);
 }
 if(process.argv[1]?.endsWith('capture-ready-pose.mjs')){
  const {values:v}=parseArgs({options:{input:{type:'string'},output:{type:'string'},source:{type:'string'},target:{type:'string'},time:{type:'string',default:'0'},duration:{type:'string',default:'2'},help:{type:'boolean'}}});

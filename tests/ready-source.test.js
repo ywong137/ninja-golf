@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {WARRIORS} from '../src/warriors.js';
-for(const [model,sourceName,readyName]of [['kaede','Ace_Cut_Diagonal','Ace_Ready'],['ronin','Ronin_Power_Cut','Ronin_Ready'],['monk','Ethan_GDH_Combo5_Review','Ethan_Naginata_Ready']])test(model+': ready retains every channel of the captured full-body stance',async()=>{
+for(const [model,sourceName,readyName]of [['kaede','Ace_Cut_Diagonal','Ace_Ready'],['ronin','Ronin_Power_Cut','Ronin_Ready'],['monk','Ethan_GDH_Combo5_Review','Ethan_Naginata_Ready'],['ayame','Hustler_Combo_Opening','Ring_Ready'],['sora','Closer_Combo_Opening','Sickle_Ready']])test(model+': ready retains every channel of the captured full-body stance',async()=>{
  const g=await loadNativeSkin(new URL('../public/models/'+model+'.glb',import.meta.url));
  const source=g.animations.find(c=>c.name===sourceName),ready=g.animations.find(c=>c.name===readyName);
  const byName=new Map(ready.tracks.map(t=>[t.name,t]));

@@ -72,6 +72,7 @@ for(const model of ['ronin','sora','kaede','shinobi'])MODEL_REVISIONS[model]='re
 MODEL_REVISIONS.kaede='captured-ready-20261005';
 MODEL_REVISIONS.ronin='captured-root-ready-20261005';
 MODEL_REVISIONS.monk='captured-ready-20261005';
+for(const model of ['ayame','sora'])MODEL_REVISIONS[model]='captured-low-ready-20261005';
 const retargeted=new Map();
 const motionSources=[];
 const materials=new Map();
@@ -612,7 +613,9 @@ export class Warrior {
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
     if(previewPose){
-      if(this.current!==previewPose.clip)this.play(previewPose.clip,.07,true);
+      // Exact seeks clear current. Snap the grip too: paused time cannot
+      // finish a fade from the previous golf or two-handed pose.
+      if(this.current!==previewPose.clip)this.play(previewPose.clip,this.current ? .07 : 0,true);
       const previewAction=this.actions.get(previewPose.clip);
       if(!previewAction)throw Error('Missing showcase animation: '+previewPose.clip);
       previewAction.setEffectiveTimeScale(0);previewAction.time=previewPose.time;
