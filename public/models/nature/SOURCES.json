@@ -57,7 +57,29 @@
     "asset": "searsia_burchellii",
     "license": "CC0-1.0",
     "source": "https://polyhaven.com/a/searsia_burchellii",
-    "licenseSource": "https://polyhaven.com/license"
+    "licenseSource": "https://polyhaven.com/license",
+    "derivedAtlases": {
+      "builder": "tools/bake-nature-impostors.mjs --tile-size=128 --occlusion woody-scrub",
+      "views": 24,
+      "note": "Local renders of the existing CC0 model. Source normal maps and hemispherical cavity shading retained. Used beyond native mesh distance.",
+      "files": [
+        {
+          "file": "woody-scrub-views.webp",
+          "bytes": 53398,
+          "sha256": "9a7c52e2d5a8acf4d8b7c30601e4c782504c46c05575a9fb03934d7701a3b1fc"
+        },
+        {
+          "file": "woody-scrub-normals.webp",
+          "bytes": 74504,
+          "sha256": "ad6913ca930ccaf2021fad8ca61febeff0e935d10416219f25f8a64a40595413"
+        },
+        {
+          "file": "woody-scrub-shadow.webp",
+          "bytes": 63280,
+          "sha256": "7f0cc504fee63ab9c6461fcdcd17bd89c9bc7175511b79609f599ac3dd52a936"
+        }
+      ]
+    }
   },
   {
     "asset": "didelta_spinosa",
@@ -66,7 +88,29 @@
     "source": "https://polyhaven.com/a/didelta_spinosa",
     "licenseSource": "https://polyhaven.com/license",
     "gameAsset": "desert-scrub.glb",
-    "note": "Medium source plant, two simplified distance meshes; diffuse and alpha combined. Visual dry-scrub substitute, not a native Sonoran species."
+    "note": "Medium source plant, two simplified distance meshes; diffuse and alpha combined. Visual dry-scrub substitute, not a native Sonoran species.",
+    "derivedAtlases": {
+      "builder": "tools/bake-nature-impostors.mjs --tile-size=128 --occlusion desert-scrub",
+      "views": 24,
+      "note": "Local renders of the existing CC0 model. Source normal maps and hemispherical cavity shading retained. Used beyond native mesh distance.",
+      "files": [
+        {
+          "file": "desert-scrub-views.webp",
+          "bytes": 115444,
+          "sha256": "8f38477c510cdee10acd8edd806acca30bc4c29f92c4b6bae13038c5bb78faee"
+        },
+        {
+          "file": "desert-scrub-normals.webp",
+          "bytes": 126024,
+          "sha256": "b2608c5666420e0c0bfdb4c2c610ec716ec251db1adaa808634213da338451fd"
+        },
+        {
+          "file": "desert-scrub-shadow.webp",
+          "bytes": 37660,
+          "sha256": "0c0788a72e6ee7b40fc9564283f15e406036006899d1f785bab6fc42abc03e96"
+        }
+      ]
+    }
   },
   {
     "asset": "namaqualand_boulders_01",

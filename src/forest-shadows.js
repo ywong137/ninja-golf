@@ -3,9 +3,10 @@ import * as THREE from 'three';
 // The atlas projects the scanned tree along SUN_DIRECTION from lighting.js.
 // Its eight bounds already include tree rotation. Do not rotate the projected quad again.
 export const FOREST_SHADOW_GRID=4;
-export function forestShadowGeometry(records,source,height){
+export function forestShadowGeometry(records,source,height,{grid=FOREST_SHADOW_GRID}={}){
  if(!source.shadowMap||source.shadowViews?.length!==8)throw new Error('Forest grounding requires the eight baked sun silhouettes.');
- const positions=[],uvs=[],bounds=[],indices=[],n=FOREST_SHADOW_GRID;
+ if(!Number.isInteger(grid)||grid<1||grid>8)throw new Error('Forest shadow grid must be an integer from 1 to 8.');
+ const positions=[],uvs=[],bounds=[],indices=[],n=grid;
  for(const p of records){
   const view=((Math.round(p.angle/(Math.PI*2)*8)%8)+8)%8;
   const box=source.shadowViews[view];
@@ -45,7 +46,7 @@ export function forestShadowMaterial(map){
     if(a<.003)discard;gl_FragColor=vec4(.018,.024,.012,a);
    }`});
 }
-export function buildForestShadows(records,source,height){
- const mesh=new THREE.Mesh(forestShadowGeometry(records,source,height),forestShadowMaterial(source.shadowMap));
+export function buildForestShadows(records,source,height,options){
+ const mesh=new THREE.Mesh(forestShadowGeometry(records,source,height,options),forestShadowMaterial(source.shadowMap));
  mesh.name='Distant forest ground silhouettes';mesh.castShadow=false;mesh.receiveShadow=false;return mesh;
 }

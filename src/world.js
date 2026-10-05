@@ -5,8 +5,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import {loadRegionalTerrain} from './regional-terrain.js';
 import {createPond,createOceanMaterial} from './water.js';
-import { NaturalLandscape,forestAtlasSource,queueSceneryRock } from './nature.js';
+import { NaturalLandscape,forestAtlasSource,shrubAtlasSources,queueSceneryRock } from './nature.js';
 import {buildDistantForest} from './distant-forest.js';
+import {buildLandscapeUnderstory,UNDERSTORY_LIMITS} from './landscape-understory.js';
 import {buildDistantCity} from './distant-city.js';
 import {SceneryCollision} from './scenery-collision.js';
 import {BuildingNavigation} from './building-navigation.js';
@@ -78,7 +79,10 @@ export class World {
   buildHorizon(c){
     this.distantCity?.dispose();this.distantCity=null;
     if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
-    this.horizon=new THREE.Mesh(landscapeHorizon(c,this.regions?.[c.theme]),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=(c.theme==='japanese'||c.theme==='highlands')?createTerrainSurfaceSampler(this.horizon.geometry):null;
+    this.horizon=new THREE.Mesh(landscapeHorizon(c,this.regions?.[c.theme]),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=c.theme!=='cyberpunk'?createTerrainSurfaceSampler(this.horizon.geometry):null;
+    for(const mesh of [...(this.distantUnderstory?.meshes||[]),...(this.distantUnderstory?.shadows||[])]){this.root.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();if(mesh.isInstancedMesh)mesh.dispose();}
+    const ground=createCourseSurfaceSampler(c,heightAt,ellipse);
+    this.distantUnderstory=buildLandscapeUnderstory(this.root,c,shrubAtlasSources(c.theme),UNDERSTORY_LIMITS[c.theme]?(x,z)=>this.horizonHeight?.(x,z)??ground(x,z):null);
     this.distantCity=buildDistantCity(this.root,c,this.regions?.[c.theme]);
   }
   applyTheme(c){
@@ -98,7 +102,7 @@ export class World {
   clear(){
     this.pond?.dispose();
     const materials=new Set(),geos=new Set();this.root.traverse(o=>{if(o.isInstancedMesh)o.dispose();if(o.geometry)geos.add(o.geometry);if(o.customDepthMaterial)materials.add(o.customDepthMaterial);if(o.material&&o.material!==this.waterMaterial)materials.add(o.material);});
-    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.distantCity=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
+    this.root.clear();this.collision=new SceneryCollision();this.buildingNavigation=null;this.path=null;this.distantCity=null;this.distantUnderstory=null;this.horizon=null;this.horizonHeight=null;this.root.userData.landmarks=[];this.root.userData.buildingObstacles=[];this.root.userData.pathContains=null;delete this.root.userData.architectureGround;delete this.root.userData.sceneryRocks;geos.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);

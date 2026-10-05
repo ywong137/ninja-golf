@@ -4,6 +4,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {loadModel} from './load-model.js';
 import {SAGUARO_NAMES,createSaguaro,applySaguaroSkin,saguaroRadius} from './saguaro.js';
 import {buildDesertFormations,insideDesertFormation} from './desert-geology.js';
+import {SHRUB_DETAIL} from './landscape-understory.js';
 import {natureAssetsForTheme} from './nature-assets.js';
 import {createAssetCache} from './asset-cache.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
@@ -134,38 +135,38 @@ export class NaturalLandscape{
   for(let i=sites.length-1;i>=0;i--)if(sites[i].id.startsWith('scan-')&&(inBunker(sites[i])||removedTrees.has(`${sites[i].x},${sites[i].z}`)))sites.splice(i,1);
   if(desert)for(const [name,records]of placements){if(!SAGUARO_NAMES.includes(name))continue;for(const rec of records){if(this.records.includes(rec))continue;rec.species=name;this.records.push(rec);sites.push({id:`scan-cactus-${sites.length}`,kind:'tree',x:rec.x,z:rec.z,y:rec.y,height:rec.scale*TREE_SPECIES[name].height,radius:saguaroRadius(name)*rec.scale});}}
   // Ground silhouettes follow the scanned branches and the actual sun direction.
-  for(const {name:tree} of forestSpecies(c.theme)){
+  for(const tree of new Set([...forestSpecies(c.theme).map(s=>s.name),...Object.keys(SHRUB_DETAIL).filter(name=>placements.has(name))])){
   const source=assets.get(tree);if(!source.shadowMap)continue;const shadowPositions=[],shadowUV=[],shadowIds=[],anchors=[];
-  for(const rec of this.records.filter(rec=>rec.species===tree)){const view=Math.round(rec.angle/(Math.PI*2)*8)%8,[minX,minZ,maxX,maxZ]=source.shadowViews[view],base=shadowPositions.length/3;
+  for(const rec of placements.get(tree)||[]){const view=Math.round(rec.angle/(Math.PI*2)*8)%8,[minX,minZ,maxX,maxZ]=source.shadowViews[view],base=shadowPositions.length/3;
    for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){const x=rec.x+(minX+(maxX-minX)*i/8)*rec.scale,z=rec.z+(minZ+(maxZ-minZ)*j/8)*rec.scale;shadowPositions.push(x,heightAt(c,x,z)+.035,z);shadowUV.push((view%4+i/8)/4,(1-Math.floor(view/4)+1-j/8)/2);anchors.push(rec.x,rec.y,rec.z);}
    for(let j=0;j<8;j++)for(let i=0;i<8;i++){const n=base+j*9+i;shadowIds.push(n,n+9,n+1,n+1,n+9,n+10);}
   }
   const shadowGeo=new THREE.BufferGeometry();shadowGeo.setAttribute('position',new THREE.Float32BufferAttribute(shadowPositions,3));shadowGeo.setAttribute('uv',new THREE.Float32BufferAttribute(shadowUV,2));shadowGeo.setAttribute('treeAnchor',new THREE.Float32BufferAttribute(anchors,3));shadowGeo.setIndex(shadowIds);
-  root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||TREE_DETAIL)));
+  root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||SHRUB_DETAIL[tree]||TREE_DETAIL)));
   }
   for(const [name,allRecords]of placements){
    const source=assets.get(name);if(!source)throw new Error(`Missing scenery ${name} for ${c.theme}; await loadNature(theme) before building the course`);
    if(['coastal-rock','desert-rock','sea-cliff','desert-boulders'].includes(name))for(const [i,record]of allRecords.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.formBounds.get(record.rockForm)||source.bounds,`rock:${name}:${i}`));
-   const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub'||name==='desert-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
+   const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub'||name==='desert-scrub',detail=TREE_SPECIES[name]?.detail||SHRUB_DETAIL[name]||TREE_DETAIL;
    for(const part of source.parts){
     const records=part.rockForm===undefined?allRecords:allRecords.filter(record=>record.rockForm===part.rockForm);if(!records.length)continue;
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
     if(desert&&name==='woody-scrub'){material.color.set('#e3d7ae');if(material.alphaTest>0)material.alphaTest=.25;}
     if(source.saguaro)applySaguaroSkin(material);
-    if(plant){material.envMapIntensity=.85;if(!source.saguaro)sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
+    if(plant){material.envMapIntensity=.85;if(!source.saguaro)sway(material,material.alphaTest>0);}if(isTree||source.map)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
     const mesh=new THREE.InstancedMesh(part.geometry.clone(),material,records.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
-    if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree)treeTransition(mesh.customDepthMaterial,part.lod,detail);if(plant)leafShadowCutoff(mesh.customDepthMaterial,material.alphaTest);}
+    if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree||source.map)treeTransition(mesh.customDepthMaterial,part.lod,detail);if(plant)leafShadowCutoff(mesh.customDepthMaterial,material.alphaTest);}
     if(source.saguaro){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});treeTransition(mesh.customDepthMaterial,part.lod,detail);}
     root.add(mesh);this.groups.push({name,mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map,solidTree:!!source.saguaro,desertScrub:desert&&!isTree&&plant});
    }
-   if(source.map){const records=allRecords,geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}
+   if(source.map){const records=allRecords,geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');if(desert&&name==='woody-scrub')material.color.set('#e3d7ae');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({name,mesh,records,lod:2,isTree,plant,detail,atlas:true});}
   }
  }
  update(time,camera){
   clock.value=time;foliageEye.value.copy(camera);if(this.last.distanceToSquared(camera)<.25)return;this.last.copy(camera);
   for(const {mesh,records,lod,isTree,plant,detail=TREE_DETAIL,atlas,solidTree,desertScrub}of this.groups){let count=0;
-   for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree?detail.nearEnd:desertScrub?42:plant?25:75,far=isTree?detail.farEnd:desertScrub?260:plant?110:1200;
-    if(lod===0?d>=near:lod===1?(d<(isTree?detail.nearStart:near)||d>=far):d<detail.farStart)continue;
+   for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree||atlas?detail.nearEnd:desertScrub?42:plant?25:75,far=isTree||atlas?detail.farEnd:desertScrub?260:plant?110:1200;
+    if(lod===0?d>=near:lod===1?(d<(isTree||atlas?detail.nearStart:near)||d>=far):d<detail.farStart)continue;
     if(lod===1&&isTree&&!atlas&&!solidTree&&d>450)continue;
     transform.position.set(rec.x,rec.y,rec.z);transform.rotation.set(0,rec.angle,0);transform.scale.set(rec.scaleX??rec.scale,rec.scaleY??rec.scale,rec.scaleZ??rec.scale);transform.updateMatrix();mesh.setMatrixAt(count++,transform.matrix);
    }mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
@@ -176,4 +177,9 @@ export class NaturalLandscape{
 export function forestAtlasSource(theme){
  const source=assets.get(theme?forestSpecies(theme)[0].name:'forest-canopy');
  return theme?{...source,species:forestSpecies(theme).map(entry=>({...entry,source:assets.get(entry.name)}))}:source;
+}
+
+export function shrubAtlasSources(theme){
+ const names=theme==='desert'?['desert-scrub','woody-scrub']:theme==='highlands'?['woody-scrub']:[];
+ return Object.fromEntries(names.map(name=>[name,assets.get(name)]));
 }
