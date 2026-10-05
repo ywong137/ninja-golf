@@ -11,9 +11,18 @@ export function hangingBodyVertices(mesh,hipHeight,kneeHeight){
  const find=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i];}return i;};
  const join=(a,b)=>{parent[find(a)]=find(b);};
  for(let i=0;i<(index?.count??count);i+=3){const a=index?index.getX(i):i,b=index?index.getX(i+1):i+1,c=index?index.getX(i+2):i+2;join(a,b);join(b,c);}
- const bounds=new Map(),vertices=[];mesh.skeleton.update();
- for(let i=0;i<count;i++){mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);const key=find(i),range=bounds.get(key)??{min:Infinity,max:-Infinity};range.min=Math.min(range.min,point.y);range.max=Math.max(range.max,point.y);bounds.set(key,range);vertices.push(key);}
- return new Set(vertices.flatMap((key,i)=>{const r=bounds.get(key);return r.min>kneeHeight+.025&&r.min<hipHeight&&r.max>hipHeight?[i]:[];}));
+ const bounds=new Map(),vertices=[],heights=[];mesh.skeleton.update();
+ for(let i=0;i<count;i++){mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld);const key=find(i),range=bounds.get(key)??{min:Infinity,max:-Infinity};range.min=Math.min(range.min,point.y);range.max=Math.max(range.max,point.y);bounds.set(key,range);vertices.push(key);heights.push(point.y);}
+ // A cropped trouser leg also ends above the knee, but its hem follows the
+ // thigh directly. It is fitted legwear, not a loose panel to inflate/drape.
+ const fittedHems=new Map(),{skinIndex,skinWeight}=mesh.geometry.attributes;
+ for(let i=0;i<count;i++){
+  const key=vertices[i];if(heights[i]>bounds.get(key).min+(hipHeight-kneeHeight)*.04)continue;
+  let thighWeight=0;
+  for(let k=0;k<4;k++)if(/^thigh_[rl]$/.test(mesh.skeleton.bones[skinIndex.getComponent(i,k)].name))thighWeight+=skinWeight.getComponent(i,k);
+  fittedHems.set(key,(fittedHems.get(key)??true)&&thighWeight>=.85);
+ }
+ return new Set(vertices.flatMap((key,i)=>{const r=bounds.get(key);return !fittedHems.get(key)&&r.min>kneeHeight+.025&&r.min<hipHeight&&r.max>hipHeight?[i]:[];}));
 }
 
 // A unilateral cloth constraint: a front panel cannot cross to the back of

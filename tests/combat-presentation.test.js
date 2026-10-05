@@ -64,6 +64,27 @@ test('all ninja attacks preserve knee hinges and move their root consistently at
  }
 });
 
+test('the Ace fitted shorts keep their native shape instead of becoming inflated hanging panels',async()=>{
+ const g=await loadNativeSkin(new URL('../public/models/kaede.glb',import.meta.url),{materialNames:true}),bones={};
+ g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
+ const original=new Map();g.scene.traverse(mesh=>{if(mesh.isSkinnedMesh)original.set(mesh,mesh.geometry);});
+ const cloth=new GarmentCollision(g.scene,bones);
+ let visor;g.scene.traverse(mesh=>{if(mesh.isSkinnedMesh&&mesh.material.name==='Major Threat warm cream cotton')visor=mesh;});assert.ok(visor);
+ const headLocal=()=>{g.scene.updateMatrixWorld(true);visor.skeleton.update();const inverse=bones.Head.matrixWorld.clone().invert();return Array.from({length:Math.ceil(visor.geometry.attributes.position.count/30)},(_,i)=>visor.getVertexPosition(i*30,new T.Vector3()).applyMatrix4(visor.matrixWorld).applyMatrix4(inverse));};
+ const visorRest=headLocal();
+ assert.equal(cloth.report.vertices,0,'Fitted shorts must not receive the loose-panel displacement');
+ for(const name of ['Ace_Ready','Ace_Combo_Opening','Ace_Turning_Double_Cut','Golf_Swing','Run_Forward']){
+  const clip=g.animations.find(c=>c.name===name);assert.ok(clip,name);g.mixer.stopAllAction();const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
+  for(let sample=0;sample<=20;sample++){
+   action.time=clip.duration*sample/20;g.mixer.update(0);cloth.update();
+   assert.equal(cloth.report.maximumOffset,0);
+   headLocal().forEach((p,i)=>assert.ok(p.distanceTo(visorRest[i])<1e-5,`${name}: visor must follow the head, not the neck`));
+   for(const [mesh,geometry]of original)assert.equal(mesh.geometry,geometry,'The authored skinning must remain intact');
+  }
+ }
+ cloth.dispose();
+});
+
 test('the Closer merged tunic receives collision correction through her attacks and golf swing',async()=>{
  const g=await loadNativeSkin(new URL('../public/models/sora.glb',import.meta.url),{materialNames:true}),bones={};
  g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});

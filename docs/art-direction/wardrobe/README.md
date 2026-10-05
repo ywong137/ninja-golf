@@ -63,3 +63,13 @@ python3 tools/merge-selected-wardrobe.py --base BASE.glb --garment OUTPUT_DIR/MO
 Add `--replace-body --original-body TARGET.glb` for the Ace and Closer. The merge retains their original hands and shoes. Do not re-export the source animations through Blender.
 
 Run the garment preservation, leg clearance, shoulder skin, and browser showcase tests after a change. The saved preservation report identifies the original inputs. Do not replace that baseline with a candidate model.
+
+## Ace visor fitting
+
+After merging the Ace wardrobe, run `tools/fit-ace-visor.mjs` with the merged model as `--input` and a different `--output`.
+The fitter replaces only the cream visor surface and attaches it to `Head`.
+It uses a smooth contour from the solid head and nearby hair, a shorter curved brim, and narrow navy edges.
+Keep the unfitted input for repeatable rebuilds. Do not use an earlier fitted output as the next input.
+
+The runtime cloth classifier distinguishes fitted shorts from hanging tunic panels using their hem skin weights.
+Do not shrink the Ace body to compensate for a cloth classification error.
