@@ -5,7 +5,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {AttackLocomotion} from '../src/attack-locomotion.js';
 import {WARRIORS} from '../src/warriors.js';
-const attackName=hero=>{const w=WARRIORS.find(w=>w.model===hero),name=w.motionPrefix+'Cut_Diagonal';return w.motionOverrides?.[name]??name;};
+// This unit covers the walking overlay. Captured root-travel attacks bypass it in actors.js.
+const attackName=hero=>{const w=WARRIORS.find(w=>w.model===hero);const n=w.motionPrefix+'Cut_Diagonal';return hero==='shinobi'?n:hero==='monk'?'Ethan_Naginata_Driving_Cut':w.motionOverrides?.[n]??n;};
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 globalThis.ProgressEvent??=class{};
 async function rig(hero,prefix){

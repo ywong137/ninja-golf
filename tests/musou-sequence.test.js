@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {buildMusouSequence,combatSequenceFrame} from '../src/musou-sequence.js';
+import {buildMusouSequence,combatSequenceFrame,samplePerformanceClock} from '../src/musou-sequence.js';
 import {WARRIORS} from '../src/warriors.js';
 import {MUSOU_WIPES} from '../src/musou-cinematic.js';
 import {MUSOU_CINEMATIC_DURATION} from '../src/combat.js';
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
-for(const hero of WARRIORS.filter(w=>w.musouChain))test(hero.name+' ultimate keeps complete captures and a shared root/contact clock',()=>{
+for(const hero of WARRIORS.filter(w=>w.musouChain))test(hero.name+' ultimate preserves captured strikes and a shared root/contact clock',()=>{
  const s=buildMusouSequence(motions,hero.musouChain);
  assert.ok(s.duration>=7&&s.duration<11);assert.ok(s.hits.length>=7);
  for(const [i,part]of s.segments.entries()){
@@ -14,8 +14,13 @@ for(const hero of WARRIORS.filter(w=>w.musouChain))test(hero.name+' ultimate kee
   for(const fraction of [0,.2,.5,.999]){
    const a=combatSequenceFrame({sequence:s,time:part.start+part.duration*fraction,token:42});
    assert.equal(a.index,i);assert.equal(a.action.motionName,part.clip);assert.equal(a.hidden,false);
-   assert.ok(Math.abs(a.action.time-part.duration*fraction)<1e-8);assert.ok(a.action.syncMotion);
+   const source=samplePerformanceClock(part.clock,part.duration*fraction);
+   assert.ok(Math.abs(a.action.time/record.combatDuration*record.duration-source)<1e-8);assert.ok(a.action.syncMotion);
   }
+ }
+ for(const part of s.segments)for(const hit of part.motion.impacts){
+  const time=part.start+samplePerformanceClock(part.clock,hit,true),frame=combatSequenceFrame({sequence:s,time,token:42});
+  assert.ok(Math.abs(frame.action.time/frame.action.duration*part.motion.duration-hit)<1e-7,'A damage contact must sample its original captured strike');
  }
  for(const hz of [40,60,144]){
   const fired=[];let index=0;

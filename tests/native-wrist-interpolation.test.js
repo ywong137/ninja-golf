@@ -24,7 +24,7 @@ test('Native attack wrists follow blade directions between solved animation keys
   const point=name=>gltf.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
   const names=['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'].map(name=>hero.motionOverrides?.[hero.motionPrefix+name]??hero.motionPrefix+name);
   const clips=gltf.animations.filter(c=>names.includes(c.name));
-  assert.equal(clips.length,9,hero.model);
+  assert.equal(clips.length,new Set(names).size,hero.model);
   for(const clip of clips){
    mixer.stopAllAction();const action=mixer.clipAction(clip).play();
    // Check the exported keys and the intervals between native solved samples.
@@ -35,7 +35,9 @@ test('Native attack wrists follow blade directions between solved animation keys
     for(const side of hero.dualWield?['r','l']:['r']){
      const grip=side==='r'?pose.grip:pose.offGrip,tip=side==='r'?pose.tip:pose.offTip;
      const expected=new THREE.Vector3(tip[0]-grip[0],tip[2]-grip[2],grip[1]-tip[1]).normalize();
-     const actual=motions[clip.name].nativeAttachment
+     const actual=motions[clip.name].slidingGrip
+      ?gltf.scene.getObjectByName('hand_r').localToWorld(new THREE.Vector3().fromArray(grips[hero.model].sword.r.center)).sub(gltf.scene.getObjectByName('hand_l').localToWorld(new THREE.Vector3().fromArray(grips[hero.model].sword.l.center))).normalize().multiplyScalar(Math.sign(motions[clip.name].gripSpacing))
+      :motions[clip.name].nativeAttachment
       ?new THREE.Vector3(...grips[hero.model].sword[side].axis).applyQuaternion(gltf.scene.getObjectByName('hand_'+side).getWorldQuaternion(new THREE.Quaternion())).normalize()
       :point('PalmShaft_'+side).sub(point('PalmGrip_'+side)).normalize();
      const degrees=actual.angleTo(expected)*180/Math.PI;

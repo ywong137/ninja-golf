@@ -67,6 +67,8 @@ for(const {model}of WARRIORS)MODEL_REVISIONS[model]='furrowed-musou-20261004b';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-emergence-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
+MODEL_REVISIONS.monk='purchased-polearm-20261005';
+for(const model of ['ronin','sora','kaede','shinobi'])MODEL_REVISIONS[model]='release-polish-20261005';
 const retargeted=new Map();
 const motionSources=[];
 const materials=new Map();
@@ -157,7 +159,7 @@ export class Warrior {
     this.root.updateMatrixWorld(true);
     if(this.nativeHuman)for(const side of ['r','l']){const grip=this.model.getObjectByName('PalmGrip_'+side),shaft=this.model.getObjectByName('PalmShaft_'+side),hand=this.bones['hand_'+side];if(grip&&shaft){this.palmGrips[side].copy(hand.worldToLocal(grip.getWorldPosition(new THREE.Vector3())));this.shaftAxes[side].copy(hand.worldToLocal(shaft.getWorldPosition(new THREE.Vector3()))).sub(this.palmGrips[side]).normalize();}}
     this.neutralHandRotations=Object.fromEntries(['r','l'].map(side=>[side,this.bones['hand_'+side].quaternion.clone()]));
-    this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:WARRIORS[type].model==='kaede'?['r']:[],overflow:templates[index].userData?.wardrobeDefault?.replacedBody?'nearest':'reject'}):null;
+    this.forearmTwist=!enemy&&this.nativeHuman?installLimbSkinning(this.model,{upperArms:['r'],overflow:'nearest'}):null;
     this.garmentCollision=!enemy?new GarmentCollision(this.model,this.bones,WARRIORS[type].model==='sora'?{clearance:.028,surfaceQuantile:.99}:{}):null;
     this.golfRestPose=captureGolfRestPose(this.model);this.golfClubFits=new Map();
     this.armContinuation=!enemy&&this.nativeHuman?new ArmMotionContinuation(this.bones,this.golfRestPose):null;
@@ -602,7 +604,7 @@ export class Warrior {
     this.startingRun=false;this.turningRun=false;this.recordedStopping=false;
     if(golf||selection||cinematic||this.dead){this.recordedStart?.reset();this.recordedTurn?.reset();this.recordedStop?.reset();}
     if(!moving||action||golf||selection)this.startHandoff=null;
-    if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}this.weapon.visible=false;if(this.offhand)this.offhand.visible=false;if(!this.deathStarted){this.deathStarted=true;this.play('Death01',.08,true,1.6);}this.updateMixer(dt);this.updateSkinDeformation();return;}
+    if(this.dead>0){if(this.runFootwork){this.runFootwork.exitPose=null;this.runFootwork.exitAge=undefined;this.runFootwork.resetEntry();this.runFootwork.resetDirection();}if(!this.deathStarted){this.deathStarted=true;this.play('Hit_Chest',.06,true,1);}this.updateMixer(dt);const deathPose=this.actions.get('Hit_Chest');if(deathPose.time>.23){deathPose.time=.23;deathPose.setEffectiveTimeScale(0);this.updateMixer(0);}this.updateSkinDeformation();return;}
     this.oneShot=Math.max(0,this.oneShot-dt);
     const guardPrefix=GUARD_PREFIX[WARRIORS[this.type]?.combatStyle],guardEnabled=!this.enemy&&!golf&&!cinematic;
     const guardImpact=guardEnabled&&!action&&!swing&&!dodge&&(parry>0&&!this.wasParry||blocking&&guardHitToken>0&&guardHitToken!==this.lastGuardHitToken);
@@ -797,6 +799,16 @@ export class Warrior {
     weight=Math.min(1,weight);
     this.forearmTwist.update({refreshMatrices:false,upperArmWeight:weight});
     this.garmentCollision?.update();
+  }
+  setDeathFade(opacity){
+    if(!this.deathMaterials){
+      this.deathMaterials=new Set();const copies=new Map();
+      this.root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;
+        const own=m=>{if(!copies.has(m)){const copy=m.clone();copy.onBeforeCompile=m.onBeforeCompile;copy.customProgramCacheKey=m.customProgramCacheKey;copy.transparent=true;copy.depthWrite=false;this.ownedMaterials.push(copy);copies.set(m,copy);this.deathMaterials.add(copy);}return copies.get(m);};
+        o.material=Array.isArray(o.material)?o.material.map(own):own(o.material);
+      });
+    }
+    for(const material of this.deathMaterials)material.opacity=Math.max(0,Math.min(1,opacity));
   }
   dispose(){this.garmentCollision?.dispose();this.skinBounds?.dispose();this.facialPose?.restore();this.attackLocomotion?.dispose();this.forearmTwist?.dispose();this.mixer.stopAllAction();this.mixer.uncacheRoot(this.model);const skeletons=new Set();this.model.traverse(o=>{if(o.isSkinnedMesh)skeletons.add(o.skeleton);});for(const skeleton of skeletons)skeleton.dispose();for(const material of this.ownedMaterials)material.dispose();}
 }

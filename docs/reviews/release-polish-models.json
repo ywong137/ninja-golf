@@ -1,0 +1,3940 @@
+{
+  "ronin": {
+    "sourceSha256": "26bd962eacd0dd183cbcff11ab8dca276285715ace981ee471bab75683c4b46c",
+    "outputSha256": "4b54076d4c95588366e0cb1cc534e4d20449091deb8fc964ea3ec968f342a011",
+    "baseBinaryBytes": 15880712,
+    "baseBinarySha256": "6fda980ab8b2590e4137a34c9048d696a8ce90757855770d427a6f3c2e91e5f8",
+    "nodesSha256": "5176a5f9852cfd0b98efa9afd2d3b933fcab879515285ce0d81a069d819491c1",
+    "skinsSha256": "171b09361cdeda436afa256e736d810ec429a17c6d47a01f60ca114a3f20f18e",
+    "previousMeshes": [
+      {
+        "name": "Mesh",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "TEXCOORD_1": 3,
+              "JOINTS_0": 4,
+              "WEIGHTS_0": 5
+            },
+            "indices": 11591,
+            "material": 3,
+            "targets": [
+              {
+                "POSITION": 11658,
+                "NORMAL": 11659
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 7,
+              "NORMAL": 8,
+              "TEXCOORD_0": 9,
+              "TEXCOORD_1": 10,
+              "JOINTS_0": 11,
+              "WEIGHTS_0": 12
+            },
+            "indices": 13,
+            "material": 1,
+            "targets": [
+              {
+                "POSITION": 11660,
+                "NORMAL": 11661
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14,
+              "NORMAL": 15,
+              "TEXCOORD_0": 16,
+              "TEXCOORD_1": 17,
+              "JOINTS_0": 18,
+              "WEIGHTS_0": 19
+            },
+            "indices": 20,
+            "material": 2,
+            "targets": [
+              {
+                "POSITION": 11662,
+                "NORMAL": 11663
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "TEXCOORD_1": 3,
+              "JOINTS_0": 4,
+              "WEIGHTS_0": 5
+            },
+            "indices": 11590,
+            "material": 0,
+            "targets": [
+              {
+                "POSITION": 11664,
+                "NORMAL": 11665
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 11626,
+              "NORMAL": 11627,
+              "TEXCOORD_0": 11628,
+              "JOINTS_0": 11629,
+              "WEIGHTS_0": 11630
+            },
+            "indices": 11631,
+            "material": 4,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 11666,
+                "NORMAL": 11667
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 11632,
+              "NORMAL": 11633,
+              "TEXCOORD_0": 11634,
+              "JOINTS_0": 11635,
+              "WEIGHTS_0": 11636
+            },
+            "indices": 11637,
+            "material": 3,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 11668,
+                "NORMAL": 11669
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 11638,
+              "NORMAL": 11639,
+              "TEXCOORD_0": 11640,
+              "JOINTS_0": 11641,
+              "WEIGHTS_0": 11642
+            },
+            "indices": 11643,
+            "material": 5,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 11670,
+                "NORMAL": 11671
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ],
+        "extras": {
+          "targetNames": [
+            "Musou_Snarl"
+          ]
+        }
+      }
+    ],
+    "currentMeshesSha256": "2c8929b4d1f7dd02bbd033c48299187618b6fd25384f7a695cb564a652f434a4",
+    "replacedAnimations": [],
+    "addedClips": []
+  },
+  "shinobi": {
+    "sourceSha256": "af0dd5a3beca947b3ca42a58eed2957b2bf62979aee9cac6ab48d4b2ca55c44e",
+    "outputSha256": "d853b0d5f0eb5ddfc3186ef64cad04748dcbce1f8c122828a6812423e8c801a9",
+    "baseBinaryBytes": 20815816,
+    "baseBinarySha256": "6275f4fed8dfb30a86c5e48fbfff48e2d9a6d7f04ad84076cb4bdd8fdff8d8a8",
+    "nodesSha256": "ce00062d32f6701edd0c9ed091da49dc89cd618283e2da5e601f0a86a60b856e",
+    "skinsSha256": "4ec046154c81af9b84adc3e671e997409c3e368bbf161893dbe461cb6971f87b",
+    "previousMeshes": [
+      {
+        "name": "Mesh",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "JOINTS_0": 3,
+              "WEIGHTS_0": 4
+            },
+            "indices": 17308,
+            "material": 3,
+            "targets": [
+              {
+                "POSITION": 17623,
+                "NORMAL": 17624
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 6,
+              "NORMAL": 7,
+              "TEXCOORD_0": 8,
+              "JOINTS_0": 9,
+              "WEIGHTS_0": 10
+            },
+            "indices": 11,
+            "material": 1,
+            "targets": [
+              {
+                "POSITION": 17625,
+                "NORMAL": 17626
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 12,
+              "NORMAL": 13,
+              "TEXCOORD_0": 14,
+              "JOINTS_0": 15,
+              "WEIGHTS_0": 16
+            },
+            "indices": 17,
+            "material": 2,
+            "targets": [
+              {
+                "POSITION": 17627,
+                "NORMAL": 17628
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "JOINTS_0": 3,
+              "WEIGHTS_0": 4
+            },
+            "indices": 17307,
+            "material": 0,
+            "targets": [
+              {
+                "POSITION": 17629,
+                "NORMAL": 17630
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 17327,
+              "NORMAL": 17328,
+              "TEXCOORD_0": 17329,
+              "JOINTS_0": 17330,
+              "WEIGHTS_0": 17331
+            },
+            "indices": 17332,
+            "material": 4,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 17631,
+                "NORMAL": 17632
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 17333,
+              "NORMAL": 17334,
+              "TEXCOORD_0": 17335,
+              "JOINTS_0": 17336,
+              "WEIGHTS_0": 17337
+            },
+            "indices": 17338,
+            "material": 5,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 17633,
+                "NORMAL": 17634
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ],
+        "extras": {
+          "targetNames": [
+            "Musou_Snarl"
+          ]
+        }
+      }
+    ],
+    "currentMeshesSha256": "4f2b2102f5b982ddc868a7034931b5ab428bbe1289971706d93fbe65599828e7",
+    "replacedAnimations": [
+      {
+        "channels": [
+          {
+            "sampler": 0,
+            "target": {
+              "node": 84,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 1,
+            "target": {
+              "node": 84,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 2,
+            "target": {
+              "node": 84,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 3,
+            "target": {
+              "node": 83,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 4,
+            "target": {
+              "node": 83,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 5,
+            "target": {
+              "node": 83,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 6,
+            "target": {
+              "node": 74,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 7,
+            "target": {
+              "node": 74,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 8,
+            "target": {
+              "node": 74,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 9,
+            "target": {
+              "node": 73,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 10,
+            "target": {
+              "node": 73,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 11,
+            "target": {
+              "node": 73,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 12,
+            "target": {
+              "node": 72,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 13,
+            "target": {
+              "node": 72,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 14,
+            "target": {
+              "node": 72,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 15,
+            "target": {
+              "node": 29,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 16,
+            "target": {
+              "node": 29,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 17,
+            "target": {
+              "node": 29,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 18,
+            "target": {
+              "node": 1,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 19,
+            "target": {
+              "node": 1,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 20,
+            "target": {
+              "node": 1,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 21,
+            "target": {
+              "node": 2,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 22,
+            "target": {
+              "node": 2,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 23,
+            "target": {
+              "node": 2,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 24,
+            "target": {
+              "node": 7,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 25,
+            "target": {
+              "node": 7,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 26,
+            "target": {
+              "node": 7,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 27,
+            "target": {
+              "node": 3,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 28,
+            "target": {
+              "node": 3,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 29,
+            "target": {
+              "node": 3,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 30,
+            "target": {
+              "node": 4,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 31,
+            "target": {
+              "node": 4,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 32,
+            "target": {
+              "node": 4,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 33,
+            "target": {
+              "node": 5,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 34,
+            "target": {
+              "node": 5,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 35,
+            "target": {
+              "node": 5,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 36,
+            "target": {
+              "node": 6,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 37,
+            "target": {
+              "node": 6,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 38,
+            "target": {
+              "node": 6,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 39,
+            "target": {
+              "node": 8,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 40,
+            "target": {
+              "node": 8,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 41,
+            "target": {
+              "node": 8,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 42,
+            "target": {
+              "node": 9,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 43,
+            "target": {
+              "node": 9,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 44,
+            "target": {
+              "node": 9,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 45,
+            "target": {
+              "node": 10,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 46,
+            "target": {
+              "node": 10,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 47,
+            "target": {
+              "node": 10,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 48,
+            "target": {
+              "node": 11,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 49,
+            "target": {
+              "node": 11,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 50,
+            "target": {
+              "node": 11,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 51,
+            "target": {
+              "node": 12,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 52,
+            "target": {
+              "node": 12,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 53,
+            "target": {
+              "node": 12,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 54,
+            "target": {
+              "node": 13,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 55,
+            "target": {
+              "node": 13,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 56,
+            "target": {
+              "node": 13,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 57,
+            "target": {
+              "node": 14,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 58,
+            "target": {
+              "node": 14,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 59,
+            "target": {
+              "node": 14,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 60,
+            "target": {
+              "node": 15,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 61,
+            "target": {
+              "node": 15,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 62,
+            "target": {
+              "node": 15,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 63,
+            "target": {
+              "node": 16,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 64,
+            "target": {
+              "node": 16,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 65,
+            "target": {
+              "node": 16,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 66,
+            "target": {
+              "node": 17,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 67,
+            "target": {
+              "node": 17,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 68,
+            "target": {
+              "node": 17,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 69,
+            "target": {
+              "node": 18,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 70,
+            "target": {
+              "node": 18,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 71,
+            "target": {
+              "node": 18,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 72,
+            "target": {
+              "node": 19,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 73,
+            "target": {
+              "node": 19,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 74,
+            "target": {
+              "node": 19,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 75,
+            "target": {
+              "node": 20,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 76,
+            "target": {
+              "node": 20,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 77,
+            "target": {
+              "node": 20,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 78,
+            "target": {
+              "node": 21,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 79,
+            "target": {
+              "node": 21,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 80,
+            "target": {
+              "node": 21,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 81,
+            "target": {
+              "node": 22,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 82,
+            "target": {
+              "node": 22,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 83,
+            "target": {
+              "node": 22,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 84,
+            "target": {
+              "node": 23,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 85,
+            "target": {
+              "node": 23,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 86,
+            "target": {
+              "node": 23,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 87,
+            "target": {
+              "node": 24,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 88,
+            "target": {
+              "node": 24,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 89,
+            "target": {
+              "node": 24,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 90,
+            "target": {
+              "node": 25,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 91,
+            "target": {
+              "node": 25,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 92,
+            "target": {
+              "node": 25,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 93,
+            "target": {
+              "node": 26,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 94,
+            "target": {
+              "node": 26,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 95,
+            "target": {
+              "node": 26,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 96,
+            "target": {
+              "node": 27,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 97,
+            "target": {
+              "node": 27,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 98,
+            "target": {
+              "node": 27,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 99,
+            "target": {
+              "node": 28,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 100,
+            "target": {
+              "node": 28,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 101,
+            "target": {
+              "node": 28,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 102,
+            "target": {
+              "node": 50,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 104,
+            "target": {
+              "node": 50,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 105,
+            "target": {
+              "node": 49,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 107,
+            "target": {
+              "node": 49,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 108,
+            "target": {
+              "node": 48,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 110,
+            "target": {
+              "node": 48,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 111,
+            "target": {
+              "node": 47,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 113,
+            "target": {
+              "node": 47,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 114,
+            "target": {
+              "node": 32,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 116,
+            "target": {
+              "node": 32,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 117,
+            "target": {
+              "node": 31,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 119,
+            "target": {
+              "node": 31,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 120,
+            "target": {
+              "node": 30,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 122,
+            "target": {
+              "node": 30,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 123,
+            "target": {
+              "node": 35,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 125,
+            "target": {
+              "node": 35,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 126,
+            "target": {
+              "node": 34,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 128,
+            "target": {
+              "node": 34,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 129,
+            "target": {
+              "node": 33,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 131,
+            "target": {
+              "node": 33,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 132,
+            "target": {
+              "node": 38,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 134,
+            "target": {
+              "node": 38,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 135,
+            "target": {
+              "node": 37,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 137,
+            "target": {
+              "node": 37,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 138,
+            "target": {
+              "node": 36,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 140,
+            "target": {
+              "node": 36,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 141,
+            "target": {
+              "node": 41,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 143,
+            "target": {
+              "node": 41,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 144,
+            "target": {
+              "node": 40,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 146,
+            "target": {
+              "node": 40,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 147,
+            "target": {
+              "node": 39,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 149,
+            "target": {
+              "node": 39,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 150,
+            "target": {
+              "node": 44,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 152,
+            "target": {
+              "node": 44,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 153,
+            "target": {
+              "node": 43,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 155,
+            "target": {
+              "node": 43,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 156,
+            "target": {
+              "node": 42,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 158,
+            "target": {
+              "node": 42,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 159,
+            "target": {
+              "node": 71,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 161,
+            "target": {
+              "node": 71,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 162,
+            "target": {
+              "node": 70,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 164,
+            "target": {
+              "node": 70,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 165,
+            "target": {
+              "node": 69,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 167,
+            "target": {
+              "node": 69,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 168,
+            "target": {
+              "node": 68,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 170,
+            "target": {
+              "node": 68,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 171,
+            "target": {
+              "node": 53,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 173,
+            "target": {
+              "node": 53,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 174,
+            "target": {
+              "node": 52,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 176,
+            "target": {
+              "node": 52,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 177,
+            "target": {
+              "node": 51,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 179,
+            "target": {
+              "node": 51,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 180,
+            "target": {
+              "node": 56,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 182,
+            "target": {
+              "node": 56,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 183,
+            "target": {
+              "node": 55,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 185,
+            "target": {
+              "node": 55,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 186,
+            "target": {
+              "node": 54,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 188,
+            "target": {
+              "node": 54,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 189,
+            "target": {
+              "node": 59,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 191,
+            "target": {
+              "node": 59,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 192,
+            "target": {
+              "node": 58,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 194,
+            "target": {
+              "node": 58,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 195,
+            "target": {
+              "node": 57,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 197,
+            "target": {
+              "node": 57,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 198,
+            "target": {
+              "node": 62,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 200,
+            "target": {
+              "node": 62,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 201,
+            "target": {
+              "node": 61,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 203,
+            "target": {
+              "node": 61,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 204,
+            "target": {
+              "node": 60,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 206,
+            "target": {
+              "node": 60,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 207,
+            "target": {
+              "node": 65,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 209,
+            "target": {
+              "node": 65,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 210,
+            "target": {
+              "node": 64,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 212,
+            "target": {
+              "node": 64,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 213,
+            "target": {
+              "node": 63,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 215,
+            "target": {
+              "node": 63,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 216,
+            "target": {
+              "node": 78,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 287,
+            "target": {
+              "node": 78,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 218,
+            "target": {
+              "node": 78,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 219,
+            "target": {
+              "node": 77,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 288,
+            "target": {
+              "node": 77,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 221,
+            "target": {
+              "node": 77,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 222,
+            "target": {
+              "node": 76,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 289,
+            "target": {
+              "node": 76,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 224,
+            "target": {
+              "node": 76,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 225,
+            "target": {
+              "node": 75,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 226,
+            "target": {
+              "node": 75,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 227,
+            "target": {
+              "node": 75,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 228,
+            "target": {
+              "node": 82,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 284,
+            "target": {
+              "node": 82,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 230,
+            "target": {
+              "node": 82,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 231,
+            "target": {
+              "node": 81,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 285,
+            "target": {
+              "node": 81,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 233,
+            "target": {
+              "node": 81,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 234,
+            "target": {
+              "node": 80,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 286,
+            "target": {
+              "node": 80,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 236,
+            "target": {
+              "node": 80,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 237,
+            "target": {
+              "node": 79,
+              "path": "translation"
+            }
+          },
+          {
+            "sampler": 238,
+            "target": {
+              "node": 79,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 239,
+            "target": {
+              "node": 79,
+              "path": "scale"
+            }
+          },
+          {
+            "sampler": 246,
+            "target": {
+              "node": 50,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 247,
+            "target": {
+              "node": 49,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 248,
+            "target": {
+              "node": 48,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 249,
+            "target": {
+              "node": 47,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 250,
+            "target": {
+              "node": 32,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 251,
+            "target": {
+              "node": 31,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 252,
+            "target": {
+              "node": 30,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 253,
+            "target": {
+              "node": 35,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 254,
+            "target": {
+              "node": 34,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 255,
+            "target": {
+              "node": 33,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 256,
+            "target": {
+              "node": 38,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 257,
+            "target": {
+              "node": 37,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 258,
+            "target": {
+              "node": 36,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 259,
+            "target": {
+              "node": 41,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 260,
+            "target": {
+              "node": 40,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 261,
+            "target": {
+              "node": 39,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 262,
+            "target": {
+              "node": 44,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 263,
+            "target": {
+              "node": 43,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 264,
+            "target": {
+              "node": 42,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 265,
+            "target": {
+              "node": 71,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 266,
+            "target": {
+              "node": 70,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 267,
+            "target": {
+              "node": 69,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 268,
+            "target": {
+              "node": 68,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 269,
+            "target": {
+              "node": 53,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 270,
+            "target": {
+              "node": 52,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 271,
+            "target": {
+              "node": 51,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 272,
+            "target": {
+              "node": 56,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 273,
+            "target": {
+              "node": 55,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 274,
+            "target": {
+              "node": 54,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 275,
+            "target": {
+              "node": 59,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 276,
+            "target": {
+              "node": 58,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 277,
+            "target": {
+              "node": 57,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 278,
+            "target": {
+              "node": 62,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 279,
+            "target": {
+              "node": 61,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 280,
+            "target": {
+              "node": 60,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 281,
+            "target": {
+              "node": 65,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 282,
+            "target": {
+              "node": 64,
+              "path": "rotation"
+            }
+          },
+          {
+            "sampler": 283,
+            "target": {
+              "node": 63,
+              "path": "rotation"
+            }
+          }
+        ],
+        "name": "Twin_Ready",
+        "samplers": [
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14157
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14158
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12393
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12394
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14159
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12396
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12397
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14160
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12399
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12637
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14161
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12639
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12640
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14162
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12642
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12643
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12644
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12639
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12645
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12410
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12646
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12647
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12648
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12649
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12650
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12651
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12417
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12652
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12653
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12654
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12655
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12656
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12657
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12658
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12659
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12660
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12661
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12662
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12663
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12664
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12665
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12666
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12667
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12668
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12669
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12670
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12671
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12672
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12673
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12674
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12675
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12676
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12443
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12677
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12678
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12679
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12680
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12681
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12682
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12683
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12684
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12685
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12686
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12687
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12688
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12689
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12690
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12691
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12692
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12693
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12694
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12639
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12695
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12696
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12649
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12697
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12698
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12699
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12700
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12701
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12399
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12702
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12703
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12480
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12704
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12705
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12706
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12707
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12479
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12480
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12708
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12709
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12639
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12710
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12711
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12646
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12712
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12488
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12713
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12714
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12715
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12716
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12717
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14163
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12719
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12720
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14164
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14165
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14166
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14167
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14168
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14169
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14170
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14171
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14172
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14173
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14174
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14175
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14176
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14177
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14178
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14179
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14180
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14181
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14182
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14183
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14184
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14185
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14186
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14187
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14188
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14189
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14190
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14191
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14192
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14193
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14194
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14195
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14196
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14197
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14198
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14199
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14200
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14201
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14202
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14203
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14204
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14205
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14206
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14207
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14208
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14209
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14210
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14211
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14212
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14213
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14214
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14215
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14216
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12774
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14217
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12649
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12776
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14218
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12680
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14219
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14220
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14221
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14222
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14223
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14224
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14225
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14226
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14227
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14228
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14229
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14230
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14231
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14232
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12901
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14233
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14234
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14235
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14236
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14237
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14238
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14239
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14240
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14241
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14242
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14243
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12913
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14244
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14245
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14246
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14247
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14248
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14249
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14250
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14251
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14252
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14253
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14254
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14255
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14256
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14257
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14258
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14259
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14260
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14261
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14262
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14263
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14264
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14265
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14266
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14267
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12607
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14268
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14269
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14270
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14271
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14272
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14273
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14274
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14275
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14276
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14277
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14278
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 12619
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14279
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 13259
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14280
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14281
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 13677
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14282
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14283
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14284
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14285
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14286
+          },
+          {
+            "input": 14156,
+            "interpolation": "STEP",
+            "output": 14287
+          },
+          {
+            "input": 14745,
+            "output": 14746,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 14745,
+            "output": 14747,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 14745,
+            "output": 14748,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 14745,
+            "output": 14749,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 14745,
+            "output": 14750,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 14745,
+            "output": 14751,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15314,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15315,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15316,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15317,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15318,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15319,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15320,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15321,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15322,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15323,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15324,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15325,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15326,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15327,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15328,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15329,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15330,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15331,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15332,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15333,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15334,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15335,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15336,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15337,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15338,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15339,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15340,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15341,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15342,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15343,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15344,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15345,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15346,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15347,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15348,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15349,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15350,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 15313,
+            "output": 15351,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16951,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16952,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16953,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16954,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16955,
+            "interpolation": "LINEAR"
+          },
+          {
+            "input": 16950,
+            "output": 16956,
+            "interpolation": "LINEAR"
+          }
+        ],
+        "extras": {
+          "kneeAlignmentVersion": 1,
+          "nativeShinobiVersion": 1,
+          "nativeShinobiDuration": 2,
+          "reviewCandidate": true,
+          "nativeLegFrames": 1
+        }
+      }
+    ],
+    "addedClips": []
+  },
+  "kaede": {
+    "sourceSha256": "7559d5a9f5941e23d353e041e6a4608d54bb05172ff0e0834d88310be2995c1f",
+    "outputSha256": "d3217bd766b6bbb0b4aeb5a9dff2d78b2da2984946eaeb9528ffb9a65777c192",
+    "baseBinaryBytes": 24791416,
+    "baseBinarySha256": "fa6adc87ae9260e87d967e6d80d33e6ce309841a974a730f712f531781acf75b",
+    "nodesSha256": "1e6cac5d3ba7cbf46dbe974b42ae78948e738c8456304aca200a170facf93b99",
+    "skinsSha256": "1aabc091bc4e71c040c8e500a3f05cdc7cab50ad27f79dc0817501b3f272a1f0",
+    "previousMeshes": [
+      {
+        "name": "Mesh",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 14368,
+              "NORMAL": 14369,
+              "TEXCOORD_0": 14370,
+              "JOINTS_0": 14371,
+              "WEIGHTS_0": 14372
+            },
+            "indices": 14373,
+            "material": 4,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14607,
+                "NORMAL": 14608
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 10,
+              "NORMAL": 11,
+              "TEXCOORD_0": 12,
+              "TEXCOORD_1": 13,
+              "TEXCOORD_2": 14,
+              "COLOR_0": 15,
+              "COLOR_1": 16,
+              "JOINTS_0": 17,
+              "WEIGHTS_0": 18
+            },
+            "indices": 19,
+            "material": 1,
+            "targets": [
+              {
+                "POSITION": 14609,
+                "NORMAL": 14610
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 20,
+              "NORMAL": 21,
+              "TEXCOORD_0": 22,
+              "TEXCOORD_1": 23,
+              "TEXCOORD_2": 24,
+              "COLOR_0": 25,
+              "COLOR_1": 26,
+              "JOINTS_0": 27,
+              "WEIGHTS_0": 28
+            },
+            "indices": 29,
+            "material": 2,
+            "targets": [
+              {
+                "POSITION": 14611,
+                "NORMAL": 14612
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "TEXCOORD_1": 3,
+              "TEXCOORD_2": 4,
+              "COLOR_0": 5,
+              "COLOR_1": 6,
+              "JOINTS_0": 7,
+              "WEIGHTS_0": 8
+            },
+            "indices": 14279,
+            "material": 0,
+            "targets": [
+              {
+                "POSITION": 14613,
+                "NORMAL": 14614
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14344,
+              "NORMAL": 14345,
+              "TEXCOORD_0": 14346,
+              "JOINTS_0": 14347,
+              "WEIGHTS_0": 14348
+            },
+            "indices": 14349,
+            "material": 5,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14615,
+                "NORMAL": 14616
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14350,
+              "NORMAL": 14351,
+              "TEXCOORD_0": 14352,
+              "JOINTS_0": 14353,
+              "WEIGHTS_0": 14354
+            },
+            "indices": 14355,
+            "material": 6,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14617,
+                "NORMAL": 14618
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14356,
+              "NORMAL": 14357,
+              "TEXCOORD_0": 14358,
+              "JOINTS_0": 14359,
+              "WEIGHTS_0": 14360
+            },
+            "indices": 14361,
+            "material": 7,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14619,
+                "NORMAL": 14620
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14362,
+              "NORMAL": 14363,
+              "TEXCOORD_0": 14364,
+              "JOINTS_0": 14365,
+              "WEIGHTS_0": 14366
+            },
+            "indices": 14367,
+            "material": 8,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14621,
+                "NORMAL": 14622
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ],
+        "extras": {
+          "targetNames": [
+            "Musou_Snarl"
+          ]
+        }
+      }
+    ],
+    "currentMeshesSha256": "3aa360c013bc85a929919c7a14a6966c0ccaf9f1a5f2d7175b48d146129a6df2",
+    "replacedAnimations": [],
+    "addedClips": []
+  },
+  "sora": {
+    "sourceSha256": "4c553e6417836eb0714686288cb9740ed276000dfd8d5be1ff3fb2932cd47c93",
+    "outputSha256": "63359ab776d92f626cdc19ca1168156a3ea996f051c6333dbee37796f892355a",
+    "baseBinaryBytes": 25596004,
+    "baseBinarySha256": "7e8ce07b468e586c428f382b73fd355a8cca05cd547f8a8ae69c1ba05f6310fc",
+    "nodesSha256": "181526ff63bc3a2c2c4d06f16f3b5d020416a62a779b6eea3a420b1c799bc331",
+    "skinsSha256": "3a065a22b81e65fcf23c1c3cca1f8916ec8a83b59ade6718553e0a722adfb8d1",
+    "previousMeshes": [
+      {
+        "name": "Mesh",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 12942,
+              "NORMAL": 12943,
+              "TEXCOORD_0": 12944,
+              "JOINTS_0": 12945,
+              "WEIGHTS_0": 12946
+            },
+            "indices": 12947,
+            "material": 4,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 12972,
+                "NORMAL": 12973
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 8,
+              "NORMAL": 9,
+              "TEXCOORD_0": 10,
+              "COLOR_0": 11,
+              "COLOR_1": 12,
+              "JOINTS_0": 13,
+              "WEIGHTS_0": 14
+            },
+            "indices": 15,
+            "material": 1,
+            "targets": [
+              {
+                "POSITION": 12974,
+                "NORMAL": 12975
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 16,
+              "NORMAL": 17,
+              "TEXCOORD_0": 18,
+              "COLOR_0": 19,
+              "COLOR_1": 20,
+              "JOINTS_0": 21,
+              "WEIGHTS_0": 22
+            },
+            "indices": 23,
+            "material": 2,
+            "targets": [
+              {
+                "POSITION": 12976,
+                "NORMAL": 12977
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "COLOR_0": 3,
+              "COLOR_1": 4,
+              "JOINTS_0": 5,
+              "WEIGHTS_0": 6
+            },
+            "indices": 12898,
+            "material": 0,
+            "targets": [
+              {
+                "POSITION": 12978,
+                "NORMAL": 12979
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 12948,
+              "NORMAL": 12949,
+              "TEXCOORD_0": 12950,
+              "JOINTS_0": 12951,
+              "WEIGHTS_0": 12952
+            },
+            "indices": 12953,
+            "material": 5,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 12980,
+                "NORMAL": 12981
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 12954,
+              "NORMAL": 12955,
+              "TEXCOORD_0": 12956,
+              "JOINTS_0": 12957,
+              "WEIGHTS_0": 12958
+            },
+            "indices": 12959,
+            "material": 6,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 12982,
+                "NORMAL": 12983
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ],
+        "extras": {
+          "targetNames": [
+            "Musou_Snarl"
+          ]
+        }
+      }
+    ],
+    "currentMeshesSha256": "340bdfa0d7d1025336b4a54ed851c021220fb07887215d0864953e8b834288cf",
+    "replacedAnimations": [],
+    "addedClips": []
+  },
+  "monk": {
+    "sourceSha256": "72546096c118d300ded7bc6eea0a95094fa74f037344544c5bb3432a6dc58464",
+    "outputSha256": "e03308da85c25b467d6e7260b3519fda585b2b765dc5324e9cf9e4d73723bd75",
+    "baseBinaryBytes": 25559560,
+    "baseBinarySha256": "e6e327930f265a560b2d96d569408e40e93a0c52151aaee94ee407326c5b44a3",
+    "nodesSha256": "5bc362a3f87b99424b69499bba8ba72c278d5785b6348a5c661c45c4773275a4",
+    "skinsSha256": "4ec046154c81af9b84adc3e671e997409c3e368bbf161893dbe461cb6971f87b",
+    "previousMeshes": [
+      {
+        "name": "Mesh",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "JOINTS_0": 3,
+              "WEIGHTS_0": 4
+            },
+            "indices": 14114,
+            "material": 6,
+            "targets": [
+              {
+                "POSITION": 14307,
+                "NORMAL": 14308
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 6,
+              "NORMAL": 7,
+              "TEXCOORD_0": 8,
+              "JOINTS_0": 9,
+              "WEIGHTS_0": 10
+            },
+            "indices": 11,
+            "material": 1,
+            "targets": [
+              {
+                "POSITION": 14309,
+                "NORMAL": 14310
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 12824,
+              "NORMAL": 12825,
+              "TEXCOORD_0": 12826,
+              "JOINTS_0": 12827,
+              "WEIGHTS_0": 12828
+            },
+            "indices": 12829,
+            "material": 5,
+            "targets": [
+              {
+                "POSITION": 14311,
+                "NORMAL": 14312
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 0,
+              "NORMAL": 1,
+              "TEXCOORD_0": 2,
+              "JOINTS_0": 3,
+              "WEIGHTS_0": 4
+            },
+            "indices": 14113,
+            "material": 0,
+            "targets": [
+              {
+                "POSITION": 14313,
+                "NORMAL": 14314
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14267,
+              "NORMAL": 14268,
+              "TEXCOORD_0": 14269,
+              "JOINTS_0": 14270,
+              "WEIGHTS_0": 14271
+            },
+            "indices": 14272,
+            "material": 6,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14315,
+                "NORMAL": 14316
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14273,
+              "NORMAL": 14274,
+              "TEXCOORD_0": 14275,
+              "JOINTS_0": 14276,
+              "WEIGHTS_0": 14277
+            },
+            "indices": 14278,
+            "material": 7,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14317,
+                "NORMAL": 14318
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14279,
+              "NORMAL": 14280,
+              "TEXCOORD_0": 14281,
+              "JOINTS_0": 14282,
+              "WEIGHTS_0": 14283
+            },
+            "indices": 14284,
+            "material": 8,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14319,
+                "NORMAL": 14320
+              }
+            ]
+          },
+          {
+            "attributes": {
+              "POSITION": 14285,
+              "NORMAL": 14286,
+              "TEXCOORD_0": 14287,
+              "JOINTS_0": 14288,
+              "WEIGHTS_0": 14289
+            },
+            "indices": 14290,
+            "material": 9,
+            "mode": 4,
+            "targets": [
+              {
+                "POSITION": 14321,
+                "NORMAL": 14322
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ],
+        "extras": {
+          "targetNames": [
+            "Musou_Snarl"
+          ]
+        }
+      },
+      {
+        "name": "Vice President graphite glasses",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 12002,
+              "NORMAL": 12003
+            },
+            "indices": 12004,
+            "material": 3
+          }
+        ]
+      },
+      {
+        "name": "Vice President brushed silver temples",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 12005,
+              "NORMAL": 12006
+            },
+            "indices": 12007,
+            "material": 4
+          }
+        ]
+      }
+    ],
+    "currentMeshesSha256": "949bc7a4190d8055727ca7972bef663236866b755f2849dc1fd76fb3133fa163",
+    "replacedAnimations": [],
+    "addedClips": [
+      "Ethan_GDH_Combo5_Review",
+      "Ethan_GDH_Advancing_Thrust"
+    ]
+  }
+}

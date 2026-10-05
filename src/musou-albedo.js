@@ -3,7 +3,7 @@ import {loadCharacterTexture} from './character-textures.js';
 
 export function loadMusouAlbedo(identity){
  if(!['ronin','shinobi','monk','kaede','ayame','sora'].includes(identity))return null;
- return loadCharacterTexture(`${import.meta.env?.BASE_URL||'/'}textures/musou/${identity}-snarl.webp?v=20261004b`,{colorSpace:SRGBColorSpace,anisotropy:8});
+ return loadCharacterTexture(`${import.meta.env?.BASE_URL||'/'}textures/musou/${identity}-snarl.webp?v=20261005-identity`,{colorSpace:SRGBColorSpace,anisotropy:8});
 }
 
 // A private material lets each actor own its expression. The shared texture

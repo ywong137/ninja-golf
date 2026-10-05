@@ -1,7 +1,7 @@
 {
   "file": "ronin-snarl.webp",
-  "sha256": "96df43e2e744a72cd8a21155d4bacab77b8b085316ddd6525b8330da2b4427f8",
-  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "sha256": "9508d3bdf7b23326dca5af686acdc8b87d83e13fddade3885eea91a488bb2473",
+  "source": "Image-generated angry albedo from the approved October 5 character identity and its neutral UV atlas.",
   "baseLicense": "MIT, see public/models/LICENSE.txt",
-  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+  "use": "Same-identity face texture blended on the live 3D head during musou."
 }

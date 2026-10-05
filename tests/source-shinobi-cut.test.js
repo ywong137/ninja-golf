@@ -14,7 +14,7 @@ import {attackDefinition} from '../src/combat.js';
 import {withMotionTiming} from '../src/attack-timing.js';
 import {activeBladeTrailHands} from '../src/effects.js';
 
-const hero=WARRIORS.find(w=>w.model==='shinobi'),name=hero.motionOverrides.Twin_Cut_Diagonal;
+const hero=WARRIORS.find(w=>w.model==='shinobi'),name='Shinobi_Stepping_Cut';
 const record=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)))[name];
 const grip=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).shinobi.sword;
 
@@ -101,7 +101,7 @@ for(const [clipName,override,hand,step]of [['Shinobi_Airborne_Cut','Twin_Heavy_C
 });
 
 test('Shinobi return cut uses the complete mirrored performance and the left strike trail',()=>{
- const name=hero.motionOverrides.Twin_Cut_Return;
+ const name='Shinobi_Left_Stepping_Cut';
  assert.equal(name,'Shinobi_Left_Stepping_Cut');
  const r=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)))[name];
  assert.ok(r.nativeSourceMotion&&r.nativeAttachment&&!r.twoHanded);

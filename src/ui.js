@@ -1,3 +1,4 @@
+import {afterMenuPaint} from './menu-feedback.js';
 import {MUSOU_CINEMATIC_DURATION} from './combat.js';
 import {MUSOU_WIPES} from './musou-cinematic.js';
 import {controlHints} from './control-bindings.js';
@@ -35,13 +36,15 @@ export class UI {
     this.$('showcase-forward').onclick=()=>callbacks.showcaseStep(1);
     for(const id of ['showcase-speed','showcase-position','showcase-stage'])this.$(id).onkeydown=e=>{if(e.code==='KeyC'&&!e.repeat){e.preventDefault();this.toggleShowcaseConsole();this.$('showcase-console-toggle').focus();}};
     this.$('showcase-pause').onclick=()=>callbacks.showcasePause();
-    this.$('play').onclick=()=>{this.showScreen('selection');callbacks.selection();};
-    this.$('back-home').onclick=()=>{this.showScreen('home');callbacks.home();};
-    this.$('begin').onclick=()=>{this.showScreen('courses');callbacks.courseSelection();};
-    this.$('back-warriors').onclick=()=>{this.showScreen('selection');callbacks.selection();};
-    this.$('start-round').onclick=()=>{this.showScreen('game');callbacks.begin(this.selected,this.selectedCourse);};
-    document.querySelectorAll('[data-course]').forEach(el=>el.onclick=()=>{this.selectedCourse=+el.dataset.course;document.querySelectorAll('[data-course]').forEach(x=>x.classList.toggle('selected',x===el));callbacks.course(this.selectedCourse);});
-    document.querySelectorAll('[data-warrior]').forEach(el=>el.onclick=()=>callbacks.warrior(+el.dataset.warrior));
+    this.menuRequest=0;
+    const menuAction=operation=>{const request=++this.menuRequest;return afterMenuPaint(()=>{if(request===this.menuRequest)return operation();}).catch(error=>console.error('Menu action failed.',error));};
+    this.$('play').onclick=()=>{this.showScreen('selection');menuAction(()=>callbacks.selection());};
+    this.$('back-home').onclick=()=>{this.showScreen('home');menuAction(()=>callbacks.home());};
+    this.$('begin').onclick=()=>{this.showScreen('courses');menuAction(()=>callbacks.courseSelection());};
+    this.$('back-warriors').onclick=()=>{this.showScreen('selection');menuAction(()=>callbacks.selection());};
+    this.$('start-round').onclick=()=>{this.showScreen('game');menuAction(()=>callbacks.begin(this.selected,this.selectedCourse));};
+    document.querySelectorAll('[data-course]').forEach(el=>el.onclick=()=>{this.selectedCourse=+el.dataset.course;document.querySelectorAll('[data-course]').forEach(x=>x.classList.toggle('selected',x===el));const index=this.selectedCourse;menuAction(()=>callbacks.course(index));});
+    document.querySelectorAll('[data-warrior]').forEach(el=>el.onclick=()=>{const index=+el.dataset.warrior;this.warriorDetails(index);menuAction(()=>callbacks.warrior(index));});
     this.$('audio-toggle').onclick=()=>callbacks.audio();this.$('pause-button').onclick=()=>callbacks.pause();this.$('home-help').onclick=()=>callbacks.help();this.$('credits-button').onclick=()=>this.credits();
     document.querySelector('.brand').onclick=e=>{e.preventDefault();callbacks.pause();};
     document.querySelectorAll('[data-shot-height]').forEach(el=>{el.onclick=event=>{callbacks.shotHeight(Number(el.dataset.shotHeight));if(event.detail)el.blur();};el.onkeydown=event=>{if(event.code==='Space'||event.code==='Enter')event.stopPropagation();};});
@@ -157,13 +160,15 @@ export class UI {
   musou(w){
     let el=this.$('musou-cinema');if(!el){el=document.createElement('div');el.id='musou-cinema';document.body.append(el);}
     const index=['ronin','shinobi','monk','kaede','ayame','sora'].indexOf(w.model),atlas=index<3?'men':'women';
-    const portraitUrl=new URL(`${import.meta.env.BASE_URL}textures/musou/${atlas}.webp`,document.baseURI).href;
+    const individual=['ronin','sora'].includes(w.model);
+    const portraitUrl=new URL(`${import.meta.env.BASE_URL}textures/musou/${individual?w.model+'-portrait':atlas}.webp`,document.baseURI).href;
     el.style.setProperty('--musou-duration',MUSOU_CINEMATIC_DURATION+'s');
     el.style.setProperty('--musou-eye-duration',MUSOU_WIPES[0].duration+'s');
     el.style.setProperty('--musou-portrait-delay',MUSOU_WIPES[1].time+'s');
     el.style.setProperty('--musou-portrait-duration',MUSOU_WIPES[1].duration+'s');
     el.style.setProperty('--musou-color',w.color);el.style.setProperty('--musou-face',`url("${portraitUrl}")`);
-    el.style.setProperty('--musou-face-x',`${index%3*50}%`);
+    el.style.setProperty('--musou-face-x',individual?'50%':`${index%3*50}%`);
+    el.style.setProperty('--musou-face-size',individual?'100%':'300%');
     el.innerHTML=`<div class="cinema-cut"></div><div class="cinema-flash"></div><div class="cinema-ink"></div><div class="cinema-lines"></div><div class="cinema-portrait" role="img" aria-label="${w.name}, fierce attack expression"></div><div class="cinema-eye-strip"></div><div class="cinema-slash slash-a"></div><div class="cinema-slash slash-b"></div><div class="cinema-title"><span>一球入魂 · ONE SHOT. ALL SOUL.</span><strong>${w.name}</strong><em>${w.special}</em></div><div class="musou-kanji">無双</div>`;
     el.classList.remove('hidden');document.body.classList.add('musou-active');
   }

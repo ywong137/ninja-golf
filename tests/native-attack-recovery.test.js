@@ -26,10 +26,10 @@ for(const hero of WARRIORS)test(`${hero.name}: native recovery has no elbow tele
  const rig=await loadRig(hero.model),point=name=>rig.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
  const activeNames=new Set(['Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'].map(s=>{const key=(hero.motionPrefix||'')+s;return hero.motionOverrides?.[key]??key;}));
  const clips=rig.animations.filter(c=>activeNames.has(c.name));
- assert.equal(clips.length,9,`${hero.model}: incomplete attack family`);
+ assert.equal(clips.length,activeNames.size,`${hero.model}: incomplete attack family`);
  const failures=[],reports=[];
  for(const clip of clips){
-  const spec=motions[clip.name],start=spec.impacts.at(-1)+.09;
+  const spec=motions[clip.name],start=spec.recoveryStart??spec.impacts.at(-1)+.09;
   rig.mixer.stopAllAction();const action=rig.mixer.clipAction(clip).setLoop(THREE.LoopOnce,1).play();action.clampWhenFinished=true;
   const rows={r:[],l:[]},count=Math.ceil(clip.duration*RATE);
   for(let frame=0;frame<=count;frame++){

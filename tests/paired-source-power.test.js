@@ -13,7 +13,7 @@ import {createWeapon} from '../src/weapons.js';
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const grips=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
 for(const [model,kind] of [...['ronin','monk'].flatMap(model=>['light','heavy'].map(kind=>[model,kind])),['kaede','heavy']])test(model+' '+kind+' source cut retains whole-body movement, native hinges, and two fitted fists',async t=>{
- const hero=WARRIORS.find(h=>h.model===model),name=hero.motionOverrides[(hero.motionPrefix||'')+(kind==='light'?'Cut_Diagonal':'Heavy_Cleave')],record=motions[name];
+ const hero=WARRIORS.find(h=>h.model===model),name=model==='monk'?(kind==='light'?'Ethan_Naginata_Driving_Cut':'Ethan_Naginata_Power_Cut'):hero.motionOverrides[(hero.motionPrefix||'')+(kind==='light'?'Cut_Diagonal':'Heavy_Cleave')],record=motions[name];
  assert.ok(record.nativeSourceMotion&&record.nativeAttachment&&record.fixedGripFrame&&record.pairedGrip);
  // The wider polearm grip has separately reviewed rotation bounds.
  // Hinge tolerance covers quaternion interpolation, not a reverse elbow.

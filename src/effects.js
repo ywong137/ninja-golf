@@ -1,3 +1,4 @@
+import {EmberClouds} from './ember-clouds.js';
 import {MusouAura} from './musou-aura.js';
 import {ContactBursts} from './contact-bursts.js';
 import {ImpactParticles} from './impact-particles.js';
@@ -31,7 +32,7 @@ export function telegraphGeometry(position,yaw,reach,type,groundHeight){
 }
 export class Effects {
   constructor(scene,groundHeight){
-    this.groundHeight=groundHeight;this.musouAura=new MusouAura(scene);this.impacts=new ImpactParticles(scene);this.contacts=new ContactBursts(scene);
+    this.groundHeight=groundHeight;this.clouds=new EmberClouds(scene);this.musouAura=new MusouAura(scene);this.impacts=new ImpactParticles(scene);this.contacts=new ContactBursts(scene);
     this.scene=scene;this.items=[];this.ringPools=new Map();this.ribbonTracks=new Map();this.ribbonSamples=[];this.elapsed=0;this.capacity=4096;this.cursor=0;this.particles=Array.from({length:this.capacity},()=>({life:0,v:new THREE.Vector3()}));
     this.positions=new Float32Array(this.capacity*3);this.colors=new Float32Array(this.capacity*3);this.sizes=new Float32Array(this.capacity);
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(this.positions,3).setUsage(THREE.DynamicDrawUsage));geometry.setAttribute('color',new THREE.BufferAttribute(this.colors,3));geometry.setAttribute('size',new THREE.BufferAttribute(this.sizes,1).setUsage(THREE.DynamicDrawUsage));
@@ -57,9 +58,10 @@ export class Effects {
   }
   particle(position,velocity,life,size,kind){const i=this.cursor++%this.capacity,p=this.particles[i];p.life=p.max=life;p.size=size;p.v.copy(velocity);position.toArray(this.positions,i*3);this.palette[kind].toArray(this.colors,i*3);this.points.geometry.attributes.color.needsUpdate=true;}
   burst(position,count=12,power=4,kind=0){for(let i=0;i<count;i++)this.particle(position,new THREE.Vector3((Math.random()-.5)*power,Math.random()*power*.8,(Math.random()-.5)*power),.35+Math.random()*.55,.07+Math.random()*.16,kind);}
-  hit(position,direction,options={}){this.impacts.emit(position,direction,options);this.contacts.emit(position,options);}
+  hit(position,direction,options={}){this.impacts.emit(position,direction,options);this.contacts.emit(position,options);if(options.heavy||options.special)this.clouds.explosion(position,options.special?1.4:.8);}
   explosion(position,scale=1,{debris=true}={}){
     const center=position.clone().add(new THREE.Vector3(0,.8,0));
+    this.clouds.explosion(center,scale);
     if(debris)this.impacts.emit(center,new THREE.Vector3(0,1,0),{heavy:scale>.5,special:scale>1,guarded:true});
     // Crowd-wide finishes reuse the same instanced draw as ordinary contacts.
     this.contacts.emit(center,{heavy:true,special:true,radius:2*scale,duration:.32});
@@ -73,6 +75,7 @@ export class Effects {
     if(final){this.explosion(position,2);for(let i=0;i<8;i++){const angle=i*Math.PI/4;this.explosion(position.clone().add(new THREE.Vector3(Math.sin(angle)*5,0,Math.cos(angle)*5)),.85);}}
   }
   trail(a,b,kind=0,token=0,channel=0){
+    if(kind===2)this.clouds.trail(b,token,channel);
     if(token!==this.trailToken){this.ribbonTracks.clear();this.trailToken=token;}
     let samples=this.ribbonTracks.get(channel)||[];const previous=samples.at(-1);if(previous&&(this.elapsed-previous.time>.09||previous.b.distanceTo(b)>7))samples=[];
     samples.push({a:a.clone().lerp(b,kind===2?.28:.84),b:b.clone(),kind,time:this.elapsed});if(samples.length>120)samples.shift();this.ribbonTracks.set(channel,samples);
@@ -92,10 +95,10 @@ export class Effects {
   }
   setMusou(position,active,reducedMotion=false){this.musouAura.set(position,active,reducedMotion);}
   update(dt,calm=false){
-    this.musouAura.update(dt,calm);
+    this.musouAura.update(dt,calm);this.clouds.update(dt,calm);
     this.impacts.update(dt,calm);this.contacts.update(dt,calm);this.scene.userData.contactFlash=this.contacts.active>0;this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<(s.kind===2?.42:.18)&&!calm));
     const rg=this.ribbon.geometry;let n=0;for(const samples of this.ribbonTracks.values())for(let i=1;i<samples.length;i++){const a=samples[i-1],b=samples[i];for(const [sample,point] of [[a,a.a],[a,a.b],[b,b.b],[a,a.a],[b,b.b],[b,b.a]]){point.toArray(rg.attributes.position.array,n*3);this.palette[sample.kind].toArray(rg.attributes.color.array,n*3);rg.attributes.alpha.array[n++]=Math.max(0,1-(this.elapsed-sample.time)/(sample.kind===2?.42:.18))*(sample.kind===2?.82:.24)*(point===sample.a?0:1);}}
     rg.setDrawRange(0,n);Object.values(rg.attributes).forEach(a=>a.needsUpdate=true);
     for(let i=0;i<this.capacity;i++){const p=this.particles[i];if(p.life<=0)continue;p.life-=dt*(calm?3:1);p.v.y-=6*dt;const j=i*3;this.positions[j]+=p.v.x*dt;this.positions[j+1]+=p.v.y*dt;this.positions[j+2]+=p.v.z*dt;this.sizes[i]=Math.max(0,p.life/p.max)*p.size;}this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.size.needsUpdate=true;for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt*(calm?3:1);if(p.life<=0){this.releaseItem(p);this.items.splice(i,1);}else{p.m.material.opacity=p.telegraph?.12+(1-p.life/p.max)*.18:p.life/p.max*(p.peak||.32);if(p.flash){p.m.material.uniforms.opacity.value=p.m.material.opacity;p.m.material.uniforms.age.value=1-p.life/p.max;}if(p.shockwave)p.m.scale.setScalar(.8+(p.shockwave-.8)*(1-p.life/p.max));else if(!p.telegraph)p.m.scale.multiplyScalar(1+dt*(p.growth||3));}}}
-  clear(){this.musouAura.clear();this.impacts.clear();this.contacts.clear();this.scene.userData.contactFlash=false;for(const p of this.items)this.releaseItem(p);this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
+  clear(){this.clouds.clear();this.musouAura.clear();this.impacts.clear();this.contacts.clear();this.scene.userData.contactFlash=false;for(const p of this.items)this.releaseItem(p);this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
 }

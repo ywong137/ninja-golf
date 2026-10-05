@@ -5,14 +5,24 @@ import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {parseGlb} from '../tools/bake-native-golf.mjs';
 const reports=JSON.parse(fs.readFileSync(new URL('../docs/reviews/selected-wardrobe-preservation.json',import.meta.url)));
+const releaseRevisions=JSON.parse(fs.readFileSync(new URL('../docs/reviews/release-polish-models.json',import.meta.url)));
 const hash=x=>createHash('sha256').update(x).digest('hex');
 for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfit preserves the face, rig and motion data`,()=>{
  const raw=fs.readFileSync(new URL('../public/models/'+model+'.glb',import.meta.url)),{doc,bin}=parseGlb(raw);
+ const revision=releaseRevisions[model];let historicalSha=hash(raw);const currentMeshes=doc.meshes;
+ if(revision){
+  assert.equal(hash(raw),revision.outputSha256);assert.equal(hash(bin.subarray(0,revision.baseBinaryBytes)),revision.baseBinarySha256);
+  assert.equal(hash(JSON.stringify(doc.meshes)),revision.currentMeshesSha256);
+  for(const key of ['nodes','skins'])assert.equal(hash(JSON.stringify(doc[key])),revision[key+'Sha256']);
+  assert.deepEqual(doc.animations.filter(a=>revision.addedClips.includes(a.name)).map(a=>a.name),revision.addedClips);
+  doc.animations=doc.animations.filter(a=>!revision.addedClips.includes(a.name)).map(a=>revision.replacedAnimations.find(r=>r.name===a.name)??a);
+  doc.meshes=structuredClone(revision.previousMeshes);historicalSha=revision.sourceSha256;
+ }
  const revisions=saved.animationRevisions??[],appendedClips=revisions.flatMap(r=>r.addedClips);
  let preceding=saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256;
  for(const revision of revisions){assert.equal(revision.sourceSha256,preceding);assert.equal(hash(bin.subarray(0,revision.baseBinaryBytes)),revision.baseBinarySha256,'Preserve every preceding binary byte');assert.deepEqual(doc.animations.slice(revision.preservedAnimations,revision.preservedAnimations+revision.addedClips.length).map(a=>a.name),revision.addedClips);preceding=revision.outputSha256;}
  if(saved.expressionRevision){const f=saved.expressionRevision;assert.equal(f.sourceSha256,preceding);assert.equal(hash(bin.subarray(0,f.baseBinaryBytes)),f.baseBinarySha256,'Expression edits preserve all existing binary data');}
- assert.equal(hash(raw),saved.expressionRevision?.outputSha256??revisions.at(-1)?.outputSha256??saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
+ assert.equal(historicalSha,saved.expressionRevision?.outputSha256??revisions.at(-1)?.outputSha256??saved.facialRevision?.outputSha256??saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);assert.equal(hash(bin.subarray(0,saved.originalTargetBinaryBytes)),saved.originalTargetBinarySha256);
  if(saved.facialRevision){const f=saved.facialRevision;assert.equal(hash(bin.subarray(0,f.baseBinaryBytes)),f.baseBinarySha256,'Every original binary byte must remain unchanged');assert.equal(f.sourceSha256,saved.motionAppend?.outputSha256??saved.garmentRevision?.outputSha256??saved.motionExtension?.outputSha256??saved.outputSha256);withoutMusouTarget({doc});}
  for(const key of ['animations','nodes','skins'])assert.equal(hash(JSON.stringify(key==='animations'?doc.animations.slice(0,saved.preservedAnimations):doc[key])),saved.originalRigHashes[key],key);
  if(saved.motionExtension){
@@ -31,7 +41,7 @@ for(const [model,saved]of Object.entries(reports))test(`${model}: selected outfi
   assert.equal(hash(JSON.stringify(doc.animations.slice(0,ext.baseAnimations))),ext.baseAnimationsSha256);
   assert.deepEqual(doc.animations.slice(ext.baseAnimations).map(a=>a.name),[...ext.addedClips,...appendedClips]);
  }
- const joints=doc.skins[0].joints.length;
+ doc.meshes=currentMeshes;const joints=doc.skins[0].joints.length;
  for(const p of doc.meshes[0].primitives){
   const wa=doc.accessors[p.attributes.WEIGHTS_0],ja=doc.accessors[p.attributes.JOINTS_0],wv=doc.bufferViews[wa.bufferView],jv=doc.bufferViews[ja.bufferView],js=ja.componentType===5121?1:2,jr=js===1?'readUInt8':'readUInt16LE';
   for(let i=0;i<wa.count;i++){let total=0;for(let k=0;k<4;k++){const w=bin.readFloatLE((wv.byteOffset||0)+(wa.byteOffset||0)+i*(wv.byteStride||16)+k*4),j=bin[jr]((jv.byteOffset||0)+(ja.byteOffset||0)+i*(jv.byteStride||js*4)+k*js);assert.ok(Number.isFinite(w)&&w>=0&&j<joints);total+=w;}assert.ok(Math.abs(total-1)<.001,'Normalize garment skin weights.');}

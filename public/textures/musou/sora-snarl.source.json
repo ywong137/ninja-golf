@@ -1,8 +1,8 @@
 {
   "file": "sora-snarl.webp",
-  "sha256": "91ebcfed918966087938256f9fb40302539a9acf0bf5ea993fc14f8b5318c656",
-  "source": "Image-generated expression variant of the licensed Rocketbox Female Adult 12 color atlas.",
+  "sha256": "0dc98717c97077c1f76d4390dc55280c0fecb59be687d49c0e67b58d854c0ef6",
+  "source": "Image-generated angry albedo from the approved October 5 character identity and its neutral UV atlas.",
   "baseLicense": "MIT; see public/models/LICENSE.txt",
-  "use": "The Closer native 3D face during musou; neutral color texture and geometry remain unchanged.",
+  "use": "Same-identity face texture blended on the live 3D head during musou.",
   "review": "Opus 5.5 High visual review of front and quarter views. Complete texture plus seven-degree cinematic chin pose."
 }

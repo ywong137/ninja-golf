@@ -14,8 +14,8 @@ Source identities and build details: docs/rocketbox-roster.md.
 Enemy wardrobe sources and artwork: assets/enemies/SOURCES.md.
 
 The Vice President adapts the native head geometry and texture to Ethan Cary's
-authorized likeness, with original glasses. The Closer uses an edited forehead
-texture and fringe geometry. These adaptations retain the licensed source rigs.
+authorized likeness, with original glasses. The Ronin and Closer use approved original character identities,
+with new face textures, edited head geometry, and short hairstyles. These adaptations retain the licensed source rigs.
 
 Original locomotion and reference skeleton: Quaternius
 CC0 1.0 Universal Public Domain Dedication
@@ -174,3 +174,9 @@ It retains the project's existing neutral geometry, textures, and animation.
 Shinobi_Airborne_Cut, derived from Adobe Mixamo Sword And Shield Power Slash.
 The standalone source stays private. The existing character geometry and
 native musou face target remain unchanged.
+
+The Vice President also includes two adapted performances from Game Dev Hero
+Spear Combat Animation V1, purchased by the project owner. These clips are not
+MIT or CC0. The asset license covers game use but excludes standalone animation
+redistribution. Keep the source pack and this review build private.
+https://itch.io/blog/1578239/animation-asset-license
