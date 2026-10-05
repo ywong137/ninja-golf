@@ -59,3 +59,9 @@ It covers C, speed, pause, resume, direct phase selection, exact seeks, frame st
 The six-rig shoulder browser test also passes through repeated swings and idle/death transitions.
 The production build succeeds as `index-8u1QRuX6.js`.
 The bundler retains its existing large-chunk warning.
+
+The muted production browser check passes eighteen selected poses across all six characters.
+The revised Ace model loads with its new version stamp.
+A real golf shot followed by a mouse-triggered heavy attack confirms the Shinobi's captured clip and matching selection duration.
+The production run reports no browser errors.
+The test waits for deferred menu callbacks and the combat input context before sending its next action.
