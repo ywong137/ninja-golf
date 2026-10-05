@@ -1,5 +1,5 @@
 """Blender: reduce CC0 scanned nature to bounded browser LODs without replacing its materials."""
-import bpy,sys,json,random,bmesh,collections
+import bpy,sys,json,bmesh,runpy
 from pathlib import Path
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1];SOURCE=Path('/private/tmp/ninja-nature-sources');OUT=ROOT/'public/models/nature';OUT.mkdir(parents=True,exist_ok=True)
@@ -33,23 +33,9 @@ for asset in sys.argv[sys.argv.index('--')+1:] or SPECS:
   if asset=='island_tree_01':
    material=o.data.materials[0].name
    if 'leaves' in material:
-    # Thin whole leaves evenly. Collapsing a whole crown destroys small leaves first.
-    parents=list(range(len(o.data.vertices)))
-    def find(i):
-     while parents[i]!=i:parents[i]=parents[parents[i]];i=parents[i]
-     return i
-    for e in o.data.edges:
-     a,b=map(find,e.vertices);parents[b]=a
-    groups=collections.defaultdict(list)
-    for v in o.data.vertices:groups[find(v.index)].append(v.index)
-    rng=random.Random(827);remove=[]
-    for ids in groups.values():
-     if rng.random()>.27:remove.extend(ids)
-     else:
-      middle=sum((o.data.vertices[i].co for i in ids),Vector())/len(ids)
-      for i in ids:o.data.vertices[i].co=middle+(o.data.vertices[i].co-middle)*1.55
-    bm=bmesh.new();bm.from_mesh(o.data);bm.verts.ensure_lookup_table();bmesh.ops.delete(bm,geom=[bm.verts[i] for i in remove],context='VERTS');bm.to_mesh(o.data);bm.free()
-    target=58000;count=len(o.data.polygons)
+    # Keep the source leaves here. The UV-based rebuild below simplifies each
+    # leaf independently, so no reduction step can remove a whole leaf.
+    target=count
    elif 'branches' in material:target=30000
    else:target=10500
   dec=o.modifiers.new('Browser triangle budget','DECIMATE');dec.ratio=min(1,target/count);dec.use_collapse_triangulate=True;bpy.ops.object.modifier_apply(modifier=dec.name)
@@ -61,8 +47,14 @@ for asset in sys.argv[sys.argv.index('--')+1:] or SPECS:
     node.inputs['Metallic'].default_value=0;node.inputs['Roughness'].default_value=.86
     node.inputs['Specular IOR Level'].default_value=.25
   low=o.copy();low.data=o.data.copy();bpy.context.collection.objects.link(low);low.name=f'LOD1_{n}';bpy.context.view_layer.objects.active=low;mod=low.modifiers.new('Distant geometry','DECIMATE');lowtarget=max(100,int(lowbudget*count/total));
-  if asset=='island_tree_01':lowtarget=8500 if 'leaves' in material else 4000 if 'branches' in material else 1800
+  if asset=='island_tree_01':lowtarget=len(low.data.polygons) if 'leaves' in material else 4000 if 'branches' in material else 1800
   mod.ratio=min(1,lowtarget/len(low.data.polygons));mod.use_collapse_triangulate=True;bpy.ops.object.modifier_apply(modifier=mod.name)
  bpy.ops.export_scene.gltf(filepath=str(OUT/(name+'.glb')),export_format='GLB',export_animations=False,export_yup=True,export_image_format='AUTO')
+ if asset=='island_tree_01':
+  saved_args=sys.argv[:]
+  try:
+   sys.argv=['rebuild-broadleaf.py','--source',str(SOURCE/asset/(asset+'.gltf')),'--model',str(OUT/(name+'.glb')),'--output',str(OUT/(name+'.glb')),'--report',str(OUT/(name+'-build.json'))]
+   runpy.run_path(str(ROOT/'tools/rebuild-broadleaf.py'),run_name='__main__')
+  finally:sys.argv=saved_args
  print('NATURE',name,'height',height,'triangles',[(o.name,len(o.data.polygons)) for o in bpy.context.scene.objects if o.type=='MESH'],flush=True)
 (OUT/'SOURCES.json').write_text(json.dumps([entry for entry in json.loads((SOURCE/'SOURCES.json').read_text()) if entry['asset'] in SPECS],indent=2)+'\n')

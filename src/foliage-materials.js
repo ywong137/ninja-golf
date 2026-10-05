@@ -79,3 +79,8 @@ export function canopyShadowMaterial(map,night=false,detail=TREE_DETAIL){
  // Real tree geometry now casts into both cascades, including during a flyover.
  return new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{map:{value:map},natureEye:foliageEye,opacity:{value:night?.24:.40}},vertexShader:`uniform vec3 natureEye;attribute vec3 treeAnchor;varying vec2 vUv;varying float strength;void main(){vUv=uv;float d=length(vec3(treeAnchor.x-natureEye.x,max(0.,natureEye.y-treeAnchor.y-5.),treeAnchor.z-natureEye.z));strength=smoothstep(${detail.farStart.toFixed(1)},${detail.farEnd.toFixed(1)},d);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D map;uniform float opacity;varying vec2 vUv;varying float strength;void main(){vec2 pixel=vec2(1./2048.,1./1024.);float a=texture2D(map,vUv).a*.4;for(int i=0;i<4;i++){vec2 d=vec2(i<2?-1.:1.,i==0||i==2?-1.:1.);a+=texture2D(map,vUv+pixel*d*1.2).a*.15;}a*=opacity*strength;if(a<.005)discard;gl_FragColor=vec4(.015,.021,.009,a);}`});
 }
+
+// Preserve fine leaf coverage in minified views and use the same threshold when baking.
+export function foliageAlphaCutoff(name){
+ return ['forest-canopy','pine-open','pine-young','fir-layered'].includes(name)?.18:.45;
+}

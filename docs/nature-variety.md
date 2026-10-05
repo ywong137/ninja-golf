@@ -69,3 +69,6 @@ Each case used 64 enemies, Balanced settings, and a 1440 × 900 viewport.
 See [production quality](production-quality.md) for the full measurement limits.
 
 See [leaf opacity repair](reviews/leaf-opacity.md) before rebuilding the scrub asset. Its source opacity mask must survive export.
+
+
+See [complete broadleaf canopy](reviews/broadleaf-canopy-2026-10-05.md) for the restored source leaves and current broadleaf build procedure.

@@ -8,21 +8,22 @@ import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './
 import {bridgeDistance} from './course-layout.js';
 import {bunkerDistance} from './bunkers.js';
 import views from './nature-views.json' with {type:'json'};
-import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission,leafShadowCutoff} from './foliage-materials.js';
+import {TREE_DETAIL,foliageAlphaCutoff,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission,leafShadowCutoff} from './foliage-materials.js';
 import {sceneryRockBounds,fitSceneryRock,sceneryRockObstacle} from './scenery-rocks.js';
 import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.js';
 export {queueSceneryRock} from './scenery-rocks.js';
 const ATLAS_REVISION='leaf-opacity-2';
+const BROADLEAF_REVISION='complete-canopy-1';
 const OPACITY_REPAIRED=new Set(['forest-canopy','understory','fern','woody-scrub']);
 const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
 const natureCache=createAssetCache(async name=>{
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),textures=new THREE.TextureLoader();
   const conifer=['pine-open','pine-young','fir-layered'].includes(name);
-  const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
-  // The source needle alpha has soft coverage. A 0.45 cutoff erased it in
+  const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${name==='forest-canopy'?'?v='+BROADLEAF_REVISION:OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
+  // The source foliage alpha has soft coverage. A 0.45 cutoff erased it in
   // minified views. The custom shadow material below shares this same cutoff.
-  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=conifer?.18:.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
-  let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${kind==='shadow'&&name!=='forest-canopy'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
+  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=foliageAlphaCutoff(name);material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
+  let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${name==='forest-canopy'?BROADLEAF_REVISION:kind==='shadow'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
   assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
 });
 export async function loadNature(theme){await Promise.all(natureAssetsForTheme(theme).map(name=>natureCache.load(name)));}
