@@ -88,3 +88,27 @@ test('the Closer merged tunic receives collision correction through her attacks 
  }
  assert.ok(corrected>0);assert.ok(examined>100000);cloth.dispose();
 });
+
+
+test('Ethan free hems fall during a run while the waist keeps its existing correction',async()=>{
+ const g=await loadNativeSkin(new URL('../public/models/monk.glb',import.meta.url),{materialNames:true}),bones={};
+ g.scene.traverse(b=>{if(b.isBone)bones[b.name]=b;});
+ const cloth=new GarmentCollision(g.scene,bones),clip=g.animations.find(c=>c.name==='Run_Forward');
+ const action=g.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
+ let greatestDrop=0,waistSamples=0,freeSamples=0;
+ for(let i=0;i<=24;i++){
+  action.time=clip.duration*i/24;g.mixer.update(0);cloth.update();
+  for(const {mesh,entries}of cloth.plans)for(const entry of entries){
+   const original=mesh.getVertexPosition(entry.id,new T.Vector3()),rendered=original.clone().add(new T.Vector3().fromBufferAttribute(mesh.geometry.attributes.garmentOffset,entry.id)).applyMatrix4(mesh.matrixWorld);
+   const native=original.applyMatrix4(mesh.matrixWorld),projected=native.clone(),proxy=cloth.proxies[entry.side==='r'?0:1],outward=entry.outward.clone().applyQuaternion(proxy.q);
+   projectGarmentPoint(projected,proxy.a,proxy.b,proxy.r0,proxy.r1,outward,entry.clearance*cloth.baseScale);projected.lerp(native,1-entry.weight);
+   if(entry.drop===0){assert.ok(rendered.distanceTo(projected)<1e-5,'Drape must not move the waist');waistSamples++;}
+   if(entry.weight>.9999){
+    greatestDrop=Math.max(greatestDrop,projected.y-rendered.y);freeSamples++;
+    const remaining=projectGarmentPoint(rendered.clone(),proxy.a,proxy.b,proxy.r0,proxy.r1,outward,entry.clearance*cloth.baseScale);
+    assert.ok(remaining<1e-4,'Gravity must not pull the hem through the thigh');
+   }
+  }
+ }
+ assert.ok(waistSamples>100);assert.ok(freeSamples>1000);assert.ok(greatestDrop>.03,'The unsupported hem still follows the lifted thigh rigidly');cloth.dispose();
+});

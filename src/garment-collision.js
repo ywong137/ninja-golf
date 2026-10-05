@@ -59,7 +59,7 @@ export class GarmentCollision{
     const radial=point.clone().sub(a).addScaledVector(axis,-t);
     if(radial.length()<.025*this.baseScale)continue;
     radial.normalize().applyQuaternion(bone.getWorldQuaternion(new T.Quaternion()).invert());
-    entries.push({id:v,side,outward:radial,clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?clearance+.006:clearance,weight:T.MathUtils.smoothstep(hipHeight+.08*this.baseScale-point.y,0,.12*this.baseScale)});
+    entries.push({id:v,side,outward:radial,drop:Math.max(0,hipHeight-point.y),clearance:/lining/i.test(mesh.material.name)?.010:/piping/i.test(mesh.material.name)?clearance+.006:clearance,weight:T.MathUtils.smoothstep(hipHeight+.08*this.baseScale-point.y,0,.12*this.baseScale)});
    }
    if(entries.length)candidates.push({mesh,entries,ids:new Set(entries.map(e=>e.id))});
   });
@@ -96,6 +96,10 @@ export class GarmentCollision{
    mesh.skeleton.update();inverse.copy(mesh.matrixWorld).invert();const offset=mesh.geometry.attributes.garmentOffset;
    for(const entry of entries){
     mesh.getVertexPosition(entry.id,point).applyMatrix4(mesh.matrixWorld);const original=originalPoint.copy(point),proxy=this.proxies[entry.side==='r'?0:1];
+    // A raised leg supports only the cloth above it. Let the free hem fall
+    // toward gravity before the existing outward collision constraint.
+    const lift=T.MathUtils.smoothstep(axis.subVectors(proxy.b,proxy.a).normalize().y,-.8,.1);
+    point.y-=entry.drop*.65*scale*lift;
     const outward=outwardPoint.copy(entry.outward).applyQuaternion(proxy.q);
     const shift=projectGarmentPoint(point,proxy.a,proxy.b,proxy.r0*scale,proxy.r1*scale,outward,entry.clearance*this.baseScale*scale);
     point.lerp(original,1-entry.weight);const changed=point.distanceTo(original);this.report.maximumOffset=Math.max(this.report.maximumOffset,changed);
