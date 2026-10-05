@@ -13,3 +13,12 @@ Validation:
 - The original FBX export retains meter-scale positions during animation playback.
 
 These changes affect offline authoring tools. They do not replace any playable animation. The purchased motion studies remain private and still need weapon-clearance and gameplay review.
+
+
+## Sliding polearm grips
+
+Captured polearm motions can change the distance between the hands. Records can now set `slidingGrip: true` with `pairedGrip`. The signed `gripSpacing` gives the shaft direction. The displayed palm positions give the actual distance after interpolation and pose blending. The attachment preserves those positions and the authored arms.
+
+Sliding grips cannot also use `fixedGripFrame`. They do not qualify for a transition that assumes two fixed grip stations. Existing golf and fixed sword attachments retain their behavior.
+
+Validation: 21 focused grip, attachment, and weapon-frame tests pass. A private purchased-motion trial passes nine combat cases across 40, 60, and 144 Hz. Normal keyboard and mouse play also passes. The source motion remains outside the repository. No playable animation changes in this commit.

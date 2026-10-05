@@ -5,7 +5,7 @@ const Y=new Vector3(0,1,0);
 const position=bone=>bone.getWorldPosition(new Vector3());
 const rotation=bone=>bone.getWorldQuaternion(new Quaternion());
 export function compatibleNativePair(from,to,defaultStation){
- const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing!==0;
+ const paired=clip=>clip?.nativeAttachment&&clip.pairedGrip&&clip.twoHanded&&!clip.slidingGrip&&Number.isFinite(clip.gripSpacing)&&clip.gripSpacing!==0;
  if(!paired(from)||!paired(to))return false;
  const start=from.primaryGrip??defaultStation,end=to.primaryGrip??defaultStation;
  return Number.isFinite(start)&&Number.isFinite(end)&&Math.abs(start-end)<1e-8&&Math.abs(from.gripSpacing-to.gripSpacing)<1e-8;
@@ -146,16 +146,20 @@ export class HandGrip {
   held.quaternion.copy(rotation(root).invert().multiply(world));held.scale.setScalar(1);
   held.updateWorldMatrix(true,true);
  }
- attachPair(held,station,spacing,{preservePrimaryFrame=false}={}){
+ attachPair(held,station,spacing,{preservePrimaryFrame=false,slidingGrip=false}={}){
   if(!Number.isFinite(station)||!Number.isFinite(spacing)||spacing===0)throw Error('A paired grip needs a finite primary station and nonzero signed spacing.');
   const {root,bones}=this.actor,scale=root.getWorldScale(new Vector3()).x;
   const palms=['r','l'].map(side=>bones['hand_'+side].localToWorld(this.active[side].center.clone()));
+  if(slidingGrip&&preservePrimaryFrame)throw Error('A sliding grip cannot preserve a fixed primary frame.');
+  // Captured hands can slide along a polearm. Sample their displayed positions,
+  // including interpolation and pose blends, instead of resampling a distance.
+  if(slidingGrip)spacing=Math.sign(spacing)*palms[0].distanceTo(palms[1])/scale;
   // Complete grip frames fix the blade or club to the primary palm. Tiny
   // interpolation errors in the support hand must not steer the held object.
   if(preservePrimaryFrame){
    this.attach(held,'r',station);
    const target=held.localToWorld(new Vector3(0,station-spacing,0));
-   this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,preservePrimaryFrame:true,palmGap:palms[1].distanceTo(target)};
+   this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,preservePrimaryFrame:true,spacing,palmGap:palms[1].distanceTo(target)};
    return;
   }
   const axis=palms[0].clone().sub(palms[1]);
@@ -171,7 +175,7 @@ export class HandGrip {
   held.position.copy(root.worldToLocal(center.addScaledVector(axis,-(station-spacing*.5)*scale)));
   held.quaternion.copy(rotation(root).invert().multiply(world));held.scale.setScalar(1);
   held.updateWorldMatrix(true,true);
-  this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,palmGap:Math.abs(palms[0].distanceTo(palms[1])-Math.abs(spacing)*scale)*.5};
+  this.report={secondaryWeight:this.secondaryWeight,pairedGrip:true,spacing,palmGap:Math.abs(palms[0].distanceTo(palms[1])-Math.abs(spacing)*scale)*.5};
  }
  solveSecondary(held,spacing,weight=this.weight){
   const {actor}=this,{bones,root}=actor,scale=root.getWorldScale(new Vector3()).x;
@@ -250,7 +254,7 @@ export class HandGrip {
   if(actor.offhand&&!golf){this.orient('l',motion?.offGrip,motion?.offTip,false,!!clip?.nativeAttachment);this.attach(actor.offhand,'l',actor.offhand.userData.primaryGrip);}
   // A native paired clip authors the support-hand approach. Do not bend its
   // elbow with legacy IK while that hand is still released from the weapon.
-  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(closingSourcePair||!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf||clip.fixedGripFrame===true});}
+  else if(clip?.pairedGrip&&secondaryWeight>.999&&!carryActive&&(closingSourcePair||!actor.heldBlend||actor.mixer.time>=actor.heldBlend.start+actor.heldBlend.duration||actor.heldBlend.preservePair)){this.attachPair(held,station,spacing,{preservePrimaryFrame:golf||clip.fixedGripFrame===true,slidingGrip:!golf&&clip.slidingGrip===true});}
   else if(secondaryWeight>0&&!(clip?.nativeAttachment&&clip?.pairedGrip&&(carryActive||golf))){this.solveSecondary(held,spacing,secondaryWeight);this.attach(held,'r',station);}
   if(golf){
    const length=actor.golfClubFit?.shaftLengthNative??(motion?.grip&&motion?.tip?Math.hypot(...motion.tip.map((v,i)=>v-motion.grip[i])):1.12);
