@@ -3,6 +3,14 @@
 ## Current readiness — October 4, 2026
 
 The game remains a playable alpha. It does not yet meet the requested AAA presentation or animation standard.
+The user now accepts ordinary combat controls and the musou introduction. Preserve these during release preparation.
+
+The latest release candidate adds solid scanned rocks and camera clearance beside obstacles.
+Musou retains red fire, aura, and blade trails throughout its attack sequence.
+All 36 tees and greens remain clear. Four-course movement, dodge, and camera checks pass.
+The exact production build also passes normal keyboard and gamepad checks.
+See [the rock and aura review](reviews/rock-collision-musou-aura-2026-10-04.md) for the measured scope.
+
 All six approved outfit defaults are live. The concept references remain archived for future unlockable outfits.
 
 Every hero has complete source performances for the opening light and heavy attacks.
@@ -38,7 +46,7 @@ See [the forest and Neo-Tokyo review](reviews/forest-needle-coverage.md) for evi
 
 Remaining acceptance work includes:
 
-- Replace weak later attack branches and musou sequences with complete body performances.
+- Review weaker later attack branches while preserving the accepted controls and captured musou performances.
 - Refine the outfits toward the approved concept silhouettes and materials.
 - Expand normal-input hazard coverage and repeat full rounds after major gameplay changes.
 - Improve environment materials and lighting toward the requested realistic appearance.

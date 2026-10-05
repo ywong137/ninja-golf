@@ -4,6 +4,8 @@ A peaceful round. An unreasonable number of ninjas.
 
 Ninja Golf is a browser game built with Three.js. Choose one of six warriors and four original nine-hole courses, then fight your way to each shot.
 
+[Play Ninja Golf in your browser](https://ywong137.github.io/ninja-golf/). Use a desktop browser with a keyboard and mouse, or a standard gamepad.
+
 ## Run locally
 
 Requires Node.js 22.12 or newer.
@@ -43,7 +45,7 @@ The production build lives in `dist/`. All game assets and music ship with the b
 | Sprint | Hold Shift | Hold left-stick click |
 | Dodge | Space | B |
 | Directional guard / timed parry | Hold / press V | Hold / press LB |
-| Face the ball waypoint | Q | — |
+| Face the ball waypoint | Q | Right-stick click |
 | Address the ball | E, near the ball with no nearby enemies | A |
 | Pause | Escape | Start |
 
@@ -55,7 +57,15 @@ Putting grids show slope, with moving dots pointing downhill. Shot results repor
 
 Choose low, normal, or high flight. Low shots sacrifice carry for a flatter flight and more run. High shots sacrifice some carry for a steeper landing and more wind exposure. The carry readout and landing preview follow this choice. Height controls reset the power meter and lock once the swing starts. Putting uses normal height, and each new shot starts at normal height.
 
-After a long shot, walk to the ball and fight the attackers. Movement follows the camera. The warrior faces the movement direction. Attacks hold that facing through the strike. Q turns the camera toward the ball without moving you. The combat radar shows nearby enemies and the ball waypoint. Attacks hit several enemies. Defeats build Resolve and restore a little health. Chain fast attacks, then add a heavy attack for different finishers. Musou starts with a screen slash and a 2.85-second face close-up. A six-cut sequence then launches enemies through sparks and shock waves. Hold the focused stance to move independently of facing. Enemies flank and intercept. Three melee attackers and one ranged attacker can commit at once. Grunts often hold a ready stance before attacking. Enemy damage is half the previous release. Ground warnings show committed attacks. Heavy cuts break enemy guards, and a well-timed dodge earns Resolve. Hold V or LB to guard toward the camera. Guard blocks frontal hits but leaves your rear exposed. A timed guard press parries, staggers the attacker, and earns 10 Resolve. Release guard to recover strength faster. A broken guard needs time to recover; dodge to escape immediately, or buffer an attack through its 220 ms recovery. Attacks exit guard immediately. Blade ribbons, sparks, and brief impact pauses reinforce contact. They emerge from lanterns, pagodas, rocks, trees, sand, and water.
+After a long shot, walk to the ball and fight the attackers. Movement follows the camera. Hold the focused stance to strafe or backpedal while facing another direction. Q or right-stick click turns the camera toward the ball. The combat radar shows enemies and the next ball waypoint.
+
+Fast attacks build a combo. Heavy attacks add finishers and break enemy guards. Movement can cancel an attack during preparation or recovery. The strike itself has a brief commitment window. Dodge cancels immediately. Defeats build Resolve and restore some health.
+
+With full Resolve, Musou immediately interrupts the current action. Two dramatic wipes and a camera orbit introduce a longer captured attack sequence. Red fire, aura, and blade trails remain visible between strikes. The finish launches enemies through sparks and impact bursts.
+
+Hold V or LB to guard toward the camera. A timed guard press parries, staggers the attacker, and earns Resolve. Guard leaves your rear exposed. Release it to recover strength. Dodge can escape a broken guard.
+
+Ninjas emerge from lanterns, pagodas, rocks, trees, sand, and water. They flank and intercept, while many grunts wait before attacking. Ground warnings show committed attacks. Rocks and buildings block movement, so run around them.
 
 Water and out-of-bounds shots return to the previous lie and add one penalty stroke. Defeat revives the warrior and adds one penalty stroke. Short shots and putts do not start a new battle.
 
@@ -75,22 +85,22 @@ Choose a warrior, then select a course from four scenic in-game previews. The ti
 All 36 holes use individually authored routes. Doglegs, split fairways, landing islands, switchbacks, and island greens change the shot strategy. Dry bridges connect routes across water. Both maps show the same fairways, islands, and bridges as the terrain. Displayed hole yardage follows the planned route; distance to the pin stays direct. [Course design notes](docs/course-design.md) describe the layouts and official references.
 
 The Ronin favors power, the Shinobi favors speed and accuracy, and The Vice President favors health and reach. The Vice President uses an adapted likeness of Ethan Cary.
-The Ace carries a straight jian, The Hustler carries a curved dao, and The Closer carries a short wakizashi. Each has a separate stance, four fast attacks, four heavy finishers, and a Musou sequence. Selection alternates men and women while preserving saved character IDs. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
-Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms. Hooded runners, T-shirt regulars, and cloth ninjas each have four fixed palettes. Their appearance is separate from the four combat roles.
+The Ace carries a straight jian, The Hustler carries a curved dao, and The Closer carries a short wakizashi. Each has a separate stance, fast attacks, heavy finishers, and a Musou sequence. Selection alternates men and women while preserving saved character IDs. [SW4/5 roster research](docs/warrior-roster-reference.md) records the art and character references.
+Each warrior has a distinct face, hair, costume, and body shape. Enemies use smaller conventional blades and polearms. Enemies wear traditional ninja clothing in dark grey, black, and blue. Understated trim varies by course. Their appearance is separate from their four combat roles.
 
 The character selection screen cycles through address, a full golf swing, combat ready, a light attack, and a heavy attack. Press **C** to open animation controls. Speed ranges from **0.1× to 1.0×**. **Pause / Go** freezes or resumes the character. Changing characters retains these settings.
 
 ## Graphics and scope
 
-This release uses licensed Microsoft Rocketbox humans with their original anatomy, skinning, faces, hair, clothing, and textures. Each character has adapted golf, movement, combat, guard, and death animations. Golf swings use a baked two-hand animation. The ball launches at the swing contact time.
+This release uses licensed Microsoft Rocketbox humans with adapted geometry, skinning, faces, hair, clothing, and textures. Each character has adapted golf, movement, combat, guard, and death animations. Golf swings use a baked two-hand animation. The ball launches at the swing contact time.
 
-The golf swing keeps the lead arm extended, shifts the hips, turns the chest, and raises the trail heel through the finish. Ethan uses a complete two-handed naginata family, including stepping cuts, a returning sweep, and a seven-hit Musou. Both hands share the same shaft. His guard reactions use the same grip. See [native motion checks and remaining elbow-fold limits](docs/reviews/native-naginata.md).
+The golf swing keeps the lead arm extended, shifts the hips, turns the chest, and raises the trail heel through the finish. Ethan uses a two-handed naginata, with stepping attacks and an extended Musou sequence. Both hands share the same shaft. His guard reactions use the same grip. See [native motion checks and remaining elbow-fold limits](docs/reviews/native-naginata.md).
 
 The environment uses scanned grass, sand, bark, rock, and pine textures, plus a photographic HDR sky and reflections. Trees, shrubs, rocks, and cliffs use reduced photographic scans. Buildings and small props use generated geometry. Nearby trees retain branches and leaf cards, with wind deformation. Distant trees use 24 viewing angles, including elevated views. Their surface normals respond to scene lighting. Ground shadows follow their actual branches. Short dithered transitions connect the detail levels. Grass uses instancing and fades smoothly at distance. Ponds reflect the scene, with ripples and shoreline foam. The architecture uses curved tiled roofs, galleries, lattice panels, and stone foundations. Weapons use beveled steel, cloth grips, and brass fittings. Each hero weapon uses five to seven material draws. At most 64 enemies remain active at once. Waves can produce hundreds of enemies over a round.
 
-This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer, licensed course replicas, or motion-captured combat.
+This is a playable browser release, with further art work needed for the requested photorealistic standard. It does not yet match a current AAA golf simulator. It uses simplified golf physics. It includes simplified wind, bounce, slope, rolling friction, and cup capture. It does not include multiplayer or licensed course replicas. Adapted combat performances include Mixamo captures and Quaternius animations.
 
-Buildings block actors, combat cameras, blades, projectiles, and golf balls. Enemies take routes around their walls. Gates, arches, and porches remain open. Interiors and stairs remain inaccessible. Balls receive a free drop when a building blocks the golf stance. Inaccessible roofs add one penalty stroke. The [building review](docs/building-collision-review.md) records placement checks, collision behavior, and remaining limits.
+Buildings block actors, combat cameras, blades, projectiles, and golf balls. Enemies take routes around their walls. Gates, arches, and porches remain open. Interiors and stairs remain inaccessible. Large rocks also block movement and combat cameras. Balls receive a free drop when scenery blocks the golf stance. Inaccessible roofs add one penalty stroke. The [building review](docs/building-collision-review.md) records placement checks, collision behavior, and remaining limits.
 
 Choose Performance, Balanced, or High quality from the pause menu. Balanced adjusts rendering resolution to maintain frame rate, up to 1.5 device pixels. Performance disables dynamic shadows and ambient occlusion. Balanced and High add contact shading with GTAO. Balanced suspends this extra pass during dense combat, while keeping dynamic shadows. High quality caps rendering at 2 device pixels.
 
@@ -117,9 +127,9 @@ Crane uses Japanese instruments and guitar rock. Heather uses Celtic music and c
 
 The game alternates recordings within each mode. Combat encounters alternate their starting tracks. Crossfades last 1.15 seconds. Each course retains its track order when you change courses. Only the active mode plays after each fade. Copper and Neo-Tokyo recordings use 160 kbps MP3 encoding. Crane and Heather retain the original MP3 files. The original compositions remain unchanged. See [full soundtrack credits](public/audio/music/CREDITS.md), [source metadata](public/audio/music/SOURCES.json), and the in-game credits.
 
-CC0 recordings supply wind, surf, birds, footsteps, splashes, and weapon swishes. Web Audio synthesis adds impact accents. The game does not generate music. Pause suspends all audio. A second active tab silences the first tab within the same browser profile. See the [recording credits](public/audio/field/CREDITS.md).
+Licensed recordings supply wind, surf, birds, footsteps, splashes, weapon whooshes, and layered impacts. Web Audio synthesis supplies interface sounds and supporting accents. The game does not generate music. Pause suspends all audio. A second active tab silences the first tab within the same browser profile. See the [recording credits](public/audio/field/CREDITS.md).
 
-Three.js and Vite use the MIT license. All six heroes and three enemy appearance families use textured humans from [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox), under MIT. The [Quaternius](https://quaternius.com/) Universal Animation Library supplies CC0 motion references. The native motion conversion, weapons, and golf trajectories are original adaptations. See [model credits](public/models/LICENSE.txt) and [the human roster](docs/rocketbox-roster.md).
+Three.js and Vite use the MIT license. All six heroes and the ninja bodies derive from textured humans from [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox), under MIT. The [Quaternius](https://quaternius.com/) Universal Animation Library supplies CC0 motion references. The native motion conversion, weapons, and golf trajectories are original adaptations. See [model credits](public/models/LICENSE.txt) and [the human roster](docs/rocketbox-roster.md).
 
 Earlier tree assets use Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The retained generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
 
