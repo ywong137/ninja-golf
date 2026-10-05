@@ -4,16 +4,17 @@ import * as THREE from 'three';
 import {LANDSCAPE_GLSL} from './landscape-material.js';
 import {BUNKER_GLSL,bunkerProfile} from './bunkers.js';
 import {BUNKER_SURFACE_GLSL} from './bunker-surface.js';
+import {mowingProfile,TURF_MOWING_GLSL} from './turf-mowing.js';
 import {fairwayPrimitives,dryLandDistance,FAIRWAY_GLSL,MAX_FAIRWAY_SEGMENTS,MAX_WATERS,DRY_LAND_GLSL} from './course-layout.js';
 // Course boundaries use the same analytic shapes as lieAt. They stay crisp at any mesh resolution.
 export function courseMaterial(c, textures, distant=false) {
   const mat=new THREE.MeshStandardMaterial({map:textures.grassColor,normalMap:textures.grassNormal,normalScale:new THREE.Vector2(.36,.36),roughness:.96});
   mat.onBeforeCompile=shader=>{
     const routes=fairwayPrimitives(c);
-    Object.assign(shader.uniforms,{...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},bunkerColor:{value:textures.bunkerColor},bunkerNormal:{value:textures.bunkerNormal},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
+    Object.assign(shader.uniforms,{mowingProfile:{value:mowingProfile(c)},...pondUniforms(c),routeCount:{value:routes.length},routeSegments:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector4(...(routes[i]?.slice(0,4)||[9999,9999,9999,9999])))},routeWidths:{value:Array.from({length:MAX_FAIRWAY_SEGMENTS},(_,i)=>new THREE.Vector2(...(routes[i]?.slice(4)||[0,0])))},courseWeave:{value:c.weave||0},courseCoastal:{value:c.coastal===false?0:1},courseTheme:{value:({japanese:0,highlands:1,desert:2,cyberpunk:3})[c.theme]||0},courseShape:{value:new THREE.Vector4(c.length,c.bend,c.greenX,c.width)},landRock:{value:textures.rockColor},landCliff:{value:textures.cliffColor},landRockNormal:{value:textures.rockNormal},landCliffNormal:{value:textures.cliffNormal},bunkerProfiles:{value:Array.from({length:4},(_,i)=>new THREE.Vector4(...(c.bunkers[i]?bunkerProfile(c.bunkers[i]):[0,0,1,0])))},turfColor:{value:textures.turfColor},turfNormal:{value:textures.turfNormal},turfRoughness:{value:textures.turfRoughness},bunkerColor:{value:textures.bunkerColor},bunkerNormal:{value:textures.bunkerNormal},sandColor:{value:textures.sandColor},sandNormal:{value:textures.sandNormal},bunkers:{value:[...c.bunkers.map(b=>new THREE.Vector4(...b)),...Array.from({length:4-c.bunkers.length},()=>new THREE.Vector4(9999,9999,1,1))]}});
     shader.vertexShader='varying vec3 terrainPosition;varying vec3 terrainSlope;\n'+shader.vertexShader;
     shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nterrainPosition=(modelMatrix*vec4(position,1.)).xyz;terrainSlope=normal;');
-    shader.fragmentShader=FAIRWAY_GLSL+BUNKER_GLSL+BUNKER_SURFACE_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
+    shader.fragmentShader=TURF_MOWING_GLSL+FAIRWAY_GLSL+BUNKER_GLSL+BUNKER_SURFACE_GLSL+DRY_LAND_GLSL+`uniform int pondCount;uniform vec4 shoreBasins[${MAX_WATERS}];uniform float shoreLevels[${MAX_WATERS}];uniform vec4 shoreShapes[${MAX_WATERS}];
 varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRock;uniform sampler2D landCliff;uniform vec4 bunkerProfiles[4];uniform sampler2D sandColor;uniform sampler2D sandNormal;uniform sampler2D turfColor;uniform sampler2D turfNormal;uniform sampler2D turfRoughness;uniform vec4 bunkers[4];uniform vec4 courseShape;uniform float courseWeave;uniform float courseCoastal;uniform float courseTheme;
       float groundHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float groundNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(groundHash(i),groundHash(i+vec2(1,0)),f.x),mix(groundHash(i+vec2(0,1)),groundHash(i+vec2(1,1)),f.x),f.y);}
@@ -63,27 +64,25 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       vec2 bunkerUV=p/2.,bunkerDx=dFdx(bunkerUV),bunkerDy=dFdy(bunkerUV);
       ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));float landBlend=courseTheme>2.5?0.:smoothstep(50.,850.,outerDistance);float rockMask=0.;if(landBlend<1.){`:''}
       for(int i=0;i<4;i++){float bd=bunkerDistance(p,bunkers[i],bunkerProfiles[i]);sandMask=max(sandMask,1.-smoothstep(-.10,.10,bd));turfLip=max(turfLip,smoothstep(-.10,.10,bd)*(1.-smoothstep(.4,1.4,bd)));if(bd<bunkerEdge){bunkerEdge=bd;rakeFrame=vec4(bunkers[i].xy,cos(bunkerProfiles[i].x),sin(bunkerProfiles[i].x));}}
-      float edge=routeDistance(p);
+      vec3 routeFrame;float edge=routeDistance(p,routeFrame);
       float fairway=1.-smoothstep(-.2,.2,edge);
       float firstCut=1.-smoothstep(1.8,2.4,edge);
       float greenDistance=length(vec2((p.x-courseShape.z)/1.05,p.y-courseShape.x));
       green=1.-smoothstep(16.85,17.15,greenDistance);float collar=1.-smoothstep(18.3,18.8,greenDistance);
       float tee=(1.-smoothstep(4.9,5.1,abs(p.x)))*(1.-smoothstep(6.9,7.1,abs(p.y)));
       fairway=max(fairway,tee);shortGrass=max(fairway,collar);
-      float mowingAngle=atan(courseShape.z,courseShape.x)+.42;
-      vec2 mowingDirection=vec2(sin(mowingAngle),cos(mowingAngle));
-      vec2 viewDirection=normalize(cameraPosition.xz-p+vec2(.001));
-      float stripe=smoothstep(-.16,.16,sin(dot(p,mowingDirection)*3.14159265/5.5))*2.-1.;
-      if(courseTheme>.5&&courseTheme<1.5)stripe=tanh((p.x-courseShape.z*p.y/courseShape.x)*.35);
-      float mowing=1.-.032*stripe*dot(viewDirection,mowingDirection);
-      vec2 greenDirection=vec2(cos(mowingAngle+.7),sin(mowingAngle+.7));
-      float greenStripe=smoothstep(-.2,.2,sin(dot(p,greenDirection)*3.14159265/1.7))*2.-1.;
+      vec3 turfView=normalize(cameraPosition-terrainPosition+vec3(.0001));
+      vec2 mowGrain=fairwayGrain(p,routeFrame,edge);
+      vec2 teeGrain=stripGrain(p,mowingAxis(mowingProfile.x+.2),1.25);
+      vec2 greenGrain=stripGrain(p-vec2(courseShape.z,courseShape.x),mowingAxis(mowingProfile.x+.7),.72);
+      mowGrain=mix(mowGrain,teeGrain,tee);
+      float mowing=grainShade(mowGrain,turfView,mix(mowingProfile.z,.11,tee));
       turfUV=p/mix(mix(1.4,1.1,tee),.46,green);
       // Retain the source blade colour and mute saturation without a strong blue tint.
-      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.66,.76,.94);
+      vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.59,.69,.81);
       turfResolved=1.-smoothstep(.008,.05,max(length(dFdx(turfUV)),length(dFdy(turfUV))));
       cut=mix(cut,vec3(dot(cut,vec3(.2126,.7152,.0722))),.12);
-      vec3 putting=cut*vec3(1.18,1.10,1.12)*(1.-.023*greenStripe*dot(viewDirection,greenDirection));
+      vec3 putting=cut*vec3(1.20,1.12,1.14)*grainShade(greenGrain,turfView,.095);
       // Broad moisture and growth variation sits beneath the photographic blade detail.
       // Domain warping prevents a visible square noise grid at aerial distances.
       vec2 conditionUV=p+courseShape.zx*.19;
@@ -176,7 +175,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-v15-fine-bunker-sand-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-v16-directional-mowing-${distant}`;
   return mat;
 }
 

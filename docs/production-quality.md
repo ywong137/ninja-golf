@@ -37,6 +37,11 @@ Four crowded fights average 41–56 FPS at full resolution; the final Japanese c
 The added detail has a measurable rendering cost. The built game passes course selection, golf, and combat checks.
 See [the rough grass review](reviews/rough-grass-2026-10-05.md) for the source, measurements, and limits.
 
+Fairways now use stronger directional mowing grain, with separate patterns for each course style.
+Tee and green passes use their own scale. Distant bands fade before they form interference patterns.
+The GPU check preserves fairway boundaries across all 36 holes. Four moving fights average 42–57 FPS on this Mac.
+See [the turf definition review](reviews/turf-definition-2026-10-05.md) for references, checks, and limits.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026

@@ -16,7 +16,26 @@ export function routePoint(c,fraction){const p=c.layout.route;let total=0;for(le
 // Each outline represents one tapered capsule. Drawing all outlines gives exactly the fairway union.
 export function mapOutlines(c){return fairwayPrimitives(c).map(s=>{const points=[],angle=Math.atan2(s[3]-s[1],s[2]-s[0]);for(let i=0;i<=16;i++){const a=angle+Math.PI/2+i*Math.PI/16;points.push([s[0]+Math.cos(a)*s[4],s[1]+Math.sin(a)*s[4]]);}for(let i=0;i<=16;i++){const a=angle-Math.PI/2+i*Math.PI/16;points.push([s[2]+Math.cos(a)*s[5],s[3]+Math.sin(a)*s[5]]);}return points;});}
 export const FAIRWAY_GLSL=`uniform vec4 routeSegments[${MAX_FAIRWAY_SEGMENTS}];uniform vec2 routeWidths[${MAX_FAIRWAY_SEGMENTS}];uniform int routeCount;
-float routeDistance(vec2 p){float d=1000000.;for(int i=0;i<${MAX_FAIRWAY_SEGMENTS};i++){if(i>=routeCount)break;vec4 s=routeSegments[i];vec2 v=s.zw-s.xy;float t=clamp(dot(p-s.xy,v)/max(dot(v,v),1.),0.,1.);d=min(d,length(p-s.xy-v*t)-mix(routeWidths[i].x,routeWidths[i].y,t));}return d;}`;
+float routeDistance(vec2 p,out vec3 frame){
+ float distance=1000000.,nextDistance=1000000.;
+ vec3 nearest=vec3(0.,1.,0.),nextFrame=nearest;
+ for(int i=0;i<${MAX_FAIRWAY_SEGMENTS};i++){
+  if(i>=routeCount)break;
+  vec4 segment=routeSegments[i];vec2 vector=segment.zw-segment.xy;float squared=dot(vector,vector);
+  float t=clamp(dot(p-segment.xy,vector)/max(squared,1.),0.,1.);
+  vec2 offset=p-segment.xy-vector*t;
+  float candidate=length(offset)-mix(routeWidths[i].x,routeWidths[i].y,t);
+  if(candidate<nextDistance){
+   vec2 direction=squared>.0001?vector*inversesqrt(squared):vec2(0.,1.);
+   vec3 candidateFrame=vec3(direction,dot(offset,vec2(direction.y,-direction.x)));
+   if(candidate<distance){nextDistance=distance;nextFrame=nearest;distance=candidate;nearest=candidateFrame;}
+   else{nextDistance=candidate;nextFrame=candidateFrame;}
+  }
+ }
+ // Blend the grain through segment joins without changing the exact golf boundary.
+ frame=mix(nearest,nextFrame,.5*(1.-smoothstep(0.,3.,nextDistance-distance)));
+ return distance;
+}`;
 export const MAX_BRIDGES=24,MAX_ISLANDS=8;
 export const DRY_LAND_GLSL=SHORELINE_GLSL+`uniform vec4 bridgeSegments[${MAX_BRIDGES}];uniform vec2 bridgeWidths[${MAX_BRIDGES}];uniform int bridgeCount;uniform vec4 dryIslands[${MAX_ISLANDS}];uniform int islandCount;uniform vec4 islandShapes[${MAX_ISLANDS}];
 float dryDistance(vec2 p){float d=1000000.;for(int i=0;i<${MAX_BRIDGES};i++){if(i>=bridgeCount)break;vec4 s=bridgeSegments[i];vec2 v=s.zw-s.xy;float t=clamp(dot(p-s.xy,v)/max(dot(v,v),1.),0.,1.);d=min(d,length(p-s.xy-v*t)-mix(bridgeWidths[i].x,bridgeWidths[i].y,t));}for(int i=0;i<${MAX_ISLANDS};i++){if(i>=islandCount)break;vec4 e=dryIslands[i];d=min(d,shoreDistance(p,e,islandShapes[i]));}return d;}`;

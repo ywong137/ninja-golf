@@ -35,7 +35,7 @@ test('Walking bridges cross real water without creating broad fairways',()=>{
  assert.equal(waterAt(c,xx,zz),true);assert.ok(heightAt(c,xx,zz)<waterSurfaceAt(c,xx,zz));
 });
 test('CPU coverage supplies shader primitives and map boundaries for every hole',()=>{
- for(const set of COURSE_SETS)for(const c of set.holes){const m=courseMaterial(c,{grassColor:null,grassNormal:null}),shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};m.onBeforeCompile(shader);assert.equal(shader.uniforms.routeCount.value,c.layout.segments.length);assert.ok(shader.fragmentShader.includes('float edge=routeDistance(p)'));assert.ok(!shader.fragmentShader.includes('cx=sin('));
+ for(const set of COURSE_SETS)for(const c of set.holes){const m=courseMaterial(c,{grassColor:null,grassNormal:null}),shader={uniforms:{},vertexShader:'#include <begin_vertex>',fragmentShader:'#include <map_fragment>\n#include <normal_fragment_maps>'};m.onBeforeCompile(shader);assert.equal(shader.uniforms.routeCount.value,c.layout.segments.length);assert.ok(shader.fragmentShader.includes('float edge=routeDistance(p,routeFrame)'));assert.ok(!shader.fragmentShader.includes('cx=sin('));
   const outlines=mapOutlines(c);assert.equal(outlines.length,c.layout.segments.length);for(const polygon of outlines)assert.ok(polygon.length>=16&&polygon.every(p=>p.every(Number.isFinite)));m.dispose();}
 });
 test('Multiple water basins share dry masks and release all reflection targets',()=>{
