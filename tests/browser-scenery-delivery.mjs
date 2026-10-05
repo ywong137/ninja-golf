@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
-import {natureAssetsForTheme} from '../src/nature-assets.js';
+import {natureModelFilesForTheme} from '../src/nature-assets.js';
 import {COURSE_SETS} from '../src/course.js';
 if(process.argv.includes('--help')){console.log('Usage: node tests/browser-scenery-delivery.mjs [BUILT_APP_URL] [OUTPUT_DIRECTORY]\nBuild and start Vite preview first. Checks all four courses and the gzip fallback with audio muted.');process.exit(0);}
 const [url='http://127.0.0.1:4184/',out='/private/tmp/ninja-scenery-delivery']=process.argv.slice(2);
@@ -16,7 +16,7 @@ try{
   const suffix=fallback?'.meshopt.glb':'.meshopt.glb.gz';
   const assets=await page.evaluate(()=>performance.getEntriesByType('resource').map(r=>new URL(r.name).pathname).filter(name=>name.includes('/models/nature/')&&name.includes('.glb')));
   const initial=await page.evaluate(()=>window.ninjaGolf.state().courseId),theme=COURSE_SETS.find(c=>c.id===initial).theme;
-  assert.deepEqual(assets.map(file=>file.split('/').at(-1)).sort(),natureAssetsForTheme(theme).map(n=>n+suffix).sort());
+  assert.deepEqual(assets.map(file=>file.split('/').at(-1)).sort(),natureModelFilesForTheme(theme).map(n=>n+suffix).sort());
   await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
   const courses=[];
   for(let i=0;i<(fallback?1:4);i++){

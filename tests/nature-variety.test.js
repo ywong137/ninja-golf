@@ -24,7 +24,8 @@ test('Japanese and Highland groves select different species mixes without canopy
   for(const entry of entries)assert.equal(counts[entry.name],entry.weight*1000);
  }
  assert.equal(forestSpecies('highlands').some(e=>e.name==='forest-canopy'),false);
- assert.deepEqual(forestSpecies('desert'),[{name:'dry-tree',weight:1}]);
+ assert.equal(forestSpecies('desert').length,3);
+ assert.ok(forestSpecies('desert').every(entry=>entry.name.startsWith('saguaro-')));
 });
 
 test('Native conifer branches contain no large triangular sheets from collapsed junctions',()=>{

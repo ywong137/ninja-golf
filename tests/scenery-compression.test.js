@@ -4,12 +4,12 @@ import fs from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {compressSceneryGLB} from '../tools/compress-scenery.mjs';
-import {NATURE_ASSET_NAMES} from '../src/nature-assets.js';
+import {NATURE_MODEL_NAMES} from '../src/nature-assets.js';
 const parse=bytes=>{const length=bytes.readUInt32LE(12);return {json:JSON.parse(bytes.subarray(20,20+length).toString()),binary:bytes.subarray(28+length)};};
 
 test('All scenery geometry and textures decode byte-for-byte with the shipped Three decoder',async t=>{
  await MeshoptDecoder.ready;let before=0,after=0,views=0;
- for(const name of NATURE_ASSET_NAMES){
+ for(const name of NATURE_MODEL_NAMES){
   const original=await fs.readFile(new URL(`../public/models/nature/${name}.glb`,import.meta.url)),packed=await compressSceneryGLB(original),a=parse(original),b=parse(packed.bytes);
   assert.equal(packed.bytes.readUInt32LE(8),packed.bytes.length);
   assert.equal(b.json.bufferViews.length,a.json.bufferViews.length,name);

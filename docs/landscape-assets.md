@@ -5,7 +5,9 @@ The landscape uses Poly Haven models under CC0. Their source links and license l
 | Game asset | Source | Use |
 | --- | --- | --- |
 | Forest canopy | island_tree_01 | Japanese gardens, Highland groves, city gardens |
-| Dry tree | quiver_tree_01 | Desert trees and young plants |
+| Saguaro | Original project geometry | Three desert cactus forms with two distance meshes |
+| Dry shrub | didelta_spinosa | Dense scrub groups outside the desert playing surfaces |
+| Dry tree | quiver_tree_01 | Legacy asset; no current course selects it |
 | Understory | shrub_01 | Woodland shrubs and planted borders |
 | Fern | fern_02 | Shaded woodland ground |
 | Coastal rock | boulder_01 | Garden boulders and shoreline rocks |

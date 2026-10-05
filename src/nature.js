@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {loadModel} from './load-model.js';
+import {SAGUARO_NAMES,createSaguaro,applySaguaroSkin,saguaroRadius} from './saguaro.js';
 import {natureAssetsForTheme} from './nature-assets.js';
 import {createAssetCache} from './asset-cache.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
@@ -17,6 +18,7 @@ const BROADLEAF_REVISION='complete-canopy-1';
 const OPACITY_REPAIRED=new Set(['forest-canopy','understory','fern','woody-scrub']);
 const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
 const natureCache=createAssetCache(async name=>{
+ if(SAGUARO_NAMES.includes(name)){assets.set(name,createSaguaro(name));return;}
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),textures=new THREE.TextureLoader();
   const conifer=['pine-open','pine-young','fir-layered'].includes(name);
   const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${name==='forest-canopy'?'?v='+BROADLEAF_REVISION:OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
@@ -52,7 +54,7 @@ export class NaturalLandscape{
    // Open scenery windows preserve long views across the golf course.
    const patch=Math.sin(x*.035+1)*Math.cos(z*.023)+Math.sin(z*.041-x*.018)*.55;
    if(patch<(desert?.35:highland?.38:-.16))continue;
-   const tree=selectForestSpecies(c.theme,r()),rec=add(tree,x,z,(desert?.62:.78)+r()*(desert?.6:.38));rec.species=tree;occupied.push(rec);this.records.push(rec);sites.push({id:`scan-tree-${sites.length}`,kind:'tree',x,z,y:rec.y,height:rec.scale*TREE_SPECIES[tree].height});
+   const tree=selectForestSpecies(c.theme,r()),rec=add(tree,x,z,(desert?.62:.78)+r()*(desert?.6:.38));rec.species=tree;occupied.push(rec);this.records.push(rec);sites.push({id:`scan-tree-${sites.length}`,kind:'tree',x,z,y:rec.y,height:rec.scale*TREE_SPECIES[tree].height,...(desert?{radius:saguaroRadius(tree)*rec.scale}:{} )});
   }
   // Scanned rock formations compose the coast and the long canyon walls.
   for(let i=0;i<38;i++){
@@ -73,7 +75,21 @@ export class NaturalLandscape{
    for(let j=0;j<12;j++){
     const a=r()*6.28,d=2+r()*7,x=cx+Math.cos(a)*d,z=cz+Math.sin(a)*d;if(!safe(x,z,3))continue;
     if(!desert)add(highland?(j%4?'woody-scrub':'fern'):(j%4?'understory':'fern'),x,z,highland?.55+r()*.45:.5+r()*.55);
-    else if(j%5===0)add('dry-tree',x,z,.22+r()*.17);
+    else add(j%6===0?'saguaro-young':'woody-scrub',x,z,j%6===0?.35+r()*.25:.42+r()*.35);
+   }
+  }
+  // Sonoran scrub forms irregular islands beside the maintained turf.
+  // A separate seed keeps existing cover, rocks, and collision anchors stable.
+  if(desert){
+   const desertRandom=random(c.seed+8912),shrubs=[];
+   for(let i=0;i<105;i++){
+    const p=routePoint(c,(i+.5)/105),side=i%2?1:-1,d=p.width+9+desertRandom()*24;
+    const cx=p.x+p.tangentZ*side*d,cz=p.z-p.tangentX*side*d;
+    for(let j=0;j<14;j++){
+     const a=desertRandom()*Math.PI*2,rad=Math.sqrt(desertRandom())*(4+desertRandom()*6),x=cx+Math.cos(a)*rad,z=cz+Math.sin(a)*rad;
+     if(!safe(x,z,5)||shrubs.some(q=>Math.hypot(q.x-x,q.z-z)<1.9))continue;
+     const scale=.65+desertRandom()*.6,name=desertRandom()<.72?'desert-scrub':'woody-scrub';shrubs.push(add(name,x,z,scale,desertRandom()*Math.PI*2));
+    }
    }
   }
   // Low undergrowth sits within tree groves, not in the playable landing areas.
@@ -84,16 +100,35 @@ export class NaturalLandscape{
   // Filter after generation so removing a plant cannot change the seeded random
   // sequence and move unrelated groves, formations, and their collision bounds.
   const inBunker=record=>c.bunkers.some(b=>bunkerDistance(record.x,record.z,b)<=2);
+  const removedTrees=new Set();
   for(const [name,records]of placements){
+   // Full plant bounds protect shorelines and narrow paths as well as their anchors.
+   const checkFootprint=desert&&(SAGUARO_NAMES.includes(name)||name==='desert-scrub');
+   let bounds;
+   if(checkFootprint){bounds=new THREE.Box3();for(const part of assets.get(name).parts)if(part.lod===0){part.geometry.computeBoundingBox();bounds.union(part.geometry.boundingBox);}}
+   const clearFootprint=record=>{
+    if(!bounds)return true;
+    const cos=Math.cos(record.angle),sin=Math.sin(record.angle);
+    for(const dx of [bounds.min.x,0,bounds.max.x])for(const dz of [bounds.min.z,0,bounds.max.z]){
+     const x=record.x+(dx*cos+dz*sin)*record.scale,z=record.z+(-dx*sin+dz*cos)*record.scale;
+     if(fairwayDistance(c,x,z)<=0||greenDistance(c,x,z)<=20||lieAt(c,x,z)==='Water'||root.userData.pathContains?.(x,z,.1)||bridgeDistance(c,x,z)<=0||c.bunkers.some(b=>bunkerDistance(x,z,b)<=0))return false;
+    }
+    return true;
+   };
    // Authored covers keep the same visible rock as their registered ambush site.
-   const kept=records.filter(record=>authoredRocks.has(record)||!inBunker(record));
+   const kept=records.filter(record=>{
+    if(authoredRocks.has(record)||!inBunker(record)&&clearFootprint(record))return true;
+    if(SAGUARO_NAMES.includes(name))removedTrees.add(`${record.x},${record.z}`);
+    return false;
+   });
    if(kept.length)placements.set(name,kept);else placements.delete(name);
   }
-  this.records=this.records.filter(record=>!inBunker(record));
-  for(let i=sites.length-1;i>=0;i--)if(sites[i].id.startsWith('scan-')&&inBunker(sites[i]))sites.splice(i,1);
+  this.records=this.records.filter(record=>!inBunker(record)&&!removedTrees.has(`${record.x},${record.z}`));
+  for(let i=sites.length-1;i>=0;i--)if(sites[i].id.startsWith('scan-')&&(inBunker(sites[i])||removedTrees.has(`${sites[i].x},${sites[i].z}`)))sites.splice(i,1);
+  if(desert)for(const [name,records]of placements){if(!SAGUARO_NAMES.includes(name))continue;for(const rec of records){if(this.records.includes(rec))continue;rec.species=name;this.records.push(rec);sites.push({id:`scan-cactus-${sites.length}`,kind:'tree',x:rec.x,z:rec.z,y:rec.y,height:rec.scale*TREE_SPECIES[name].height,radius:saguaroRadius(name)*rec.scale});}}
   // Ground silhouettes follow the scanned branches and the actual sun direction.
   for(const {name:tree} of forestSpecies(c.theme)){
-  const source=assets.get(tree),shadowPositions=[],shadowUV=[],shadowIds=[],anchors=[];
+  const source=assets.get(tree);if(!source.shadowMap)continue;const shadowPositions=[],shadowUV=[],shadowIds=[],anchors=[];
   for(const rec of this.records.filter(rec=>rec.species===tree)){const view=Math.round(rec.angle/(Math.PI*2)*8)%8,[minX,minZ,maxX,maxZ]=source.shadowViews[view],base=shadowPositions.length/3;
    for(let j=0;j<=8;j++)for(let i=0;i<=8;i++){const x=rec.x+(minX+(maxX-minX)*i/8)*rec.scale,z=rec.z+(minZ+(maxZ-minZ)*j/8)*rec.scale;shadowPositions.push(x,heightAt(c,x,z)+.035,z);shadowUV.push((view%4+i/8)/4,(1-Math.floor(view/4)+1-j/8)/2);anchors.push(rec.x,rec.y,rec.z);}
    for(let j=0;j<8;j++)for(let i=0;i<8;i++){const n=base+j*9+i;shadowIds.push(n,n+9,n+1,n+1,n+9,n+10);}
@@ -104,23 +139,26 @@ export class NaturalLandscape{
   for(const [name,records]of placements){
    const source=assets.get(name);if(!source)throw new Error(`Missing scenery ${name} for ${c.theme}; await loadNature(theme) before building the course`);
    if(['coastal-rock','desert-rock','sea-cliff'].includes(name))for(const [i,record]of records.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.bounds,`rock:${name}:${i}`));
-   const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
+   const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub'||name==='desert-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
    for(const part of source.parts){
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
-    if(plant){material.envMapIntensity=.85;sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
+    if(desert&&name==='woody-scrub'){material.color.set('#e3d7ae');if(material.alphaTest>0)material.alphaTest=.25;}
+    if(source.saguaro)applySaguaroSkin(material);
+    if(plant){material.envMapIntensity=.85;if(!source.saguaro)sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
     const mesh=new THREE.InstancedMesh(part.geometry.clone(),material,records.length);mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
     if(material.alphaTest>0){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:material.map,alphaTest:material.alphaTest,side:THREE.DoubleSide});if(plant)sway(mesh.customDepthMaterial,true);if(isTree)treeTransition(mesh.customDepthMaterial,part.lod,detail);if(plant)leafShadowCutoff(mesh.customDepthMaterial,material.alphaTest);}
-    root.add(mesh);this.groups.push({mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map});
+    if(source.saguaro){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});treeTransition(mesh.customDepthMaterial,part.lod,detail);}
+    root.add(mesh);this.groups.push({name,mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map,solidTree:!!source.saguaro,desertScrub:desert&&!isTree&&plant});
    }
    if(source.map){const geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}
   }
  }
  update(time,camera){
   clock.value=time;foliageEye.value.copy(camera);if(this.last.distanceToSquared(camera)<.25)return;this.last.copy(camera);
-  for(const {mesh,records,lod,isTree,plant,detail=TREE_DETAIL,atlas}of this.groups){let count=0;
-   for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree?detail.nearEnd:plant?25:75,far=isTree?detail.farEnd:plant?110:1200;
+  for(const {mesh,records,lod,isTree,plant,detail=TREE_DETAIL,atlas,solidTree,desertScrub}of this.groups){let count=0;
+   for(const rec of records){const d=Math.hypot(rec.x-camera.x,rec.z-camera.z,Math.max(0,camera.y-rec.y-5)),near=isTree?detail.nearEnd:desertScrub?42:plant?25:75,far=isTree?detail.farEnd:desertScrub?260:plant?110:1200;
     if(lod===0?d>=near:lod===1?(d<(isTree?detail.nearStart:near)||d>=far):d<detail.farStart)continue;
-    if(lod===1&&isTree&&!atlas&&d>450)continue;
+    if(lod===1&&isTree&&!atlas&&!solidTree&&d>450)continue;
     transform.position.set(rec.x,rec.y,rec.z);transform.rotation.set(0,rec.angle,0);transform.scale.set(rec.scaleX??rec.scale,rec.scaleY??rec.scale,rec.scaleZ??rec.scale);transform.updateMatrix();mesh.setMatrixAt(count++,transform.matrix);
    }mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
   }

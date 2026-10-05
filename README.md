@@ -134,7 +134,7 @@ Three.js, Vite, and meshoptimizer use the MIT license. All six heroes and the ni
 
 Earlier tree assets use Daniel Greenheck’s [EZ-Tree](https://github.com/dgreenheck/ez-tree), under MIT. The retained generator runs only during asset production. See [its license](public/licenses/EZ-Tree-MIT.txt). The [Tidewater reference](https://github.com/dgreenheck/tidewater) informed the quality study and supplied the credited CC0 recording collection. Its MIT notice accompanies the adapted audio bank.
 
-Current trees, shrubs, ferns, boulders, cliffs, ground materials, and daylight/night HDR skies come from [Poly Haven](https://polyhaven.com/), under CC0. See [landscape credits](public/models/nature/SOURCES.json) and [texture credits](public/textures/SOURCES.json). No Samurai Warriors game assets are included. Official Samurai Warriors 4 and 5 artwork and descriptions inform weapon families and combat styles.
+Scanned trees, shrubs, ferns, boulders, cliffs, ground materials, and daylight/night HDR skies come from [Poly Haven](https://polyhaven.com/), under CC0. See [landscape credits](public/models/nature/SOURCES.json) and [texture credits](public/textures/SOURCES.json). The desert saguaro models are original project geometry. No Samurai Warriors game assets are included. Official Samurai Warriors 4 and 5 artwork and descriptions inform weapon families and combat styles.
 
 ## Code layout
 

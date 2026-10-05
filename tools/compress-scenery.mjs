@@ -2,7 +2,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {gzipSync} from 'node:zlib';
 import {MeshoptEncoder} from 'meshoptimizer';
-import {NATURE_ASSET_NAMES} from '../src/nature-assets.js';
+import {NATURE_MODEL_NAMES} from '../src/nature-assets.js';
 
 // Encode the original attribute bytes. No quantization, filtering, vertex
 // reordering, triangle rotation, texture conversion, or simplification occurs.
@@ -42,7 +42,7 @@ export function compressedSceneryPlugin(){
  let outputDirectory;
  return {name:'ninja-golf-compressed-scenery',apply:'build',configResolved(config){outputDirectory=path.resolve(config.root,config.build.outDir,'models/nature');},async writeBundle(){
   let before=0,after=0;
-  for(const name of NATURE_ASSET_NAMES){
+  for(const name of NATURE_MODEL_NAMES){
    const source=await readFile(path.join(outputDirectory,name+'.glb')),{bytes}=await compressSceneryGLB(source),gzip=gzipSync(bytes,{level:6});
    await writeFile(path.join(outputDirectory,name+'.meshopt.glb'),bytes);await writeFile(path.join(outputDirectory,name+'.meshopt.glb.gz'),gzip);
    before+=gzipSync(source,{level:6}).length;after+=gzip.length;

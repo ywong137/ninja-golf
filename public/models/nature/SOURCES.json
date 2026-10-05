@@ -58,5 +58,14 @@
     "license": "CC0-1.0",
     "source": "https://polyhaven.com/a/searsia_burchellii",
     "licenseSource": "https://polyhaven.com/license"
+  },
+  {
+    "asset": "didelta_spinosa",
+    "author": "Jenelle van Heerden",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/didelta_spinosa",
+    "licenseSource": "https://polyhaven.com/license",
+    "gameAsset": "desert-scrub.glb",
+    "note": "Medium source plant, two simplified distance meshes; diffuse and alpha combined. Visual dry-scrub substitute, not a native Sonoran species."
   }
 ]

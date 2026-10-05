@@ -47,6 +47,11 @@ Trees, rocks, and clothing show clearer shape. All six selection characters and 
 Four crowded fights average 41–57 FPS on this Mac. Normal-input golf and combat pass in the private build.
 See [the daylight balance review](reviews/daylight-balance-2026-10-05.md) for measurements and limits.
 
+Copper Saguaro now has three original saguaro forms and grouped scanned scrub.
+Nine holes pass planting clearance checks, including 730 clear approaches to cactus trunks.
+A crowded moving fight averages 53.6 FPS on this Mac. Normal-input golf and combat pass in the private build.
+See [the desert planting review](reviews/sonoran-planting-2026-10-05.md) for sources, measurements, and limits.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026
