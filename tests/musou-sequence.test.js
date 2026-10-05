@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {buildMusouSequence,combatSequenceFrame,samplePerformanceClock} from '../src/musou-sequence.js';
+import {buildMusouSequence,combatSequenceFrame,samplePerformanceClock,musouPerformanceClock} from '../src/musou-sequence.js';
 import {WARRIORS} from '../src/warriors.js';
 import {MUSOU_WIPES} from '../src/musou-cinematic.js';
 import {MUSOU_CINEMATIC_DURATION} from '../src/combat.js';
@@ -11,6 +11,13 @@ for(const hero of WARRIORS.filter(w=>w.musouChain))test(hero.name+' ultimate pre
  assert.ok(s.duration>=7&&s.duration<11);assert.ok(s.hits.length>=7);
  for(const [i,part]of s.segments.entries()){
   const record=motions[part.clip];assert.ok(record.nativeSourceMotion&&record.nativeAttachment);
+  assert.equal(part.clock.start,0,'Keep the incoming full-body preparation');
+  const nextClip=hero.musouChain[(i+1)%hero.musouChain.length];
+  const continuation=Object.values(record.continuations??{}).find(branch=>branch.clip===nextClip);
+  assert.equal(part.clock.end,continuation?.at??record.duration,'Retain complete recovery unless the next cut has an authored continuation');
+  for(const row of part.clock.rows)assert.ok(Math.abs(row.time-row.source/record.duration*record.combatDuration)<1e-8,'Do not accelerate steps and turns between damage contacts');
+  if(i>0&&s.segments[i-1].continues){assert.equal(s.segments[i-1].continues.clip,part.clip);assert.ok(part.entryBlend<=.03);}
+
   for(const fraction of [0,.2,.5,.999]){
    const a=combatSequenceFrame({sequence:s,time:part.start+part.duration*fraction,token:42});
    assert.equal(a.index,i);assert.equal(a.action.motionName,part.clip);assert.equal(a.hidden,false);
@@ -27,6 +34,7 @@ for(const hero of WARRIORS.filter(w=>w.musouChain))test(hero.name+' ultimate pre
   for(let time=0;time<=s.duration+1/hz;time+=1/hz)while(index<s.hits.length&&time>=s.hits[index])fired.push(index++);
   assert.equal(new Set(fired).size,s.hits.length);
  }
+ assert.ok(!s.segments.at(-1).continues,'Finish the combination before ending the ultimate');
  assert.equal(s.planarRoot.duration,s.duration);assert.equal(s.planarRoot.rows.at(-1).time,s.duration);
 });
 test('Musou never silently falls back to procedural cuts',()=>{
@@ -49,4 +57,10 @@ test('Repeated musou impacts reuse compiled rings and bounded flash storage',asy
  for(let i=0;i<150;i++)effects.explosion(origin,1);
  assert.equal(effects.items.length,itemCount);assert.equal(effects.contacts.records.length,96);
  effects.clear();assert.equal(effects.items.length,0);assert.ok(effects.contacts.records.every(r=>r.life===0));
+});
+
+test('Explicit performance bounds reject missing contacts and invalid acceleration',()=>{
+ const motion=motions.Closer_Combo_Return;
+ for(const options of [{start:-.1},{end:motion.duration+1},{start:motion.impacts[0]},{end:motion.impacts[0]},{acceleration:-1},{acceleration:NaN}])
+  assert.throws(()=>musouPerformanceClock(motion,options),/Performance/);
 });
