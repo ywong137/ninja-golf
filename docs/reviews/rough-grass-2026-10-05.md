@@ -1,76 +1,85 @@
 # Photographic rough grass
 
-The rough now uses photographed leaf textures and curved source geometry.
-The previous grass used isolated narrow triangles. The new patches give nearby rough visible leaf shapes and uneven height.
-Twelve authored leaf groups supply sixteen varied groups in each repeated patch.
-Course colors and heights vary. Desert growth stays close to the fairway; city growth stays shorter.
+The rough now uses shorter, denser leaf groups over a continuous fine turf surface near fairways.
+The previous geometry looked like tall, separate weeds above worn ground.
+Thirty-six small leaf groups now occupy each patch, compared with sixteen mixed-size groups before.
+The six spreading templates retain their photographic textures and curved shapes.
+The twelve original source templates remain available in the asset file.
 
-The source is Rico Cilliers’ [Grass Bermuda 01](https://polyhaven.com/a/grass_bermuda_01) from Poly Haven.
-Its [CC0 license](https://polyhaven.com/license) permits this use.
-`public/textures/SOURCES.json` records the source links, original Blender checksum, and installed texture checksums.
-The two 1K textures total 234,989 bytes. The geometry templates add 89,978 bytes before compression.
-No source Blender file downloads at runtime.
+The source is Rico Cilliers’ [Grass Bermuda 01](https://polyhaven.com/a/grass_bermuda_01), under [CC0](https://polyhaven.com/license).
+`public/textures/SOURCES.json` records the original Blender checksum and installed texture checksums.
+The existing two 1K images total 234,989 bytes. This update adds no textures or draw calls.
+The [USGA course-definition reference](https://www.usga.org/content/usga/home-page/course-care/green-section-record/57/22/defining-definition.html) supports keeping the rough visually distinct from patterned fairways.
 
-Grass follows the actual rendered ground triangles and tilts with the slope.
-Placement excludes playing surfaces, green collars, bunkers, paths, and nearby water.
-A lower first cut blends into taller rough. Wind moves the leaf tips.
-The opacity shader preserves thin leaves and corrects dark edges from the source photograph.
-Golf lies, resistance, collision, character models, animation, and controls remain unchanged.
+The base patch stays below eleven centimetres before local growth and instance scaling.
+Nonuniform leaf scaling now applies the corresponding inverse scale to surface normals.
+Root shading and the existing thin-leaf transmission model integrate the blades with their ground surface.
+The near-fairway material fills gaps with fine turf. Worn or dry ground remains farther from the maintained area.
+The desert fringe retains its transition into mineral soil.
+Fairway mowing, golf boundaries, ball resistance, terrain heights, controls, and character motion remain unchanged.
 
-## Bounded streaming
+## Bounded rendering
 
-A fixed grid gives each patch a stable position, rotation, and scale.
-The cache reuses patch transforms when the player crosses a five-metre cell boundary.
-It stores only the current window, including rejected cells. Long walks do not accumulate the whole course.
-Grass fades from 17 to 24 metres. The streaming circle includes that range throughout each cell.
-Patches outside that circle no longer submit invisible geometry.
+Each patch contains 432 triangles. The old patch contained 237 triangles.
+The renderer trades distant patch coverage for greater nearby density.
+Leaves fade between nine and sixteen metres. The texture surface remains visible beyond them.
+The fixed buffer capacity drops from 22,500 to 12,100 patches.
+Stable cell coordinates preserve placement as the player moves.
+The cached window still includes the complete fade radius throughout every five-metre cell.
+
+Grass follows the actual rendered ground triangles and tilts with their slope.
+Placement excludes playing surfaces, collars, bunkers, paths, and nearby water.
+The wind moves the leaf tips. No source Blender file downloads at runtime.
 
 ## Verification
 
-Nine focused checks pass across grass geometry, streaming, slopes, and bunker compatibility.
-Placement checks sample more than 100,000 positions across all 36 holes.
-They verify empty playing surfaces and protected green and bunker margins.
-The exporter reproduces the installed geometry byte-for-byte from the original Blender source.
+Six focused checks pass across geometry, unit normals, slopes, placement, and bounded streaming.
+The placement check samples more than 100,000 positions across all 36 holes.
+Matched captures cover actual fairways, their boundaries, greens, and aerial views on all four course styles.
+The inspection script finds a valid fairway station and solves its boundary before positioning the camera.
+This avoids mistaking the gaps between desert fairway islands for maintained turf.
 
-Muted browser captures cover all four themes, tees, rough, and greens without browser errors.
-The private production build passes all four course previews and normal golf-to-combat input as Ethan.
+The final private build passes four course previews and a golf-to-combat sequence using normal keyboard and mouse input.
+Ethan runs and performs light and heavy attacks. The heavy motion remains `Ethan_GDH_Combo5_Review`.
 Both grass images return HTTP 200 and decode at 1024 × 1024.
-The production bundle is `index-DRXemcow.js`.
+The final bundle is `index-D0L1HRjN.js`.
+All four course cards now show the updated scenery. No browser errors occurred, and all test browsers remained muted.
 
-The combat comparison uses 24 enemies, moving heavy attacks, 1440 × 900, and a fixed rendering ratio of 1.0.
-Each short sample uses Chrome Metal on this Mac’s M1 Max.
+## Performance and limits
 
-| Course | Earlier grass FPS | New cached grass FPS |
+The comparison keeps twenty-four enemies alive during moving heavy attacks.
+Chrome Metal on the local Apple M1 Max uses 1440 × 900 and a fixed rendering ratio of 1.0.
+Each sample measures eight seconds after two warmup seconds. No other automated GPU job runs during sampling.
+
+| Course | Previous FPS | Updated FPS |
 | --- | ---: | ---: |
-| Crane Coast | 51.6 | 41.3 |
-| Heather & Crown | 57.5 | 47.6 |
-| Copper Saguaro | 59.4 | 55.6 |
-| Neo-Tokyo | 54.3 | 50.0 |
+| Crane Coast | 39.3 | 41.2 |
+| Heather & Crown | 56.7 | 48.0 |
+| Copper Saguaro | 60.1 | 60.1 |
+| Neo-Tokyo | 53.8 | 54.5 |
 
-The final invisible-patch reduction received another Crane Coast check. It averaged 40.4 FPS with 24 enemies and no browser errors.
-The 95th-percentile frame time was 33.4 ms. One frame reached 99.9 ms.
-These samples meet the lower requested frame-rate target, but the new grass has a measurable rendering cost.
-The final culling change does not establish a speed improvement within this short comparison.
-Other hardware and longer encounters remain unmeasured.
+The updated samples have 95th-percentile frame times of 16.7–33.4 ms.
+The longest measured frame is 66.7 ms, compared with 300 ms in the first baseline sample.
+The baseline Crane Coast sample failed the forty-FPS threshold. All updated samples pass it.
+These short encounters vary with combat timing and scene contents. They do not establish a general speed improvement or cross-device performance.
+Cached grass updates take roughly 3–9 ms in the updated samples. Initial population takes roughly 24–38 ms.
 
-Cached movement updates take about 7–14 ms, versus 34–46 ms in the earlier grass path.
-The initial uncached population remains slower: about 66–84 ms in these samples.
-The game still has wider performance and visual work before it reaches the requested AAA standard.
+The rough remains an approximation using textured surfaces and leaf groups.
+It improves the earlier oversized, sparse plants but does not establish the full AAA visual objective.
+Distant terrain, environmental variety, and dense-scene performance still need work.
+The approved characters and accepted gameplay remain intact.
+The complete build stays local/private at http://127.0.0.1:4185/, including Ethan’s purchased motions.
+
+Current evidence lives in `/Users/yishan/ninja-golf/artifacts/reviews/ground-surfaces/`.
+`before/` and `final/` contain matched views. `after/` holds a rejected intermediate material.
+`performance-before/` and `performance-after/` hold timing reports and fight screenshots.
+`production/` holds the exact-build course and combat checks.
+The older `artifacts/reviews/rough-grass/` evidence describes the previous implementation.
 
 ## Reproduction
 
-Run the exporter with Blender and the original CC0 source file.
-
 ```sh
-blender --background --threads 2 -noaudio --python tools/export-rough-grass.py -- \
-  --source /path/to/grass_bermuda_01_1k.blend \
-  --output src/rough-grass-templates.json
-node --test tests/rough-grass.test.js tests/grass-streaming.test.js tests/bunkers.test.js
+node --test tests/rough-grass.test.js tests/grass-streaming.test.js
+GAME_URL=http://localhost:5184 node tools/capture-course-previews.mjs
 npm run build
 ```
-
-Evidence lives in the primary checkout under `artifacts/reviews/rough-grass/`.
-`final/` contains the current views. `production/` contains the built-game report.
-`performance-final/` contains four cached encounters; `performance-culled/` contains the final Japanese encounter.
-Earlier prototype folders record rejected versions and should not serve as current screenshots.
-The complete build remains local and private because it includes Ethan’s purchased motions.

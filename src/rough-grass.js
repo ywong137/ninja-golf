@@ -1,24 +1,26 @@
 import * as THREE from 'three';
-import {leafShadowCutoff} from './foliage-materials.js';
+import {leafShadowCutoff,leafTransmission} from './foliage-materials.js';
 import {bunkerDistance} from './bunkers.js';
 import {waterAt} from './course-layout.js';
 import templates from './rough-grass-templates.json' with {type:'json'};
 import {lieAt,greenDistance,fairwayDistance,random} from './course.js';
 
-export const ROUGH_GRASS={step:.4,radius:30,fadeStart:17,fadeEnd:24,capacity:22500,streamRadius:28.25,blades:16};
+export const ROUGH_GRASS={step:.4,radius:22,fadeStart:9,fadeEnd:16,capacity:12100,streamRadius:20.3,blades:36};
 const palettes={japanese:'#ffffff',highlands:'#d2c496',desert:'#cbb88c',cyberpunk:'#91b8b2'};
 
 // The CC0 source templates preserve curved leaf shapes and photographic UVs.
 export function roughGrassGeometry(theme){
  const r=random(39257),positions=[],normals=[],uv=[],colors=[],tint=new THREE.Color(palettes[theme]||palettes.japanese);
  for(let blade=0;blade<ROUGH_GRASS.blades;blade++){
-  const source=templates[blade%templates.length],angle=r()*Math.PI*2,co=Math.cos(angle),si=Math.sin(angle),scale=1.7+r()*.5;
-  const cx=(blade%4+r())/4*.42-.21,cz=(Math.floor(blade/4)+r())/4*.42-.21;
+  // Short, spreading leaves add depth above the continuous turf surface.
+  const source=templates[blade%6],angle=r()*Math.PI*2,co=Math.cos(angle),si=Math.sin(angle),scale=1.45+r()*.35,heightScale=.85+r()*.3;
+  const variation=.88+r()*.20;
+  const cx=(blade%6+r())/6*.42-.21,cz=(Math.floor(blade/6)+r())/6*.42-.21;
   for(let i=0;i<source.position.length;i+=3){
-   const x=source.position[i]*scale,y=source.position[i+1]*scale,z=source.position[i+2]*scale;
+   const x=source.position[i]*scale,y=source.position[i+1]*heightScale,z=source.position[i+2]*scale;
    positions.push(co*x-si*z+cx,y,si*x+co*z+cz);
-   const nx=source.normal[i],ny=source.normal[i+1],nz=source.normal[i+2];normals.push(co*nx-si*nz,ny,si*nx+co*nz);
-   const shade=.68+.32*Math.min(1,y/.07);colors.push(tint.r*shade,tint.g*shade,tint.b*shade);
+   const nx=source.normal[i]/scale,ny=source.normal[i+1]/heightScale,nz=source.normal[i+2]/scale,length=Math.hypot(nx,ny,nz);normals.push((co*nx-si*nz)/length,ny/length,(si*nx+co*nz)/length);
+   const shade=(.55+.45*Math.min(1,y/.04))*variation;colors.push(tint.r*shade,tint.g*shade,tint.b*shade);
   }
   uv.push(...source.uv);
  }
@@ -27,7 +29,7 @@ export function roughGrassGeometry(theme){
 
 export function roughGrassMaterial(time,focus,textures){
  const mat=new THREE.MeshStandardMaterial({vertexColors:true,map:textures.color,alphaMap:textures.alpha,alphaTest:.18,alphaToCoverage:true,side:THREE.DoubleSide,roughness:1});
- mat.color.setRGB(1.5,1.65,1.3);
+ mat.color.setRGB(1.25,1.48,1.10);
  mat.onBeforeCompile=s=>{
   s.uniforms.grassTime=time;s.uniforms.grassFocus=focus;
   s.vertexShader='uniform float grassTime;uniform vec3 grassFocus;\n'+s.vertexShader;
@@ -49,7 +51,7 @@ export function roughGrassMaterial(time,focus,textures){
    normal=normalize(mix(normal,normalize(mat3(viewMatrix)*vec3(0.,1.,0.)),.65));
   `);
  };
- mat.customProgramCacheKey=()=> 'rough-grass-photographic-v3';leafShadowCutoff(mat,.18);return mat;
+ mat.customProgramCacheKey=()=> 'rough-grass-photographic-v4';leafShadowCutoff(mat,.18);leafTransmission(mat);return mat;
 }
 
 // This only decorates Rough. Golf lies, ball resistance, and course boundaries are unchanged.

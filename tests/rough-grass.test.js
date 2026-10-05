@@ -13,8 +13,9 @@ test('Authored grass retains twelve distinct leaf groups with finite photographi
   assert.ok(t.position.every(Number.isFinite)&&t.normal.every(Number.isFinite));assert.ok(t.uv.every(v=>v>=0&&v<=1));
  }
  const geometry=roughGrassGeometry('japanese');
- assert.ok(geometry.attributes.position.count/3<260,'Patch geometry exceeds its measured budget');
- geometry.computeBoundingBox();assert.ok(geometry.boundingBox.max.y<.26&&geometry.boundingBox.min.y===0);
+ assert.ok(geometry.attributes.position.count/3<=450,'Dense patch geometry exceeds its budget');
+ const normals=geometry.attributes.normal;for(let i=0;i<normals.count;i++)assert.ok(Math.abs(Math.hypot(normals.getX(i),normals.getY(i),normals.getZ(i))-1)<1e-6,'Nonuniform leaf scaling must retain unit normals');
+ geometry.computeBoundingBox();assert.ok(geometry.boundingBox.max.y<.11&&geometry.boundingBox.min.y===0);
  assert.ok(Math.max(Math.abs(geometry.boundingBox.min.x),Math.abs(geometry.boundingBox.max.x),Math.abs(geometry.boundingBox.min.z),Math.abs(geometry.boundingBox.max.z))<.5);
  geometry.dispose();
 });

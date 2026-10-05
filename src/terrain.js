@@ -59,7 +59,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
     shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`
       vec2 p=terrainPosition.xz;
       vec2 grassUV=p/2.7,grassDx=dFdx(grassUV),grassDy=dFdy(grassUV);
-      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.,desertSoil=0.,turfResolved=0.;vec2 turfUV=p/1.4;
+      float sandMask=0.,turfLip=0.,shortGrass=0.,green=0.,beach=0.,turfCondition=0.,desertSoil=0.,turfResolved=0.,roughCanopy=0.;vec2 turfUV=p/1.4;
       float bunkerEdge=1000000.;vec4 rakeFrame=vec4(0.,0.,1.,0.);vec2 rakeSlope=vec2(0.);vec3 fineSandNormal=vec3(0.,0.,1.);
       vec2 bunkerUV=p/2.,bunkerDx=dFdx(bunkerUV),bunkerDy=dFdy(bunkerUV);
       ${distant?`float outerDistance=length(vec2(max(0.,abs(p.x)-375.),max(0.,max(-165.-p.y,p.y-courseShape.x-165.))));float landBlend=courseTheme>2.5?0.:smoothstep(50.,850.,outerDistance);float rockMask=0.;if(landBlend<1.){`:''}
@@ -82,6 +82,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       vec3 cut=texture2D(turfColor,turfUV).rgb*vec3(.59,.69,.81);
       turfResolved=1.-smoothstep(.008,.05,max(length(dFdx(turfUV)),length(dFdy(turfUV))));
       cut=mix(cut,vec3(dot(cut,vec3(.2126,.7152,.0722))),.12);
+      vec3 uncut=cut*vec3(.76,.88,.70);
       vec3 putting=cut*vec3(1.20,1.12,1.14)*grainShade(greenGrain,turfView,.095);
       // Broad moisture and growth variation sits beneath the photographic blade detail.
       // Domain warping prevents a visible square noise grid at aerial distances.
@@ -107,7 +108,11 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       if(courseTheme>.5&&courseTheme<1.5){rough=mix(vec3(.16,.16,.07),vec3(.22,.17,.16),groundNoise(p*.035))*detail;cut*=vec3(1.13,1.02,.92);}
       if(courseTheme>2.5){rough=mix(vec3(.04,.060,.032),vec3(.068,.085,.045),groundNoise(p*.04))*detail;cut*=vec3(.68,.88,.92);putting*=vec3(.80,.96,1.04);}
       if(courseTheme<1.5)rough=mix(rough,roughSample*vec3(.8,1.1,.64),.27);
-      vec3 firstCutColor=mix(rough,roughSample*vec3(.60,1.18,.43),.58);
+      // A continuous layer of fine turf fills the spaces below the raised leaves.
+      // Keep native ground variation farther away from maintained playing areas.
+      roughCanopy=(1.-smoothstep(6.,18.,edge))*(courseTheme>.5&&courseTheme<1.5?.42:.72);
+      rough=mix(rough,uncut*(.80+.20*broadCondition),roughCanopy);
+      vec3 firstCutColor=mix(rough,uncut,.85);
       if(courseTheme>1.5&&courseTheme<2.5){
        // Irrigated turf grades into dry grass before the surrounding mineral soil.
        // The worn fringe lies outside the analytic fairway boundary used by golf.
@@ -117,10 +122,12 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
        vec3 soil=groundSample(sandColor,p/4.8)*mix(vec3(.65,.49,.35),vec3(.81,.64,.46),groundNoise(p*.055));
        vec3 dryGrass=roughSample*vec3(1.10,.98,.67)*(.94+groundNoise(p*.19)*.12);
        rough=mix(soil,dryGrass,fringe*.72);
-       firstCutColor=roughSample*vec3(.68,1.10,.46);
+       roughCanopy=fringe*.60;
+       rough=mix(rough,uncut*vec3(1.12,1.04,.85),roughCanopy);
+       firstCutColor=uncut*vec3(1.08,1.12,.92);
        cut*=vec3(1.06,1.10,.92);
       }
-      rough=mix(rough,firstCutColor,firstCut);
+      rough=mix(rough,firstCutColor,firstCut);roughCanopy=max(roughCanopy,firstCut*.85);
       vec3 grass=mix(rough,cut,shortGrass);grass=mix(grass,putting,green);
       float macro=.945+.075*groundNoise(p*.045)+.035*groundNoise(p*.22);
       vec3 sand=texture2D(sandColor,p/4.).rgb*.81;
@@ -167,7 +174,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       if(courseTheme>1.5&&courseTheme<2.5){vec3 soilNormal=groundSample(sandNormal,p/4.8).xyz*2.-1.;soilNormal.xy*=.22;gn=mix(gn,soilNormal,desertSoil);}
       vec3 tn=texture2D(turfNormal,turfUV).xyz*2.-1.;
       tn.xy*=mix(.26,.085,green)*turfResolved;
-      tn=normalize(tn);
+      tn=normalize(tn);gn=normalize(mix(gn,tn,roughCanopy));
       vec3 sn=texture2D(sandNormal,p/4.).xyz*2.-1.;sn.xy*=normalScale;sn=normalize(mix(sn,fineSandNormal,sandMask));
       vec3 terrainNormal=mix(mix(gn,tn,shortGrass),sn,max(sandMask,beach));
       normal=normalize(mix(normal,normalize(tbn*terrainNormal),${distant?'1.-landBlend':'1.'}));
@@ -175,7 +182,7 @@ varying vec3 terrainPosition;varying vec3 terrainSlope;uniform sampler2D landRoc
       ${distant?'}if(landBlend>0.&&courseTheme<2.5){vec3 farNormal=landscapeNormal(terrainPosition,normalize(terrainSlope),rockMask);normal=normalize(mix(normal,mat3(viewMatrix)*farNormal,landBlend));}':''}`);
 
   };
-  mat.customProgramCacheKey=()=>`course-ground-v16-directional-mowing-${distant}`;
+  mat.customProgramCacheKey=()=>`course-ground-v17-rough-canopy-${distant}`;
   return mat;
 }
 
