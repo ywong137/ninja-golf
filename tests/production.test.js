@@ -15,6 +15,16 @@ test('Shot planning follows wind and terrain instead of a fixed carry arc',()=>{
 test('Waiting enemies leave room for attackers and approach distinct lanes',()=>{
  const player={x:0,z:0},v={x:0,z:0};for(let type=0;type<3;type++){const e={x:0,z:7,type,slot:2};const waiting=engagementTarget(e,player,v,false),attacking=engagementTarget(e,player,v,true);assert.ok(Math.hypot(waiting.x,waiting.z)>6);assert.ok(Math.hypot(attacking.x,attacking.z)<ENEMY_TYPES[type].reach);}
 });
+test('Nearby waiting enemies retain space while the player runs or reverses',()=>{
+ const player={x:0,z:0};
+ for(const speed of [2.99,3.01,5.6,9])for(const heading of [0,Math.PI/2,Math.PI])for(let type=0;type<3;type++){
+  const velocity={x:Math.sin(heading)*speed,z:Math.cos(heading)*speed};
+  const enemy={x:0,z:2,type,slot:2};
+  const waiting=engagementTarget(enemy,player,velocity,false),attacking=engagementTarget(enemy,player,velocity,true);
+  assert.ok(Math.hypot(waiting.x,waiting.z)>6,'Waiting enemies must not chase the player center');
+  assert.ok(Math.hypot(attacking.x,attacking.z)<ENEMY_TYPES[type].reach,'Committed attackers must still close to weapon range');
+ }
+});
 test('Scenery collision slides around trunks and retracts an obstructed camera',()=>{
  const collision=new SceneryCollision([{kind:'tree',x:0,z:0,y:0,height:9}]);const p=collision.slide({x:.1,z:.1});assert.ok(Math.hypot(p.x,p.z)>=.69);const camera=collision.camera({x:0,y:1.7,z:4},{x:0,y:3,z:-4});assert.ok(camera.z>0);const clear=collision.camera({x:4,y:1.7,z:4},{x:4,y:3,z:-4});assert.equal(clear.z,-4);
 });

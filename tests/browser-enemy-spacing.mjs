@@ -8,7 +8,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mut
 try {
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
  await disableHmr(page);page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
+ await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  await page.locator('#asset-curtain').waitFor({state:'detached'});
  const result=await page.evaluate(async()=>{
   const {heightAt,lieAt}=await import('/src/course.js'),{ENEMY_TYPES}=await import('/src/combat.js');
@@ -22,7 +22,7 @@ try {
   const positions=()=>g.enemies.map(e=>({x:e.root.position.x-center.x,z:e.root.position.z-center.z}));
   const sectors=points=>new Set(points.map(p=>Math.floor((Math.atan2(p.x,p.z)+Math.PI)/(Math.PI/2))%4)).size;
   for(let i=0;i<12;i++){
-   const type=i%3,e=new Warrior(type,true,{family:i%3,palette:i%4}),a=-1.2+i*2.4/11;
+   const type=i%3,e=new Warrior(type,true,{family:0,palette:i%4}),a=-1.2+i*2.4/11;
    e.root.position.copy(point(center.x+Math.sin(a)*7.4,center.z+Math.cos(a)*7.4));
    Object.assign(e,{slot:i,role:ENEMY_TYPES[type].role,speed:ENEMY_TYPES[type].speed,hp:10000,cooldown:1000,readyAt:g.time+1000,knockback:g.player.root.position.clone().set(0,0,0),lift:0,verticalSpeed:0});g.enemies.push(e);
   }
@@ -47,11 +47,21 @@ try {
   close.slot=0;close.root.position.copy(point(center.x,center.z+1));
   for(let i=0;i<180;i++)tick();
   const closeRadius=Math.hypot(close.root.position.x-center.x,close.root.position.z-center.z);
-  g.audio.pause();return{standby,attacks,maxMelee,pacedFrames,closeRadius};
+  // Non-attacking enemies must also keep lanes through running reversals.
+  let pursuitMaxClose=0,pursuitFrames=0;
+  for(const [key,duration]of [['KeyS',1.5],['KeyW',1.8],[null,1.5]]){
+   g.input.clear();if(key)g.input.keys.add(key);
+   for(let frame=0;frame<duration/dt;frame++){
+    tick();pursuitFrames++;
+    const close=g.enemies.filter(e=>Math.hypot(e.root.position.x-g.player.root.position.x,e.root.position.z-g.player.root.position.z)<3).length;
+    pursuitMaxClose=Math.max(pursuitMaxClose,close);
+   }
+  }
+  g.input.clear();g.audio.pause();return{standby,attacks,maxMelee,pacedFrames,closeRadius,pursuitMaxClose,pursuitFrames};
  });
  await page.screenshot({path:'/tmp/ninja-enemy-spacing.png'});
  fs.writeFileSync('/tmp/ninja-enemy-spacing.json',JSON.stringify({...result,errors},null,2));
- console.log(JSON.stringify({standby:{...result.standby,initial:undefined,final:undefined},attacks:result.attacks,maxMelee:result.maxMelee,pacedFrames:result.pacedFrames,closeRadius:result.closeRadius,errors}));
+ console.log(JSON.stringify({standby:{...result.standby,initial:undefined,final:undefined},attacks:result.attacks,maxMelee:result.maxMelee,pacedFrames:result.pacedFrames,closeRadius:result.closeRadius,pursuitMaxClose:result.pursuitMaxClose,pursuitFrames:result.pursuitFrames,errors}));
  assert.equal(result.standby.initialSectors,2);
  assert.equal(result.standby.finalSectors,4,'Waiting enemies must spread around the hero after the pursuit stops');
  assert.ok(result.standby.minRadius>5.5,'Waiting enemies must leave space for attacks');
@@ -61,5 +71,6 @@ try {
  assert.ok(result.maxMelee<=3,'No more than three melee attackers commit together');
  assert.ok(result.pacedFrames>30,'Slower formation movement also slows the native running clip');
  assert.ok(result.closeRadius>5.5,'An idle enemy retreats when the player stops next to it');
+ assert.ok(result.pursuitMaxClose<=1,'Waiting pursuit lanes must not collapse into a crowd around the running hero');
  assert.deepEqual(errors,[]);
 } finally {await browser.close();}

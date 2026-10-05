@@ -126,7 +126,9 @@ export function guardDamageMultiplier(type,kind,front,stunned){return ENEMY_TYPE
 // Reserve a few readable attacks while the rest approach from distinct lanes.
 export function engagementTarget(enemy,player,velocity,engaged){
  const d=Math.hypot(player.x-enemy.x,player.z-enemy.z),speed=Math.hypot(velocity.x,velocity.z);
- if(d>11||speed>3||ENEMY_TYPES[enemy.type].ranged)return enemyIntent(enemy,player,velocity);
+ // Only committed attackers intercept the moving player. The waiting crowd
+ // keeps its nearby lanes during pursuit, so it does not collapse on the hero.
+ if(d>11||engaged&&speed>3||ENEMY_TYPES[enemy.type].ranged)return enemyIntent(enemy,player,velocity);
  const current=Math.atan2(enemy.x-player.x,enemy.z-player.z),lane=enemy.slot*2.39996323;
  const offset=Math.atan2(Math.sin(lane-current),Math.cos(lane-current));
  const angle=current+Math.max(-.65,Math.min(.65,offset));
