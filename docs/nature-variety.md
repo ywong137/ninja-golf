@@ -43,9 +43,9 @@ The fir source stores `UVMap` as a corner vector attribute. The builder converts
 | pine-open | 374,624 | 129,696 | 21,149,980 |
 | pine-young | 228,295 | 129,675 | 15,686,272 |
 | fir-layered | 56,625 | 43,452 | 6,588,760 |
-| woody-scrub | 7,800 | 2,949 | 1,374,032 |
+| woody-scrub | 7,800 | 2,949 | 2,065,068 |
 
-Each conifer has four material parts per mesh LOD, one atlas draw, and one merged ground-shadow draw. Only active LOD ranges draw. The three new conifer GLBs plus scrub total 44,799,044 bytes before the three atlas sets. The atlases add 3,738,096 bytes, for 48,537,140 delivered bytes. Each atlas set contains color, normal, and sun-shadow views.
+Each conifer has four material parts per mesh LOD, one atlas draw, and one merged ground-shadow draw. Only active LOD ranges draw. The three new conifer GLBs plus scrub total 45,490,080 bytes before the three atlas sets. The atlases add 3,738,096 bytes, for 49,228,176 delivered bytes. Each atlas set contains color, normal, and sun-shadow views.
 
 The public `forestAtlasSource()` call retains its single-source behavior. Passing a theme returns three sources. `buildDistantForest` retains `mesh` and `shadow` aliases for the first pair, and supplies complete `meshes` and `shadows` arrays. Inspection tools must inspect those arrays to measure all species.
 
@@ -67,3 +67,5 @@ Final dense-grove measurements on M1 Max reached 59.2 FPS for Crane Coast and 58
 The Crane grove reached 51.6 FPS at Retina DPR 2 with a 1.5 rendering ratio.
 Each case used 64 enemies, Balanced settings, and a 1440 × 900 viewport.
 See [production quality](production-quality.md) for the full measurement limits.
+
+See [leaf opacity repair](reviews/leaf-opacity.md) before rebuilding the scrub asset. Its source opacity mask must survive export.

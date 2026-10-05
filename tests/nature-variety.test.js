@@ -13,7 +13,7 @@ test('Distinct conifer anatomy retains bounded near and middle geometry with tex
   assert.ok(alpha,`${name}: missing photographed needle cards`);assert.equal(nearFoliage,{'pine-open':345915,'pine-young':209250,'fir-layered':33753}[name],`${name}: native near foliage was reduced`);assert.ok(counts[0]<400000);assert.ok(counts[1]>40000&&counts[1]<140000);assert.ok(raw.length<22e6);signatures.push(counts.join('/'));
  }
  assert.equal(new Set(signatures).size,3,'Separate authored tree forms must not reuse one mesh');
- const scrub=glb('woody-scrub');assert.ok(scrub.raw.length<2e6);assert.ok(scrub.doc.materials.some(m=>/leaves/.test(m.name)));
+ const scrub=glb('woody-scrub');assert.ok(scrub.raw.length<2.2e6);assert.ok(scrub.doc.materials.some(m=>/leaves/.test(m.name)));
 });
 test('Japanese and Highland groves select different species mixes without canopy reuse in Highlands',()=>{
  for(const theme of ['japanese','highlands']){

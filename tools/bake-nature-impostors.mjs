@@ -3,7 +3,7 @@ import {writeFileSync,readFileSync} from 'node:fs';
 const names=process.argv.slice(2);const selected=names.length?names:['forest-canopy','dry-tree'];
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try {
- const page=await browser.newPage();await page.route('**/@vite/client',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.goto('http://localhost:5173/tools/tree-bake.html');
+ const page=await browser.newPage();await page.route('**/@vite/client',route=>route.fulfill({contentType:'application/javascript',body:''}));await page.goto((process.env.GAME_URL||'http://localhost:5173')+'/tools/tree-bake.html');await page.addScriptTag({type:'importmap',content:JSON.stringify({imports:{three:'/node_modules/three/build/three.module.js'}})});
  const result=await page.evaluate(async(selected)=>{
   const T=await import('/node_modules/three/build/three.module.js'),{GLTFLoader}=await import('/node_modules/three/examples/jsm/loaders/GLTFLoader.js');
   const {SUN_DIRECTION}=await import('/src/lighting.js'),shadowSlope=new T.Vector2(-SUN_DIRECTION[0]/SUN_DIRECTION[1],-SUN_DIRECTION[2]/SUN_DIRECTION[1]);

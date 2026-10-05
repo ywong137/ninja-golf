@@ -1,0 +1,38 @@
+[
+  {
+    "asset": "searsia_burchellii",
+    "file": "searsia_burchellii_alpha_2k.png",
+    "size": 90520,
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/2k/searsia_burchellii/searsia_burchellii_alpha_2k.png",
+    "md5": "68add821aca147aa5a17db4fd7d13823",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/searsia_burchellii"
+  },
+  {
+    "asset": "shrub_01",
+    "file": "shrub_01_alpha_2k.png",
+    "size": 297762,
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/2k/shrub_01/shrub_01_alpha_2k.png",
+    "md5": "dabea4c2ea5710c231d58cf94b85e6b3",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/shrub_01"
+  },
+  {
+    "asset": "fern_02",
+    "file": "fern_02_alpha_2k.png",
+    "size": 230089,
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/2k/fern_02/fern_02_alpha_2k.png",
+    "md5": "ff18f7e8e869c58eac8f9c7d7c519f4a",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/fern_02"
+  },
+  {
+    "asset": "island_tree_01",
+    "file": "island_tree_01_leaves_alpha_2k.png",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/2k/island_tree_01/island_tree_01_leaves_alpha_2k.png",
+    "md5": "063774afef8fe1d35ce52d56bf41bf81",
+    "size": 139077,
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/island_tree_01"
+  }
+]
