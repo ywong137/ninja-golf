@@ -21,6 +21,7 @@ import {buildTeeMarkers} from './tee-markers.js';
 import {buildThemeScenery,buildFairwayCover,THEME_LIGHTS} from './course-themes.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { SunLight } from 'three/addons/lights/SunLight.js';
+import { CourseSunShadow } from './course-sun-shadow.js';
 import { heightAt, lieAt, routePoint, waterBasins, waterSurfaceAt, ellipse, smooth, random } from './course.js';
 
 const obj = new THREE.Object3D();
@@ -46,8 +47,8 @@ export class World {
     u.turbidity.value=3.5;u.rayleigh.value=1.7;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.83;u.sunPosition.value.copy(sun);
     // Fit two shadow cascades to the rendered camera. Flight and survey cameras
     // can leave the golfer far behind; their visible scenery still needs shadows.
-    this.sun=new SunLight('#ffedd0',3.0);this.sun.position.copy(sun);this.sun.castShadow=true;
-    this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.far=280;this.sun.shadow.bias=-.00015;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=3;
+    this.sun=new SunLight('#ffedd0',3.0);this.sun.position.copy(sun);this.sun.castShadow=true;this.sun.shadow=new CourseSunShadow();
+    this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.far=280;this.sun.shadow.bias=-.00002;this.sun.shadow.normalBias=.015;this.sun.shadow.radius=1.5;
     scene.add(this.sun);this.hemisphere=new THREE.HemisphereLight('#d7e6e4','#777a49',.8);scene.add(this.hemisphere);
     const env=new THREE.PMREMGenerator(renderer);this.environment=env.fromScene(sky,.04,1,30000);scene.environment=this.environment.texture;scene.environmentIntensity=.18;env.dispose();
     this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');this.bunkerColor=this.texture('bunker-color-2k.jpg',true);this.bunkerNormal=this.texture('bunker-normal-2k.jpg');

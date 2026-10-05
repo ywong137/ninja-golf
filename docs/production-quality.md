@@ -27,6 +27,10 @@ Eleven focused checks pass. Four crowded fights average 51–58 FPS; sustained m
 The private production build passes normal selection, golf, and combat input without errors.
 See [the impact effects review](reviews/impact-refinement-2026-10-05.md) for test conditions and limits.
 
+Nearby shadows now resolve shoes, blades, and small scenery with about three times more linear detail.
+Distant coverage and atlas size remain unchanged. Four crowded encounters average 49–56 FPS on this Mac.
+See [the ground shadow review](reviews/ground-shadows-2026-10-05.md) for measurements and scope.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026
