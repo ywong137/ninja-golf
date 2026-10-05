@@ -67,5 +67,14 @@
     "licenseSource": "https://polyhaven.com/license",
     "gameAsset": "desert-scrub.glb",
     "note": "Medium source plant, two simplified distance meshes; diffuse and alpha combined. Visual dry-scrub substitute, not a native Sonoran species."
+  },
+  {
+    "asset": "namaqualand_boulders_01",
+    "author": "Greg Zaal (photography), Jenelle van Heerden (modeling)",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/namaqualand_boulders_01",
+    "licenseSource": "https://polyhaven.com/license",
+    "gameAsset": "desert-boulders.glb",
+    "note": "Two separate eroded boulder scans, each normalized to 3 m height. Full near geometry and independent 3,200-triangle distance meshes. Shared 4K color and 2K normal/roughness maps. Used as a visual desert-rock substitute; the source is from Namaqualand."
   }
 ]

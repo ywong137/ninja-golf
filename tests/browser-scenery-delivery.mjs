@@ -19,7 +19,7 @@ try{
   assert.deepEqual(assets.map(file=>file.split('/').at(-1)).sort(),natureModelFilesForTheme(theme).map(n=>n+suffix).sort());
   await page.click('#audio-toggle');await page.click('#play');await page.click('#begin');
   const courses=[];
-  for(let i=0;i<(fallback?1:4);i++){
+  for(const i of (fallback?[2]:[0,1,2,3])){
    await page.click(`[data-course="${i}"]`);await page.waitForFunction(id=>window.ninjaGolf.state().courseId===id&&document.querySelector('#course-loading').classList.contains('hidden'),COURSE_SETS[i].id);await page.waitForTimeout(450);
    const state=await page.evaluate(()=>window.ninjaGolf.state());assert.equal(state.mode,'courses');assert.ok(state.triangles>10000);courses.push(state.courseId);
    if(!fallback)await page.screenshot({path:`${out}/course-${i}.png`});

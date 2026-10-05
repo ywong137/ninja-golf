@@ -3,6 +3,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {loadModel} from './load-model.js';
 import {SAGUARO_NAMES,createSaguaro,applySaguaroSkin,saguaroRadius} from './saguaro.js';
+import {buildDesertFormations,insideDesertFormation} from './desert-geology.js';
 import {natureAssetsForTheme} from './nature-assets.js';
 import {createAssetCache} from './asset-cache.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
@@ -24,9 +25,10 @@ const natureCache=createAssetCache(async name=>{
   const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${name==='forest-canopy'?'?v='+BROADLEAF_REVISION:OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
   // The source foliage alpha has soft coverage. A 0.45 cutoff erased it in
   // minified views. The custom shadow material below shares this same cutoff.
-  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=foliageAlphaCutoff(name);material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
+  const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=foliageAlphaCutoff(name);material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({rockForm:o.userData.rockForm,lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
   let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${name==='forest-canopy'?BROADLEAF_REVISION:kind==='shadow'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
-  assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
+  const forms=[...new Set(parts.map(p=>p.rockForm).filter(Number.isInteger))],formBounds=new Map(forms.map(form=>[form,sceneryRockBounds(parts.filter(p=>p.rockForm===form))]));
+  assets.set(name,{parts,formBounds,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
 });
 export async function loadNature(theme){await Promise.all(natureAssetsForTheme(theme).map(name=>natureCache.load(name)));}
 export function isNatureReady(theme){return natureAssetsForTheme(theme).every(name=>natureCache.has(name));}
@@ -48,7 +50,7 @@ export class NaturalLandscape{
   }
   delete root.userData.sceneryRocks;
   const safe=(x,z,margin=8)=>fairwayDistance(c,x,z)>margin&&greenDistance(c,x,z)>29&&bridgeDistance(c,x,z)>3&&lieAt(c,x,z)!=='Water'&&heightAt(c,x,z)>3.7&&!root.userData.pathContains?.(x,z,3)&&!(root.userData.landmarks||[]).some(b=>Math.abs(x-b.x)<b.halfWidth+7&&Math.abs(z-b.z)<b.halfDepth+7);
-  const spacing=desert?15:highland?15:10,occupied=[];
+  const spacing=desert?15:highland?15:10,occupied=[],formationAnchors=[];
   for(let i=0;i<900;i++){
    const x=-240+r()*365,z=-65+r()*(c.length+180);if(!safe(x,z,15)||occupied.some(t=>Math.hypot(t.x-x,t.z-z)<spacing))continue;
    // Open scenery windows preserve long views across the golf course.
@@ -60,13 +62,15 @@ export class NaturalLandscape{
   for(let i=0;i<38;i++){
    const z=-30+r()*(c.length+100),x=c.coastal!==false?130+Math.sin(z*.014)*28+r()*17:-145-r()*55;
    if(!safe(x,z,17))continue;
-   add(desert?'desert-rock':'coastal-rock',x,z,2+r()*3,r()*6.28,1.0);
+   const scale=2+r()*3,angle=r()*6.28;
+   if(desert)formationAnchors.push({x,z,scale,angle});else add('coastal-rock',x,z,scale,angle,1.0);
   }
   for(let i=0;i<12;i++){
    const z=-5+i*(c.length+90)/11,coastal=c.coastal!==false,x=desert?-210-r()*35:coastal?146+Math.sin(z*.014)*28:-180-r()*45;
    if(fairwayDistance(c,x,z)<30)continue;
    const angle=coastal?-Math.atan2(1,.392*Math.cos(z*.014)):r()*6.28;
-   add(desert?'desert-rock':coastal?'sea-cliff':'coastal-rock',x,z,desert?7+r()*8:coastal?.8+r()*.4:4+r()*3,angle,coastal?6:3);
+   const scale=desert?7+r()*8:coastal?.8+r()*.4:4+r()*3;
+   if(desert)formationAnchors.push({x,z,scale,angle,distant:true});else add(coastal?'sea-cliff':'coastal-rock',x,z,scale,angle,coastal?6:3);
   }
   for(let station=0;station<20;station++){
    const p=routePoint(c,(station+.5)/20),side=station%2?1:-1,cx=p.x+p.tangentZ*side*(p.width+12),cz=p.z-p.tangentX*side*(p.width+12);
@@ -97,6 +101,8 @@ export class NaturalLandscape{
    const a=r()*6.28,d=1.5+r()*3,x=t.x+Math.cos(a)*d,z=t.z+Math.sin(a)*d;if(!safe(x,z,5))continue;
    add(desert?'desert-rock':highland?'woody-scrub':j%2?'understory':'fern',x,z,desert?.2+r()*.25:.45+r()*.45);
   }
+  const formationSource=desert?assets.get('desert-boulders'):null,formations=desert?buildDesertFormations(c,root,formationAnchors,formationSource.formBounds):[];
+  if(formations.length)placements.set('desert-boulders',formations);
   // Filter after generation so removing a plant cannot change the seeded random
   // sequence and move unrelated groves, formations, and their collision bounds.
   const inBunker=record=>c.bunkers.some(b=>bunkerDistance(record.x,record.z,b)<=2);
@@ -117,7 +123,8 @@ export class NaturalLandscape{
    };
    // Authored covers keep the same visible rock as their registered ambush site.
    const kept=records.filter(record=>{
-    if(authoredRocks.has(record)||!inBunker(record)&&clearFootprint(record))return true;
+    const planted=!!TREE_SPECIES[name]||['desert-scrub','woody-scrub'].includes(name),covered=desert&&planted&&insideDesertFormation(record.x,record.z,formations,formationSource.formBounds,1.2);
+    if(authoredRocks.has(record)||!inBunker(record)&&clearFootprint(record)&&!covered)return true;
     if(SAGUARO_NAMES.includes(name))removedTrees.add(`${record.x},${record.z}`);
     return false;
    });
@@ -136,11 +143,12 @@ export class NaturalLandscape{
   const shadowGeo=new THREE.BufferGeometry();shadowGeo.setAttribute('position',new THREE.Float32BufferAttribute(shadowPositions,3));shadowGeo.setAttribute('uv',new THREE.Float32BufferAttribute(shadowUV,2));shadowGeo.setAttribute('treeAnchor',new THREE.Float32BufferAttribute(anchors,3));shadowGeo.setIndex(shadowIds);
   root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||TREE_DETAIL)));
   }
-  for(const [name,records]of placements){
+  for(const [name,allRecords]of placements){
    const source=assets.get(name);if(!source)throw new Error(`Missing scenery ${name} for ${c.theme}; await loadNature(theme) before building the course`);
-   if(['coastal-rock','desert-rock','sea-cliff'].includes(name))for(const [i,record]of records.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.bounds,`rock:${name}:${i}`));
+   if(['coastal-rock','desert-rock','sea-cliff','desert-boulders'].includes(name))for(const [i,record]of allRecords.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.formBounds.get(record.rockForm)||source.bounds,`rock:${name}:${i}`));
    const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub'||name==='desert-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
    for(const part of source.parts){
+    const records=part.rockForm===undefined?allRecords:allRecords.filter(record=>record.rockForm===part.rockForm);if(!records.length)continue;
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
     if(desert&&name==='woody-scrub'){material.color.set('#e3d7ae');if(material.alphaTest>0)material.alphaTest=.25;}
     if(source.saguaro)applySaguaroSkin(material);
@@ -150,7 +158,7 @@ export class NaturalLandscape{
     if(source.saguaro){mesh.customDepthMaterial=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking});treeTransition(mesh.customDepthMaterial,part.lod,detail);}
     root.add(mesh);this.groups.push({name,mesh,records,lod:part.lod,isTree,plant,detail,atlas:!!source.map,solidTree:!!source.saguaro,desertScrub:desert&&!isTree&&plant});
    }
-   if(source.map){const geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}
+   if(source.map){const records=allRecords,geo=new THREE.PlaneGeometry(source.span,source.span);geo.translate(0,source.center,0);const material=treeImpostor(source,{detail});if(c.theme==='cyberpunk')material.color.set('#a2c9da');const mesh=new THREE.InstancedMesh(geo,material,records.length);mesh.frustumCulled=false;root.add(mesh);this.groups.push({mesh,records,lod:2,isTree:true,detail,atlas:true});}
   }
  }
  update(time,camera){

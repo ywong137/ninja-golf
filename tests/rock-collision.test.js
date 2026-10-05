@@ -5,10 +5,12 @@ import * as T from 'three';
 import {sceneryRockObstacle,fitSceneryRock} from '../src/scenery-rocks.js';
 import {SceneryCollision} from '../src/scenery-collision.js';
 
-for(const source of ['coastal-rock','desert-rock','sea-cliff'])test(source+' collision encloses both rendered LODs at actual scale and rotation',()=>{
+for(const [source,form] of [['coastal-rock'],['desert-rock'],['sea-cliff'],['desert-boulders',0],['desert-boulders',1]])test(source+(form===undefined?'':` form ${form}`)+' collision encloses both rendered LODs at actual scale and rotation',()=>{
  const bytes=fs.readFileSync(new URL('../public/models/nature/'+source+'.glb',import.meta.url));
  const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)));
- const boxes=json.meshes.flatMap(m=>m.primitives.map(p=>{const a=json.accessors[p.attributes.POSITION];return new T.Box3(new T.Vector3(...a.min),new T.Vector3(...a.max));}));
+ const meshes=form===undefined?json.meshes:json.nodes.filter(n=>n.extras?.rockForm===form).map(n=>json.meshes[n.mesh]);
+ assert.equal(meshes.length,2,'Collision must enclose both distance meshes');
+ const boxes=meshes.flatMap(m=>m.primitives.map(p=>{const a=json.accessors[p.attributes.POSITION];return new T.Box3(new T.Vector3(...a.min),new T.Vector3(...a.max));}));
  const bounds=boxes.reduce((b,p)=>b.union(p),new T.Box3());
  for(const angle of [0,.61,2.5,4.71])for(const scale of [.4,3,12]){
   const record={x:20,y:7,z:35,scale,angle},obstacle=sceneryRockObstacle(record,bounds,'scan'),matrix=new T.Matrix4().compose(new T.Vector3(record.x,record.y,record.z),new T.Quaternion().setFromAxisAngle(new T.Vector3(0,1,0),angle),new T.Vector3(scale,scale,scale));
