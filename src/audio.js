@@ -6,6 +6,12 @@ export class AudioEngine {
   constructor(){
     this.channel=typeof BroadcastChannel!=='undefined'?new BroadcastChannel('ninja-golf-audio'):null;this.channel?.addEventListener('message',()=>{if(!this.paused)this.pause();});
     this.ctx=null;this.enabled=true;this.musicEnabled=true;this.volume=.4;this.mode='course';this.paused=false;this.musicFailed=false;this.fadeTimer=null;
+    try{
+      const saved=JSON.parse(localStorage.getItem('ninja-golf-audio-settings'));
+      if(typeof saved?.enabled==='boolean')this.enabled=saved.enabled;
+      if(typeof saved?.musicEnabled==='boolean')this.musicEnabled=saved.musicEnabled;
+      if(Number.isFinite(saved?.volume)&&saved.volume>=0&&saved.volume<=1)this.volume=saved.volume;
+    }catch{/* Storage can be unavailable or contain an older invalid value. */}
     this.playlist=new MusicPlaylist(SOUNDTRACKS,'crane-coast');
     this.music=new Audio(`${import.meta.env.BASE_URL}${this.playlist.current('course').src}`);
     this.combatMusic=new Audio(`${import.meta.env.BASE_URL}${this.playlist.current('combat').src}`);
@@ -35,9 +41,10 @@ export class AudioEngine {
     }
     if(active)this.fadeTimer=setTimeout(()=>{for(const [name,track] of Object.entries(this.tracks))if(name!==this.mode)track.element.pause();},1200);
   }
-  setVolume(v){this.volume=v;if(this.master)this.master.gain.value=this.enabled?v:0;}
+  saveSettings(){try{localStorage.setItem('ninja-golf-audio-settings',JSON.stringify({enabled:this.enabled,musicEnabled:this.musicEnabled,volume:this.volume}));}catch{/* Audio remains usable when browser storage is unavailable. */}}
+  setVolume(v){if(!Number.isFinite(v)||v<0||v>1)throw new RangeError('Audio volume must be a number between 0 and 1.');this.volume=v;if(this.master)this.master.gain.value=this.enabled?v:0;this.saveSettings();}
   toggle(){this.enabled=!this.enabled;this.setVolume(this.volume);if(this.enabled&&!this.paused)this.start();else this.syncMusic();return this.enabled;}
-  setMusic(on){this.musicEnabled=on;if(on&&this.enabled&&!this.paused)this.start();else this.syncMusic();}
+  setMusic(on){this.musicEnabled=on;this.saveSettings();if(on&&this.enabled&&!this.paused)this.start();else this.syncMusic();}
   noise(duration=.2,frequency=1000,gain=.3){if(!this.ctx||!this.enabled)return;const ctx=this.ctx,n=ctx.sampleRate*duration,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const src=ctx.createBufferSource();src.buffer=b;const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(frequency,ctx.currentTime);f.frequency.exponentialRampToValueAtTime(Math.max(60,frequency*.18),ctx.currentTime+duration);const g=ctx.createGain();g.gain.setValueAtTime(gain,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);src.connect(f).connect(g).connect(this.master);src.start();src.stop(ctx.currentTime+duration);}
   tone(freq,duration,volume=.2,type='sine',end=freq){if(!this.ctx||!this.enabled)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(10,end),t+duration);g.gain.setValueAtTime(.001,t);g.gain.linearRampToValueAtTime(volume,t+.006);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g).connect(this.master);o.start(t);o.stop(t+duration+.01);}
   update(dt,combat,position,coastal=true){if(this.ctx&&!this.paused&&this.enabled)this.field?.update(dt,combat,Math.abs(position.x-145),coastal);}
