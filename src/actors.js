@@ -325,6 +325,15 @@ export class Warrior {
     this.current=name;this.oneShot=once?next.getClip().duration/speed:0;
     this.handGrip?.engage(!!toGrip?.twoHanded,fade);
   }
+  recoil(){
+    if(!this.enemy||this.dead)return false;
+    if(!this.actions.has('Hit_Chest'))throw Error('Enemy model is missing its Hit_Chest reaction.');
+    this.play('Hit_Chest',.045,true);
+    this.enemyAction=null;this.strike=0;this.wasAttack=false;
+    // Finish the recorded recoil before AI movement can replace its recovery.
+    this.stun=Math.max(this.stun||0,this.oneShot);
+    return true;
+  }
   captureRunHandoff(contactWeights={r:1,l:1},groundHeight=null,{previous=null,dt=0}={}){
     this.root.updateMatrixWorld(true);
     const feet=Object.fromEntries(['r','l'].map(side=>{
@@ -629,7 +638,7 @@ export class Warrior {
     this.recordedStopPose?.applyExit(dt);
     // Small distributed rotations preserve the source animation and give the core elastic follow-through.
     const overlay=(name,x,y,z)=>{const bone=this.bones[name];if(!bone)return;const r=new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z));bone.quaternion.multiply(r);this.overlays.push([bone,r]);};
-    if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!motions[this.current]?.nativeAttackReady&&!/_Guard_|^Run_|^Sprint_Forward$/.test(this.current)){
+    if(!selection&&!golf&&!dodge&&!emerging&&!motions[this.current]?.athleticAttack&&!motions[this.current]?.nativeAttackReady&&!/_Guard_|^Run_|^Sprint_Forward$|^Hit_Chest$/.test(this.current)){
       const gait=moving?Math.sin(time*(sprinting?15:11)):Math.sin(time*2)*.12;
       for(const [i,name] of ['spine_01','spine_02','spine_03'].entries())overlay(name,(moving?.025:0)+gait*.018,gait*.035*(i===2?-1:1),gait*.022);
       if(focused&&moving){const twist=Math.sin(moveAngle)*.6;overlay('pelvis',0,twist,0);overlay('spine_01',0,-twist*.4,0);overlay('spine_02',0,-twist*.6,0);}
