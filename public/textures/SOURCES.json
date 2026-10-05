@@ -124,5 +124,38 @@
       "adobe-roughness-2k.jpg"
     ],
     "modifications": "2K source JPG maps re-encoded at quality 88; clay pigment normalized to a warm lime finish, with normal strength adjusted in game."
+  },
+  {
+    "asset": "cliff_side",
+    "author": {
+      "James Ray Cock": "Photography",
+      "Jenelle van Heerden": "Processing",
+      "Dario Barresi": "Photography"
+    },
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/cliff_side",
+    "licenseSource": "https://polyhaven.com/license",
+    "physicalDimensionsMetres": [
+      1.8300000429153442,
+      1.8300000429153442
+    ],
+    "usage": "Distant Arizona rock faces. Broader texture placement represents larger geological layers; the measured source patch is 1.83 metres.",
+    "modifications": "Diffuse and OpenGL normal maps re-encoded as JPEG quality 90, no chroma subsampling. Matching translated patches and triplanar projection in the shader.",
+    "files": [
+      {
+        "file": "sandstone-color-2k.jpg",
+        "sha256": "aa59f28464630f3784f62421a5f7ed53e12eb6945d50b3f35a83d36e46c472f3",
+        "bytes": 1494026,
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cliff_side/cliff_side_diff_2k.jpg",
+        "sourceMD5": "6d129836144e271b30071281241e237d"
+      },
+      {
+        "file": "sandstone-normal-2k.jpg",
+        "sha256": "1cc416890a0201d5c9bebaabf59a89469c04d626a2b792eb5ede64afb458bd88",
+        "bytes": 1716976,
+        "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/cliff_side/cliff_side_nor_gl_2k.jpg",
+        "sourceMD5": "8209033c3ad15185977d91c92cf5866f"
+      }
+    ]
   }
 ]
