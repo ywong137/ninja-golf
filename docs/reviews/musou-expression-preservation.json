@@ -1,0 +1,56 @@
+[
+  {
+    "hero": "ronin",
+    "sourceSha256": "f28a47cf4486afe5844863e44ceca5c6360939ba448318c1b267d24e3bb62c8e",
+    "outputSha256": "26bd962eacd0dd183cbcff11ab8dca276285715ace981ee471bab75683c4b46c",
+    "baseBinaryBytes": 15678992,
+    "baseBinarySha256": "68f6777cc345801bfd8c3178de94ccf12b8114c8e7ab164d8a62c29e994ea9b9",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  },
+  {
+    "hero": "shinobi",
+    "sourceSha256": "ce41cd0e1fd0ec73595412b84a5f87c9d11221317f601b596d19d5582af14c14",
+    "outputSha256": "af0dd5a3beca947b3ca42a58eed2957b2bf62979aee9cac6ab48d4b2ca55c44e",
+    "baseBinaryBytes": 20624440,
+    "baseBinarySha256": "0262e3058383cf31fa825dd24eb7dda6636d761d0f28f867e01001afa24414c0",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  },
+  {
+    "hero": "monk",
+    "sourceSha256": "1335ae9d98c3677f1a3e215aa2c46981274d2921816565ea4ee26fbb2343efeb",
+    "outputSha256": "72546096c118d300ded7bc6eea0a95094fa74f037344544c5bb3432a6dc58464",
+    "baseBinaryBytes": 25179208,
+    "baseBinarySha256": "4c559fb52f8dd6aa60c0b4cc0948a0248218d880895578903d02220c8cd3bfa5",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  },
+  {
+    "hero": "kaede",
+    "sourceSha256": "f9af1e6a5256515c7d2e3c72024ce912f1a4e6f434f53d6d67e26f1fc170a1d8",
+    "outputSha256": "7559d5a9f5941e23d353e041e6a4608d54bb05172ff0e0834d88310be2995c1f",
+    "baseBinaryBytes": 24539872,
+    "baseBinarySha256": "50ec291e7807d34a3db6bee58670915e35c947f91cd3642811b8717479c7db06",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  },
+  {
+    "hero": "ayame",
+    "sourceSha256": "e50eb01fbb2bf23d4b52f10aa3e0a201378ee25807a8c079b81cdb4eff1d2b30",
+    "outputSha256": "b8010d019f0a1ce98aec25d72d7d738ce59e785308639e2307e3e3ba5ff70049",
+    "baseBinaryBytes": 21469412,
+    "baseBinarySha256": "b43c78ab20f362dab505777d2592ce13adb898cd8b1283faf3eac302d3ec0d52",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  },
+  {
+    "hero": "sora",
+    "sourceSha256": "bc9ce6310f596181355a57146b7f7500414ef2e323024516fcdaeac3fcd7582a",
+    "outputSha256": "4c553e6417836eb0714686288cb9740ed276000dfd8d5be1ff3fb2932cd47c93",
+    "baseBinaryBytes": 25354492,
+    "baseBinarySha256": "9c1d00917408197f0ce23995e789d5408053c42d7113996385e5fe6a6c3e5954",
+    "neutralMeshesUnchanged": true,
+    "rigAndAnimationUnchanged": true
+  }
+]

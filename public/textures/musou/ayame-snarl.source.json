@@ -1,0 +1,7 @@
+{
+  "file": "ayame-snarl.webp",
+  "sha256": "d47b8a20c7c2d7a113069de571f5f226670097efe3192dfeb0d7ed124ea9f6af",
+  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "baseLicense": "MIT, see public/models/LICENSE.txt",
+  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+}

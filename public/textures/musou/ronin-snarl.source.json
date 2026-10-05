@@ -1,0 +1,7 @@
+{
+  "file": "ronin-snarl.webp",
+  "sha256": "96df43e2e744a72cd8a21155d4bacab77b8b085316ddd6525b8330da2b4427f8",
+  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "baseLicense": "MIT, see public/models/LICENSE.txt",
+  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+}

@@ -797,7 +797,7 @@
       ],
       "samples": 566,
       "rate": 60,
-      "modelSha256": "f28a47cf4486afe5844863e44ceca5c6360939ba448318c1b267d24e3bb62c8e"
+      "modelSha256": "26bd962eacd0dd183cbcff11ab8dca276285715ace981ee471bab75683c4b46c"
     },
     "shinobi": {
       "min": [
@@ -2249,7 +2249,7 @@
       ],
       "samples": 595,
       "rate": 60,
-      "modelSha256": "ce41cd0e1fd0ec73595412b84a5f87c9d11221317f601b596d19d5582af14c14"
+      "modelSha256": "af0dd5a3beca947b3ca42a58eed2957b2bf62979aee9cac6ab48d4b2ca55c44e"
     },
     "monk": {
       "min": [
@@ -2996,7 +2996,7 @@
       ],
       "samples": 580,
       "rate": 60,
-      "modelSha256": "1335ae9d98c3677f1a3e215aa2c46981274d2921816565ea4ee26fbb2343efeb"
+      "modelSha256": "72546096c118d300ded7bc6eea0a95094fa74f037344544c5bb3432a6dc58464"
     },
     "kaede": {
       "min": [
@@ -4383,7 +4383,7 @@
       ],
       "samples": 595,
       "rate": 60,
-      "modelSha256": "f9af1e6a5256515c7d2e3c72024ce912f1a4e6f434f53d6d67e26f1fc170a1d8"
+      "modelSha256": "7559d5a9f5941e23d353e041e6a4608d54bb05172ff0e0834d88310be2995c1f"
     },
     "ayame": {
       "min": [
@@ -5770,7 +5770,7 @@
       ],
       "samples": 622,
       "rate": 60,
-      "modelSha256": "e50eb01fbb2bf23d4b52f10aa3e0a201378ee25807a8c079b81cdb4eff1d2b30"
+      "modelSha256": "b8010d019f0a1ce98aec25d72d7d738ce59e785308639e2307e3e3ba5ff70049"
     },
     "sora": {
       "min": [
@@ -7382,7 +7382,7 @@
       ],
       "samples": 622,
       "rate": 60,
-      "modelSha256": "bc9ce6310f596181355a57146b7f7500414ef2e323024516fcdaeac3fcd7582a"
+      "modelSha256": "4c553e6417836eb0714686288cb9740ed276000dfd8d5be1ff3fb2932cd47c93"
     }
   }
 }

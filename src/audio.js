@@ -42,7 +42,7 @@ export class AudioEngine {
   tone(freq,duration,volume=.2,type='sine',end=freq){if(!this.ctx||!this.enabled)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(10,end),t+duration);g.gain.setValueAtTime(.001,t);g.gain.linearRampToValueAtTime(volume,t+.006);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g).connect(this.master);o.start(t);o.stop(t+duration+.01);}
   update(dt,combat,position,coastal=true){if(this.ctx&&!this.paused&&this.enabled)this.field?.update(dt,combat,Math.abs(position.x-145),coastal);}
   play(name,lie='Fairway'){if(!this.enabled||this.paused)return;
-    if(['sword','hit','heavy-hit','clash'].includes(name)){if(!this.combat?.play(name))this.noise(name==='sword'?.16:.09,name==='sword'?2200:900,.3);return;}
+    if(['whoosh','heavy-whoosh','hit','heavy-hit','clash'].includes(name)){if(!this.combat?.play(name))this.noise(name.includes('whoosh')?.30:.09,name.includes('whoosh')?1800:900,.3);return;}
     if(name==='step'&&this.field?.play(lie==='Bunker'?'step_sand':'step_grass',.22,.94+Math.random()*.12))return;
     if(name==='swing'&&this.field?.play('rod_swish',.68,1.2))return;
     if(name==='water'&&this.field?.play('splash',.4))return;

@@ -15,7 +15,7 @@ test('musou color belongs to each actor and preserves neutral material propertie
  assert.equal(a.mesh.material.map,original.map);assert.equal(a.mesh.material.normalMap,original.normalMap);assert.equal(a.mesh.material.roughness,.78);
  first.set(.8);assert.equal(first.weight.value,.8);assert.equal(second.weight.value,0);
  first.set(Infinity);assert.equal(first.weight.value,0);first.set(2);assert.equal(first.weight.value,1);
- assert.equal(installMusouAlbedo(a.group,null),null);assert.equal(loadMusouAlbedo('monk'),null);
+ assert.equal(installMusouAlbedo(a.group,null),null);assert.equal(loadMusouAlbedo('unknown'),null);
 });
 
 test('musou texture blends in the actual surface shader and preserves prior extensions',()=>{
@@ -37,7 +37,7 @@ test('native facial lifecycle resets the angry texture on disabled and restored 
  for(let i=0;i<60;i++)pose.apply(1/60,{exertion:.4});assert.ok(albedo.value<.0001);
 });
 
-test('reviewed angry color asset matches its source record',()=>{
- const folder=new URL('../public/textures/musou/',import.meta.url),record=JSON.parse(fs.readFileSync(new URL('sora-snarl.source.json',folder))),bytes=fs.readFileSync(new URL(record.file,folder));
+for(const hero of ['ronin','shinobi','monk','kaede','ayame','sora'])test(`${hero} angry color asset matches its source record`,()=>{
+ const folder=new URL('../public/textures/musou/',import.meta.url),record=JSON.parse(fs.readFileSync(new URL(`${hero}-snarl.source.json`,folder))),bytes=fs.readFileSync(new URL(record.file,folder));
  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),record.sha256);assert.equal(bytes.subarray(8,12).toString(),'WEBP');assert.ok(bytes.length<250000);
 });

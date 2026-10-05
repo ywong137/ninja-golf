@@ -1,0 +1,7 @@
+{
+  "file": "monk-snarl.webp",
+  "sha256": "d2645f112dca88406266f204b144e49935ff7a9a9e2259d3448ff93e59943c88",
+  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "baseLicense": "MIT, see public/models/LICENSE.txt",
+  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+}

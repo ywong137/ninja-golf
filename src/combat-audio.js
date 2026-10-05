@@ -1,9 +1,10 @@
-// Recorded CC0 effects; attribution and unmodified source names live beside the files.
+// Recorded CC0 / CC-BY-SA effects; credits and source names live beside the files.
 export const COMBAT_SAMPLES=Object.freeze({
- sword:['sword-1','sword-2','sword-3'],
+ whoosh:['whoosh-1','whoosh-2','whoosh-3'],
  clash:['clash-1','clash-2','clash-3'],
- hit:['flesh-1','flesh-2'],
- crunch:['crunch-1','crunch-2'],
+ hit:['impact-1','impact-2','impact-3'],
+ cut:['metal-cut-1','metal-cut-2','metal-cut-3'],
+ flesh:['flesh-1','flesh-2'],
 });
 export class CombatAudio{
  constructor(ctx,destination){
@@ -35,17 +36,22 @@ export class CombatAudio{
   source.start(when,offset,duration??Math.max(.01,buffer.duration-offset));return true;
  }
  play(kind){
-  const rate=.96+Math.random()*.08;
-  if(kind==='sword')return this.sample('sword',.65,rate);
-  if(kind==='clash')return this.sample('clash',.6,rate,{offset:.15});
+  const rate=.97+Math.random()*.06;
+  if(kind==='whoosh'||kind==='heavy-whoosh'){
+   const heavy=kind==='heavy-whoosh';
+   const played=this.sample('whoosh',heavy?.95:.8,heavy?.90:1.12);
+   // The lower air layer gives large blades weight without a metallic ring.
+   this.sample('whoosh',heavy?.52:.24,heavy?.65:.82,{delay:.012,duration:.30});
+   return played;
+  }
+  if(kind==='clash'){
+   const played=this.sample('clash',.85,rate,{offset:.15});
+   this.sample('cut',.65,1.07,{duration:.32});return played;
+  }
   if(kind==='hit'||kind==='heavy-hit'){
-   // The old wood layer arrived first; the cut and metal recordings had
-   // 130–150 ms of lead-in. Align their transients with the contact frame.
-   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?1.15:.95,heavy?.94:rate);
-   this.sample('hit',heavy?.65:.4,heavy?1.24:1.35,{offset:.09,delay:.018,duration:.24});
-   this.sample('crunch',heavy?.24:.14,heavy?1.12:1.3,{delay:.012,duration:.20});
-   this.sample('clash',heavy?.18:.1,1.35,{offset:.15,duration:.22});
-   this.sample('sword',heavy?.45:.32,1.35,{offset:.20,duration:.32});
+   const heavy=kind==='heavy-hit',played=this.sample('hit',heavy?1.1:.9,heavy?.88:rate);
+   this.sample('flesh',heavy?.70:.48,heavy?.88:1.03,{delay:.008,duration:.32});
+   this.sample('cut',heavy?.82:.58,heavy?.93:1.12,{delay:.004,duration:.42});
    return played;
   }
   return false;

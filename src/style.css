@@ -101,7 +101,7 @@ body[data-phase=combat] #toast{width:max-content;max-width:min(600px,calc(100vw 
 #musou-cinema .cinema-title em{display:block;font-family:Impact,'Arial Black',sans-serif;font-size:clamp(42px,7.8vw,118px);line-height:.93;font-weight:950;font-style:italic;text-transform:uppercase;letter-spacing:-.025em;color:#fff3d2;-webkit-text-stroke:1px #fff1d2;filter:drop-shadow(4px 5px 0 var(--musou-color))}
 #musou-cinema .musou-kanji{z-index:3;font-size:clamp(70px,12vw,160px);right:3vw;top:auto;bottom:7vh;color:#fff1d2;opacity:.85;transform:rotate(-9deg);text-shadow:4px 5px 0 #0b0b13,0 0 30px var(--musou-color)}
 @keyframes musou-eyes{0%{clip-path:inset(49% 0);opacity:0;translate:-20% 0}15%,65%{clip-path:inset(0);opacity:1;translate:0 0}100%{clip-path:inset(50% 0);opacity:0;translate:15% 0}}
-@keyframes musou-portrait{0%,12%{opacity:0;transform:translateX(20%) scale(.92)}24%{opacity:1;transform:translateX(0) scale(1)}52%{opacity:1;transform:translateX(-2%) scale(1.10)}66%,100%{opacity:0;transform:translateX(-6%) scale(1.17)}}
+@keyframes musou-portrait{0%,4%{opacity:0;transform:translateX(20%) scale(.96)}8%,16%{opacity:1;transform:translateX(0) scale(1)}24%,100%{opacity:0;transform:translateX(-8%) scale(1.04)}}
 @keyframes musou-title{0%,18%{opacity:0;transform:translateX(-100px) skewX(-8deg)}29%,88%{opacity:1;transform:translateX(0) skewX(-8deg)}100%{opacity:0;transform:translateX(80px) skewX(-8deg)}}
 @keyframes musou-slash{0%{opacity:0;scale:0 1}7%,15%{opacity:1;scale:1 1}20%,83%{opacity:.3;scale:1 1}89%{opacity:1;scale:1.2 2}100%{opacity:0;scale:1.5 1}}
 @keyframes musou-ink{0%{opacity:0;transform:scale(1.5)}18%,87%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}

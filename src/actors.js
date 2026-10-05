@@ -63,6 +63,7 @@ MODEL_REVISIONS.ayame='connected-combo-20261004';
 MODEL_REVISIONS.sora='selected-wardrobe-20261003';
 for(const {model}of WARRIORS)MODEL_REVISIONS[model]='native-facs-musou-20261004';
 MODEL_REVISIONS.shinobi='left-airborne-cut-20261004';
+for(const {model}of WARRIORS)MODEL_REVISIONS[model]='furrowed-musou-20261004b';
 for(const {model}of ENEMY_APPEARANCES)MODEL_REVISIONS[model]='ninja-emergence-20261004';
 const GUARD_PREFIX={odachi:'Odachi',twin:'Twin',naginata:'Naginata',fan:'Fan',ring:'Ring',sickle:'Sickle'};
 const templates=[];
@@ -249,6 +250,15 @@ export class Warrior {
   }
   setGolfClubLength(length){
     this.clubShaft.scale.y=Math.max(.1,length-.14);this.clubShaft.position.y=.14+this.clubShaft.scale.y*.5;this.clubHead.position.y=length;
+  }
+  interruptAttack(){
+    // Release the animation lock and the old foot plan. Normal pose blending
+    // keeps the outgoing body while the new movement starts this frame.
+    this.oneShot=0;this.wasAttack=false;this.actionToken=null;
+    this.attackLocomotion?.restore();this.attackLocomotion?.reset();
+    this.runAttackStep?.restore();this.runAttackStep?.reset();
+    this.lastWalkingHandoff=null;this.startHandoff=null;this.stoppingRun=false;
+    this.recordedStart?.reset();this.recordedTurn?.reset();this.recordedStop?.reset();
   }
   capturePose(){
     const actions=new Set([...this.actions.values(),...(this.repeatActions?.values()??[])]),sources=capturePoseWeights(actions);

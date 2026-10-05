@@ -35,7 +35,7 @@ try{
   assert.ok(report.nativeMorphs.length>0&&report.nativeMorphs.every(w=>w>.99),'The native face must use its angry mesh target');
   assert.ok(report.angerAtQuarterSecond>.9,'The face must react on real time, not the slowed body clock');
   assert.ok(Math.abs(report.eyeScreen[0])<.15&&Math.abs(report.eyeScreen[1])<.15,'Camera centers the actual eyes');
-  assert.ok(report.cameraDistance>.4&&report.cameraDistance<.8,'Camera shows a facial close-up');
+  assert.ok(report.cameraDistance>1&&report.cameraDistance<1.5,'Camera keeps a dramatic face-and-weapon composition');
   await page.evaluate(()=>{const g=window.__golfTest;for(let i=0;i<60&&g.cinematic>0;i++){g.time+=1/60;g.updateCombat(1/60);}if(g.action?.kind!=='musou')throw Error('Cinematic did not enter the musou attack');g.clearEnemies();});
  }
  assert.deepEqual(errors,[]);fs.writeFileSync(`${output}/report.json`,JSON.stringify(reports,null,2));console.log(JSON.stringify(reports,null,2));

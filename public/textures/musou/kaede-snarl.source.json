@@ -1,0 +1,7 @@
+{
+  "file": "kaede-snarl.webp",
+  "sha256": "53c1c0cd41673b5208a35f7e5a65a250b3811626e7e89f7c814683279497185b",
+  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "baseLicense": "MIT, see public/models/LICENSE.txt",
+  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+}

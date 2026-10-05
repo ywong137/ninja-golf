@@ -95,6 +95,14 @@
       "baseBinaryBytes": 15477272,
       "baseBinarySha256": "5d2929f060fc772feee712172192bd3863a0c5fb9fc762442be280509c54e28f",
       "target": "Musou_Snarl"
+    },
+    "expressionRevision": {
+      "sourceSha256": "f28a47cf4486afe5844863e44ceca5c6360939ba448318c1b267d24e3bb62c8e",
+      "outputSha256": "26bd962eacd0dd183cbcff11ab8dca276285715ace981ee471bab75683c4b46c",
+      "baseBinaryBytes": 15678992,
+      "baseBinarySha256": "68f6777cc345801bfd8c3178de94ccf12b8114c8e7ab164d8a62c29e994ea9b9",
+      "neutralMeshesUnchanged": true,
+      "rigAndAnimationUnchanged": true
     }
   },
   "shinobi": {
@@ -211,7 +219,15 @@
           "Shinobi_Left_Airborne_Cut"
         ]
       }
-    ]
+    ],
+    "expressionRevision": {
+      "sourceSha256": "ce41cd0e1fd0ec73595412b84a5f87c9d11221317f601b596d19d5582af14c14",
+      "outputSha256": "af0dd5a3beca947b3ca42a58eed2957b2bf62979aee9cac6ab48d4b2ca55c44e",
+      "baseBinaryBytes": 20624440,
+      "baseBinarySha256": "0262e3058383cf31fa825dd24eb7dda6636d761d0f28f867e01001afa24414c0",
+      "neutralMeshesUnchanged": true,
+      "rigAndAnimationUnchanged": true
+    }
   },
   "kaede": {
     "originalBinarySha256": "47bceafa16535a853c0f09b476bbc9355090df49f1ce21ce1419de302300612a",
@@ -336,6 +352,14 @@
       "baseBinaryBytes": 24288328,
       "baseBinarySha256": "404f5fb737edb61830094215155a5a3cc8a3cdbb4f0867ca1e6431a47f9b2869",
       "target": "Musou_Snarl"
+    },
+    "expressionRevision": {
+      "sourceSha256": "f9af1e6a5256515c7d2e3c72024ce912f1a4e6f434f53d6d67e26f1fc170a1d8",
+      "outputSha256": "7559d5a9f5941e23d353e041e6a4608d54bb05172ff0e0834d88310be2995c1f",
+      "baseBinaryBytes": 24539872,
+      "baseBinarySha256": "50ec291e7807d34a3db6bee58670915e35c947f91cd3642811b8717479c7db06",
+      "neutralMeshesUnchanged": true,
+      "rigAndAnimationUnchanged": true
     }
   },
   "ayame": {
@@ -493,6 +517,14 @@
       "baseBinaryBytes": 21224540,
       "baseBinarySha256": "b7e6f3863a8be55969a47be2df7b1619cf9e3016ef9fb1a088310f13a842f353",
       "target": "Musou_Snarl"
+    },
+    "expressionRevision": {
+      "sourceSha256": "e50eb01fbb2bf23d4b52f10aa3e0a201378ee25807a8c079b81cdb4eff1d2b30",
+      "outputSha256": "b8010d019f0a1ce98aec25d72d7d738ce59e785308639e2307e3e3ba5ff70049",
+      "baseBinaryBytes": 21469412,
+      "baseBinarySha256": "b43c78ab20f362dab505777d2592ce13adb898cd8b1283faf3eac302d3ec0d52",
+      "neutralMeshesUnchanged": true,
+      "rigAndAnimationUnchanged": true
     }
   },
   "sora": {
@@ -596,6 +628,14 @@
       "baseBinaryBytes": 25112980,
       "baseBinarySha256": "0168a1f9a3669c47f3c2509fa637007a3fb001360e856c2651d1f4b3b5eb904a",
       "target": "Musou_Snarl"
+    },
+    "expressionRevision": {
+      "sourceSha256": "bc9ce6310f596181355a57146b7f7500414ef2e323024516fcdaeac3fcd7582a",
+      "outputSha256": "4c553e6417836eb0714686288cb9740ed276000dfd8d5be1ff3fb2932cd47c93",
+      "baseBinaryBytes": 25354492,
+      "baseBinarySha256": "9c1d00917408197f0ce23995e789d5408053c42d7113996385e5fe6a6c3e5954",
+      "neutralMeshesUnchanged": true,
+      "rigAndAnimationUnchanged": true
     }
   }
 }

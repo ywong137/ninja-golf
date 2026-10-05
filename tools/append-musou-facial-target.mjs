@@ -10,7 +10,7 @@ if(!['ronin','shinobi','monk','kaede','ayame','sora'].includes(hero)||!options.i
 if(path.resolve(options.input)===path.resolve(options.output))throw Error('Use a separate output candidate.');
 const source=JSON.parse(fs.readFileSync(options.source));
 const input=fs.readFileSync(options.input),jsonLength=input.readUInt32LE(12),doc=JSON.parse(input.subarray(20,20+jsonLength)),originalBin=input.subarray(28+jsonLength);
-const chunks=[originalBin],report={hero,inputSHA256:crypto.createHash('sha256').update(input).digest('hex'),weights:{AU_04_BrowLowerer:hero==='shinobi'?.60:.42,AU_07_LidTightener:.60,AU_09_NoseWrinkler:.60,AU_10_UpperLipRaiser:.70,AU_16_LowerLipDepressor:.45,AU_26_JawDrop:.10},primitives:[]};let offset=originalBin.length;
+const chunks=[originalBin],report={hero,inputSHA256:crypto.createHash('sha256').update(input).digest('hex'),weights:{AU_04_BrowLowerer:.78,AU_07_LidTightener:hero==='monk'?.65:.80,AU_09_NoseWrinkler:.68,AU_10_UpperLipRaiser:.82,AU_16_LowerLipDepressor:.5,AU_26_JawDrop:hero==='monk'?.20:.14},primitives:[]};let offset=originalBin.length;
 const component={5121:1,5123:2,5125:4,5126:4},arity={SCALAR:1,VEC2:2,VEC3:3,VEC4:4};
 function read(ai){const a=doc.accessors[ai],v=doc.bufferViews[a.bufferView],n=arity[a.type],size=component[a.componentType],at=(v.byteOffset||0)+(a.byteOffset||0),stride=v.byteStride||n*size;const data=[];for(let i=0;i<a.count;i++)for(let j=0;j<n;j++){const p=at+i*stride+j*size;data.push(a.componentType===5126?originalBin.readFloatLE(p):a.componentType===5125?originalBin.readUInt32LE(p):a.componentType===5123?originalBin.readUInt16LE(p):originalBin[p]);}return data;}
 function append(array){const bytes=Buffer.from(new Float32Array(array).buffer),view=doc.bufferViews.length;doc.bufferViews.push({buffer:0,byteOffset:offset,byteLength:bytes.length});chunks.push(bytes);offset+=bytes.length;const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];array.forEach((v,i)=>{min[i%3]=Math.min(min[i%3],v);max[i%3]=Math.max(max[i%3],v);});const index=doc.accessors.length;doc.accessors.push({bufferView:view,componentType:5126,count:array.length/3,type:'VEC3',min,max});return index;}
@@ -29,7 +29,7 @@ function preserveTriangleOrientation(pos,delta,index){
 }
 for(const mesh of doc.meshes){
  if(!mesh.primitives.some(p=>/^[fm]\d{3}_head$/.test(doc.materials[p.material]?.name)))continue;
- if(mesh.weights?.length||mesh.primitives.some(p=>p.targets?.length))throw Error('Existing morph targets need an explicit merge.');
+ if((mesh.weights?.length||mesh.primitives.some(p=>p.targets?.length))&&JSON.stringify(mesh.extras?.targetNames)!==JSON.stringify(['Musou_Snarl']))throw Error('Only Musou_Snarl can be replaced. Other targets need an explicit merge.');
  for(const p of mesh.primitives){
   const name=doc.materials[p.material]?.name,pos=read(p.attributes.POSITION),delta=new Array(pos.length).fill(0);let maxUVError=0,maxPositionError=0,mapped=0;
   const triangles=source.triangles.filter(t=>t.material===name);

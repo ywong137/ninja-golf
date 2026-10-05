@@ -1,0 +1,56 @@
+[
+  {
+    "file": "whoosh-1.ogg",
+    "source": "swish-7.wav",
+    "license": "CC0-1.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "whoosh-2.ogg",
+    "source": "swish-8.wav",
+    "license": "CC0-1.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "whoosh-3.ogg",
+    "source": "swish-9.wav",
+    "license": "CC0-1.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "impact-1.ogg",
+    "source": "Socapex - new_hits_1.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "impact-2.ogg",
+    "source": "Socapex - new_hits_2.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "impact-3.ogg",
+    "source": "Socapex - new_hits_6.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "metal-cut-1.ogg",
+    "source": "Socapex - Swordsmall.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "metal-cut-2.ogg",
+    "source": "Socapex - Swordsmall_1.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  },
+  {
+    "file": "metal-cut-3.ogg",
+    "source": "Socapex - Swordsmall_2.wav",
+    "license": "CC-BY-SA-3.0",
+    "changes": "Lead silence removed, high-pass 65Hz, peak limiter, Opus encoding."
+  }
+]

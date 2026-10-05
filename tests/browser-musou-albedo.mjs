@@ -7,9 +7,23 @@ const output=process.env.REVIEW_OUTPUT??'artifacts/musou-albedo';fs.mkdirSync(ou
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[],failed=[];
- page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.url().includes('sora-snarl')&&!r.ok())failed.push(r.status());});
+ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('response',r=>{if(r.url().includes('-snarl.webp')&&!r.ok())failed.push(r.status());});
  await disableHmr(page);await page.goto(process.env.NINJA_BASE_URL??'http://localhost:5184');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);
  await page.evaluate(async()=>{const g=window.__golfTest;g.audio.pause();g.audio.enabled=false;g.frame=()=>{};await g.world.waitForAssets();g.clearEnemies();g.selectWarrior(5);g.mode='game';g.phase='combat';g.paused=false;g.resolve=100;g.ui.showScreen('game');g.player.root.rotation.y=0;g.attack('musou');for(let i=0;i<135;i++){g.time+=1/60;g.updateCombat(1/60);g.updateCamera(1/60);}g.portraitLights.visible=true;g.portraitLights.position.copy(g.player.root.position);for(const a of document.getAnimations()){a.pause();a.currentTime=2250;}});
+ const heroPixels=[];
+ for(let hero=0;hero<6;hero++){
+  const result=await page.evaluate(async hero=>{
+   const g=window.__golfTest;g.clearEnemies();g.selectWarrior(hero);g.resolve=100;g.attack('musou');
+   for(let i=0;i<135;i++){g.time+=1/60;g.updateCombat(1/60);g.updateCamera(1/60);}
+   g.portraitLights.visible=true;g.portraitLights.position.copy(g.player.root.position);
+   const a=g.player,gl=g.renderer.getContext(),size=120,x=Math.floor(gl.drawingBufferWidth/2-size/2),y=Math.floor(gl.drawingBufferHeight/2-size/2),before=new Uint8Array(size*size*4),after=new Uint8Array(before.length);
+   g.rendering.render('high');gl.readPixels(x,y,size,size,gl.RGBA,gl.UNSIGNED_BYTE,before);
+   a.musouAlbedo.set(0);g.rendering.render('high');gl.readPixels(x,y,size,size,gl.RGBA,gl.UNSIGNED_BYTE,after);
+   let changed=0;for(let i=0;i<before.length;i+=4){const d=Math.abs(before[i]-after[i])+Math.abs(before[i+1]-after[i+1])+Math.abs(before[i+2]-after[i+2]);if(d>6)changed++;}
+   a.musouAlbedo.set(1);g.rendering.render('high');return{hero,changedPixels:changed,texture:a.musouAlbedo.materials.length};
+  },hero);
+  heroPixels.push(result);assert.ok(result.changedPixels>300,'Every rendered hero must use the angry face texture: '+JSON.stringify(result));
+ }
  const rows=[];
  for(const theme of ['japanese','highlands','desert','cyberpunk'])for(const quality of ['high','balanced','low']){
   const result=await page.evaluate(({theme,quality})=>{
@@ -30,9 +44,9 @@ try{
   for(let i=0;i<60;i++)a.update(g.time+i/60,1/60,{});const combat=a.musouAlbedo.weight.value;
   a.facialPose.apply(.1,{musou:1});a.update(g.time,.016,{golf:true});const golf=a.musouAlbedo.weight.value;
   a.facialPose.apply(.1,{musou:1});a.update(g.time,.016,{dodge:1});const dodge=a.musouAlbedo.weight.value;
-  g.selectWarrior(0);const other=g.player.musouAlbedo;g.selectWarrior(5);const fresh=g.player.musouAlbedo.weight.value;
+  g.selectWarrior(0);const other=g.player.musouAlbedo.weight.value;g.selectWarrior(5);const fresh=g.player.musouAlbedo.weight.value;
   return {combat,golf,dodge,other,fresh};
  });
- assert.ok(recovery.combat<.0001);assert.equal(recovery.golf,0);assert.equal(recovery.dodge,0);assert.equal(recovery.other,null);assert.equal(recovery.fresh,0);assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
- fs.writeFileSync(`${output}/report.json`,JSON.stringify({rows,recovery,errors,failed},null,2));console.log(JSON.stringify({rows,recovery,errors}));
+ assert.ok(recovery.combat<.0001);assert.equal(recovery.golf,0);assert.equal(recovery.dodge,0);assert.equal(recovery.other,0);assert.equal(recovery.fresh,0);assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);
+ fs.writeFileSync(`${output}/report.json`,JSON.stringify({heroPixels,rows,recovery,errors,failed},null,2));console.log(JSON.stringify({heroPixels,rows,recovery,errors}));
 }finally{await browser.close();}

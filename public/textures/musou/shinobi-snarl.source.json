@@ -1,0 +1,7 @@
+{
+  "file": "shinobi-snarl.webp",
+  "sha256": "1c73784d5cf6eff659a31b9646ea9b799901f57db0f39325da1b8dad796911f3",
+  "source": "Image-generated expression paint using this character\u2019s existing head color atlas.",
+  "baseLicense": "MIT, see public/models/LICENSE.txt",
+  "use": "Live 3D head during musou only. Neutral face, original UVs, and body stay unchanged."
+}

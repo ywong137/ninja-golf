@@ -21,7 +21,7 @@ try{
    const focus=g.rendering.portraitFocus.clone(),direction=focus.clone().sub(g.camera.position).normalize();
    // Put a solid witness directly across the eyes. It must affect the untreated
    // image, disappear from the portrait, and remain visible outside that render.
-   const witness=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({color:0xff00ff,side:T.DoubleSide}));witness.position.copy(focus).addScaledVector(direction,-.18);witness.lookAt(g.camera.position);g.world.root.add(witness);
+   const witness=new T.Mesh(new T.PlaneGeometry(2,2),new T.MeshBasicMaterial({color:0xff00ff,side:T.DoubleSide}));witness.position.copy(focus).addScaledVector(direction,-.5);witness.lookAt(g.camera.position);g.world.root.add(witness);
    const size=g.renderer.getDrawingBufferSize(new T.Vector2()),gl=g.renderer.getContext(),eye=focus.clone().project(g.camera),x=Math.round((eye.x*.5+.5)*size.x)-48,y=Math.round((eye.y*.5+.5)*size.y)-42;
    const capture=(quality,visible,enabled)=>{
     witness.visible=visible;const roots=g.rendering.portraitRoots;if(!enabled)g.rendering.portraitRoots=null;
