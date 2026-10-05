@@ -12,6 +12,7 @@ for(const {model}of WARRIORS)test(`${model}: preview bounds match the released a
  assert.equal(record.modelSha256,sha,'Animation changed. Re-bake and visually verify its full preview envelope.');
  assert.ok(record.rate>=60&&record.samples>record.rate*5);
  assert.ok(record.hull.length>=8);
+ assert.ok([...record.min,...record.max].every(Number.isFinite),'Preview bounds must contain finite coordinates.');
  for(const point of record.hull)for(let axis=0;axis<3;axis++){
   assert.ok(Number.isFinite(point[axis]));
   assert.ok(point[axis]>=record.min[axis]-1e-8&&point[axis]<=record.max[axis]+1e-8);

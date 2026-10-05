@@ -35,3 +35,10 @@ test('invalid seek requests preserve the existing preview',()=>{
  for(const [stage,time]of [['missing',0],['light',NaN],['light',-.1],['light',.7]])assert.throws(()=>clock.seek(stage,time));
  assert.equal(JSON.stringify(clock),before);
 });
+
+test('inspecting a follow-up holds its final pose and does not enter another move',()=>{
+ const clock=new ShowcaseClock(showcaseStages(2.4,.6,1),[{id:'musou',label:'Musou',duration:8}]);
+ clock.seek('musou',7.95);clock.setSpeed(.1);clock.paused=false;
+ assert.ok(Math.abs(clock.advance(2)-.05)<1e-8);assert.equal(clock.elapsed,8);assert.equal(clock.paused,true);assert.equal(clock.stage.id,'musou');
+ assert.equal(clock.advance(50),0);clock.seek('address',0);assert.equal(clock.inspection,null);clock.paused=false;clock.advance(12);assert.equal(clock.stage.id,'swing');
+});

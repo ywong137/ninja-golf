@@ -1,5 +1,5 @@
-import {buildMusouSequence,combatSequenceFrame} from './musou-sequence.js';
-import {buildShadowSequence,crossedShadowEvents} from './shadow-sequence.js';
+import {combatSequenceFrame} from './musou-sequence.js';
+import {crossedShadowEvents} from './shadow-sequence.js';
 import {shadowBurst,shadowWave} from './shadow-effects.js';
 import enemyMotions from './enemy-motion.json';
 import {enemyEmergenceFrame} from './enemy-emergence.js';
@@ -18,17 +18,17 @@ import {resolveBuildingBall,obstructionRelief} from './building-ball.js';
 import {createCourseSurfaceSampler} from './terrain.js';
 import { Warrior, Effects, CrowdRenderer, loadInitialWarriorAssets, loadWarrior, isWarriorReady } from './actors.js';
 import { cameraRelativeMove, aimDelta, turnToward } from './navigation.js';
-import { attackDefinition, strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
+import { strikeContains, chooseAmbushSites, ENEMY_TYPES, enemyTypeForSlot, engagementTarget, guardDamageMultiplier, enemyReadyToAttack, MUSOU_CINEMATIC_DURATION, createPlayerGuard, updatePlayerGuard, exitPlayerGuard, resolvePlayerGuard, guardAttackRecovering, escapeGuardBreak } from './combat.js';
 import {attackRootDelta} from './attack-root-motion.js';
 import {attackContinuation} from './attack-continuation.js';
 import {musouCameraFrame,musouReadyPose,MUSOU_WIPES} from './musou-cinematic.js';
 import {ATTACK_BUFFER_SECONDS,attackControlWindow,movementRedirected,steerAttack,swingSoundTimes} from './combat-control.js';
-import {withMotionTiming} from './attack-timing.js';
+import {createAttackPerformance} from './attack-performance.js';
 import {attackEntryVelocity} from './attack-braking.js';
 import {createSurvey,moveSurvey,surveyPosition} from './survey.js';
 import {readRoundSave} from './round.js';
 import { Projectiles } from './projectiles.js';
-import {musouHeadings,combatMotionName,motions} from './motion.js';
+import {combatMotionName,motions} from './motion.js';
 import { Input } from './input.js';
 import {controlHints} from './control-bindings.js';
 import { AudioEngine } from './audio.js';
@@ -44,7 +44,7 @@ const YARD=1.09361;
 class Game {
   constructor(initialCourse=0){
     this.courseRequest=0;this.characterRequest=0;this.courseIndex=0;this.roundCourse=COURSE_SETS[0];this.holes=this.roundCourse.holes;this.penalties=0;this.scorePenalties=[];this.audio=new AudioEngine();this.mode='home';this.phase='aim';this.paused=false;this.hole=0;this.scores=[];this.kills=0;this.combo=0;this.bestCombo=0;this.comboTime=0;this.resolve=35;this.guard=createPlayerGuard();this.health=110;this.quality='balanced';this.time=0;this.playerIndex=0;this.enemies=[];this.power=1;this.charging=false;this.club=0;this.shotHeight=0;this.strokes=0;this.enemiesSpawned=0;this.attackTimer=0;this.dodgeTimer=0;this.invincible=0;this.shotOrigin=new THREE.Vector3();this.cameraYaw=0;this.cameraPitch=.35;this.swingTimer=0;this.uiTime=0;this.frameCount=0;this.fpsTime=0;
-    this.ui=new UI({selection:()=>this.selectScreen(),home:()=>this.home(),begin:(i,c)=>this.begin(i,c),courseSelection:()=>this.selectCourseScreen(),course:i=>this.previewCourse(i),warrior:i=>this.requestWarrior(i),audio:()=>this.ui.audio(this.audio.toggle()),pause:()=>this.togglePause(),help:()=>{this.ui.help();},resume:()=>this.resume(),swing:()=>{this.audio.start();this.swing();},club:d=>this.changeClub(d),selectClub:i=>this.selectClub(i),shotHeight:value=>this.selectShotHeight(value),skip:()=>{this.fastFlight=true;},restart:()=>{this.paused=false;this.loadHole(this.hole);this.audio.resume();},next:()=>this.nextHole(),survey:()=>this.toggleSurvey(),showcaseSeek:(stage,seconds)=>{if(this.showcase)this.showcase.seek(stage??this.showcase.state.stage,seconds);this.updateShowcaseUI();},showcaseStep:direction=>{if(this.showcase){const s=this.showcase.state;this.showcase.seek(s.stage,clamp(s.time+direction/60,0,s.duration));}this.updateShowcaseUI();},showcaseSpeed:speed=>{this.showcase?.clock.setSpeed(speed);this.updateShowcaseUI();},showcasePause:()=>{if(this.showcase)this.showcase.clock.paused=!this.showcase.clock.paused;this.updateShowcaseUI();}});
+    this.ui=new UI({selection:()=>this.selectScreen(),home:()=>this.home(),begin:(i,c)=>this.begin(i,c),courseSelection:()=>this.selectCourseScreen(),course:i=>this.previewCourse(i),warrior:i=>this.requestWarrior(i),audio:()=>this.ui.audio(this.audio.toggle()),pause:()=>this.togglePause(),help:()=>{this.ui.help();},resume:()=>this.resume(),swing:()=>{this.audio.start();this.swing();},club:d=>this.changeClub(d),selectClub:i=>this.selectClub(i),shotHeight:value=>this.selectShotHeight(value),skip:()=>{this.fastFlight=true;},restart:()=>{this.paused=false;this.loadHole(this.hole);this.audio.resume();},next:()=>this.nextHole(),survey:()=>this.toggleSurvey(),showcaseSeek:(stage,seconds)=>{if(this.showcase)this.showcase.seek(stage??this.showcase.state.stage,seconds);this.updateShowcaseUI();},showcaseStep:direction=>{if(this.showcase){const s=this.showcase.state;this.showcase.seek(s.stage,clamp(s.time+direction/60,0,s.duration));}this.updateShowcaseUI();},showcaseSpeed:speed=>{this.showcase?.clock.setSpeed(speed);this.updateShowcaseUI();},showcasePause:()=>{this.showcase?.togglePause();this.updateShowcaseUI();}});
     this.ui.audio(this.audio.enabled);
     try{this.renderer=new THREE.WebGLRenderer({canvas:this.ui.canvas,antialias:true,powerPreference:'high-performance'});}catch(e){this.ui.modal('<h2>A little more graphics power.</h2><p>This game needs WebGL 2. Enable hardware acceleration in your browser, then reload the page.</p>');return;}
     this.renderer.setSize(innerWidth,innerHeight);this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.92;this.renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -250,11 +250,8 @@ class Game {
     if(this.time>(this.chainExpires||0))this.lightChain=0;
     const step=continuation?.step??(kind==='light'?(this.lightChain||0)%(this.warrior.lightComboLength??4):Math.max(0,(this.lightChain||0)-1));
     const motionName=continuation?.clip??combatMotionName(this.warrior,kind,step),motion=motions[motionName];
-    let definition=withMotionTiming(attackDefinition(kind,step,this.warrior.combatStyle),motion);
-    const sequence=kind==='musou'?(this.warrior.musouChain?buildMusouSequence(motions,this.warrior.musouChain):this.warrior.musouSequence?buildShadowSequence(motions,this.warrior.musouSequence,{gap:.075,continuous:true,minDuration:7}):null):null;
-    if(sequence)definition={...definition,duration:sequence.duration,hits:sequence.hits,headings:sequence.headings,damage:definition.damage*definition.hits.length/sequence.hits.length};
-    this.action={...definition,motionName,syncMotion:!!(continuation||motion.continuations),impactHands:motion.impactHands,rootAdvance:motion.rootAdvance??0,planarRoot:motion.planarRoot,movementScale:motion.movementScale??.45,kind,step,sequence,headings:definition.headings??(kind==='musou'?musouHeadings(this.warrior):null),time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
-    if(sequence){this.action.planarRoot=sequence.planarRoot;this.action.impactHands=sequence.impactHands;this.action.movementScale=0;}
+    const definition=createAttackPerformance(this.warrior,kind,step,motionName,motions);
+    this.action={...definition,syncMotion:!!(continuation||definition.syncMotion),time:0,hitIndex:0,token:(this.actionSerial=(this.actionSerial||0)+1)};
     const movingEntry=this.player.running||this.player.startingRun||this.player.turningRun||this.player.recordedStopping;
     const entry=brakingEntry??(movingEntry?(this.player.runAttackStep?.previous?.rootVelocity??this.playerVelocity):null);
     if(entry&&!motion.planarRoot&&kind!=='musou')this.action.entryVelocity={x:entry.x,z:entry.z};

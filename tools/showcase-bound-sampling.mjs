@@ -13,20 +13,28 @@ export function measureShowcaseBounds(actor,{rate=60}={}){
     points=[...vertices].map(v=>v.point);
   };
   try{
-    while(preview.clock.cycle===0){
+    const measure=()=>{
       actor.root.updateMatrixWorld(true);inverse.copy(actor.root.matrixWorld).invert();
       if(preview.clock.opacity>.01)actor.root.traverseVisible(mesh=>{
         if(!mesh.isMesh)return;
         mesh.skeleton?.update();matrix.multiplyMatrices(inverse,mesh.matrixWorld);meshBounds.makeEmpty();
         for(let i=0;i<mesh.geometry.attributes.position.count;i++){
-          mesh.getVertexPosition(i,point).applyMatrix4(matrix);meshBounds.expandByPoint(point);
+          mesh.getVertexPosition(i,point).applyMatrix4(matrix);
+          if(!point.toArray().every(Number.isFinite))throw Error(`Nonfinite preview vertex: hero=${actor.type}, stage=${preview.clock.stage.id}, time=${preview.clock.elapsed}, mesh=${mesh.name}, vertex=${i}, clip=${actor.current}`);
+          meshBounds.expandByPoint(point);
         }
         if(meshBounds.isEmpty())return;
         bounds.union(meshBounds);
         for(let i=0;i<8;i++)points.push(new T.Vector3(i&1?meshBounds.max.x:meshBounds.min.x,i&2?meshBounds.max.y:meshBounds.min.y,i&4?meshBounds.max.z:meshBounds.min.z));
       });
-      samples++;if(samples%60===0)reduce();preview.update(1/rate);
+      samples++;if(samples%60===0)reduce();
+    };
+    while(preview.clock.cycle===0){measure();preview.update(1/rate);}
+    for(const stage of preview.clock.inspectionStages){
+      preview.seek(stage.id,0);preview.clock.paused=false;
+      do{measure();preview.update(1/rate);}while(!preview.clock.paused);
+      measure();
     }
-    reduce();return{min:bounds.min.toArray(),max:bounds.max.toArray(),hull:points.map(p=>p.toArray()),samples,rate};
+    reduce();return{min:bounds.min.toArray(),max:bounds.max.toArray(),hull:points.map(p=>p.toArray()),samples,rate,inspectionStages:preview.clock.inspectionStages.map(stage=>stage.id)};
   }finally{preview.dispose();}
 }
