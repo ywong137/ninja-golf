@@ -5,7 +5,7 @@ const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'ch
 try{
  const page=await browser.newPage({viewport:{width:800,height:600}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await disableHmr(page);
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await page.goto(process.env.GAME_URL??'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await page.locator('#asset-curtain').waitFor({state:'detached'});
  const result=await page.evaluate(async()=>{
   const T=await import('/node_modules/three/build/three.module.js'),{SUN_DIRECTION}=await import('/src/lighting.js'),{leafTransmission}=await import('/src/foliage-materials.js'),g=window.__golfTest;
   g.frame=()=>{};g.paused=true;g.audio.pause();await g.world.waitForAssets();
@@ -14,7 +14,7 @@ try{
   const sun=new T.Vector3(...SUN_DIRECTION),camera=new T.PerspectiveCamera(16,1,.1,100);camera.lookAt(sun);camera.updateMatrixWorld(true);
   const registration=[];
   for(let theme=0;theme<3;theme++){
-   g.setCourse(theme);await g.world.waitForAssets();const scene=new T.Scene();scene.background=g.scene.background;scene.backgroundRotation.copy(g.scene.backgroundRotation);scene.backgroundIntensity=1;
+   g.setCourse(theme);g.world.applyTheme(g.holes[0]);await g.world.waitForAssets();const scene=new T.Scene();scene.background=g.scene.background;scene.backgroundRotation.copy(g.scene.backgroundRotation);scene.backgroundIntensity=1;
    renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,size,size,pixels);
    let peak=0;for(let i=0;i<pixels.length;i+=4)peak=Math.max(peak,pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722);
    let x=0,y=0,weight=0;for(let i=0;i<pixels.length;i+=4){const l=pixels[i]*.2126+pixels[i+1]*.7152+pixels[i+2]*.0722;if(l<peak*.1)continue;const p=i/4;x+=(p%size+.5)*l;y+=(Math.floor(p/size)+.5)*l;weight+=l;}

@@ -9,11 +9,12 @@ import {scaleBoxUV} from './architecture-uv.js';
 import {architecturalSurface} from './architecture-materials.js';
 import {CYBER_FIXTURES,queueCyberFixture,flushCyberFixtures} from './cyber-fixtures.js';
 
+// Balance direct sun against the photographic sky. Excess unshadowed fill hides surface shape.
 export const THEME_LIGHTS={
- japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#fcfff5',fill:'#c7ddf1',ground:'#62695c',intensity:2.7,ambient:1.65},
- highlands:{sky:'#a1adb9',fog:'#a6b2bd',sun:'#f4f8ff',fill:'#c1d2e8',ground:'#64615a',intensity:1.85,ambient:1.65},
- desert:{sky:'#9ecbdc',fog:'#e0b996',sun:'#fff5df',fill:'#bdd9ef',ground:'#ac937a',intensity:3.0,ambient:.85},
- cyberpunk:{sky:'#121b39',fog:'#172342',sun:'#c8d7eb',fill:'#aec8eb',ground:'#394239',intensity:2.1,ambient:.65},
+ japanese:{sky:'#a9c3ce',fog:'#b4c3bd',sun:'#fcfff5',fill:'#c7ddf1',ground:'#62695c',intensity:3.5,ambient:.28,environment:.25},
+ highlands:{sky:'#a1adb9',fog:'#a6b2bd',sun:'#f4f8ff',fill:'#c1d2e8',ground:'#64615a',intensity:2.4,ambient:.40,environment:.26},
+ desert:{sky:'#9ecbdc',fog:'#e0b996',sun:'#fff5df',fill:'#bdd9ef',ground:'#ac937a',intensity:4.0,ambient:.20,environment:.20},
+ cyberpunk:{sky:'#121b39',fog:'#172342',sun:'#c8d7eb',fill:'#aec8eb',ground:'#394239',intensity:2.1,ambient:.65,environment:.4},
 };
 const transform=new THREE.Object3D();
 // Each plant component is a single instanced draw. Static architecture is merged by material.

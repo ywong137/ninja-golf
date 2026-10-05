@@ -42,6 +42,11 @@ Tee and green passes use their own scale. Distant bands fade before they form in
 The GPU check preserves fairway boundaries across all 36 holes. Four moving fights average 42–57 FPS on this Mac.
 See [the turf definition review](reviews/turf-definition-2026-10-05.md) for references, checks, and limits.
 
+Daylight now uses less unshadowed fill and stronger sunlight across the three daytime course styles.
+Trees, rocks, and clothing show clearer shape. All six selection characters and angry musou textures remain readable.
+Four crowded fights average 41–57 FPS on this Mac. Normal-input golf and combat pass in the private build.
+See [the daylight balance review](reviews/daylight-balance-2026-10-05.md) for measurements and limits.
+
 The remaining acceptance work below still applies. Preserve the user's accepted controls and characters during further visual work.
 
 ## Previous readiness — October 4, 2026
