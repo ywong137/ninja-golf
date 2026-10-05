@@ -22,3 +22,14 @@ export function fitSceneryRock(record,bounds){
  const co=Math.cos(record.angle),si=Math.sin(record.angle),cx=center.x*horizontal,cz=center.z*horizontal;
  return {x:record.x-co*cx-si*cz,z:record.z+si*cx-co*cz,y:record.y-bounds.min.y*vertical-record.burial*size.y*vertical,angle:record.angle,scale:1,scaleX:horizontal,scaleY:vertical,scaleZ:horizontal};
 }
+
+// The same scan bounds and transform drive rendering and solid collision.
+// The small margin keeps moving knees and loose clothing outside the surface.
+export function sceneryRockObstacle(record,bounds,id){
+ const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
+ const sx=record.scaleX??record.scale,sy=record.scaleY??record.scale,sz=record.scaleZ??record.scale;
+ const co=Math.cos(record.angle),si=Math.sin(record.angle),cx=center.x*sx,cz=center.z*sz;
+ return{id,kind:'box',x:record.x+co*cx+si*cz,z:record.z-si*cx+co*cz,
+  halfWidth:size.x*sx*.5+.1,halfDepth:size.z*sz*.5+.1,yaw:record.angle,
+  minY:record.y+bounds.min.y*sy,maxY:record.y+bounds.max.y*sy};
+}

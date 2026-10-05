@@ -36,9 +36,9 @@ test('Wipe beats have readable doubled durations and fit inside the intro',()=>{
 test('Repeated musou impacts reuse compiled rings and bounded flash storage',async()=>{
  const {Effects}=await import('../src/effects.js'),T=await import('three');
  const effects=new Effects(new T.Scene()),origin=new T.Vector3();
- effects.flourish(origin,0,'#dcad57','naginata');
+ effects.flourish(origin,0,'naginata');
  const first=effects.items.map(item=>item.m);effects.clear();
- effects.flourish(origin,1,'#dcad57','naginata');
+ effects.flourish(origin,1,'naginata');
  assert.deepEqual(effects.items.map(item=>item.m),first);
  const itemCount=effects.items.length;
  for(let i=0;i<150;i++)effects.explosion(origin,1);

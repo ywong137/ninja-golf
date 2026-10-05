@@ -98,7 +98,7 @@ export class World {
     if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.rockColor,normal:this.rockNormal});
     buildFairwayCover(this.root,c,this.ambushSites,{color:this.rockColor,normal:this.rockNormal});
     buildArchitectureGround(this.root,c,this.path,this.ambushSites);
-    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(c.theme),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
+    this.vegetation=new NaturalLandscape(this.root,c,this.ambushSites);this.distantForest=buildDistantForest(this.root,c,this.regions?.[c.theme],forestAtlasSource(c.theme),this.horizonHeight);this.makeGrass(r);buildBridges(this.root,c,{color:this.texture('bark-color.jpg',true),normal:this.texture('bark-normal.jpg')});this.collision=new SceneryCollision(this.ambushSites,this.root.userData.buildingObstacles,this.vegetation.rockObstacles);this.buildingNavigation=new BuildingNavigation(c,this.collision);this.makeFlag();this.makePetals(r);this.makeBirds();
     buildTeeMarkers(this.root,c,{stoneColor:this.rockColor,stoneNormal:this.rockNormal});
   }
   makeGrass(r){

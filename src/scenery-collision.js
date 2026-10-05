@@ -33,20 +33,20 @@ function sweep(s,from,to,radius,height,verticalMargin=0){
 
 // Every occupied cell stores the full obstacle, including wide and rotated buildings.
 export class SceneryCollision {
- constructor(sites=[],buildingObstacles=[]){
-  this.cells=new Map();this.buildings=[];
+ constructor(sites=[],buildingObstacles=[],rockObstacles=[]){
+  this.cells=new Map();this.buildings=[];this.rocks=[];
   for(const site of sites){
-   if(!['tree','lantern','pagoda','rock'].includes(site.kind))continue;
+   if(!['tree','lantern','pagoda','rock'].includes(site.kind)||site.kind==='rock'&&rockObstacles.length)continue;
    const radius=site.radius??(site.kind==='tree'?.32:site.kind==='rock'?Math.min(1.15,site.height*.65):.7),height=site.kind==='tree'?site.height:site.height||2.5;
    this.insert({...site,kind:'cylinder',radius,minY:site.y??0,maxY:(site.y??0)+height,cos:1,sin:0,building:false});
   }
   const ids=new Set();
-  for(const record of buildingObstacles){
-   if(!['box','cylinder'].includes(record.kind))throw new Error(`Unsupported building collision kind: ${record.kind}`);
+  for(const [category,records]of [['building',buildingObstacles],['rock',rockObstacles]])for(const record of records){
+   if(!['box','cylinder'].includes(record.kind))throw new Error(`Unsupported ${category} collision kind: ${record.kind}`);
    const values=[record.x,record.z,record.minY,record.maxY,...(record.kind==='box'?[record.halfWidth,record.halfDepth,record.yaw??0]:[record.radius])];
-   if(!values.every(Number.isFinite)||record.maxY<=record.minY||(record.kind==='box'?record.halfWidth<=0||record.halfDepth<=0:record.radius<=0))throw new Error(`Invalid building collision bounds: ${record.id??'unnamed'}`);
+   if(!values.every(Number.isFinite)||record.maxY<=record.minY||(record.kind==='box'?record.halfWidth<=0||record.halfDepth<=0:record.radius<=0))throw new Error(`Invalid ${category} collision bounds: ${record.id??'unnamed'}`);
    if(record.id!=null&&ids.has(record.id))continue;
-   ids.add(record.id);const yaw=record.yaw??0,item={...record,yaw,cos:Math.cos(yaw),sin:Math.sin(yaw),building:true};this.buildings.push(item);this.insert(item);
+   ids.add(record.id);const yaw=record.yaw??0,item={...record,yaw,cos:Math.cos(yaw),sin:Math.sin(yaw),building:category==='building'};(item.building?this.buildings:this.rocks).push(item);this.insert(item);
   }
  }
  key(x,z){return `${Math.floor(x/CELL)},${Math.floor(z/CELL)}`;}
@@ -90,8 +90,23 @@ export class SceneryCollision {
   }
   return nearest;
  }
- camera(origin,target){
-  const hit=this.sweepSphere(origin,target,.45,false),closest=hit?Math.max(0,hit.t-.002):1;
-  target.x=origin.x+(target.x-origin.x)*closest;target.z=origin.z+(target.z-origin.z)*closest;target.y=origin.y+(target.y-origin.y)*closest;return target;
+ camera(origin,target,minimumDistance=0){
+  const radius=minimumDistance>0?.2:.45;
+  const project=end=>{const hit=this.sweepSphere(origin,end,radius,false),t=hit?Math.max(0,hit.t-.002):1;return{x:origin.x+(end.x-origin.x)*t,y:origin.y+(end.y-origin.y)*t,z:origin.z+(end.z-origin.z)*t};};
+  const desired={...target},length=p=>Math.hypot(p.x-origin.x,p.y-origin.y,p.z-origin.z);
+  let best=project(desired);
+  if(minimumDistance>0&&length(best)<minimumDistance){
+   // Keep a clear view of the body instead of collapsing the lens into it.
+   // Search nearby side and elevated views only when the normal boom is blocked.
+   const dx=desired.x-origin.x,dz=desired.z-origin.z,span=Math.max(minimumDistance,Math.hypot(dx,dz)),yaw=Math.atan2(dx,dz);
+   let score=Infinity;
+   for(const rise of [0,2.5,5,9,16])for(const turn of [0,-Math.PI/4,Math.PI/4,-Math.PI/2,Math.PI/2,-Math.PI*.75,Math.PI*.75,Math.PI]){
+    const candidate=project({x:origin.x+Math.sin(yaw+turn)*span,y:Math.max(origin.y+.6,desired.y)+rise,z:origin.z+Math.cos(yaw+turn)*span});
+    if(length(candidate)<minimumDistance)continue;
+    const distance=(candidate.x-desired.x)**2+(candidate.y-desired.y)**2+(candidate.z-desired.z)**2;
+    if(distance<score){best=candidate;score=distance;}
+   }
+  }
+  target.x=best.x;target.y=best.y;target.z=best.z;return target;
  }
 }

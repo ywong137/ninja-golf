@@ -1,12 +1,14 @@
+import {MusouAura} from './musou-aura.js';
 import {ContactBursts} from './contact-bursts.js';
 import {ImpactParticles} from './impact-particles.js';
 import * as THREE from 'three';
-const PALETTE=['#ffe1a0','#c9d9af','#fff2b5','#9ee4ff','#dcc294'];
+const PALETTE=['#ffe1a0','#c9d9af','#ff3020','#9ee4ff','#dcc294'];
 const TRAIL_HANDS=[[],['r'],['l'],['r','l']].map(Object.freeze);
 export function activeBladeTrailHands(action,hasOffhand){
+  if(action.kind==='musou')return TRAIL_HANDS[hasOffhand?3:1];
   let mask=0;
   for(let i=0;i<action.hits.length;i++){
-    if(Math.abs(action.time-action.hits[i])>=(action.kind==='musou'?.24:.105))continue;
+    if(Math.abs(action.time-action.hits[i])>=.105)continue;
     const hand=action.impactHands?.[i]??(hasOffhand?'both':'r');
     if(!['r','l','both'].includes(hand))throw Error(`Unknown attack hand: ${hand}`);
     if(hand==='r'||hand==='both')mask|=1;
@@ -29,7 +31,7 @@ export function telegraphGeometry(position,yaw,reach,type,groundHeight){
 }
 export class Effects {
   constructor(scene,groundHeight){
-    this.groundHeight=groundHeight;this.impacts=new ImpactParticles(scene);this.contacts=new ContactBursts(scene);
+    this.groundHeight=groundHeight;this.musouAura=new MusouAura(scene);this.impacts=new ImpactParticles(scene);this.contacts=new ContactBursts(scene);
     this.scene=scene;this.items=[];this.ringPools=new Map();this.ribbonTracks=new Map();this.ribbonSamples=[];this.elapsed=0;this.capacity=4096;this.cursor=0;this.particles=Array.from({length:this.capacity},()=>({life:0,v:new THREE.Vector3()}));
     this.positions=new Float32Array(this.capacity*3);this.colors=new Float32Array(this.capacity*3);this.sizes=new Float32Array(this.capacity);
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(this.positions,3).setUsage(THREE.DynamicDrawUsage));geometry.setAttribute('color',new THREE.BufferAttribute(this.colors,3));geometry.setAttribute('size',new THREE.BufferAttribute(this.sizes,1).setUsage(THREE.DynamicDrawUsage));
@@ -62,10 +64,10 @@ export class Effects {
     // Crowd-wide finishes reuse the same instanced draw as ordinary contacts.
     this.contacts.emit(center,{heavy:true,special:true,radius:2*scale,duration:.32});
   }
-  flourish(position,beat,color,style,{final=false}={}){
+  flourish(position,beat,style,{final=false}={}){
     this.impacts.emit(position.clone().add(new THREE.Vector3(0,1.2,0)),new THREE.Vector3(Math.sin(beat),.1,Math.cos(beat)),{heavy:true,special:true,guarded:true});
     for(let i=0;i<3;i++){
-      const radius=2.8+i*1.8,m=this.ring(radius,final?.55:.28,64,-2.1,4.2,i===1?'#fff1b2':color);
+      const radius=2.8+i*1.8,m=this.ring(radius,final?.55:.28,64,-2.1,4.2,i===1?'#ffb16c':'#ff3020');
       m.position.copy(position).add(new THREE.Vector3(0,style==='sickle'?.6:1.25,0));m.rotation.set(-Math.PI/2+(i-1)*(style==='fan'?.95:.65),beat*1.07,i*.7+beat*.95);this.scene.add(m);this.items.push({m,life:.7,max:.7,peak:.82,growth:style==='ring'?3:2.1});
     }
     if(final){this.explosion(position,2);for(let i=0;i<8;i++){const angle=i*Math.PI/4;this.explosion(position.clone().add(new THREE.Vector3(Math.sin(angle)*5,0,Math.cos(angle)*5)),.85);}}
@@ -88,10 +90,12 @@ export class Effects {
     m.rotation.set(-Math.PI/2,style==='ring'?.38:.12,yaw-Math.PI/2);m.position.copy(position);m.position.y+=style==='sickle'?.55:1.2;this.scene.add(m);this.items.push({m,life:.24,max:.24,peak:.45});
     this.impacts.emit(m.position,new THREE.Vector3(Math.sin(yaw),.1,Math.cos(yaw)),{heavy:special,guarded:true});
   }
+  setMusou(position,active,reducedMotion=false){this.musouAura.set(position,active,reducedMotion);}
   update(dt,calm=false){
+    this.musouAura.update(dt,calm);
     this.impacts.update(dt,calm);this.contacts.update(dt,calm);this.scene.userData.contactFlash=this.contacts.active>0;this.elapsed+=dt;for(const [key,samples]of this.ribbonTracks)this.ribbonTracks.set(key,samples.filter(s=>this.elapsed-s.time<(s.kind===2?.42:.18)&&!calm));
     const rg=this.ribbon.geometry;let n=0;for(const samples of this.ribbonTracks.values())for(let i=1;i<samples.length;i++){const a=samples[i-1],b=samples[i];for(const [sample,point] of [[a,a.a],[a,a.b],[b,b.b],[a,a.a],[b,b.b],[b,b.a]]){point.toArray(rg.attributes.position.array,n*3);this.palette[sample.kind].toArray(rg.attributes.color.array,n*3);rg.attributes.alpha.array[n++]=Math.max(0,1-(this.elapsed-sample.time)/(sample.kind===2?.42:.18))*(sample.kind===2?.82:.24)*(point===sample.a?0:1);}}
     rg.setDrawRange(0,n);Object.values(rg.attributes).forEach(a=>a.needsUpdate=true);
     for(let i=0;i<this.capacity;i++){const p=this.particles[i];if(p.life<=0)continue;p.life-=dt*(calm?3:1);p.v.y-=6*dt;const j=i*3;this.positions[j]+=p.v.x*dt;this.positions[j+1]+=p.v.y*dt;this.positions[j+2]+=p.v.z*dt;this.sizes[i]=Math.max(0,p.life/p.max)*p.size;}this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.size.needsUpdate=true;for(let i=this.items.length-1;i>=0;i--){const p=this.items[i];p.life-=dt*(calm?3:1);if(p.life<=0){this.releaseItem(p);this.items.splice(i,1);}else{p.m.material.opacity=p.telegraph?.12+(1-p.life/p.max)*.18:p.life/p.max*(p.peak||.32);if(p.flash){p.m.material.uniforms.opacity.value=p.m.material.opacity;p.m.material.uniforms.age.value=1-p.life/p.max;}if(p.shockwave)p.m.scale.setScalar(.8+(p.shockwave-.8)*(1-p.life/p.max));else if(!p.telegraph)p.m.scale.multiplyScalar(1+dt*(p.growth||3));}}}
-  clear(){this.impacts.clear();this.contacts.clear();this.scene.userData.contactFlash=false;for(const p of this.items)this.releaseItem(p);this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
+  clear(){this.musouAura.clear();this.impacts.clear();this.contacts.clear();this.scene.userData.contactFlash=false;for(const p of this.items)this.releaseItem(p);this.items=[];this.ribbonTracks.clear();this.ribbonSamples=[];this.ribbon.geometry.setDrawRange(0,0);this.particles.forEach(p=>p.life=0);this.sizes.fill(0);this.points.geometry.attributes.size.needsUpdate=true;}
 }

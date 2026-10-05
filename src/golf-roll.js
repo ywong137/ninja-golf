@@ -1,5 +1,5 @@
 import {heightAt,lieAt,waterSurfaceAt} from './course.js';
-import {resolveBuildingBall,buildingRelief} from './building-ball.js';
+import {resolveBuildingBall,obstructionRelief} from './building-ball.js';
 import {BALL_RADIUS} from './golf-equipment.js';
 export {BALL_RADIUS} from './golf-equipment.js';
 
@@ -40,7 +40,7 @@ export function stepRollingBall(course,state,dt,cup,collision=null){
  state.stillTime=applyRollingResistance(course,p,v,surface,dt,state.stillTime);
  if(capturesCup(before,p,v,cup))return state.outcome='Holed';
  if(rollingFinished(state.stillTime,state.time)){
-  const relief=buildingRelief(course,collision,p);
+  const relief=obstructionRelief(course,collision,p);
   if(relief.status==='unplayable')return state.outcome='Unplayable building lie';
   if(relief.status==='relief'){Object.assign(p,relief.position);state.lie=lieAt(course,p.x,p.z);}
   return state.outcome='Stopped';

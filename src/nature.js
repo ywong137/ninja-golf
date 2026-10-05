@@ -4,7 +4,7 @@ import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
 import {TREE_DETAIL,foliageEye,treeTransition,treeImpostor,canopyShadowMaterial,leafTransmission,leafShadowCutoff} from './foliage-materials.js';
-import {sceneryRockBounds,fitSceneryRock} from './scenery-rocks.js';
+import {sceneryRockBounds,fitSceneryRock,sceneryRockObstacle} from './scenery-rocks.js';
 import {TREE_SPECIES,forestSpecies,selectForestSpecies} from './nature-species.js';
 export {queueSceneryRock} from './scenery-rocks.js';
 const ATLAS_REVISION='leaf-opacity-2';
@@ -32,7 +32,7 @@ function sway(material,foliage){
 // Tree placement follows authored fairway edges. Plants form groves and rock gardens.
 export class NaturalLandscape{
  constructor(root,c,sites){
-  this.records=[];this.groups=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),desert=c.theme==='desert',highland=c.theme==='highlands';
+  this.records=[];this.groups=[];this.rockObstacles=[];this.last=new THREE.Vector3(Infinity,0,0);const r=random(c.seed+2419),placements=new Map(),desert=c.theme==='desert',highland=c.theme==='highlands';
   const add=(name,x,z,scale=1,angle=r()*Math.PI*2,depth=0)=>{if(!placements.has(name))placements.set(name,[]);const rec={x,z,y:heightAt(c,x,z)-depth,scale,angle};placements.get(name).push(rec);return rec;};
   for(const rock of root.userData.sceneryRocks||[]){
    const source=assets.get(rock.source);if(!source)throw new Error(`Missing scenery scan ${rock.source}; await loadNature before building the course`);
@@ -87,7 +87,9 @@ export class NaturalLandscape{
   root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||TREE_DETAIL)));
   }
   for(const [name,records]of placements){
-   const source=assets.get(name);if(!source)continue;const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
+   const source=assets.get(name);if(!source)continue;
+   if(['coastal-rock','desert-rock','sea-cliff'].includes(name))for(const [i,record]of records.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.bounds,`rock:${name}:${i}`));
+   const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
    for(const part of source.parts){
     const material=part.material.clone();if(c.theme==='cyberpunk')material.color.set('#a2c9da');else if(name==='desert-rock'&&!desert)material.color.set('#9faeae');
     if(plant){material.envMapIntensity=.85;sway(material,material.alphaTest>0);}if(isTree)treeTransition(material,part.lod,detail);if(plant&&material.alphaTest>0)leafTransmission(material);
