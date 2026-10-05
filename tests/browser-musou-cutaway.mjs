@@ -37,7 +37,7 @@ try{
    g.world.root.remove(witness);witness.geometry.dispose();witness.material.dispose();
    g.rendering.render('high');for(const a of document.getAnimations()){a.pause();a.currentTime=2200;}
    window.finishPortraitCase=()=>{
-    for(let i=0;i<100&&g.cinematic>0;i++){g.time+=1/60;g.updateCombat(1/60);g.updateCamera(1/60);}
+    for(let i=0;i<360&&g.cinematic>0;i++){g.time+=1/60;g.updateCombat(1/60);g.updateCamera(1/60);}
     const lingering=[];g.scene.traverse(o=>{for(const m of Array.isArray(o.material)?o.material:[o.material])if(m?.clippingPlanes?.length)lingering.push(o.name);});
     return{action:g.action?.kind,portrait:g.rendering.portraitRoots,localClipping:g.renderer.localClippingEnabled,lingering};
    };

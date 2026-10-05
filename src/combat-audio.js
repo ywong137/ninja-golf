@@ -37,6 +37,12 @@ export class CombatAudio{
  }
  play(kind){
   const rate=.97+Math.random()*.06;
+  if(kind==='musou-wipe'){
+   const played=this.sample('whoosh',1.30,.74);
+   this.sample('whoosh',.92,.48,{delay:.035,duration:.44});
+   this.sample('cut',.48,.82,{delay:.06,duration:.30});
+   return played;
+  }
   if(kind==='whoosh'||kind==='heavy-whoosh'){
    const heavy=kind==='heavy-whoosh';
    const played=this.sample('whoosh',heavy?.95:.8,heavy?.90:1.12);

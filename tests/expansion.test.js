@@ -23,5 +23,5 @@ test('Survey fits a full drive and keeps camera exploration independent of the s
 test('Enemy damage is halved and hesitation must finish before another commitment',()=>{
  assert.deepEqual(ENEMY_TYPES.map(t=>t.damage),[2.5,8.5,6.5,4]);
  const enemy={cooldown:0,readyAt:4};assert.equal(enemyReadyToAttack(enemy,3),false);assert.equal(enemyReadyToAttack(enemy,4),true);assert.equal(enemyReadyToAttack({...enemy,stun:.5},5),false);
- assert.equal(MUSOU_CINEMATIC_DURATION,2.85);const special=attackDefinition('musou');assert.equal(special.duration,3.3);assert.ok(special.hits.every(t=>t>0&&t<special.duration));
+ assert.equal(MUSOU_CINEMATIC_DURATION,4.2);const special=attackDefinition('musou');assert.equal(special.duration,3.3);assert.ok(special.hits.every(t=>t>0&&t<special.duration));
 });

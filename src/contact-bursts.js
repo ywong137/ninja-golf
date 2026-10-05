@@ -32,9 +32,9 @@ export class ContactBursts {
     }`});
   this.mesh=new T.Mesh(geometry,this.material);this.mesh.name='Contact flash pool';this.mesh.frustumCulled=false;scene.add(this.mesh);
  }
- emit(position,{heavy=false,special=false,guarded=false}={}){
+ emit(position,{heavy=false,special=false,guarded=false,radius,duration}={}){
   const index=this.cursor++%this.capacity,p=this.records[index],a=this.attributes;
-  p.life=p.duration=special?.38:heavy?.32:.26;p.size=special?2.1:heavy?1.65:1.25;
+  p.life=p.duration=duration??(special?.38:heavy?.32:.26);p.size=radius??(special?2.6:heavy?1.65:1.25);
   a.center.setXYZ(index,position.x,position.y,position.z);a.radius.setX(index,p.size);a.age.setX(index,0);a.rotation.setX(index,Math.random()*Math.PI*2);a.guard.setX(index,guarded?1:0);
   for(const attribute of Object.values(a))attribute.needsUpdate=true;
  }

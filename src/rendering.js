@@ -28,7 +28,8 @@ export class Rendering {
   }
   resize(){this.composer.setPixelRatio(this.renderer.getPixelRatio());this.composer.setSize(innerWidth,innerHeight);}
   preparePortrait(roots,lights){
-    const target=this.renderer.getRenderTarget(),visible=lights.visible;
+    const target=this.renderer.getRenderTarget(),visible=lights.visible,childLights=[];
+    lights.traverse(light=>{if(light.isLight){childLights.push([light,light.visible]);light.visible=true;}});
     const focus=this.camera.getWorldDirection(new Vector3()).add(this.camera.position);
     lights.visible=true;
     try{
@@ -43,7 +44,7 @@ export class Rendering {
         return jobs;
       });
       return Promise.all(pending);
-    }finally{this.renderer.setRenderTarget(target);lights.visible=visible;}
+    }finally{this.renderer.setRenderTarget(target);lights.visible=visible;for(const [light,wasVisible]of childLights)light.visible=wasVisible;}
   }
   setPortrait(focus,roots){this.portraitRoots=focus?roots:null;if(focus)this.portraitFocus.copy(focus);}
   render(quality){
@@ -59,8 +60,14 @@ export class Rendering {
       // The AO override shader cannot use each scenery material's cutaway plane.
       // Dedicated portrait lighting supplies the face's close-up shading.
       const contactEnabled=this.contact.enabled;this.contact.enabled=false;
+      // Match the illustrated warm key/cool rim independent of course sunlight.
+      const lights=[];this.scene.traverse(o=>{
+        if(!o.isLight)return;
+        for(let p=o;p;p=p.parent)if(p.userData.portraitLighting)return;
+        lights.push([o,o.intensity]);o.intensity*=o.isHemisphereLight?.45:.2;
+      });
       try{this.cutaway.withClippedScenery(this.renderer,this.camera,this.portraitFocus,this.portraitRoots,draw);}
-      finally{this.contact.enabled=contactEnabled;}
+      finally{this.contact.enabled=contactEnabled;for(const [light,intensity]of lights)light.intensity=intensity;}
     }else draw();
   }
 }

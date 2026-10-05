@@ -32,3 +32,11 @@ export const WARRIORS = [
 
 // Keep persistent hero IDs stable; arrange the selection cards independently.
 export const WARRIOR_SELECTION_ORDER=[0,3,1,4,2,5];
+
+// Ultimate chains keep the complete captured torso, stepping and recovery motion.
+WARRIORS[0].musouChain=['Ronin_Musou_Advance','Ronin_Power_Cut','Ronin_Low_Cut','Ronin_Musou_Advance'];
+WARRIORS[2].musouChain=['Ethan_Naginata_Power_Cut','Ethan_Naginata_Driving_Cut','Ethan_Naginata_Power_Cut','Ethan_Naginata_Driving_Cut','Ethan_Naginata_Power_Cut','Ethan_Naginata_Driving_Cut'];
+WARRIORS[3].musouChain=['Ace_Musou_Tempest','Ace_Turning_Double_Cut'];
+WARRIORS[4].musouChain=['Hustler_Combo_Opening','Hustler_Combo_Return','Hustler_Combo_Finish','Hustler_Musou_Advance'];
+WARRIORS[5].musouChain=['Closer_Combo_Opening','Closer_Combo_Return','Closer_Combo_Finish','Closer_Musou_Pursuit'];
+SHINOBI_MUSOU_SEQUENCE.push({clip:'Shinobi_Stepping_Cut',heading:-2.0943951023931953,shadowTravel:1.5},{clip:'Shinobi_Left_Airborne_Cut',heading:0,shadowTravel:1.5});

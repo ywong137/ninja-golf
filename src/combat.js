@@ -134,7 +134,7 @@ export function engagementTarget(enemy,player,velocity,engaged){
  return{x:player.x+Math.sin(angle)*radius,z:player.z+Math.cos(angle)*radius};
 }
 
-export const MUSOU_CINEMATIC_DURATION=2.85;
+export const MUSOU_CINEMATIC_DURATION=4.2;
 export function enemyReadyToAttack(enemy,time){return !enemy.dead&&!enemy.emerging&&!(enemy.stun>0)&&enemy.cooldown<.4&&time>=(enemy.readyAt||0);}
 
 export const PLAYER_GUARD={maximum:100,halfArc:65*Math.PI/180,parryWindow:.18,parryCooldown:.65,resolve:10,stagger:1.2,breakDuration:1.1,attackRecovery:.22,recoveryDelay:.75,recoveryRate:28};

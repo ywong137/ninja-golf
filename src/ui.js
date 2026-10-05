@@ -1,3 +1,5 @@
+import {MUSOU_CINEMATIC_DURATION} from './combat.js';
+import {MUSOU_WIPES} from './musou-cinematic.js';
 import {controlHints} from './control-bindings.js';
 import {SHOT_HEIGHTS,shotHeightProfile} from './shot-height.js';
 import {SOUNDTRACKS,SOUNDTRACK_COURSES} from './soundtracks.js';
@@ -135,10 +137,18 @@ export class UI {
   }
   closeModal(){this.$('modal').classList.add('hidden');}
   modal(html){this.$('modal-content').innerHTML=html;this.$('modal').classList.remove('hidden');setTimeout(()=>this.$('modal-content').querySelector('button')?.focus(),0);}
+  updateMusou(seconds){
+    // Share one clock with the camera and wipe sound cues, including pauses.
+    for(const animation of this.$('musou-cinema')?.getAnimations({subtree:true})??[]){animation.pause();animation.currentTime=seconds*1000;}
+  }
   musou(w){
     let el=this.$('musou-cinema');if(!el){el=document.createElement('div');el.id='musou-cinema';document.body.append(el);}
     const index=['ronin','shinobi','monk','kaede','ayame','sora'].indexOf(w.model),atlas=index<3?'men':'women';
     const portraitUrl=new URL(`${import.meta.env.BASE_URL}textures/musou/${atlas}.webp`,document.baseURI).href;
+    el.style.setProperty('--musou-duration',MUSOU_CINEMATIC_DURATION+'s');
+    el.style.setProperty('--musou-eye-duration',MUSOU_WIPES[0].duration+'s');
+    el.style.setProperty('--musou-portrait-delay',MUSOU_WIPES[1].time+'s');
+    el.style.setProperty('--musou-portrait-duration',MUSOU_WIPES[1].duration+'s');
     el.style.setProperty('--musou-color',w.color);el.style.setProperty('--musou-face',`url("${portraitUrl}")`);
     el.style.setProperty('--musou-face-x',`${index%3*50}%`);
     el.innerHTML=`<div class="cinema-cut"></div><div class="cinema-flash"></div><div class="cinema-ink"></div><div class="cinema-lines"></div><div class="cinema-portrait" role="img" aria-label="${w.name}, fierce attack expression"></div><div class="cinema-eye-strip"></div><div class="cinema-slash slash-a"></div><div class="cinema-slash slash-b"></div><div class="cinema-title"><span>一球入魂 · ONE SHOT. ALL SOUL.</span><strong>${w.name}</strong><em>${w.special}</em></div><div class="musou-kanji">無双</div>`;

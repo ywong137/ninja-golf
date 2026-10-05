@@ -1,3 +1,4 @@
+export const MUSOU_WIPES=Object.freeze([{time:0,duration:1.32},{time:1.26,duration:1.14}]);
 // A posed orbit, then a tighter side pan. The camera never flies into the face.
 const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
 export function musouCameraFrame(progress,{reducedMotion=false}={}){
