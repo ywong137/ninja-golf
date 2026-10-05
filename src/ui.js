@@ -15,6 +15,7 @@ export class UI {
     this.cb=callbacks;this.selected=0;this.selectedCourse=0;this.lastUpdate=0;this.overlay='home';
     document.querySelector('#app').innerHTML=`
       <aside id="character-loading" class="hidden" role="status" aria-live="polite"><span class="eyebrow">YOUR WARRIOR</span><h3 id="character-loading-name"></h3><p id="character-loading-message"></p><div><button id="character-retry" class="secondary hidden">Try again</button><button id="character-cancel" class="text-button">Cancel</button></div></aside>
+      <aside id="course-loading" class="hidden" role="status" aria-live="polite"><span class="eyebrow">YOUR COURSE</span><h3 id="course-loading-name"></h3><p id="course-loading-message"></p><div><button id="course-retry" class="secondary hidden">Try again</button><button id="course-cancel" class="text-button">Cancel</button></div></aside>
       <canvas id="game" aria-label="Ninja Golf game world"></canvas><div id="vignette"></div><div id="damage-flash"></div>
       <header class="masthead"><a class="brand" href="#" aria-label="Ninja Golf home"><span class="brand-mark">忍</span><span>NINJA GOLF<span class="brand-bang">!</span></span></a><div class="header-right"><span class="edition">THE WAY OF THE FAIRWAY</span><button id="audio-toggle" class="icon-button" aria-label="Mute audio">${icons.sound}</button><button id="pause-button" class="icon-button" aria-label="Pause game">${icons.pause}</button></div></header>
       <section id="home" class="screen home-screen"><div class="home-copy"><div class="eyebrow">GOLF. WITH CONSEQUENCES.</div><h1>Ninja<br><em>Golf<span>!</span></em></h1><p class="home-tagline">Find your zen.<br>Then defend it.</p><p class="home-description">Pristine fairways. Perfect silence.<br>Several hundred uninvited ninjas.</p><button id="play" class="primary">Step onto the course ${icons.arrow}</button><div class="home-meta"><span>4 COURSES · 36 HOLES</span><span>6 WARRIORS</span><span>ABSOLUTELY NO CADDIES</span></div></div><div class="course-stamp"><span class="stamp-kanji">風</span><div><span class="eyebrow">YOUR ROUND AWAITS</span><h3 id="home-course-name">Crane Coast</h3><p id="home-course-description">An original course on the edge of calm.</p><span class="stamp-details" id="home-course-details">9 HOLES</span></div></div><div class="home-footer"><span>A DIFFERENT KIND OF GOLF CLUB.</span><button class="text-button" id="home-help">How to play ↗</button><button class="text-button" id="credits-button">Music & credits ↗</button></div></section>
@@ -52,12 +53,24 @@ export class UI {
     const active=!!name;this.$('character-loading').classList.toggle('hidden',!active);
     document.body.classList.toggle('character-pending',active);
     this.$('selection-stage').setAttribute('aria-busy',String(active&&!error));
-    for(const id of ['begin','play','continue-round'])if(this.$(id))this.$(id).disabled=active;
+    this.characterPending=active;this.updateLoadingControls();
     if(!active)return;
     this.$('character-loading-name').textContent=name;
     this.$('character-loading-message').textContent=error?'The download stopped. Check your connection, then try again.':'Preparing your warrior. You can choose another while this loads.';
     this.$('character-retry').classList.toggle('hidden',!error);this.$('character-retry').onclick=retry;
     this.$('character-cancel').onclick=cancel;
+  }
+  updateLoadingControls(){
+    for(const id of ['begin','play','continue-round','start-round'])if(this.$(id))this.$(id).disabled=!!(this.characterPending||this.coursePending);
+  }
+  courseSelection(index){this.selectedCourse=index;document.querySelectorAll('[data-course]').forEach(el=>el.classList.toggle('selected',+el.dataset.course===index));}
+  courseLoading(name,{error=false,retry,cancel}={}){
+    this.coursePending=!!name;this.$('course-loading').classList.toggle('hidden',!name);this.updateLoadingControls();
+    this.$('courses').setAttribute('aria-busy',String(!!name&&!error));
+    if(!name)return;
+    this.$('course-loading-name').textContent=name;
+    this.$('course-loading-message').textContent=error?'The download stopped. Check your connection, then try again.':'Preparing the landscape. You can choose another course while this loads.';
+    this.$('course-retry').classList.toggle('hidden',!error);this.$('course-retry').onclick=retry;this.$('course-cancel').onclick=cancel;
   }
   selectionViewport(){
     if(!this.previewRect){

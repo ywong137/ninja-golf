@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {loadModel} from './load-model.js';
-import {NATURE_ASSET_NAMES} from './nature-assets.js';
+import {natureAssetsForTheme} from './nature-assets.js';
+import {createAssetCache} from './asset-cache.js';
 import {heightAt,lieAt,fairwayDistance,greenDistance,random,routePoint} from './course.js';
 import {bridgeDistance} from './course-layout.js';
 import views from './nature-views.json' with {type:'json'};
@@ -13,9 +14,8 @@ export {queueSceneryRock} from './scenery-rocks.js';
 const ATLAS_REVISION='leaf-opacity-2';
 const OPACITY_REPAIRED=new Set(['forest-canopy','understory','fern','woody-scrub']);
 const assets=new Map(),transform=new THREE.Object3D(),clock={value:0};
-export async function loadNature(){
+const natureCache=createAssetCache(async name=>{
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),textures=new THREE.TextureLoader();
- await Promise.all(NATURE_ASSET_NAMES.map(async name=>{
   const conifer=['pine-open','pine-young','fir-layered'].includes(name);
   const model=await loadModel(loader,`${import.meta.env.BASE_URL}models/nature/${name}${import.meta.env.PROD?'.meshopt':''}.glb${OPACITY_REPAIRED.has(name)?'?v=leaf-opacity-2':''}`,{compressed:import.meta.env.PROD});model.scene.updateMatrixWorld(true);
   // The source needle alpha has soft coverage. A 0.45 cutoff erased it in
@@ -23,8 +23,9 @@ export async function loadNature(){
   const parts=[];model.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material;if(conifer)material.vertexColors=false;material.metalness=0;material.roughness=Math.max(.75,material.roughness);material.envMapIntensity=.45;if(material.transparent){material.transparent=false;material.alphaTest=conifer?.18:.45;material.depthWrite=true;material.side=THREE.DoubleSide;}for(const key of ['map','normalMap','roughnessMap'])if(material[key])material[key].anisotropy=8;parts.push({lod:o.name.startsWith('LOD1')?1:0,geometry:o.geometry.clone().applyMatrix4(o.matrixWorld),material});});
   let map,normalMap,shadowMap;if(views[name]){[map,normalMap,shadowMap]=await Promise.all(['views','normals','shadow'].map(kind=>textures.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}-${kind}.webp?v=${kind==='shadow'&&name!=='forest-canopy'?'sun-47888':ATLAS_REVISION}`)));map.colorSpace=THREE.SRGBColorSpace;}
   assets.set(name,{parts,bounds:sceneryRockBounds(parts),map,normalMap,shadowMap,...views[name]});
- }));
-}
+});
+export async function loadNature(theme){await Promise.all(natureAssetsForTheme(theme).map(name=>natureCache.load(name)));}
+export function isNatureReady(theme){return natureAssetsForTheme(theme).every(name=>natureCache.has(name));}
 function sway(material,foliage){
  material.onBeforeCompile=s=>{s.uniforms.natureTime=clock;s.vertexShader='uniform float natureTime;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
  float bend=pow(clamp(position.y/14.,0.,1.),2.);vec3 origin=instanceMatrix[3].xyz;
@@ -89,7 +90,7 @@ export class NaturalLandscape{
   root.add(new THREE.Mesh(shadowGeo,canopyShadowMaterial(source.shadowMap,c.theme==='cyberpunk',TREE_SPECIES[tree]?.detail||TREE_DETAIL)));
   }
   for(const [name,records]of placements){
-   const source=assets.get(name);if(!source)continue;
+   const source=assets.get(name);if(!source)throw new Error(`Missing scenery ${name} for ${c.theme}; await loadNature(theme) before building the course`);
    if(['coastal-rock','desert-rock','sea-cliff'].includes(name))for(const [i,record]of records.entries())this.rockObstacles.push(sceneryRockObstacle(record,source.bounds,`rock:${name}:${i}`));
    const isTree=!!TREE_SPECIES[name],plant=isTree||name==='understory'||name==='fern'||name==='woody-scrub',detail=TREE_SPECIES[name]?.detail||TREE_DETAIL;
    for(const part of source.parts){
@@ -115,6 +116,6 @@ export class NaturalLandscape{
 }
 
 export function forestAtlasSource(theme){
- const source=assets.get('forest-canopy');
+ const source=assets.get(theme?forestSpecies(theme)[0].name:'forest-canopy');
  return theme?{...source,species:forestSpecies(theme).map(entry=>({...entry,source:assets.get(entry.name)}))}:source;
 }

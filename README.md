@@ -24,6 +24,7 @@ npm run preview
 ```
 
 The production build lives in `dist/`. All game assets and music ship with the build. No game service or account is required.
+The production title downloads only its course’s scenery. Other courses load on selection, with retry and cancel controls. Loaded scenery stays cached for later visits.
 
 ## Play
 

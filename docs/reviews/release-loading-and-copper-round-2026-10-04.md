@@ -54,4 +54,5 @@ That invalid fixture was discarded. The corrected comparison uses a seeded rando
 The built candidate passes seven normal keyboard/gamepad checks, including golf-to-combat and surviving enemy recoil.
 All eleven scenery models decode in the browser. All four course previews render without errors.
 The unwrapped delivery path also works when DecompressionStream is unavailable.
-Publication and the public deployment check remain pending.
+Commit 08d0667 passed public deployment with 1,033 tests.
+Live checks verified all scenery models, all four course previews, the gzip fallback, and seven normal keyboard/gamepad behaviors.

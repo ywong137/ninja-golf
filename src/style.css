@@ -120,3 +120,8 @@ body[data-phase=combat] #toast{width:max-content;max-width:min(600px,calc(100vw 
 /* Portrait art and the live camera share a warm key and a cool rim. */
 .cinema-portrait,.cinema-eye-strip{filter:saturate(.87) brightness(.96)}
 .cinema-slash.slash-b{animation:cinema-slash 1.24s var(--musou-portrait-delay,1.26s) both}
+
+#course-loading{position:absolute;z-index:20;top:110px;right:5%;width:min(330px,80vw);padding:24px;background:#18382ff5;border:1px solid #d8b57066;box-shadow:0 16px 48px #081b2255;border-radius:4px}
+#course-loading h3{font:italic 30px Georgia,serif;margin:12px 0}
+#course-loading p{font-size:12px;line-height:1.7;color:#d3dcca}
+#course-loading>div{display:flex;align-items:center;gap:24px}
