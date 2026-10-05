@@ -11,6 +11,7 @@ import {withMotionTiming} from '../src/attack-timing.js';
 import {WARRIORS} from '../src/warriors.js';
 import {attackFootContacts} from '../src/foot-placement.js';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 import {headSurfaceMetadata,measureTriangleHeadClearance} from '../tools/blade-head-surface.mjs';
 
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
@@ -66,7 +67,8 @@ test('the source sabre cut moves the complete body without flipped joints or a t
 test('the curved sabre leads with its cutting edge through the contact window',async t=>{
  const {rig,bones}=await load(),rotation=n=>bones[n].getWorldQuaternion(new Quaternion()).normalize(),up=new Vector3(0,1,0);
  play(rig,hero.readyClip)(0);const p=motions[hero.readyClip].poses[0],shaft=new Vector3(p.tip[0]-p.grip[0],p.tip[2]-p.grip[2],p.grip[1]-p.tip[1]).normalize();
- const frame=rotation('hand_r').invert().multiply(new Quaternion().setFromUnitVectors(up,shaft).multiply(new Quaternion().setFromAxisAngle(up,p.roll??0)));
+ const reference=rotation('hand_r').invert().multiply(new Quaternion().setFromUnitVectors(up,shaft).multiply(new Quaternion().setFromAxisAngle(up,p.roll??0)));
+ const frame=gripFrame(bones,grip,'r',reference).frame.multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll??0));
  const weapon=createWeapon(hero.weaponKind),sample=play(rig,name);
  const bladePoint=time=>{sample(time);weapon.quaternion.copy(rotation('hand_r')).multiply(frame);weapon.position.copy(bones.hand_r.localToWorld(new Vector3().fromArray(grip.center))).addScaledVector(up.clone().applyQuaternion(weapon.quaternion),-weapon.userData.primaryGrip);weapon.updateMatrixWorld(true);return weapon.localToWorld(new Vector3(0,.7,0));};
  let minimum=1;for(const time of [.24,.25,record.impacts[0],.267,.28]){

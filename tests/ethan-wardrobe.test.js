@@ -11,7 +11,8 @@ test('Ethan coat preserves the existing head, skeleton and all native animation 
  const saved=JSON.parse(fs.readFileSync(new URL('../docs/reviews/ethan-wardrobe-preservation.json',import.meta.url)));
  assert.equal(hash(bin.subarray(0,saved.preservedBinaryBytes)),saved.originalBinarySha256);
  const baseline=JSON.parse(fs.readFileSync(new URL('./fixtures/ethan-before-wardrobe.json',import.meta.url)));
- for(const name of ['animations','nodes','skins'])assert.deepEqual(name==='animations'?doc.animations.slice(0,baseline.animations.length):doc[name],baseline[name],name);
+ for(const name of ['nodes','skins'])assert.deepEqual(doc[name],baseline[name],name);
+ for(const original of baseline.animations){const current=doc.animations.find(a=>a.name===original.name);assert.ok(current,original.name);assert.deepEqual(current.samplers.slice(0,original.samplers.length),original.samplers,original.name+': original animation bytes remain addressable');}
  const indices=primitive=>{const ac=doc.accessors[primitive.indices],v=doc.bufferViews[ac.bufferView],size=ac.componentType===5123?2:4,read=size===2?'readUInt16LE':'readUInt32LE';return Array.from({length:ac.count},(_,i)=>bin[read](v.byteOffset+(ac.byteOffset||0)+i*size));};
  const triangles=rows=>Array.from({length:rows.length/3},(_,i)=>rows.slice(i*3,i*3+3).join(',')).sort();
  assert.deepEqual(triangles([...indices(doc.meshes[0].primitives[0]),...indices(doc.meshes[0].primitives[3])]),triangles(indices(baseline.meshes[0].primitives[0])),'The cloth/hand split must preserve every original triangle.');

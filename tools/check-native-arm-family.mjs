@@ -4,6 +4,7 @@ import * as T from 'three';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
 import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 import {verifyAnimationReplacement} from './verify-animation-replacement.mjs';
 import {samplePlanarRoot} from '../src/attack-root-motion.js';
 
@@ -42,7 +43,7 @@ export function verifyArmFamilyPreservation(before,after,clips,{dualWield=false,
  return{...result,retainedBodyLegAndOtherChannels:retainedChannels,timingScales};
 }
 
-export async function inspectNativeArmFamily({model,record,modelKey,readyName,weaponKind,clips,doubleEdged=false,readyRecord,rate=480,skin=false}={}){
+export async function inspectNativeArmFamily({model,record,modelKey,readyName,weaponKind,clips,doubleEdged=false,readyRecord,referenceClip=readyName,rate=480,skin=false}={}){
  if(!model||!record)throw Error('Supply the paired model and motion records.');
  if(!Number.isInteger(rate)||rate<60||rate>960)throw Error('Choose an integer sample rate from 60 through 960 Hz.');
  if(!modelKey||!readyName||!weaponKind||!clips?.length)throw Error('Supply modelKey, readyName, weaponKind, and clips.');
@@ -61,10 +62,11 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
   const action=rig.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
   return time=>{action.time=Math.min(time,clip.duration);rig.mixer.update(0);const root=motions[name]?.planarRoot?samplePlanarRoot(motions[name].planarRoot,time):{x:0,z:0};rig.scene.position.set(root.x,0,root.z);rig.scene.updateMatrixWorld(true);};
  };
- sampleClip(readyName)(0);
- const ready=motions[readyName]?.poses?.[0];if(!ready)throw Error('Supply the matching '+readyName+' record.');
+ sampleClip(referenceClip)(0);
+ const ready=motions[referenceClip]?.poses?.[0];if(!ready)throw Error('Supply the matching '+readyName+' record.');
  const shaft=new T.Vector3(ready.tip[0]-ready.grip[0],ready.tip[2]-ready.grip[2],ready.grip[1]-ready.tip[1]).normalize();
- const mount=rotation('hand_r').invert().multiply(new T.Quaternion().setFromUnitVectors(Y,shaft).multiply(new T.Quaternion().setFromAxisAngle(Y,ready.roll??0))).normalize();
+ const reference=rotation('hand_r').invert().multiply(new T.Quaternion().setFromUnitVectors(Y,shaft).multiply(new T.Quaternion().setFromAxisAngle(Y,ready.roll??0))).normalize();
+ const mount=gripFrame(bones,grip.r,'r',reference).frame;
  if(Y.clone().applyQuaternion(mount).angleTo(new T.Vector3().fromArray(grip.r.axis))>.001)throw Error('The Ready record changed the fitted handle axis.');
  const weapon=createWeapon(weaponKind),blade=weapon.getObjectByName('Flat steel blade'),vertices=blade.geometry.attributes.position;
  const result={rate,skin,mountedFrame:mount.toArray(),passed:true,violationCount:0,violations:[],clips:{}};
@@ -79,7 +81,7 @@ export async function inspectNativeArmFamily({model,record,modelKey,readyName,we
   for(const time of times){
    sample(time);
    const palm=bones.hand_r.localToWorld(new T.Vector3().fromArray(grip.r.center));
-   weapon.quaternion.copy(rotation('hand_r')).multiply(mount);
+   weapon.quaternion.copy(rotation('hand_r')).multiply(mount).multiply(new T.Quaternion().setFromAxisAngle(Y,spec.weaponGripRoll??0));
    weapon.position.copy(palm).addScaledVector(Y.clone().applyQuaternion(weapon.quaternion),-weapon.userData.primaryGrip);weapon.updateMatrixWorld(true);
    let minY=Infinity;for(let i=0;i<vertices.count;i++)minY=Math.min(minY,new T.Vector3().fromBufferAttribute(vertices,i).applyMatrix4(blade.matrixWorld).y);
    metrics.minBladeHeight=Math.min(metrics.minBladeHeight,minY);if(minY<.03)fail(name,time,'r','blade ground clearance',minY);

@@ -6,7 +6,7 @@ import {parseArgs} from 'node:util';
 import {HUSTLER_CLIPS} from './native-hustler-profile.mjs';
 import {inspectNativeArmFamily,verifyArmFamilyPreservation} from './check-native-arm-family.mjs';
 export const verifyHustlerPreservation=(before,after)=>verifyArmFamilyPreservation(before,after,HUSTLER_CLIPS);
-export const inspectNativeHustler=options=>inspectNativeArmFamily({modelKey:'ayame',readyName:'Ring_Ready',weaponKind:'dao',clips:HUSTLER_CLIPS,...options});
+export const inspectNativeHustler=({includeReady=true,...options}={})=>inspectNativeArmFamily({modelKey:'ayame',readyName:'Ring_Ready',weaponKind:'dao',clips:includeReady?HUSTLER_CLIPS:HUSTLER_CLIPS.filter(n=>!n.endsWith('_Ready')),referenceClip:includeReady?undefined:HUSTLER_CLIPS.find(n=>!n.endsWith('_Ready')),...options});
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const {values}=parseArgs({options:{model:{type:'string'},record:{type:'string'},output:{type:'string'},before:{type:'string'},rate:{type:'string',default:'480'},clip:{type:'string',multiple:true},skin:{type:'boolean'},help:{type:'boolean'}}});

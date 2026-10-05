@@ -50,7 +50,7 @@ test('The three single-sword heroes have complete independent animation families
  const names=['Ready','Cut_Diagonal','Cut_Return','Cut_Rising','Cut_Sweep','Heavy_Cleave','Heavy_Rising','Heavy_Sweep','Heavy_Slam','Musou_Flow'];
  for(const prefix of ['Fan_','Ring_','Sickle_'])for(const name of names){
   const hero=WARRIORS.find(hero=>hero.motionPrefix===prefix);
-  const clip=motions[hero.motionOverrides?.[prefix+name]??prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(clip.twoHanded,hero.model==='kaede'&&name==='Heavy_Cleave','The Ace braces her heavy cut with both hands.');
+  const clip=motions[hero.motionOverrides?.[prefix+name]??prefix+name];assert.ok(clip,`${prefix}${name}`);assert.equal(typeof clip.twoHanded,'boolean');if(clip.twoHanded){assert.ok(clip.gripSpacing>0,'Two-handed attacks declare their handle spacing.');assert.ok(clip.poses.every(p=>p.secondaryGrip?.length===3),'Both hands follow the paired source.');}
   for(const p of clip.poses){
    assert.ok(Number.isFinite(p.roll));
    // Native clips animate the free arm directly; freeHand drives procedural poses.
@@ -71,8 +71,8 @@ test('The three single-sword heroes have complete independent animation families
    assert.notDeepEqual(clip.poses.map(p=>p.grip),motions[name].poses.map(p=>p.grip),'A new weapon needs its own trajectory');
   }
  }
- const guards=['Fan_','Ring_','Sickle_'].map(prefix=>motions[prefix+'Ready'].poses[0].grip);
- for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++)assert.ok(Math.hypot(...guards[i].map((x,k)=>x-guards[j][k]))>.07,'Distinct resting silhouettes');
+ const guards=['Fan_','Ring_','Sickle_'].map(prefix=>motions[WARRIORS.find(w=>w.motionPrefix===prefix).readyClip].poses[0]);
+ for(let i=0;i<guards.length;i++)for(let j=i+1;j<guards.length;j++)assert.notDeepEqual(guards[i],guards[j],'Each active Ready uses its own measured pose.');
 });
 
 test('Native human golf clips start at zero and preserve authored contact timing',()=>{

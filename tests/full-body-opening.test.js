@@ -10,6 +10,7 @@ import {withMotionTiming} from '../src/attack-timing.js';
 import {WARRIORS} from '../src/warriors.js';
 import {attackFootContacts} from '../src/foot-placement.js';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 // These timing, support, and grip fixtures describe the retained UAL1 cut.
@@ -102,7 +103,7 @@ test('the retained UAL1 opening cut leads with the cutting edge at the damage co
  const grip=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url))).kaede.sword.r;
  const weapon=createWeapon('jian'),sample=play(name);
  const bladePoint=time=>{
-  sample(time);weapon.quaternion.copy(rotation('hand_r')).multiply(frame);
+  sample(time);weapon.quaternion.copy(rotation('hand_r')).multiply(gripFrame(bones,grip,'r',frame).frame).multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll??0));
   weapon.position.copy(bones.hand_r.localToWorld(new Vector3().fromArray(grip.center))).addScaledVector(up.clone().applyQuaternion(weapon.quaternion),-weapon.userData.primaryGrip);
   weapon.updateMatrixWorld(true);return weapon.localToWorld(new Vector3(0,.7,0));
  };

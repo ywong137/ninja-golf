@@ -6,7 +6,7 @@ import {parseArgs} from 'node:util';
 import {inspectNativeArmFamily,verifyArmFamilyPreservation} from './check-native-arm-family.mjs';
 import {CLOSER_CLIPS} from './native-closer-profile.mjs';
 
-export const inspectNativeCloser=options=>inspectNativeArmFamily({modelKey:'sora',readyName:'Sickle_Ready',weaponKind:'wakizashi',clips:CLOSER_CLIPS,...options});
+export const inspectNativeCloser=({includeReady=true,...options}={})=>inspectNativeArmFamily({modelKey:'sora',readyName:'Sickle_Ready',weaponKind:'wakizashi',clips:includeReady?CLOSER_CLIPS:CLOSER_CLIPS.filter(n=>!n.endsWith('_Ready')),referenceClip:includeReady?undefined:CLOSER_CLIPS.find(n=>!n.endsWith('_Ready')),...options});
 export const verifyCloserPreservation=(before,after)=>verifyArmFamilyPreservation(before,after,CLOSER_CLIPS);
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

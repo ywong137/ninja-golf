@@ -37,18 +37,18 @@ test('Rotation writer rejects missing channels, repeated clips, invalid keys, an
  for(const change of [{clip:'absent'},{times:[0,0]},{times:[0,2,2+1e-9]},{times:[0,NaN]},{rotations:{missing:entry.rotations.foot_r}},{rotations:{foot_r:[0,0,0,1]}},{rotations:{foot_r:[0,0,0,2,0,0,0,1]}}])assert.throws(()=>patchAnimationRotations(input,[{...entry,...change}]));
  assert.throws(()=>patchAnimationRotations(input,[entry,entry]));
 });
-test('Explicit new rotation tracks animate a formerly untracked wrist without changing other model data',()=>{
- const original=parseGlb(input),values=[0,0,0,1,0,0,Math.sin(.2),Math.cos(.2)];
- const patched=parseGlb(patchAnimationTransforms(input,[{clip:entry.clip,times:[0,2],newRotations:{hand_r:values}}]));
+test('Explicit new rotation tracks animate a formerly untracked joint without changing other model data',()=>{
+ const original=parseGlb(input),animation=original.doc.animations.find(a=>a.name===entry.clip),untracked=original.doc.nodes.find((n,i)=>n.name&&original.doc.skins[0].joints.includes(i)&&!animation.channels.some(c=>c.target.node===i&&c.target.path==='rotation')).name,values=[0,0,0,1,0,0,Math.sin(.2),Math.cos(.2)];
+ const patched=parseGlb(patchAnimationTransforms(input,[{clip:entry.clip,times:[0,2],newRotations:{[untracked]:values}}]));
  const before=original.doc.animations.find(a=>a.name===entry.clip),after=patched.doc.animations.find(a=>a.name===entry.clip);
  assert.deepEqual(patched.bin.subarray(0,original.bin.length),original.bin);
  assert.deepEqual(after.channels.slice(0,-1),before.channels);
  assert.deepEqual(after.samplers.slice(0,-1),before.samplers);
  const channel=after.channels.at(-1),accessor=patched.doc.accessors[after.samplers[channel.sampler].output],view=patched.doc.bufferViews[accessor.bufferView];
- assert.equal(patched.doc.nodes[channel.target.node].name,'hand_r');assert.equal(channel.target.path,'rotation');
+ assert.equal(patched.doc.nodes[channel.target.node].name,untracked);assert.equal(channel.target.path,'rotation');
  assert.equal(accessor.type,'VEC4');assert.equal(accessor.count,2);
  values.forEach((value,i)=>assert.equal(patched.bin.readFloatLE(view.byteOffset+i*4),Math.fround(value)));
  for(const animation of original.doc.animations)if(animation.name!==entry.clip)assert.deepEqual(patched.doc.animations.find(a=>a.name===animation.name),animation);
- for(const newRotations of [{missing:values},{foot_r:values},{hand_r:[0,0,0,1]},{hand_r:[0,0,0,2,0,0,0,1]},{hand_r:[NaN,0,0,1,0,0,0,1]}])
+ for(const newRotations of [{missing:values},{foot_r:values},{[untracked]:[0,0,0,1]},{[untracked]:[0,0,0,2,0,0,0,1]},{[untracked]:[NaN,0,0,1,0,0,0,1]}])
   assert.throws(()=>patchAnimationTransforms(input,[{clip:entry.clip,times:[0,2],newRotations}]));
 });

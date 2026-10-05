@@ -108,6 +108,11 @@ export class FootPlacement {
  }
  apply(dt,groundHeight,{enabled=true,golf=false,contactWeights=null,stance=null,preserveAuthored=false,preserveHinge=false,enforceClearance=false,worldFootTargets=null,pelvisPlan=null,referencePlane=null,kneeSolver=alignedKnee}={}){
   if(!enabled||!groundHeight){this.reset();return;}
+  // A zero-time rebuild retains the outgoing solver and its support frame.
+  // Reinterpreting a scaled ankle with the idle solver shifts its toe.
+  if(dt===0&&!preserveAuthored&&this.report?.preserveAuthored&&this.authoredHandoff){
+   const h=this.authoredHandoff;this.applyAuthored(0,groundHeight,h.contactWeights,h.stance,h.options);return;
+  }
   if(preserveAuthored){this.applyAuthored(dt,groundHeight,contactWeights,stance,{golf,preserveHinge,enforceClearance,worldFootTargets,pelvisPlan,referencePlane,kneeSolver});return;}
   const root=this.root,bones=this.bones;root.updateMatrixWorld(true);const response=1-Math.exp(-24*Math.min(dt,.05)),samples=[];
   for(const side of ['r','l']){
@@ -158,6 +163,7 @@ export class FootPlacement {
  // relative to the actor's plane. An opted-in hinge correction also fixes blends.
  applyAuthored(dt,groundHeight,contactWeights,stance,{golf=false,preserveHinge=false,enforceClearance=false,worldFootTargets=null,pelvisPlan=null,referencePlane=null,kneeSolver=alignedKnee}={}){
   pelvisPlan??=golf?{previousOffset:this.pelvisOffset,reserve:0}:this.planTerrainPelvis(dt,groundHeight,{enforceClearance,referencePlane});
+  this.authoredHandoff={contactWeights,stance,options:{golf,preserveHinge,enforceClearance,worldFootTargets,referencePlane,kneeSolver}};
   const previousPelvisOffset=pelvisPlan.previousOffset;this.reset();const {root,bones}=this;root.updateMatrixWorld(true);const samples=[];
   for(const side of ['r','l']){
    const state=this.feet[side],foot=bones['foot_'+side],ankle=foot.getWorldPosition(new THREE.Vector3()),worldTarget=worldFootTargets?.[side],rotation=worldTarget?.q.clone()??foot.getWorldQuaternion(new THREE.Quaternion()),original=foot.getWorldQuaternion(new THREE.Quaternion()),weight=contactWeights?.[side]??0;

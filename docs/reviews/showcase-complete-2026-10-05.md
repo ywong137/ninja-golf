@@ -26,3 +26,23 @@ Evidence: `/Users/yishan/ninja-golf/artifacts/reviews/showcase-complete-2026-10-
 The build stays private. All browser checks mute audio.
 
 Continue with large attack movements and the shared golf shoulder problem. Do not resume visor fitting.
+
+## Public release authorization
+
+The user authorized publication on October 5. This supersedes the private-build restriction above.
+
+The release also fixes normalized Ready timestamps for the Hustler and Closer.
+Sword attachment frames now retain their reviewed calibration when a Ready animation changes.
+A zero-time terrain update preserves the preceding foot solver and prevents a small toe jump.
+
+Legacy animation audits now compare retained cuts with their original entry poses.
+Current captured stances have separate anatomy and gameplay checks.
+The wardrobe report records later animation revisions while verifying original binary bytes, bones, skins, and facial streams.
+
+The golf shoulder experiment remains excluded. It did not improve the shoulder without introducing grip errors.
+
+The final production bundle is `index-BqlG699G.js`.
+All 250 sampled preview poses match gameplay, with a maximum major-joint difference of 0.000107 radians.
+The production check completes normal selection, inspector controls, a golf shot, and the Ace's heavy attack without browser errors.
+A visual check confirms that the Ace has no visor and her feet remain above the ground.
+Audio stays muted during all checks.

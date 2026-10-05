@@ -9,13 +9,13 @@ import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy
 
 // Read the exported skeleton, not the authoring curves. Environment overrides
 // let a private candidate pass this same check before it replaces a game asset.
-test('The Hustler heavy cleave steps, transfers weight, pivots, and returns to Ready',async t=>{
+test('The retained Hustler heavy cleave steps, transfers weight, pivots, and returns to its entry pose',async t=>{
  const model=process.env.HUSTLER_BODY_MODEL||new URL('../public/models/ayame.glb',import.meta.url);
  const records=JSON.parse(fs.readFileSync(process.env.HUSTLER_BODY_RECORDS||new URL('../src/motion-data.json',import.meta.url)));
  const name='Ring_Heavy_Cleave',spec=records[name],g=await loadNativeSkin(model),b={};g.scene.traverse(o=>{if(o.isBone)b[o.name]=o;});
  const point=n=>b[n].getWorldPosition(new T.Vector3()),rotation=n=>b[n].getWorldQuaternion(new T.Quaternion()).normalize();
  const legBind=Object.fromEntries(['r','l'].map(s=>[s,calibrateLegAnatomy(b['thigh_'+s],b['calf_'+s],b['foot_'+s])]));
- const ready=g.mixer.clipAction(g.animations.find(c=>c.name==='Ring_Ready')).play();ready.time=0;g.mixer.update(0);g.scene.updateMatrixWorld(true);
+ const ready=g.mixer.clipAction(g.animations.find(c=>c.name===name)).play();ready.time=0;g.mixer.update(0);g.scene.updateMatrixWorld(true);
  const endpointNames=['pelvis','spine_01','spine_02','spine_03','upperarm_r','lowerarm_r','hand_r','upperarm_l','lowerarm_l','hand_l','thigh_r','calf_r','foot_r','ball_r','thigh_l','calf_l','foot_l','ball_l',...Object.keys(b).filter(n=>/^(thumb|index|middle|ring|pinky)_\d+_[rl]$/.test(n))];
  const endpoints=Object.fromEntries(endpointNames.map(n=>[n,{p:point(n),q:rotation(n)}]));
  const endpointError=()=>{let position=0,rotationDegrees=0;for(const [n,expected]of Object.entries(endpoints)){position=Math.max(position,point(n).distanceTo(expected.p));rotationDegrees=Math.max(rotationDegrees,rotation(n).angleTo(expected.q)*180/Math.PI);}return{position,rotationDegrees};};

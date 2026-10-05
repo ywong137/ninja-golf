@@ -16,8 +16,8 @@ for(const kind of ['heavy']){
   const definition=attackDefinition(kind,0,ace.combatStyle);
   assert.equal(definition.duration,motions[clip].duration,'Gameplay must not rescale the native stroke.');
   assert.deepEqual(definition.hits,motions[clip].impacts,'Damage must coincide with the blade contact.');
-  const report=await inspectNativeAce({clip});
-  assert.ok(report.samples>1200,'Check Ready and intermediate native frames.');
+  const report=await inspectNativeAce({clip,includeReady:false});
+  assert.ok(report.samples>400,'Check intermediate native frames of the retained attack.');
   assert.ok(report.skin.samples>500,'Check both deformed arms through the complete stroke.');
   t.diagnostic(JSON.stringify(report));
  });

@@ -10,6 +10,7 @@ import {attackDefinition} from '../src/combat.js';
 import {withMotionTiming} from '../src/attack-timing.js';
 import {attackFootContacts} from '../src/foot-placement.js';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 const motions=JSON.parse(fs.readFileSync(new URL('../src/motion-data.json',import.meta.url)));
 const grips=JSON.parse(fs.readFileSync(new URL('../src/grip-data.json',import.meta.url)));
 for(const [model,kind] of [...['ronin','monk'].flatMap(model=>['light','heavy'].map(kind=>[model,kind])),['kaede','heavy']])test(model+' '+kind+' source cut retains whole-body movement, native hinges, and two fitted fists',async t=>{
@@ -28,7 +29,8 @@ for(const [model,kind] of [...['ronin','monk'].flatMap(model=>['light','heavy'].
  const q=n=>b[n].getWorldQuaternion(new Quaternion()),p=n=>b[n].getWorldPosition(new Vector3());
  const play=name=>{rig.mixer.stopAllAction();const clip=rig.animations.find(c=>c.name===name);assert.ok(clip);const a=rig.mixer.clipAction(clip).reset().setLoop(LoopOnce).play();a.clampWhenFinished=true;return time=>{a.time=time;rig.mixer.update(0);rig.scene.updateMatrixWorld(true);};};
  play(hero.readyClip)(0);const pose=motions[hero.readyClip].poses[0],up=new Vector3(0,1,0),shaft=new Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
- const mount=q('hand_r').invert().multiply(new Quaternion().setFromUnitVectors(up,shaft).multiply(new Quaternion().setFromAxisAngle(up,pose.roll??0))).multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll));
+ const reference=q('hand_r').invert().multiply(new Quaternion().setFromUnitVectors(up,shaft).multiply(new Quaternion().setFromAxisAngle(up,pose.roll??0)));
+ const mount=gripFrame(b,grips[model].sword.r,'r',reference).frame.multiply(new Quaternion().setFromAxisAngle(up,record.weaponGripRoll));
  const sample=play(name),profile=grips[model].sword;
  const core=createWeapon(hero.weaponKind).getObjectByName('Wrapped hand grip');
  core.geometry.computeBoundingBox();

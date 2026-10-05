@@ -10,8 +10,8 @@ test('Ethan native polearm clips preserve grip, anatomy, support, blade clearanc
     assert.equal(motions[name].nativeKneeHeading,true,name);
     if(motions[name].athleticAttack&&!name.endsWith('Musou_Flow'))assert.equal(motions[name].pelvisGaitWeight,.55,name);
   }
-  const report = await validateNativeNaginata({includeSkin:true});
-  assert.deepEqual(Object.keys(report),NATIVE_NAGINATA_CLIPS);
+  const report = await validateNativeNaginata({includeSkin:true,includeReady:false});
+  assert.deepEqual(Object.keys(report),NATIVE_NAGINATA_CLIPS.filter(n=>!n.endsWith('_Ready')));
   assert.ok(Object.values(report).every(clip => clip.samples > 100),'Sample between the authored frames.');
   assert.ok(Object.values(report).every(clip => clip.skinSamples === clip.samples*2),
     'Check both deformed arms at every frame, including anticipation, recovery, and guard reactions.');

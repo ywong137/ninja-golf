@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import * as T from 'three';
 import {WARRIORS} from '../src/warriors.js';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 import {loadNativeSkin} from './native-skin-helper.mjs';
 import {calibrateLegAnatomy,measureLegAnatomy} from '../tools/native-leg-anatomy.mjs';
 
@@ -11,7 +12,7 @@ const readJSON=file=>JSON.parse(fs.readFileSync(new URL(file,import.meta.url)));
 const motions=readJSON('../src/motion-data.json'),grips=readJSON('../src/grip-data.json').ronin.sword;
 const UP=new T.Vector3(0,1,0),degrees=180/Math.PI;
 
-test('Ronin retained ready and legacy cleave preserve anatomical wrists, real blade clearance, and planted support',async t=>{
+test('Ronin retained cleave preserves anatomical wrists, real blade clearance, and planted support',async t=>{
  const hero=WARRIORS.find(w=>w.model==='ronin');
  assert.equal(hero.readyClip,'Ronin_Ready');assert.equal(hero.motionOverrides.Heavy_Cleave,'Ronin_Power_Cut');
  const rig=await loadNativeSkin(new URL('../public/models/ronin.glb',import.meta.url)),bones={};
@@ -28,17 +29,18 @@ test('Ronin retained ready and legacy cleave preserve anatomical wrists, real bl
   return seconds=>{action.time=Math.min(seconds,clip.duration);rig.mixer.update(0);rig.scene.updateMatrixWorld(true);};
  }
  const snapshot=()=>Object.fromEntries(Object.entries(bones).map(([name,bone])=>[name,{position:bone.position.clone(),rotation:bone.quaternion.clone().normalize(),scale:bone.scale.clone()}]));
- const sampleReady=play(hero.readyClip);sampleReady(0);const ready=snapshot();
- // Match the runtime's initial Ready blade presentation, then retain that fixed
- // hand-relative frame. Subsequent poses receive no procedural wrist correction.
- const pose=motions[hero.readyClip].poses[0],shaft=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
+ const sampleReady=play('Ronin_Heavy_Cleave');sampleReady(0);const ready=snapshot();
+ // Use the fitted runtime mount and the retained clip's own entry pose.
+ // Subsequent poses receive no procedural wrist correction.
+ const pose=motions.Ronin_Heavy_Cleave.poses[0],shaft=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
  const readyWeapon=new T.Quaternion().setFromUnitVectors(UP,shaft).multiply(new T.Quaternion().setFromAxisAngle(UP,pose.roll??0));
- const weaponFrame=rotation('hand_r').invert().multiply(readyWeapon).normalize();
+ const weaponFrame=gripFrame(bones,grips.r,'r',rotation('hand_r').invert().multiply(readyWeapon).normalize()).frame;
  assert.ok(UP.clone().applyQuaternion(weaponFrame).angleTo(new T.Vector3().fromArray(grips.r.axis))<.001,'Ready calibration changed the fitted handle axis.');
  const weapon=createWeapon(hero.weaponKind),blade=weapon.getObjectByName('Flat steel blade');assert.ok(blade?.isMesh);
  const bladePoints=blade.geometry.getAttribute('position'),vertex=new T.Vector3();assert.ok(bladePoints.count>100,'Test the complete curved blade mesh.');
  const metrics={samples:0,maxWristDegrees:0,maxPalmGap:0,minBladeHeight:Infinity,maxPlantDrift:0,maxPlantTurn:0,maxArmStepAt120Hz:0,maxMedialKnee:0};
- for(const name of [hero.readyClip,'Ronin_Heavy_Cleave']){
+ // The captured Ready pose has separate source and runtime tests.
+ for(const name of ['Ronin_Heavy_Cleave']){
   const spec=motions[name],clip=clips.get(name),sample=play(name);assert.equal(spec.nativeAttachment,true);assert.ok(Math.abs(clip.duration-spec.duration)<1e-6);
   const times=new Set([0,spec.duration,...(spec.impacts??[])]);
   // Test 240 Hz keys and 480 Hz midpoints to catch gaps hidden at solved keys.

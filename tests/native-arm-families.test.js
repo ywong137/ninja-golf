@@ -16,7 +16,7 @@ const source=fs.readFileSync(new URL('../src/motion.js',import.meta.url),'utf8')
 const {combatMotionName}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 for(const [model,inspect]of [['kaede',inspectNativeAceFamily],['ayame',inspectNativeHustler],['sora',inspectNativeCloser]]){
  test(`${model}: native arm family keeps human hinges, fitted fingers, and cutting edges`,async()=>{
-  const report=await inspect({model:new URL(`../public/models/${model}.glb`,import.meta.url),record,rate:120});
+  const report=await inspect({model:new URL(`../public/models/${model}.glb`,import.meta.url),record,rate:120,includeReady:false});
   assert.ok(report.passed,JSON.stringify(report.violations));
   assert.ok(Object.values(report.clips).reduce((n,clip)=>n+clip.samples,0)>1500);
  });

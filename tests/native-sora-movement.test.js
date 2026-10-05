@@ -18,8 +18,8 @@ function play(g,name){
 function sample(g,action,seconds){action.time=seconds;g.mixer.update(0);g.scene.updateMatrixWorld(true);}
 const point=(g,name)=>g.scene.getObjectByName(name).getWorldPosition(new THREE.Vector3());
 
-test('Sora attacks return to the same body and palm pose as her Ready animation',async()=>{
- const {g}=await loaded,{action:ready}=play(g,'Sickle_Ready');sample(g,ready,0);
+test('Retained Sora attacks return to their shared authored body and palm pose',async()=>{
+ const {g}=await loaded,{action:ready}=play(g,'Sickle_Cut_Diagonal');sample(g,ready,0);
  const bones=['pelvis','spine_03','lowerarm_r','hand_r','lowerarm_l','hand_l','foot_r','foot_l'];
  const rotation=name=>g.scene.getObjectByName(name).getWorldQuaternion(new THREE.Quaternion()).normalize();
  const reference=Object.fromEntries(bones.map(name=>[name,{position:point(g,name),rotation:rotation(name)}]));

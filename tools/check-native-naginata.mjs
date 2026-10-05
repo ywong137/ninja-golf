@@ -30,6 +30,7 @@ export async function validateNativeNaginata({
   record = new URL('../src/motion-data.json',import.meta.url),
   includeFrames = false,
   includeSkin = false,
+  includeReady = true,
 } = {}) {
   const rig = await loadNativeSkin(model), records = json(record);
   // Classify the actual mesh in its bind pose before playing any animation.
@@ -53,7 +54,7 @@ export async function validateNativeNaginata({
   const weaponFrame = new T.Quaternion().fromArray(frames.r.frame).normalize();
   const endpoints = {}, result = {};
 
-  for (const name of NATIVE_NAGINATA_CLIPS) {
+  for (const name of NATIVE_NAGINATA_CLIPS.filter(name=>includeReady||!name.endsWith('_Ready'))) {
     const clip = clips.get(name), spec = records[name];
     assert.ok(clip, `Missing animation ${name}.`);
     assert.ok(spec, `Missing motion record ${name}.`);
@@ -182,7 +183,7 @@ export async function validateNativeNaginata({
     if (spec.athleticAttack) assert.ok(measured.maxLift > .04, `${name}: no authored foot lift.`);
     result[name] = measured;
   }
-  const ready = endpoints['Ethan_Naginata_Ready/start'];
+  const ready = endpoints[includeReady?'Ethan_Naginata_Ready/start':'Ethan_Naginata_Cut_Diagonal/start'];
   for (const [endpoint,pose] of Object.entries(endpoints)) {
     for (const [name,bone] of Object.entries(pose)) {
       assert.ok(bone.position.distanceTo(ready[name].position) < 1e-5, `${endpoint}/${name}: position differs from Ready.`);

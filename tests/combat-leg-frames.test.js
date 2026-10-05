@@ -27,7 +27,8 @@ for(const model of ['kaede','ayame','sora'])test(`${model}: every standard attac
     // These characters use the same reviewed UAL2 return lunge. It reaches
     // 124.47 degrees. Keep unrelated attacks at their existing 120 limit.
     const reviewedReturn=motions[name].source==='Quaternius UAL2 Sword_Regular_Combo and matching A/B recoveries (CC0)'&&/_Combo_(Return|Finish)$/.test(name);
-    const kneeLimit=name==='Hustler_Diagonal_Cut'||reviewedReturn?125:120;
+    // Match the independently reviewed complete source performances.
+    const kneeLimit=/^(Hustler|Closer)_(Musou_|Power_)/.test(name)?135:name==='Hustler_Diagonal_Cut'||reviewedReturn?125:120;
     assert.ok(m.kneeFlexion>0&&m.kneeFlexion<kneeLimit,label);
    }
   }

@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import * as T from 'three';
 import {createWeapon} from '../src/weapons.js';
+import {gripFrame} from '../src/hand-grip.js';
 import {captureArmPose,calibrateArmAnatomy,measureArmAnatomy,armAuthoringViolations} from './native-arm-anatomy.mjs';
 import {loadNativeSkin,skinGroups,measureArmSkin} from '../tests/native-skin-helper.mjs';
 import {calibrateLegAnatomy,measureLegAnatomy} from './native-leg-anatomy.mjs';
@@ -20,6 +21,7 @@ export async function inspectNativeAce({
  readyRecord=null,
  clip:attackName='Ace_Cut_Diagonal',
  includeSkin=true,
+ includeReady=true,
 }={}){
  const expected=EXPECTED[attackName];
  if(!expected)throw Error('Choose Ace_Cut_Diagonal or Ace_Heavy_Cleave.');
@@ -39,10 +41,12 @@ export async function inspectNativeAce({
   const action=rig.mixer.clipAction(clip).reset().setLoop(T.LoopOnce,1).play();action.clampWhenFinished=true;
   return seconds=>{action.time=Math.min(seconds,clip.duration);rig.mixer.update(0);rig.scene.updateMatrixWorld(true);};
  }
- const sampleReady=play('Ace_Ready');sampleReady(0);
+ const referenceName=includeReady?'Ace_Ready':attackName;
+ const sampleReady=play(referenceName);sampleReady(0);
  const ready=Object.fromEntries(Object.entries(bones).map(([name,b])=>[name,{p:b.position.clone(),q:b.quaternion.clone().normalize(),s:b.scale.clone()}]));
- const pose=motions.Ace_Ready.poses[0],shaft=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
- const frame=rot('hand_r').invert().multiply(new T.Quaternion().setFromUnitVectors(UP,shaft).multiply(new T.Quaternion().setFromAxisAngle(UP,pose.roll??0))).normalize();
+ const pose=motions[referenceName].poses[0],shaft=new T.Vector3(pose.tip[0]-pose.grip[0],pose.tip[2]-pose.grip[2],pose.grip[1]-pose.tip[1]).normalize();
+ const reference=rot('hand_r').invert().multiply(new T.Quaternion().setFromUnitVectors(UP,shaft).multiply(new T.Quaternion().setFromAxisAngle(UP,pose.roll??0))).normalize();
+ const frame=gripFrame(bones,grips.r,'r',reference).frame;
  assert.ok(UP.clone().applyQuaternion(frame).angleTo(new T.Vector3().fromArray(grips.r.axis))<.001,'Ready changed the fitted handle axis.');
  const weapon=createWeapon('jian'),blade=weapon.getObjectByName('Flat steel blade'),vertices=blade.geometry.attributes.position;
  const placeWeapon=()=>{
@@ -51,7 +55,7 @@ export async function inspectNativeAce({
   weapon.updateMatrixWorld(true);
  };
  const metrics={samples:0,maxWrist:0,minBladeHeight:Infinity,maxPlantDrift:0,maxToePlantDrift:0,maxMedialKnee:0,maxHandSpeed:0,maxArmStepAt120Hz:0,maxFreeArmReach:0,maxHumeralRoll:0,maxForearmTwist:0,maxHingeDeviation:0};
- for(const name of ['Ace_Ready',attackName]){
+ for(const name of includeReady?['Ace_Ready',attackName]:[attackName]){
   const spec=motions[name],sample=play(name);assert.equal(spec.nativeAttachment,true);assert.equal(spec.twoHanded,false);
   if(name===attackName){assert.equal(spec.duration,expected.duration);assert.deepEqual(spec.impacts,[expected.impact]);assert.deepEqual(spec.toePlants,{r:[[0,spec.duration]],l:[]},'Declare the fixed rear toe throughout the heel pivot.');}
   let previous=null,rearToe=null,rearAnkleLow=Infinity,rearAnkleHigh=-Infinity,leadStart=null,leadLift=0,leadAdvance=0;const plants=new Map(),toePlants=new Map(),trajectory=[];
