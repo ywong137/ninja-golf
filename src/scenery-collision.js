@@ -91,7 +91,7 @@ export class SceneryCollision {
   return nearest;
  }
  camera(origin,target,minimumDistance=0){
-  const radius=minimumDistance>0?.2:.45;
+  const radius=minimumDistance>0?.25:.45;
   const project=end=>{const hit=this.sweepSphere(origin,end,radius,false),t=hit?Math.max(0,hit.t-.002):1;return{x:origin.x+(end.x-origin.x)*t,y:origin.y+(end.y-origin.y)*t,z:origin.z+(end.z-origin.z)*t};};
   const desired={...target},length=p=>Math.hypot(p.x-origin.x,p.y-origin.y,p.z-origin.z);
   let best=project(desired);

@@ -110,5 +110,19 @@
         "sourceURL": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/grass_bermuda_01/grass_bermuda_01_alpha_1k.png"
       }
     ]
+  },
+  {
+    "asset": "clay_plaster",
+    "author": "Amal Kumar",
+    "license": "CC0-1.0",
+    "source": "https://polyhaven.com/a/clay_plaster",
+    "licenseSource": "https://polyhaven.com/license",
+    "sourceWidthMeters": 2,
+    "files": [
+      "adobe-color-2k.jpg",
+      "adobe-normal-2k.jpg",
+      "adobe-roughness-2k.jpg"
+    ],
+    "modifications": "2K source JPG maps re-encoded at quality 88; clay pigment normalized to a warm lime finish, with normal strength adjusted in game."
   }
 ]

@@ -1,12 +1,11 @@
 import {shorelinePoint} from './shoreline.js';
 import * as THREE from 'three';
-import {shrubGeometry} from './theme-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {heightAt,lieAt,routePoint,waterBasins,waterSurfaceAt,random,greenDistance} from './course.js';
 import {queueSceneryRock} from './scenery-rocks.js';
 import {findBuildingSite,buildingBox,buildingCylinder} from './building-placement.js';
 import {scaleBoxUV} from './architecture-uv.js';
-import {architecturalSurface} from './architecture-materials.js';
+import {desertClubhouseMaterials,buildDesertClubhouse} from './desert-clubhouse.js';
 import {CYBER_FIXTURES,queueCyberFixture,flushCyberFixtures} from './cyber-fixtures.js';
 
 // Balance direct sun against the photographic sky. Excess unshadowed fill hides surface shape.
@@ -17,28 +16,25 @@ export const THEME_LIGHTS={
  cyberpunk:{sky:'#121b39',fog:'#172342',sun:'#c8d7eb',fill:'#aec8eb',ground:'#394239',intensity:2.1,ambient:.65,environment:.4},
 };
 const transform=new THREE.Object3D();
-// Each plant component is a single instanced draw. Static architecture is merged by material.
+// Static architecture is merged by material.
 export function buildThemeScenery(root,c,sites,textures={}){
- const r=random(c.seed+912),theme=c.theme,batches=new Map(),instances=new Map();
+ const r=random(c.seed+912),theme=c.theme,batches=new Map();
  const mat=(color,glow=false)=>new THREE.MeshStandardMaterial({color,roughness:glow?.38:.92,emissive:glow?color:'#000000',emissiveIntensity:glow?.65:0});
- const shrub=shrubGeometry();
  const stone=mat(theme==='desert'?'#b2a38b':theme==='cyberpunk'?'#273653':'#8e9187');
  if(textures.rock){stone.map=textures.rock;stone.normalMap=textures.normal;stone.normalScale=new THREE.Vector2(.2,.2);}
- const finish=theme==='desert'?architecturalSurface('#cbbb9d',.91):null;
+ const desertMaterials=theme==='desert'?desertClubhouseMaterials(textures):null;
  const dark=mat(theme==='desert'?'#665541':theme==='cyberpunk'?'#0e172c':'#5a6156');
  const leaf=mat(theme==='desert'?'#597b4b':theme==='cyberpunk'?'#5adfe1':'#6f7844',theme==='cyberpunk');
  leaf.side=THREE.DoubleSide;
- const shrubMat=new THREE.MeshStandardMaterial({color:theme==='highlands'?'#9a859d':'#76975c',vertexColors:true,side:THREE.DoubleSide,roughness:1});
  const flower=mat(theme==='highlands'?'#796078':theme==='cyberpunk'?'#dd61d8':'#9ab25d',theme==='cyberpunk');
  const glass=mat(theme==='cyberpunk'?'#385f79':'#314546');glass.metalness=.5;glass.roughness=.23;
  const wood=mat(theme==='desert'?'#584335':theme==='cyberpunk'?'#53606b':'#555e57');if(theme==='cyberpunk'){wood.name='Brushed facade metal';wood.metalness=.4;wood.roughness=.45;}
  const gold=mat(theme==='highlands'?'#a89949':theme==='cyberpunk'?'#dfbc85':'#ddc39a',theme==='cyberpunk');
  if(theme==='cyberpunk')gold.emissiveIntensity=.25;
  const box=new THREE.BoxGeometry(1,1,1),cyl=new THREE.CylinderGeometry(1,1,1,7);
- const emit=(geo,m,x,y,z,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0,instanced=false)=>{
+ const emit=(geo,m,x,y,z,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0)=>{
   transform.position.set(x,y,z);transform.scale.set(sx,sy,sz);transform.rotation.set(rx,ry,rz);transform.updateMatrix();
-  if(instanced){const key=`${geo.uuid}/${m.uuid}`;if(!instances.has(key))instances.set(key,{geo,m,matrices:[]});instances.get(key).matrices.push(transform.matrix.clone());}
-  else {if(!batches.has(m))batches.set(m,[]);const part=geo.index?geo.toNonIndexed():geo.clone();if(geo===box)scaleBoxUV(part,sx,sy,sz);batches.get(m).push(part.applyMatrix4(transform.matrix));}
+  if(!batches.has(m))batches.set(m,[]);const part=geo.index?geo.toNonIndexed():geo.clone();if(geo===box)scaleBoxUV(part,sx,sy,sz);batches.get(m).push(part.applyMatrix4(transform.matrix));
  };
  const register=(kind,x,z,height,radius)=>sites.push({id:`${theme}-${sites.length}`,kind,x,z,y:kind==='water'?waterSurfaceAt(c,x,z):heightAt(c,x,z),height,radius,fairway:lieAt(c,x,z)==='Fairway'});
  // Tall monuments remain outside the playable corridor. Small cover follows the fairway edges.
@@ -95,42 +91,7 @@ export function buildThemeScenery(root,c,sites,textures={}){
    for(let i=0;i<11;i++){const a=i*Math.PI/10,theta=a-Math.PI/2;emit(box,stone,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,1,.8,.7,0,0,theta);buildingBox(root,`${id}-arch-${i}`,x+Math.cos(a)*3.4,y+3.7+Math.sin(a)*3.3,z-2.15,Math.abs(Math.cos(theta))+.8*Math.abs(Math.sin(theta)),Math.abs(Math.sin(theta))+.8*Math.abs(Math.cos(theta)),.7);}
    for(let j=0;j<12;j++){const rx=x-10+r()*20,rz=z-7+r()*4;queueSceneryRock(root,{x:rx,z:rz,y:heightAt(c,rx,rz),height:.24+r()*.2,radius:.35+r()*.3,angle:r()*Math.PI*2,burial:.12+r()*.15});}
   }else if(theme==='desert'){
-   footing('foundation',x,z,24,14);solid(`${id}-body`,finish,x,y+3,z,24,6,14);solid(`${id}-roof`,gold,x,y+6.1,z,26,.45,16);entrance(x,heightAt(c,x,z-7.1)+.06,z-7.08);
-   for(const side of [-1,1])column(`${id}-porch-column-${side<0?'left':'right'}`,gold,x+side*10,(site.foundationBottom+y+5)/2,z-10,.45,y+5-site.foundationBottom);
-   solid(`${id}-porch-roof`,finish,x,y+5.1,z-10,24,.4,6);
-   solid(`${id}-upper-body`,finish,x+4,y+7.7,z+2,12,3,8);solid(`${id}-upper-roof`,gold,x+4,y+9.25,z+2,13,.25,9);
-   for(const side of [-1,1])for(let w=0;w<6;w++){emit(box,dark,x-10+w*4,y+2.8,z+side*7.08,2.3,3.4,.18);emit(box,glass,x-10+w*4,y+2.9,z+side*7.19,1.8,2.7,.06);emit(box,gold,x-10+w*4,y+1.4,z+side*7.35,2.8,.22,.8);}
-   // Side elevations use shallow plaster divisions, service doors and coping.
-   for(const side of [-1,1]){
-    for(const zz of [-5.7,-1.9,1.9,5.7])emit(box,finish,x+side*12.08,y+2.8,z+zz,.18,5.6,.18);
-    const serviceY=heightAt(c,x+side*12.1,z)+.06;
-    for(const yy of [.45,4.7,5.55]){
-     const bandY=y+yy;
-     // Leave clearance around the complete door frame, including its header.
-     if(bandY+.06>serviceY-.05&&bandY-.06<serviceY+2.75){
-      for(const end of [-1,1])emit(box,gold,x+side*12.08,bandY,z+end*4,.20,.12,6.2);
-     }else emit(box,gold,x+side*12.08,bandY,z,.20,.12,14.2);
-    }
-    emit(box,dark,x+side*12.12,serviceY+1.28,z,.12,2.56,1.35);
-    for(const zz of [-.73,.73])emit(box,wood,x+side*12.19,serviceY+1.32,z+zz,.10,2.64,.10);
-    emit(box,wood,x+side*12.19,serviceY+2.65,z,.10,.10,1.56);
-    emit(box,gold,x+side*12.25,serviceY+1.20,z+.40,.05,.10,.17);
-    for(const zz of [-4,4]){
-     emit(box,dark,x+side*12.12,y+3.8,z+zz,.10,1.0,1.5);
-     emit(box,glass,x+side*12.18,y+3.8,z+zz,.04,.82,1.30);
-     emit(box,gold,x+side*12.23,y+3.24,z+zz,.30,.12,1.7);
-    }
-   }
-   for(let j=0;j<15;j++)emit(box,wood,x-11+j*1.6,y+5.4,z-9.6,.16,.25,7);
-   for(const side of [-1,1]){
-    const px=x+side*12,pz=z-12.5;let low=Infinity,high=-Infinity;
-    for(const dx of [-1.5,0,1.5])for(const dz of [-1,0,1]){const ground=heightAt(c,px+dx,pz+dz);low=Math.min(low,ground);high=Math.max(high,ground);}
-    const bottom=low-.15,top=high+.8;
-    solid(`${id}-planter-${side}`,stone,px,(bottom+top)/2,pz,3,top-bottom,2);
-    emit(shrub,shrubMat,px,top,pz,1.3,.75,.8,0,0,0,true);
-   }
-
-
+   buildDesertClubhouse(root,c,site,k,{emit,materials:desertMaterials});
   }else{
    const variant=(k+c.seed)%5,total=[38,64,47,76,54][variant],width=[16,13,18,12,17][variant],depth=[15,17,13,15,16][variant];
    footing('foundation',x,z,22,19);solid(`${id}-podium`,stone,x,y+2.4,z,22,4.8,19);
@@ -198,10 +159,9 @@ export function buildThemeScenery(root,c,sites,textures={}){
  }
  for(const b of c.bunkers)register('sand',b[0],b[1],0);
  for(const pond of waterBasins(c))for(let i=0;i<8;i++){const a=i*Math.PI/4,[sx,sz]=shorelinePoint(pond,a),x=pond[0]+(sx-pond[0])*.92,z=pond[1]+(sz-pond[1])*.92;if(lieAt(c,x,z)==='Water')register('water',x,z,0);}
- for(const {geo,m,matrices} of instances.values()){const mesh=new THREE.InstancedMesh(geo.clone(),m,matrices.length);matrices.forEach((v,i)=>mesh.setMatrixAt(i,v));mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
  for(const [m,geos] of batches){const geo=mergeGeometries(geos);geos.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geo,m);mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.architectureTheme=theme;mesh.name=`${theme} architecture`;root.add(mesh);}
- if(theme==='highlands')dark.dispose();
- for(const geo of [box,cyl,shrub])geo.dispose();
+ for(const material of [stone,dark,leaf,flower,glass,wood,gold])if(!batches.has(material))material.dispose();
+ for(const geo of [box,cyl])geo.dispose();
  if(theme==='cyberpunk')flushCyberFixtures(root);
 
 }

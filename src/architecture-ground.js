@@ -70,8 +70,8 @@ export function buildArchitectureGround(root,course,path,sites=[]){
   }
  collision=new SceneryCollision([],obstacles);
  for(const [index,site]of (root.userData.landmarks||[]).entries()){
-  const theme=course.theme,id=`${theme}-approach-${index}`,offset=theme==='cyberpunk'?-15:theme==='desert'?-10.8:theme==='japanese'?-14.4:-5;
-  const w=theme==='cyberpunk'?19:theme==='desert'?17:9,d=theme==='cyberpunk'?8.5:theme==='desert'?7.5:theme==='japanese'?6:7;
+  const theme=course.theme,id=`${theme}-approach-${index}`,offset=theme==='cyberpunk'?-15:theme==='desert'?-12:theme==='japanese'?-14.4:-5;
+  const w=theme==='cyberpunk'?19:theme==='desert'?17:9,d=theme==='cyberpunk'?8.5:theme==='desert'?9:theme==='japanese'?6:7;
   const center={x:site.x,z:site.z+offset},triangles=rectangle(center.x,center.z,w,d,theme!=='highlands');
   if(!triangles)continue;
   const start={x:site.x,z:center.z-d/2+.15};record.courts.push({id,...center,width:w,depth:d,triangles,entry:{x:site.x,z:theme==='cyberpunk'?site.z-9.55:theme==='desert'?site.z-7.1:theme==='japanese'?site.z-11.8:site.z-3}});

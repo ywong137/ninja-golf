@@ -5,7 +5,7 @@ import {disableHmr} from '../tools/disable-hmr.mjs';
 const browser=await chromium.launch({channel:process.env.PLAYWRIGHT_CHANNEL||'chrome',headless:true,args:['--mute-audio','--use-angle=metal']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await disableHmr(page);
- await page.goto('http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
+ await page.goto(process.env.GAME_URL||'http://localhost:5173');await page.waitForFunction(()=>window.__golfTest,null,{timeout:120000});await preloadWarriorFixtures(page);await page.locator('#asset-curtain').waitFor({state:'detached'});
  await page.evaluate(async()=>{
   const g=window.__golfTest,T=await import('/node_modules/three/build/three.module.js'),{heightAt,lieAt}=await import('/src/course.js');g.frame=()=>{};g.begin(0,0);g.paused=true;g.audio.pause();g.input.setContext('combat');
   const position=(x,z)=>new T.Vector3(x,heightAt(g.course,x,z),z);
@@ -50,7 +50,7 @@ try{
    const {g,records,position,walk}=window.buildingTest;let center,dx=0,dz=1,start,end;
    if(theme===0){const a=records.find(o=>o.id==='jp-gate-post-left'),b=records.find(o=>o.id==='jp-gate-post-right');center={x:(a.x+b.x)/2,z:(a.z+b.z)/2};start=position(center.x,center.z-4);end=position(center.x,center.z+4);}
    if(theme===1){const lintel=records.find(o=>/^highlands-\d+-lintel$/.test(o.id));center=lintel;start=position(center.x,center.z-4);end=position(center.x,center.z+4);}
-   if(theme===2){const roof=records.find(o=>/^desert-\d+-porch-roof$/.test(o.id));center=roof;dx=1;dz=0;start=position(center.x-6,center.z);end=position(center.x+6,center.z);}
+   if(theme===2){const roof=records.find(o=>/^desert-\d+-porch-roof$/.test(o.id));center={x:roof.x,z:roof.z-6.7};dx=1;dz=0;start=position(center.x-6,center.z);end=position(center.x+6,center.z);}
    const distance=start.distanceTo(end),report=walk(start,dx,dz,Math.ceil(distance/(5.6*g.warrior.speed)*60));window.buildingTest.openingAnchor=center;
    return {...report,target:end.toArray(),error:g.player.root.position.distanceTo(end),center};
   },theme);assert.equal(result.opening.maxPenetration,0,JSON.stringify(result.opening));assert.ok(result.opening.error<.25,JSON.stringify(result.opening));
@@ -70,7 +70,7 @@ try{
    }if(!setup)throw Error('No dry exposed tall wall for camera test');
    const {solid,p,dx,dz}=setup;g.player.root.position.copy(p);g.cameraYaw=Math.atan2(-dx,-dz);g.cameraPitch=.08;g.camera.position.copy(p).add({x:-dx*2,y:2,z:-dz*2});g.currentLook.copy(p);for(let i=0;i<90;i++)g.updateCamera(1/60);
    const origin=p.clone().add({x:0,y:1.7,z:0}),clear=g.world.collision.segmentClear(origin,g.camera.position,.25,0,true),shortened=origin.distanceTo(g.camera.position)<6;
-   return {wall:solid.id,clear,shortened,camera:g.camera.position.toArray(),origin:origin.toArray()};
+   return {wall:solid.id,clear,shortened,camera:g.camera.position.toArray(),origin:origin.toArray(),sphereHit:g.world.collision.sweepSphere(origin,g.camera.position,.2,false),clearanceHit:g.world.collision.sweepSphere(origin,g.camera.position,.25,true)};
   });assert.equal(result.camera.clear,true,JSON.stringify(result.camera));assert.equal(result.camera.shortened,true,JSON.stringify(result.camera));
   if(theme===1){result.overhead=await page.evaluate(()=>{
    const {g,records,position}=window.buildingTest,walls=records.filter(o=>/^highlands-\d+-rear-wall-.*-2$/.test(o.id));let setup;
@@ -95,9 +95,9 @@ try{
   console.log(JSON.stringify({theme,pursuit:result.pursuit},null,2));
   assert.equal(result.pursuit.blocked,0,JSON.stringify(result.pursuit));assert.ok(result.pursuit.finalDistance<5,JSON.stringify(result.pursuit));assert.ok(result.pursuit.maxSide>result.pursuit.detourExtent,JSON.stringify(result.pursuit));assert.equal(result.pursuit.attached,true);assert.equal(result.pursuit.visible,true);assert.equal(result.pursuit.heroAttached,true);assert.equal(result.pursuit.heroVisible,true);
   if(theme===0){await page.evaluate(()=>{const {g,body}=window.buildingTest,p=g.player.root.position;g.camera.position.set(body.x+16,body.maxY+7,body.z-26);g.camera.lookAt(body.x,body.maxY+2,body.z-7);g.world.update(g.time,0,p,g.camera.position);g.rendering.render('high');});await page.screenshot({path:'/tmp/ninja-buildings-0-stairs.png'});}
-  result.emergence=await page.evaluate(()=>{
-   const {g,body,position,reset,overlaps,step}=window.buildingTest;reset();g.player.root.position.copy(position(body.x+body.halfWidth+5,body.z));g.ball.position.copy(g.player.root.position).add({x:0,y:0,z:40});g.enemyBudget=64;g.enemiesSpawned=0;for(const site of g.world.ambushSites)site.readyAt=0;g.spawnWave(12);g.enemyBudget=0;
-   const initial=g.enemies.filter(e=>e.emerging).map(e=>({site:e.spawnSite,landing:e.emerging.landing.toArray(),blocked:overlaps(e.emerging.landing,.3)}));for(let frame=0;frame<150;frame++)step();return {initial,remaining:g.enemies.filter(e=>e.emerging).length,attached:g.enemies.every(e=>e.root.parent===g.scene),landedBlocked:g.enemies.flatMap(e=>overlaps(e.root.position,.3))};
+  result.emergence=await page.evaluate(async()=>{
+   const {g,body,position,reset,overlaps,step}=window.buildingTest,{enemyEmergenceFrame}=await import('/src/enemy-emergence.js');reset();g.player.root.position.copy(position(body.x+body.halfWidth+5,body.z));g.ball.position.copy(g.player.root.position).add({x:0,y:0,z:40});g.enemyBudget=64;g.enemiesSpawned=0;for(const site of g.world.ambushSites)site.readyAt=0;g.spawnWave(12);g.enemyBudget=0;
+   const initial=g.enemies.filter(e=>e.emerging).map(e=>({site:e.spawnSite,landing:e.emerging.landing.toArray(),blocked:overlaps(e.emerging.landing,.3)}));const finishSeconds=Math.max(...g.enemies.filter(e=>e.emerging).map(e=>e.emerging.delay+enemyEmergenceFrame(0,{duration:e.emerging.duration,kind:e.emerging.site.kind}).duration))+.1;for(let frame=0;frame<Math.ceil(finishSeconds*60);frame++)step();return {initial,finishSeconds,remaining:g.enemies.filter(e=>e.emerging).length,attached:g.enemies.every(e=>e.root.parent===g.scene),landedBlocked:g.enemies.flatMap(e=>overlaps(e.root.position,.3))};
   });assert.ok(result.emergence.initial.length>0);assert.ok(result.emergence.initial.every(e=>e.blocked.length===0),JSON.stringify(result.emergence));assert.equal(result.emergence.remaining,0);assert.equal(result.emergence.attached,true);assert.deepEqual(result.emergence.landedBlocked,[]);
   result.ball=await page.evaluate(()=>{
    const {g,records,body,position,reset,overlaps,ballRadius}=window.buildingTest;reset();const wall=records.find(o=>o.id==='jp-pagoda-body-0')||body;

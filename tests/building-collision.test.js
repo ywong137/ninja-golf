@@ -61,3 +61,13 @@ test('Two-wall corners stop diagonal movement without entering either wall',()=>
  const c=new SceneryCollision([], [box({id:'x',halfWidth:.05,halfDepth:10}),box({id:'z',halfWidth:10,halfDepth:.05})]);
  const end=p(8,8);c.slide(end,.38,p(-8,-8));assert.equal(c.blocked(end),false);near(end.x,-.43);near(end.z,-.43);
 });
+
+test('Elevated combat camera keeps its full clearance beside a raised building',()=>{
+ const c=new SceneryCollision([], [box({halfWidth:12,halfDepth:7,minY:0,maxY:7.3866}),box({id:'upper-wall',halfWidth:12,halfDepth:7,minY:7.3866,maxY:12.1866})]);
+ const origin={x:0,y:6.9809,z:8};
+ for(let i=0;i<32;i++){
+  const angle=i*Math.PI/16,target={x:Math.sin(angle)*7.7,y:7.8409,z:8+Math.cos(angle)*7.7};c.camera(origin,target,2.4);
+  assert.equal(c.sweepSphere(origin,target,.25,false),null);
+  assert.ok(Math.hypot(target.x-origin.x,target.y-origin.y,target.z-origin.z)>=2.4);
+ }
+});

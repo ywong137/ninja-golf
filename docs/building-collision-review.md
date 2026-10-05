@@ -69,7 +69,8 @@ These CPU measurements do not establish the game's frame rate. Browser measureme
 ## Limits
 
 Building interiors, galleries, foundations, and stairs do not supply walkable height surfaces.
-Their solids block movement. The open gates, arches, and porches remain traversable at terrain height.
+Their solids block movement. The open gates and arches remain traversable at terrain height.
+The revised desert terraces and stairs are solid scenery; the exterior forecourt remains traversable.
 Curved pagoda roofs use a conservative grid of overhead boxes.
 Sphere sweeps round horizontal corners, but expand roof edges conservatively.
 Forest steering remains local. The building graph is not a general terrain navigation mesh.
