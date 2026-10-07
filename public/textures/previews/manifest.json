@@ -1,0 +1,212 @@
+{
+  "adobe-color-2k.jpg": {
+    "file": "previews/adobe-color-2k-827f2639ff5f.jpg",
+    "sourceSHA256": "d961d55281e0a18afdfabb820516e80c92570e67660b94e976f65d2d73651c51",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 87203,
+    "originalBytes": 268498
+  },
+  "adobe-normal-2k.jpg": {
+    "file": "previews/adobe-normal-2k-6ba0bafcf3ff.jpg",
+    "sourceSHA256": "92e16df54dcd1257b2b3bf2e945352097f51edc6f43cc6e7f8bd1f7e47103834",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 346060,
+    "originalBytes": 831593
+  },
+  "adobe-roughness-2k.jpg": {
+    "file": "previews/adobe-roughness-2k-e2de266fdf62.jpg",
+    "sourceSHA256": "0b8c1d7c7279b9ede39fa3c57abdaaa5acc9ebc11e59962363f129b26a4dc9e2",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 107679,
+    "originalBytes": 298554
+  },
+  "bark-color.jpg": {
+    "file": "previews/bark-color-dc0ed2413508.jpg",
+    "sourceSHA256": "fa240510e9ef127a8979ebd63628950abdc048a1e091d8a1611c86bbe2c6cda4",
+    "width": 512,
+    "height": 1024,
+    "sourceWidth": 1024,
+    "sourceHeight": 2048,
+    "bytes": 156675,
+    "originalBytes": 1371666
+  },
+  "bark-normal.jpg": {
+    "file": "previews/bark-normal-e79c394e08fa.jpg",
+    "sourceSHA256": "7302db344bcd63f3a2eb2bd2321377798c54831b0ff691de44315509db83962e",
+    "width": 512,
+    "height": 1024,
+    "sourceWidth": 1024,
+    "sourceHeight": 2048,
+    "bytes": 329084,
+    "originalBytes": 2053757
+  },
+  "bunker-color-2k.jpg": {
+    "file": "previews/bunker-color-2k-2910309dd6f5.jpg",
+    "sourceSHA256": "538453033d28a64c671b89389a6ee904184af18d365adb5a15d5ea9e1eb5705b",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 292667,
+    "originalBytes": 3353581
+  },
+  "bunker-normal-2k.jpg": {
+    "file": "previews/bunker-normal-2k-0852d60e6323.jpg",
+    "sourceSHA256": "ce870ef363010e0b96faa47f3fac47982cdbb40e3a59c0fe23fa64f587f54c7f",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 465561,
+    "originalBytes": 3654915
+  },
+  "grass-color-2k.jpg": {
+    "file": "previews/grass-color-2k-1fec29d3e7ca.jpg",
+    "sourceSHA256": "e3c5bb52527f8de5b8a6245ce33562574ab1af475257161f31c5293a7799063f",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 444054,
+    "originalBytes": 1721060
+  },
+  "grass-normal-2k.jpg": {
+    "file": "previews/grass-normal-2k-658f41a430b2.jpg",
+    "sourceSHA256": "29734f09690b40e171d63124aebcc0e3e692e81d414c8b87a08eb793e530f363",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 948086,
+    "originalBytes": 3202276
+  },
+  "path-color-2k.jpg": {
+    "file": "previews/path-color-2k-1a101e07b895.jpg",
+    "sourceSHA256": "dfe40bee4b00270da677e8f87c5349b4d18efcb4e48c16cc17f3bead0c7aeadc",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 500557,
+    "originalBytes": 2241232
+  },
+  "path-normal-2k.jpg": {
+    "file": "previews/path-normal-2k-e58447d80882.jpg",
+    "sourceSHA256": "015afbce8f69a4558c7c6686d2eb8855d40ddff0201a71ffde135071bb2773f8",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 928605,
+    "originalBytes": 3589356
+  },
+  "path-roughness-2k.jpg": {
+    "file": "previews/path-roughness-2k-751ea22eab4b.jpg",
+    "sourceSHA256": "d5f34926be8521803a88a869f36df7f2f28137d4e45779fd45823453143b5676",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 56248,
+    "originalBytes": 230829
+  },
+  "rock-color-2k.jpg": {
+    "file": "previews/rock-color-2k-0b97c6d49d07.jpg",
+    "sourceSHA256": "9da52171c8300a26e1b5129c312cb43123ee54f88a04cb0b047494842bd5b513",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 445991,
+    "originalBytes": 1569847
+  },
+  "rock-normal-2k.jpg": {
+    "file": "previews/rock-normal-2k-0b891bf4bcd2.jpg",
+    "sourceSHA256": "ef327574509446b9328b0042e8fba3b47225606f9718fbe6a277a623ace0b50d",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 398774,
+    "originalBytes": 1351722
+  },
+  "sand-color-2k.jpg": {
+    "file": "previews/sand-color-2k-1ffbd5579c1e.jpg",
+    "sourceSHA256": "67b24884ea0dbbbe3c0fc6f9f572846cdc7a8b66d3448b3c7fb690a5defc753f",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 425106,
+    "originalBytes": 1510857
+  },
+  "sand-normal-2k.jpg": {
+    "file": "previews/sand-normal-2k-e1fd9b8358e0.jpg",
+    "sourceSHA256": "d6c6a5dfba852713387ea7903584edf6c81b1de8e417ca484a0307caf9956a57",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 683282,
+    "originalBytes": 1958747
+  },
+  "sandstone-color-2k.jpg": {
+    "file": "previews/sandstone-color-2k-edea69b9481a.jpg",
+    "sourceSHA256": "aa59f28464630f3784f62421a5f7ed53e12eb6945d50b3f35a83d36e46c472f3",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 440698,
+    "originalBytes": 1494026
+  },
+  "sandstone-normal-2k.jpg": {
+    "file": "previews/sandstone-normal-2k-e3f1c26da54e.jpg",
+    "sourceSHA256": "1cc416890a0201d5c9bebaabf59a89469c04d626a2b792eb5ede64afb458bd88",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 626642,
+    "originalBytes": 1716976
+  },
+  "turf-color-2k.jpg": {
+    "file": "previews/turf-color-2k-ef97d80acbe7.jpg",
+    "sourceSHA256": "c90d63d14961e8cc3af2d89d62f937a64ce5c28baa15011f5b2b80a3912ba3cf",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 742851,
+    "originalBytes": 3035816
+  },
+  "turf-normal-2k.jpg": {
+    "file": "previews/turf-normal-2k-616e10f6bb86.jpg",
+    "sourceSHA256": "f0ff3deb391f1fecf8f2f381129d4dc859b7b7b66381e60b0b0470d5873fc475",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 1028992,
+    "originalBytes": 5032499
+  },
+  "turf-roughness-2k.jpg": {
+    "file": "previews/turf-roughness-2k-e47fc6abff92.jpg",
+    "sourceSHA256": "5788bb7a32b7743e0ef737468196f96db89c2e3bd06a62d03dbb27ea7326c6e6",
+    "width": 1024,
+    "height": 1024,
+    "sourceWidth": 2048,
+    "sourceHeight": 2048,
+    "bytes": 530116,
+    "originalBytes": 2001063
+  }
+}

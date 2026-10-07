@@ -12,7 +12,8 @@
     "test:loading": "node tests/browser-character-loading.mjs",
     "test:emergence": "node tests/browser-enemy-emergence.mjs",
     "test:scenery-delivery": "node tests/browser-scenery-delivery.mjs",
-    "test:course-loading": "node tests/browser-course-loading.mjs"
+    "test:course-loading": "node tests/browser-course-loading.mjs",
+    "test:crowd": "node tests/browser-crowd-weapons.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

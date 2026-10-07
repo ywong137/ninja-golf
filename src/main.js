@@ -60,7 +60,7 @@ class Game {
     this.trail=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:'#f8f3db',transparent:true,opacity:.8}));this.scene.add(this.trail);this.trailPoints=[];
     this.player=null;this.setCourse(initialCourse);this.loadHole(this.roundCourse.preview?.hole||0);this.ball.visible=this.aimLine.visible=this.aimMarker.visible=false;this.ui.homeCourse(this.roundCourse);this.ui.showScreen('home');if(import.meta.env.DEV){this.selectWarrior(0);this.player.root.visible=false;}
     const curtain=document.createElement('div');curtain.className='loading-screen';curtain.id='asset-curtain';curtain.innerHTML='<div class="brand-mark">忍</div><h2>Preparing the course.</h2><p>Finishing the light, water, and landscape…</p>';document.body.append(curtain);
-    this.world.waitForAssets().then(()=>this.renderer.compileAsync(this.scene,this.camera)).finally(()=>{curtain.classList.add('loaded');setTimeout(()=>curtain.remove(),300);});
+    this.world.waitForAssets().then(()=>this.renderer.compileAsync(this.scene,this.camera)).finally(()=>{curtain.classList.add('loaded');setTimeout(()=>curtain.remove(),300);setTimeout(()=>this.world.surfaceTextures.start(),1800);});
     window.addEventListener('resize',()=>{this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight);this.rendering.resize();this.ui.previewRect=null;if(this.mode==='selection')this.updateCamera(0,{immediate:true});});
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.mode==='game'&&!this.paused&&this.phase!=='holed')this.togglePause();});
     this.ui.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.paused=true;this.audio.pause();this.ui.modal('<h2>The graphics session stopped.</h2><p>Reload this page to restore the course. Completed holes remain saved.</p><button class="primary" onclick="location.reload()">Reload game</button>');});
@@ -75,6 +75,7 @@ class Game {
   selectWarrior(i){const player=new Warrior(i);this.stopShowcase();if(this.player){this.scene.remove(this.player.root);this.player.dispose();}this.playerIndex=i;this.ui.warriorDetails(i);this.player=player;this.updateClubModel();this.scene.add(this.player.root);if(this.ball&&this.course){this.placePlayer();this.preparePortrait();}if(this.mode==='selection'){this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.scale.setScalar(2.0);this.player.root.rotation.y=.25;this.startShowcase();this.updateCamera(0,{immediate:true});}this.audio.play('click');}
   cancelCharacterLoad(){this.characterRequest++;this.ui.characterLoading(null);this.ui.warriorDetails(this.playerIndex);}
   async prepareWarrior(index,apply,{round=false}={}){
+    const releaseDetail=this.world.surfaceTextures.hold();
     const request=++this.characterRequest;
     const retry=()=>this.prepareWarrior(index,apply,{round});
     const cancel=()=>{this.cancelCharacterLoad();if(!this.player){this.mode='home';this.ui.showScreen('home');}else if(this.mode==='selection')this.selectScreen();else this.ui.showScreen(this.mode);};
@@ -90,7 +91,7 @@ class Game {
       if(this.characterRequest!==request)return false;
       console.warn('Character preparation failed.',error);
       this.ui.characterLoading(WARRIORS[index].name,{error:true,retry,cancel});return false;
-    }
+    }finally{releaseDetail();}
   }
   requestWarrior(index){this.ui.warriorDetails(index);return this.prepareWarrior(index,()=>this.selectWarrior(index));}
   selectScreen(){this.cancelCourseLoad();this.cancelCharacterLoad();this.mode='selection';this.paused=false;this.audio.start();this.clearEnemies();this.aimLine.visible=false;this.aimMarker.visible=false;if(!this.player)return this.requestWarrior(this.ui.selected);this.player.root.visible=true;this.player.root.position.set(1,heightAt(this.course,1,0),0);this.player.root.rotation.y=.25;this.player.root.scale.setScalar(2.0);this.ball.visible=false;this.startShowcase();this.updateCamera(0,{immediate:true});}
@@ -99,6 +100,7 @@ class Game {
   async prepareCourse(index,apply){
     const request=++this.courseRequest,course=COURSE_SETS[index];
     if(!course)throw new Error(`Unknown course index: ${index}`);
+    const releaseDetail=this.world.surfaceTextures.hold();
     const cancel=()=>{this.cancelCourseLoad();if(this.mode==='courses')this.ui.courseDetails(this.roundCourse);};
     try{
       if(!isNatureReady(course.theme)||!this.world.isThemeReady(course.theme)){
@@ -110,7 +112,7 @@ class Game {
       if(request!==this.courseRequest)return false;
       console.warn('Course preparation failed.',error);
       this.ui.courseLoading(course.name,{error:true,retry:()=>this.prepareCourse(index,apply),cancel});return false;
-    }
+    }finally{releaseDetail();}
   }
   home(index=Math.floor(Math.random()*COURSE_SETS.length)){
     this.cancelCourseLoad();this.cancelCharacterLoad();this.stopShowcase();this.clearEnemies();this.mode='home';this.paused=false;this.ui.homeCourse(this.roundCourse);
@@ -123,7 +125,7 @@ class Game {
 
   begin(i=this.playerIndex,courseIndex=0){if(!isWarriorReady(i)||!isRoundAssetsReady())return this.prepareWarrior(i,()=>this.begin(i,courseIndex),{round:true});if(!isNatureReady(COURSE_SETS[courseIndex].theme)||!this.world.isThemeReady(COURSE_SETS[courseIndex].theme))return this.prepareCourse(courseIndex,()=>this.begin(i,courseIndex));this.cancelCourseLoad();this.stopShowcase();this.mode='game';this.setCourse(courseIndex);this.selectWarrior(i);this.scores=[];this.scorePenalties=[];this.kills=0;this.bestCombo=0;this.resolve=35;this.mode='game';this.paused=false;this.loadHole(0);this.ui.showScreen('game');this.audio.start();this.ui.toast('Choose a club and aim. Start the power meter, then strike.',6000,'aim');this.save();}
   loadHole(index){
-    this.hole=index;this.course=this.holes[index];this.groundHeight=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.scene.userData.courseTheme=this.course.theme;this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.shotHeight=0;this.club=this.course.par===3?2:0;this.updateClubModel();this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
+    this.hole=index;this.course=this.holes[index];this.groundHeight=createCourseSurfaceSampler(this.course,heightAt,ellipse);this.scene.userData.courseTheme=this.course.theme;if(this.world.course!==this.course)this.world.build(this.course);this.puttingGuide.build(this.course);this.survey=false;this.clearEnemies();this.effects.clear();this.strokes=0;this.penalties=0;this.health=this.warrior.health;this.guard=createPlayerGuard();this.charging=false;this.power=1;this.shotHeight=0;this.club=this.course.par===3?2:0;this.updateClubModel();this.phase='aim';this.combo=0;this.pendingStrike=null;this.attackTimer=0;this.invincible=0;this.dodgeTimer=0;
     this.ball.position.set(0,heightAt(this.course,0,0)+BALL_RADIUS,0);this.shotOrigin.copy(this.ball.position);this.ball.visible=true;this.trail.visible=false;this.lie='Tee';if(this.player)this.player.root.visible=this.mode==='game';this.aimAtPin();this.placePlayer();this.cameraYaw=this.aim;this.camera.position.set(-9,heightAt(this.course,0,0)+8,-14);this.currentLook=this.ball.position.clone().add(new THREE.Vector3(0,2,20));this.refreshAim();this.preparePortrait();
   }
   preparePortrait(){
@@ -615,7 +617,7 @@ class Game {
     this.puttingGuide.update(this.time,this.mode==='game'&&this.phase==='aim'&&this.lie==='Green');
     this.ballGlow.position.copy(this.ball.position);this.ballGlow.position.y=heightAt(this.course,this.ball.position.x,this.ball.position.z)+.07;this.ballGlow.visible=this.mode==='game'&&this.phase!=='flight'&&this.phase!=='holed';this.ballGlow.scale.setScalar(1+Math.sin(this.time*2)*.08);
     this.ballBeacon.position.copy(this.ball.position).add(new THREE.Vector3(0,5.5,0));this.ballBeacon.visible=this.mode==='game'&&this.phase==='combat';this.aimLine.visible=this.aimMarker.visible=this.mode==='game'&&this.phase==='aim';
-    this.crowd.update(this.enemies);this.scene.userData.crowdCount=this.enemies.length;this.scene.userData.musou=this.action?.kind==='musou'&&!this.input.reducedMotion;this.frameCount++;this.fpsTime+=realDt;if(this.fpsTime>1.2){const fps=this.frameCount/this.fpsTime;this.ui.$('performance').textContent=`${Math.round(fps)} FPS`;if(this.quality==='balanced'&&!this.paused&&this.time>(this.resolutionChangedAt||0)+3){const current=this.renderer.getPixelRatio(),ceiling=Math.min(devicePixelRatio,1.5);const next=fps<42?Math.max(.75,current-.15):fps>58&&this.time>(this.resolutionChangedAt||0)+10?Math.min(ceiling,current+.1):current;if(Math.abs(next-current)>.01){this.renderer.setPixelRatio(next);this.renderer.setSize(innerWidth,innerHeight);this.rendering.resize();this.resolutionChangedAt=this.time;}}this.frameCount=0;this.fpsTime=0;}
+    this.crowd.update(this.enemies,{batchWeapons:!this.rendering.portraitRoots});this.scene.userData.crowdCount=this.enemies.length;this.scene.userData.musou=this.action?.kind==='musou'&&!this.input.reducedMotion;this.frameCount++;this.fpsTime+=realDt;if(this.fpsTime>1.2){const fps=this.frameCount/this.fpsTime;this.ui.$('performance').textContent=`${Math.round(fps)} FPS`;if(this.quality==='balanced'&&!this.paused&&this.time>(this.resolutionChangedAt||0)+3){const current=this.renderer.getPixelRatio(),ceiling=Math.min(devicePixelRatio,1.5);const next=fps<42?Math.max(.75,current-.15):fps>58&&this.time>(this.resolutionChangedAt||0)+10?Math.min(ceiling,current+.1):current;if(Math.abs(next-current)>.01){this.renderer.setPixelRatio(next);this.renderer.setSize(innerWidth,innerHeight);this.rendering.resize();this.resolutionChangedAt=this.time;}}this.frameCount=0;this.fpsTime=0;}
     // Resizing clears the drawing buffer. Apply adaptive resolution before
     // the final draw, so this frame never presents an empty canvas.
     this.rendering.render(this.quality);this.input.end();

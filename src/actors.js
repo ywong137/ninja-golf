@@ -1,3 +1,4 @@
+import {CrowdWeapons} from './crowd-weapons.js';
 import {GarmentCollision} from './garment-collision.js';
 import {LegJointBalance} from './leg-joint-balance.js';
 import * as THREE from 'three';
@@ -826,13 +827,14 @@ export class Warrior {
 }
 export class CrowdRenderer {
   constructor(scene){
-    this.scene=scene;this.active=new Set();const before=scene.onBeforeRender;
+    this.scene=scene;this.active=new Set();this.weapons=new CrowdWeapons(scene);const before=scene.onBeforeRender;
     // Three updates all world matrices before this callback, then tests camera
     // and shadow visibility. This also covers late root movement and reflections.
     scene.onBeforeRender=(renderer,renderScene,camera,target)=>{
       before.call(renderScene,renderer,renderScene,camera,target);
       for(const actor of this.active)if(actor.root.visible)actor.skinBounds?.update();
+      this.weapons.updateMatrices();
     };
   }
-  update(enemies){const present=new Set(enemies);for(const e of this.active)if(!present.has(e)){this.scene.remove(e.root);e.dispose();this.active.delete(e);}for(const e of enemies)if(!this.active.has(e)){if(e.enemy)e.skinBounds=installSkinnedBounds(e.model);this.scene.add(e.root);this.active.add(e);}}
+  update(enemies,{batchWeapons=true}={}){this.weapons.update(enemies,{enabled:batchWeapons});const present=new Set(enemies);for(const e of this.active)if(!present.has(e)){this.scene.remove(e.root);e.dispose();this.active.delete(e);}for(const e of enemies)if(!this.active.has(e)){if(e.enemy)e.skinBounds=installSkinnedBounds(e.model);this.scene.add(e.root);this.active.add(e);}}
 }

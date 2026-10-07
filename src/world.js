@@ -1,3 +1,6 @@
+import {CourseGeometryCache} from './course-geometry-cache.js';
+import {ProgressiveTextures} from './progressive-textures.js';
+import surfacePreviews from '../public/textures/previews/manifest.json' with {type:'json'};
 import {shorelinePoint} from './shoreline.js';
 import * as THREE from 'three';
 import {DAY_SKY_YAW,SUN_DIRECTION} from './lighting.js';
@@ -34,7 +37,7 @@ function addMesh(g, geo, mat, x,y,z, sx=1,sy=1,sz=1) {
 }
 export class World {
   constructor(scene, renderer) {
-    this.scene=scene;this.renderer=renderer;this.root=new THREE.Group();scene.add(this.root);
+    this.scene=scene;this.renderer=renderer;this.geometryCache=new CourseGeometryCache();this.root=new THREE.Group();scene.add(this.root);
     scene.background=new THREE.Color('#9fbfc2');scene.fog=new THREE.FogExp2('#b4c3bd',.00030);
     const sky=new Sky();this.sky=sky;sky.scale.setScalar(20000);scene.add(sky);
     this.nightSky=new THREE.Mesh(new THREE.SphereGeometry(2400,24,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,vertexShader:'varying vec3 skyDirection;void main(){skyDirection=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`varying vec3 skyDirection;
@@ -53,6 +56,7 @@ export class World {
     this.sun.shadow.mapSize.set(2048,2048);this.sun.shadow.camera.far=280;this.sun.shadow.bias=-.00002;this.sun.shadow.normalBias=.015;this.sun.shadow.radius=1.5;
     scene.add(this.sun);this.hemisphere=new THREE.HemisphereLight('#d7e6e4','#777a49',.8);scene.add(this.hemisphere);
     const env=new THREE.PMREMGenerator(renderer);this.environment=env.fromScene(sky,.04,1,30000);scene.environment=this.environment.texture;scene.environmentIntensity=.18;env.dispose();
+    this.surfaceTextures=new ProgressiveTextures({loader:new THREE.TextureLoader(),base:`${import.meta.env.BASE_URL}textures/`,manifest:import.meta.env.PROD?surfacePreviews:{}});
     this.regionalImages=new Map();this.landscapeRocks=new Map();this.textureCache=new Map();this.texturePromises=[];this.shared=[];this.grassColor=this.texture('grass-color-2k.jpg',true);this.grassNormal=this.texture('grass-normal-2k.jpg');this.sandColor=this.texture('sand-color-2k.jpg',true);this.sandNormal=this.texture('sand-normal-2k.jpg');this.bunkerColor=this.texture('bunker-color-2k.jpg',true);this.bunkerNormal=this.texture('bunker-normal-2k.jpg');
     this.turfColor=this.texture('turf-color-2k.jpg',true);this.turfNormal=this.texture('turf-normal-2k.jpg');this.turfRoughness=this.texture('turf-roughness-2k.jpg');
     this.pathColor=this.texture('path-color-2k.jpg',true);this.pathNormal=this.texture('path-normal-2k.jpg');this.pathRoughness=this.texture('path-roughness-2k.jpg');
@@ -89,7 +93,7 @@ export class World {
   }
   texture(file,srgb=false){
     if(this.textureCache.has(file))return this.textureCache.get(file);
-    let loaded;const ready=new Promise(resolve=>loaded=resolve);this.texturePromises.push(ready);const t=new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/${file}`,loaded,undefined,error=>{console.warn(`Surface texture unavailable: ${file}`,error);loaded();});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());if(srgb)t.colorSpace=THREE.SRGBColorSpace;this.textureCache.set(file,t);return t;
+    let loaded;const ready=new Promise(resolve=>loaded=resolve);this.texturePromises.push(ready);const t=this.surfaceTextures.load(file,loaded,error=>{console.warn(`Surface texture unavailable: ${file}`,error);loaded();});t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());if(srgb)t.colorSpace=THREE.SRGBColorSpace;this.textureCache.set(file,t);return t;
   }
   regionalImage(theme){
     if(!['highlands','desert'].includes(theme)||!this.regions?.[theme])return null;
@@ -106,7 +110,7 @@ export class World {
     const state={color:{value:this.rockColor},normal:{value:this.rockNormal},available:{value:0}};
     this.landscapeRocks.set(theme,state);
     const load=(file,srgb)=>new Promise((resolve,reject)=>{
-      const texture=new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/${file}`,()=>resolve(texture),undefined,error=>{texture.dispose();reject(error);});
+      const texture=this.surfaceTextures.load(file,()=>resolve(texture),error=>{texture.dispose();reject(error);});
       texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.anisotropy=Math.min(8,this.renderer.capabilities.getMaxAnisotropy());if(srgb)texture.colorSpace=THREE.SRGBColorSpace;
     });
     const ready=Promise.allSettled([load('sandstone-color-2k.jpg',true),load('sandstone-normal-2k.jpg',false)]).then(results=>{
@@ -119,7 +123,7 @@ export class World {
   buildHorizon(c){
     this.distantCity?.dispose();this.distantCity=null;
     if(this.horizon){this.root.remove(this.horizon);this.horizon.geometry.dispose();this.horizon.material.dispose();}
-    this.horizon=new THREE.Mesh(landscapeHorizon(c,this.regions?.[c.theme]),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=c.theme!=='cyberpunk'?createTerrainSurfaceSampler(this.horizon.geometry):null;
+    this.horizon=new THREE.Mesh(this.geometryCache.get(c,this.regions?.[c.theme],'horizon',()=>landscapeHorizon(c,this.regions?.[c.theme])),courseMaterial(c,this,true));this.horizon.receiveShadow=true;this.root.add(this.horizon);this.horizonHeight=c.theme!=='cyberpunk'?createTerrainSurfaceSampler(this.horizon.geometry):null;
     for(const mesh of [...(this.distantUnderstory?.meshes||[]),...(this.distantUnderstory?.shadows||[])]){this.root.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();if(mesh.isInstancedMesh)mesh.dispose();}
     const ground=createCourseSurfaceSampler(c,heightAt,ellipse);
     this.distantUnderstory=buildLandscapeUnderstory(this.root,c,shrubAtlasSources(c.theme),UNDERSTORY_LIMITS[c.theme]?(x,z)=>this.horizonHeight?.(x,z)??ground(x,z):null);
@@ -146,7 +150,7 @@ export class World {
   }
   build(course) {
     this.clear();this.ambushSites=[];this.course=course;this.prepareTheme(course.theme);this.applyTheme(course);const c=course,r=random(c.seed),preview=routePoint(c,.35);this.previewShadowFocus=new THREE.Vector3(preview.x,heightAt(c,preview.x,preview.z),preview.z);
-    const geo=courseGeometry(c,heightAt,ellipse);
+    const geo=this.geometryCache.get(c,null,'course',()=>courseGeometry(c,heightAt,ellipse));
     const terrain=new THREE.Mesh(geo,this.terrainMaterial(c));terrain.receiveShadow=true;this.root.add(terrain);this.buildHorizon(c);
     this.pond=createPond(c,this.waterMaterial.uniforms);this.root.add(this.pond);this.makePath();
     if(c.theme==='japanese'||!c.theme){this.makeBuildings();this.makeAmbushGardens();}else buildThemeScenery(this.root,c,this.ambushSites,{rock:this.rockColor,normal:this.rockNormal,...(c.theme==='desert'?{adobeColor:this.texture('adobe-color-2k.jpg',true),adobeNormal:this.texture('adobe-normal-2k.jpg'),adobeRoughness:this.texture('adobe-roughness-2k.jpg')}:{})});
